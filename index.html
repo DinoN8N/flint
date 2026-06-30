@@ -1650,11 +1650,16 @@
 .flload .effcoach{border:1px solid rgba(232,103,74,.15);background:linear-gradient(135deg,rgba(255,255,255,.92),rgba(232,103,74,.07));margin-bottom:6px}
 .flload .effcoach .ec1{font-family:'Inter';font-size:18px;font-weight:900;letter-spacing:-.02em;line-height:1.3;margin:0;color:#161512}
 .flload .effcoach .ec2{font-size:14.5px;line-height:1.5;color:#4F4A44;margin:10px 0 0}
-.flload .eact{display:flex;align-items:center;gap:13px;width:100%;background:#fff;border:1px solid var(--line);border-radius:22px;padding:9px 14px 9px 9px;margin-bottom:10px;box-shadow:var(--shadow);cursor:pointer;font-family:inherit;text-align:left}
-.flload .eact .eai{display:inline-flex;align-items:center;gap:8px;background:#E8674A;color:#fff;border-radius:16px;padding:0 14px;height:52px;flex:none;font-size:20px}
-.flload .eact .eai b{font-family:'Anton';font-style:oblique 8deg;font-size:24px}
-.flload .eact .ean{flex:1;min-width:0;font-family:'Anton';font-style:oblique 8deg;text-transform:uppercase;font-size:18px;letter-spacing:.3px;color:#161512}
-.flload .eact .eat{font-size:13px;font-weight:700;color:#7C766B;text-align:right;line-height:1.35;flex:none}
+.flload .eact{display:flex;align-items:center;gap:13px;width:100%;background:#fff;border:1px solid var(--line);border-radius:20px;padding:11px 13px;margin-bottom:10px;box-shadow:var(--shadow);cursor:pointer;font-family:inherit;text-align:left;transition:transform .12s ease,box-shadow .18s ease}
+.flload .eact:active{transform:scale(.985)}
+.flload .eact .eai{width:48px;height:48px;border-radius:15px;background:#F3EFE8;color:#4A453E;display:grid;place-items:center;flex:none}
+.flload .eact .ean{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.flload .eact .ean b{font-family:'Inter',sans-serif;font-weight:800;font-size:15.5px;letter-spacing:0;color:#15140F;line-height:1;text-transform:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.flload .eact .ean .et{font-size:12.5px;font-weight:600;color:#8A857D}
+.flload .eact .eav{flex:none;display:flex;flex-direction:column;align-items:flex-end;line-height:1}
+.flload .eact .eav b{font-family:'Anton',sans-serif;font-weight:400;font-size:22px;letter-spacing:-.3px;color:var(--accent)}
+.flload .eact .eav small{font-size:9px;font-weight:800;letter-spacing:.5px;color:#A7A29A;text-transform:uppercase;margin-top:3px}
+.flload .eact .ec{font-size:18px;color:#CBC5BB;flex:none;margin-left:-3px}
 .flload .effadd{width:100%;margin:0 0 4px;background:none;border:1px dashed #E0D9CE;color:#7C766B;border-radius:16px;padding:12px;font-weight:800;font-size:13px;cursor:pointer;font-family:inherit}
 .flload .efftr{display:block;width:100%;background:#fff;border:1px solid var(--line);border-radius:24px;padding:18px 16px;margin-bottom:12px;box-shadow:var(--shadow);cursor:pointer;font-family:inherit;text-align:left}
 .flload .efftrh{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
@@ -4317,6 +4322,7 @@ body.stepsview header{display:none}
 .elx-2col{display:flex;gap:11px;margin-bottom:14px}
 .elx-2col>section{flex:1;margin-bottom:0!important;min-width:0;display:flex;flex-direction:column}
 .elx-zcard,.elx-tgt2{padding:15px 14px!important}
+.elx-zstack{margin:13px 0 12px}
 .elx-zrow{display:flex;align-items:center;gap:8px;margin:12px 0 2px}
 .elx-zdonut{width:96px;flex:none}.elx-zdonut svg{width:100%;display:block}
 .elx-zlegend{flex:1;display:flex;flex-direction:column;gap:6px;min-width:0}
@@ -4378,7 +4384,8 @@ body.stepsview header{display:none}
   <div class="elx-2col">
     <section class="card elx-card elx-zcard" onclick="window._ezSel=null;go('effzones')" style="cursor:pointer">
       <div class="elx-ct" style="display:flex;align-items:center;justify-content:space-between">Répartition des zones <i class="ti ti-chevron-right" style="color:#C8C2B8;font-size:18px"></i></div>
-      <div class="elx-zrow"><div class="elx-zdonut" id="effZdonut"></div><div class="elx-zlegend" id="effZleg"></div></div>
+      <div class="elx-zstack" id="effZstack"></div>
+      <div class="elx-zlegend" id="effZleg"></div>
       <div class="elx-zverd" id="effZverd"><span class="ic"><i class="ti ti-heart"></i></span><span id="effZtxt">—</span></div>
     </section>
     <section class="card elx-card elx-tgt2">
@@ -4432,8 +4439,17 @@ body.stepsview header{display:none}
 .ezv-hd .t{font-family:'Anton',sans-serif;font-weight:400;font-size:24px;text-transform:uppercase;color:#15140F;line-height:1}
 .ezv-hd .s{font-size:12px;font-weight:700;color:#8A857D;margin-top:3px}
 .ezv-donut{background:#fff;border:1px solid var(--line);border-radius:28px;padding:24px 18px 18px;box-shadow:var(--sh-card);margin-bottom:13px;transition:background .45s ease}
-.ezv-hint{text-align:center;font-size:11.5px;font-weight:700;color:#9A948A;margin-top:10px;letter-spacing:.2px}
-@keyframes ezPop{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:none}}
+.ezv-hint{text-align:center;font-size:11.5px;font-weight:700;color:#9A948A;margin-top:14px;letter-spacing:.2px}
+.ezv-total{display:flex;flex-direction:column;align-items:center;gap:3px;margin-bottom:18px}
+.ezv-total .lbl{font-size:10.5px;font-weight:800;letter-spacing:.7px;color:#9A948A;text-transform:uppercase;transition:color .3s ease}
+.ezv-total .big{font-family:'Anton',sans-serif;font-weight:400;font-size:34px;color:#15140F;line-height:1}
+.ezv-total .big small{font-family:'Inter',sans-serif;font-weight:700;font-size:14px;color:#8A857D}
+.ezstack{display:flex;gap:3px;height:15px}
+.ezstack span{border-radius:5px;min-width:3px;transition:opacity .28s ease,flex-grow .55s cubic-bezier(.2,.8,.2,1)}
+.ezstack.big{height:38px;gap:5px}
+.ezstack.big span{border-radius:12px;cursor:pointer;box-shadow:inset 0 -3px 9px rgba(0,0,0,.08)}
+.ezstack.big span:active{transform:scaleY(.93)}
+@keyframes ezPop{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:none}}
 .ez-pol{background:#fff;border:1px solid var(--line);border-radius:18px;padding:14px 16px 13px;box-shadow:var(--sh-card);margin-bottom:13px}
 .ez-pol-h{display:flex;justify-content:space-between;font-size:11.5px;font-weight:800;color:#8A857D;margin-bottom:9px}
 .ez-pol-h .e{color:#5FB39A}.ez-pol-h .i{color:#E0533B}.ez-pol-h b{color:#15140F}
@@ -4467,7 +4483,7 @@ body.stepsview header{display:none}
     <button class="bk" type="button" onclick="goBack('load')" aria-label="Retour"><i class="ti ti-chevron-left"></i></button>
     <div><div class="t">Zones de FC</div><div class="s">Où ton cœur a travaillé aujourd'hui</div></div>
   </div>
-  <div class="ezv-donut" id="ezHero"><div id="ezDonut"></div><div class="ezv-hint" id="ezHint">Touche une zone — sur le donut ou la liste</div></div>
+  <div class="ezv-donut" id="ezHero"><div class="ezv-total" id="ezTotal"></div><div id="ezDonut"></div><div class="ezv-hint" id="ezHint">Touche une zone — sur la barre ou la liste</div></div>
   <div class="ez-pol" id="ezPol"></div>
   <div class="ez-rows" id="ezRows"></div>
   <div id="ezRel"></div>
@@ -7082,9 +7098,9 @@ function renderLoad(){var off=_effDay||0,K=tk(off);
  var verdict=str<=0?'':(str<lo?' Encore sous ta cible.':str<=hi?' Tu es dans ta cible 👌':' Tu as dépassé ta cible.');
  set('effTgtX',ctx+verdict);
  var ss=DB.get('sessions_'+K,[]).filter(function(s){return s.type!=='nap'});
- set('effActs',ss.length?ss.map(function(s,i){var sc=actStrain(s).toFixed(1).replace('.',',');var end=s.start?(function(){var sm=tmin(s.start)+(s.dur||0);return String(Math.floor(sm/60)%24).padStart(2,'0')+':'+String(sm%60).padStart(2,'0')})():'';return '<button class="eact" type="button" onclick="openActivity('+i+')"><span class="eai">'+(s.icon||'🏃')+'<b>'+sc+'</b></span><span class="ean">'+esc(s.name||'Activité')+'</span><span class="eat">'+(s.start||'')+'<br>'+end+'</span></button>'}).join(''):'<p class="sci" style="padding:2px 2px 14px;color:#7C766B">Aucune séance ce jour. Ajoute-en une pour suivre ta charge.</p>');
+ set('effActs',ss.length?ss.map(function(s,i){var sc=actStrain(s).toFixed(1).replace('.',',');var end=s.start?(function(){var sm=tmin(s.start)+(s.dur||0);return String(Math.floor(sm/60)%24).padStart(2,'0')+':'+String(sm%60).padStart(2,'0')})():'';var ic=svgIcon(sportIcon(s.name),{size:24,color:'#4A453E',sw:2});return '<button class="eact" type="button" onclick="openActivity('+i+')"><span class="eai">'+ic+'</span><span class="ean"><b>'+esc(s.name||'Activité')+'</b><span class="et">'+(s.start||'')+(end?' → '+end:'')+'</span></span><span class="eav"><b>'+sc+'</b><small>effort</small></span><i class="ti ti-chevron-right ec"></i></button>'}).join(''):'<p class="sci" style="padding:2px 2px 14px;color:#7C766B">Aucune séance ce jour. Ajoute-en une pour suivre ta charge.</p>');
  (function(){var zt=zonesToday(ss),z=zt.z,tot=zt.tot;
-  var dn=document.getElementById('effZdonut');if(dn)dn.innerHTML=effZoneDonut(z);
+  var st=document.getElementById('effZstack');if(st)st.innerHTML=effZoneStack(z,null,false);
   var leg=document.getElementById('effZleg');if(leg)leg.innerHTML=z.map(function(v,i){return '<div class="elx-zleg2'+(v>0?'':' off')+'"><span class="d" style="background:'+EFF_ZONES[i].c+'"></span><span class="zl">Z'+(i+1)+'</span><span class="zv">'+(v>0?v+' min':'—')+'</span></div>';}).join('');
   var loz=z[0]+z[1]+z[2],hiz=z[3]+z[4],txt;
   if(!tot)txt='Aucune séance — ajoute-en une pour voir où passe ton effort.';
@@ -7131,6 +7147,11 @@ function effZoneDonut(z){var tot=z.reduce(function(a,b){return a+b},0);var r=44,
  else seg='<circle cx="60" cy="60" r="'+r+'" fill="none" stroke="#EFEAE2" stroke-width="'+sw+'"/>';
  var h=Math.floor(tot/60),m=tot%60,lab=tot>0?(h>0?h+'h'+(m<10?'0'+m:m):m+'min'):'—';
  return '<svg viewBox="0 0 120 120"><defs>'+defs+'</defs>'+seg+'<text x="60" y="55" text-anchor="middle" font-size="9.5" font-weight="800" letter-spacing=".5" fill="#9A948A" font-family="Inter,sans-serif">TOTAL</text><text x="60" y="78" text-anchor="middle" font-family="Anton,sans-serif" font-size="20" fill="#15140F">'+lab+'</text></svg>';}
+function effZoneStack(z,sel,big){var tot=z.reduce(function(a,b){return a+b},0);
+ if(!tot)return '<div class="ezstack'+(big?' big':'')+'"><span style="flex:1;background:#EFEAE2;opacity:1"></span></div>';
+ var segs='';for(var i=0;i<5;i++){if(z[i]<=0)continue;var dim=(sel!=null&&sel!==i);
+  segs+='<span data-z="'+i+'" style="flex:'+z[i]+';background:linear-gradient(180deg,'+lighten(EFF_ZONES[i].c,.16)+','+EFF_ZONES[i].c+');opacity:'+(dim?.3:1)+'"'+(big?' onclick="effZonesSel('+i+')"':'')+'></span>';}
+ return '<div class="ezstack'+(big?' big':'')+'">'+segs+'</div>';}
 /* ===== Vue dédiée Zones de FC (interactive) ===== */
 function effBigDonut(z,sel){var tot=z.reduce(function(a,b){return a+b},0),r=66,c=2*Math.PI*r,off=0,seg='',defs='',nseg=0;
  for(var q=0;q<5;q++)if(z[q]>0)nseg++;
@@ -7149,10 +7170,11 @@ function effZonesSel(i){window._ezSel=(window._ezSel===i?null:i);if(typeof hapti
 function renderEffZones(){var off=_effDay||0,K=tk(off);
  var ss=DB.get('sessions_'+K,[]).filter(function(s){return s.type!=='nap'});
  var zt=zonesToday(ss),z=zt.z,tot=zt.tot,sel=window._ezSel,mx=Math.max.apply(null,z.concat([1]));
- var dn=document.getElementById('ezDonut');dn.innerHTML=effBigDonut(z,sel);
- var svg=dn.querySelector('svg');if(svg){svg.style.animation='none';void svg.offsetWidth;svg.style.animation='ezPop .55s cubic-bezier(.2,.9,.3,1.12) both';}
+ var dn=document.getElementById('ezDonut');dn.innerHTML=effZoneStack(z,sel,true);
+ dn.style.animation='none';void dn.offsetWidth;dn.style.animation='ezPop .5s cubic-bezier(.2,.9,.3,1.1) both';
+ (function(){var tt2=document.getElementById('ezTotal');if(!tt2)return;if(sel!=null&&tot>0){var v=z[sel],pc=tot?Math.round(v/tot*100):0;tt2.innerHTML='<span class="lbl" style="color:'+EFF_ZONES[sel].c+'">Z'+(sel+1)+' · '+EFF_ZONES[sel].n.toUpperCase()+' · '+effZBpmTxt(sel)+'</span><span class="big">'+v+'<small> min · '+pc+'%</small></span>';}else{var h=Math.floor(tot/60),m=tot%60;tt2.innerHTML='<span class="lbl">TOTAL ACTIF</span><span class="big">'+(tot>0?(h>0?h+'h'+(m<10?'0'+m:m):m+'min'):'—')+'</span>';}})();
  var hero=document.getElementById('ezHero');if(hero)hero.style.background=(sel!=null&&tot>0)?'radial-gradient(125% 95% at 50% 28%, '+hexA(EFF_ZONES[sel].c,.16)+', #fff 70%)':'#fff';
- set('ezHint',sel!=null?'Re-touche la zone pour revenir au total':'Touche une zone — sur le donut ou la liste');
+ set('ezHint',sel!=null?'Re-touche la zone pour revenir au total':'Touche une zone — sur la barre ou la liste');
  (function(){var endu=z[0]+z[1]+z[2],inten=z[3]+z[4],ep=tot?Math.round(endu/tot*100):0,ip=tot?100-ep:0;
   var pol=document.getElementById('ezPol');if(pol)pol.innerHTML=tot?('<div class="ez-pol-h"><span class="e">Endurance <b>'+ep+'%</b></span><span class="i"><b>'+ip+'%</b> Intensité</span></div><div class="ez-pol-bar"><div class="fill"><i class="e" style="width:'+ep+'%"></i><i class="i" style="width:'+ip+'%"></i></div><span class="ideal" style="left:80%"></span></div><div class="ez-pol-x">Idéal : ~80% facile · 20% intense</div>'):'';})();
  document.getElementById('ezRows').innerHTML=EFF_ZONES.map(function(zo,i){var v=z[i],pc=tot?Math.round(v/tot*100):0,on=sel===i,bw=tot?Math.max(3,v/mx*100):0;
@@ -7781,7 +7803,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v387';
+const APP_VERSION='flint-v388';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
