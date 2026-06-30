@@ -4934,40 +4934,85 @@ body.stepsview header{display:none}
   .pf2-edcell{background:#FAF8F5;padding:11px 13px;display:flex;flex-direction:column;gap:3px}
   .pf2-edcell .k{font-family:'Switzer',sans-serif;font-weight:700;letter-spacing:.05em;text-transform:uppercase;font-size:9.5px;color:#9A938A}
   .pf2-edcell b{font-family:'Geist',sans-serif;font-weight:600;font-size:14px;color:#15140F;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  /* ---- profil v3 (inspiré maquettes) ---- */
+  .pf3-h1{font-family:'Geist',sans-serif;font-weight:700;letter-spacing:-.03em;font-size:31px;color:#15140F;line-height:1;margin:2px 2px 5px}
+  .pf3-sub{font-size:14px;font-weight:600;color:#8A857D;margin:0 2px 18px}
+  .pf3-hero{position:relative;overflow:hidden;border-radius:26px;background:linear-gradient(135deg,#FDEEE7 0%,#FCE2D6 58%,#FBD7C9 100%);border:1px solid #F7DACD;box-shadow:0 18px 42px -20px rgba(240,73,46,.4);margin-bottom:24px}
+  .pf3-strk{position:absolute;top:0;right:0;width:190px;height:100%;opacity:.45;pointer-events:none}
+  .pf3-htop{display:flex;align-items:center;gap:16px;padding:20px 20px 0;position:relative}
+  .pf3-av{width:84px;height:84px;border-radius:50%;background-size:cover;background-position:center;flex:none;box-shadow:0 12px 26px -8px rgba(20,18,12,.32);position:relative;border:3px solid #fff}
+  .pf3-avb{position:absolute;bottom:-3px;right:-3px;width:30px;height:30px;border-radius:50%;background:linear-gradient(140deg,#FF8A5C,#F0492E);color:#fff;font-family:'Geist',sans-serif;font-weight:700;font-size:13px;display:grid;place-items:center;border:2.5px solid #fff;box-shadow:0 4px 10px -2px rgba(240,73,46,.5)}
+  .pf3-id{min-width:0}
+  .pf3-name{font-family:'Geist',sans-serif;font-weight:700;letter-spacing:-.025em;font-size:27px;color:#15140F;line-height:1.02}
+  .pf3-handle{font-size:14px;font-weight:600;color:#BC6A52;margin-top:5px}
+  .pf3-meta2{font-size:13.5px;font-weight:600;color:#8E7064;margin-top:3px}
+  .pf3-hact{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 20px 18px;position:relative}
+  .pf3-tier{display:inline-flex;align-items:center;gap:7px;background:var(--accent);color:#fff;font-family:'Switzer',sans-serif;font-weight:800;letter-spacing:.12em;font-size:11px;padding:11px 14px;border-radius:12px;box-shadow:0 8px 18px -5px rgba(240,73,46,.5);white-space:nowrap;flex:none}
+  .pf3-tier i{font-size:14px}
+  .pf3-edit{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:8px;background:#fff;border:1px solid #F3D8CB;border-radius:14px;padding:12px 14px;font-family:'Switzer',sans-serif;font-weight:800;font-size:13px;color:#15140F;cursor:pointer;box-shadow:0 7px 16px -6px rgba(20,18,12,.16);transition:transform .12s;white-space:nowrap}
+  .pf3-edit i{font-size:15px;color:var(--accent)}.pf3-edit:active{transform:scale(.97)}
+  .pf3-foot{display:grid;grid-template-columns:1fr 1fr 1.05fr;background:rgba(255,255,255,.62);border-top:1px solid rgba(240,73,46,.13);position:relative}
+  .pf3-fcell{padding:13px 13px 14px;display:flex;flex-direction:column;gap:3px;border-left:1px solid rgba(240,73,46,.1);min-width:0}
+  .pf3-fcell:first-child{border-left:none}
+  .pf3-fcell .fh{display:flex;align-items:center;gap:6px;font-size:10px;font-weight:700;color:#9C7C70;letter-spacing:.01em;white-space:nowrap}
+  .pf3-fcell .fh i{font-size:13px;color:var(--accent)}
+  .pf3-fcell b{font-family:'Geist',sans-serif;font-weight:700;font-size:14px;color:#15140F;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pf3-fbar{height:5px;border-radius:3px;background:rgba(240,73,46,.16);overflow:hidden;margin-top:5px}
+  .pf3-fbar i{display:block;height:100%;border-radius:3px;background:linear-gradient(90deg,#FF8A5C,#F0492E)}
+  .pf3-shead{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:24px 2px 14px}
+  .pf3-shead h3{font-family:'Geist',sans-serif;font-weight:700;letter-spacing:-.015em;font-size:21px;color:#15140F}
+  .pf3-shead a{font-family:'Switzer',sans-serif;font-weight:700;font-size:13.5px;color:var(--accent);cursor:pointer;flex:none}
+  .pf3-act{display:flex;gap:11px;overflow-x:auto;padding:2px 2px 6px;scrollbar-width:none}
+  .pf3-act::-webkit-scrollbar{display:none}
+  .pf3-acard{flex:none;width:150px;background:#fff;border:1px solid var(--line);border-radius:20px;padding:15px 15px 16px;box-shadow:var(--sh-card);display:flex;flex-direction:column;cursor:pointer;text-align:left;font-family:inherit;transition:transform .12s}
+  .pf3-acard:active{transform:scale(.98)}
+  .pf3-aico{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;font-size:22px;margin-bottom:12px}
+  .pf3-aico.pe{background:#FCE7E0;color:var(--accent)}.pf3-aico.am{background:#FCEFD8;color:#E0922A}.pf3-aico.gr{background:#E7F5EC;color:#2FA86A}
+  .pf3-aico .num{font-family:'Geist',sans-serif;font-weight:700;font-size:21px;color:var(--accentD)}
+  .pf3-alab{font-family:'Switzer',sans-serif;font-weight:800;letter-spacing:.05em;text-transform:uppercase;font-size:11px;color:#8A857D;line-height:1.25;min-height:27px}
+  .pf3-aval{font-family:'Geist',sans-serif;font-weight:700;letter-spacing:-.02em;font-size:25px;color:#15140F;margin-top:7px;line-height:1}
+  .pf3-anote{font-family:'Switzer',sans-serif;font-weight:800;font-size:12px;color:var(--accent);margin-top:4px}
+  .pf3-asub{font-size:11.5px;font-weight:600;color:#8A857D;line-height:1.3;margin-top:5px}
+  .pf3-abar{height:5px;border-radius:3px;background:#F0EBE3;overflow:hidden;margin-top:auto}
+  .pf3-abwrap{margin-top:13px}
+  .pf3-abar i{display:block;height:100%;border-radius:3px;background:linear-gradient(90deg,#FF8A5C,#F0492E)}
+  .pf3-achv{width:30px;height:30px;border-radius:50%;background:#F4F1EB;display:grid;place-items:center;color:#8A857D;font-size:16px;margin-top:11px}
+  .pf3-insight{display:flex;align-items:center;gap:14px;background:#fff;border:1px solid var(--line);border-radius:20px;padding:15px 16px;box-shadow:var(--sh-card);overflow:hidden}
+  .pf3-inico{width:46px;height:46px;border-radius:14px;background:#FCE7E0;color:var(--accent);display:grid;place-items:center;font-size:22px;flex:none}
+  .pf3-intx{flex:1;min-width:0}
+  .pf3-intx b{font-family:'Switzer',sans-serif;font-weight:800;font-size:14.5px;color:#15140F;display:block}
+  .pf3-intx span{font-size:12.5px;font-weight:600;color:#8A857D;line-height:1.35;display:block;margin-top:2px}
+  .pf3-inspark{width:92px;height:46px;flex:none}
   </style>
-  <div class="pf2-hd">
-    <button class="bk" onclick="goBack('today')" aria-label="Retour">‹</button>
-    <span class="t">Profil</span>
-    <span class="pf2-tier">À VIE</span>
-  </div>
-  <div class="pf2-hero">
-    <div class="pf2-av" id="pf2Av">—</div>
-    <div class="pf2-namerow">
-      <div style="min-width:0"><div class="pf2-name" id="pf2Name">—</div><div class="pf2-meta" id="pf2Meta">—</div></div>
-      <button class="pf2-edit" onclick="document.getElementById('pfEditCard').scrollIntoView({behavior:'smooth',block:'center'})"><i class="ti ti-pencil"></i>Modifier</button>
+  <div class="pf3-h1">Mon profil</div>
+  <div class="pf3-sub">Tes infos, tes objectifs, ton suivi.</div>
+
+  <div class="pf3-hero">
+    <svg class="pf3-strk" viewBox="0 0 190 220" preserveAspectRatio="none"><g stroke="var(--accent)" stroke-width="7" stroke-linecap="round"><line x1="66" y1="24" x2="186" y2="24"/><line x1="106" y1="48" x2="190" y2="48"/><line x1="44" y1="72" x2="180" y2="72"/><line x1="92" y1="96" x2="190" y2="96"/><line x1="64" y1="120" x2="176" y2="120"/><line x1="116" y1="144" x2="190" y2="144"/><line x1="78" y1="168" x2="184" y2="168"/><line x1="100" y1="192" x2="190" y2="192"/></g></svg>
+    <div class="pf3-htop">
+      <div class="pf3-av" id="pf3Av"><span class="pf3-avb" id="pf3Avb">A</span></div>
+      <div class="pf3-id"><div class="pf3-name" id="pf2Name">—</div><div class="pf3-handle" id="pf3Handle">—</div><div class="pf3-meta2" id="pf2Meta">—</div></div>
     </div>
-    <div class="pf2-since"><span class="ic"><i class="ti ti-rosette"></i></span>Membre depuis <b id="pf2Since">—</b></div>
+    <div class="pf3-hact">
+      <span class="pf3-tier"><i class="ti ti-crown"></i>À VIE</span>
+      <button class="pf3-edit" type="button" onclick="go('pfedit')"><i class="ti ti-pencil"></i>Modifier mon profil</button>
+    </div>
+    <div class="pf3-foot">
+      <div class="pf3-fcell"><div class="fh"><i class="ti ti-calendar-event"></i>Membre depuis</div><b id="pf2Since">—</b></div>
+      <div class="pf3-fcell"><div class="fh"><i class="ti ti-rosette"></i>Objectif</div><b id="pf3Goal">—</b></div>
+      <div class="pf3-fcell"><div class="fh"><i class="ti ti-chart-bar"></i>Complété</div><b id="pf3Pct">—</b><div class="pf3-fbar"><i id="pf3PctBar" style="width:0%"></i></div></div>
+    </div>
   </div>
 
-  <button class="pf2-row" type="button" onclick="go('howscore')"><span class="lvl" id="pf2Lvl">—</span><div class="tx"><b>Niveau <span id="pf2LvlN">—</span></b><span id="pf2LvlSub">—</span></div><i class="ti ti-chevron-right chv"></i></button>
-  <button class="pf2-row" type="button" onclick="go('today')"><span class="ic amber"><i class="ti ti-flame"></i></span><div class="tx"><b>Série de jours</b></div><span class="val" id="pf2Streak">—</span><i class="ti ti-chevron-right chv"></i></button>
-  <button class="pf2-row" type="button" onclick="go('coach')"><span class="ic mem"><i class="ti ti-bulb"></i></span><div class="tx"><b>Ma mémoire</b><span>Ce que FLINT sait de toi</span></div><i class="ti ti-chevron-right chv"></i></button>
+  <div class="pf3-shead"><h3>Mon activité</h3><a onclick="go('trends')">Voir tout</a></div>
+  <div class="pf3-act" id="pf3Act"></div>
 
-  <div class="pf2-sect">Objectifs atteints (<span id="pf2AchN">—</span>)</div>
+  <div class="pf3-shead"><h3>Mes accomplissements</h3><a onclick="toast('Bientôt : tous tes badges 🏅')">Voir tous</a></div>
   <div class="pf2-ach" id="pf2Ach"></div>
 
-  <div class="pf2-sect">Points forts des données</div>
-  <div class="pf2-stats" id="pf2Stats"></div>
-
-  <button class="pf2-edcard" id="pfEditCard" type="button" onclick="go('pfedit')">
-    <div class="pf2-edtop"><span class="ic"><i class="ti ti-id-badge-2"></i></span><div class="tx"><b>Mes informations</b><span>Prénom, âge, région & objectif</span></div><i class="ti ti-chevron-right chv"></i></div>
-    <div class="pf2-edgrid">
-      <div class="pf2-edcell"><span class="k">Prénom</span><b id="pfsName">—</b></div>
-      <div class="pf2-edcell"><span class="k">Âge</span><b id="pfsAge">—</b></div>
-      <div class="pf2-edcell"><span class="k">Région</span><b id="pfsReg">—</b></div>
-      <div class="pf2-edcell"><span class="k">Objectif</span><b id="pfsGoal">—</b></div>
-    </div>
-  </button>
+  <div class="pf3-shead"><h3>Points forts des données</h3></div>
+  <div class="pf3-insight" id="pf3Insight"></div>
+  <div class="pf2-stats" id="pf2Stats" style="margin-top:11px"></div>
 
   <div class="flcard" id="journalCard"></div>
 
@@ -5023,13 +5068,21 @@ body.stepsview header{display:none}
 .pfa-bk:active{transform:scale(.9)}
 .pfa-ttl{flex:1;text-align:center;font-family:'Switzer',sans-serif;font-weight:800;letter-spacing:.2em;text-transform:uppercase;font-size:12px;color:#15140F}
 .pfa-skip{border:none;background:transparent;font-family:'Switzer',sans-serif;font-weight:800;font-size:14px;color:var(--accent);cursor:pointer;width:40px;flex:none}
-.pfa-prev{display:flex;flex-direction:column;align-items:center;text-align:center;padding:6px 0 24px}
-.pfa-av{width:78px;height:78px;border-radius:50%;display:grid;place-items:center;font-family:'Geist',sans-serif;font-weight:700;font-size:29px;color:#fff;background:linear-gradient(140deg,#FF8A5C,#F0492E);box-shadow:0 16px 32px -10px rgba(240,73,46,.55);margin-bottom:13px;transition:transform .25s cubic-bezier(.2,.9,.3,1.4)}
-.pfa-av.pop{transform:scale(1.08)}
-.pfa-pname{font-family:'Geist',sans-serif;font-weight:700;letter-spacing:-.02em;font-size:24px;color:#15140F;line-height:1.05}
-.pfa-pmeta{font-size:13.5px;font-weight:600;color:#8A857D;margin-top:5px}
-.pfa-pgoal{display:inline-flex;align-items:center;gap:6px;margin-top:12px;background:#fff;border:1px solid var(--line);border-radius:30px;padding:7px 14px;font-family:'Switzer',sans-serif;font-weight:700;font-size:12.5px;color:var(--accentD);box-shadow:var(--sh-card)}
+.pfa-prev{position:relative;overflow:hidden;display:flex;align-items:center;gap:16px;padding:18px 20px;margin:4px 0 26px;border-radius:24px;background:linear-gradient(135deg,#FDEEE7 0%,#FCE2D6 58%,#FBD7C9 100%);border:1px solid #F7DACD;box-shadow:0 16px 38px -20px rgba(240,73,46,.4)}
+.pfa-prev .pf3-strk{width:170px;opacity:.42}
+.pfa-pav{width:76px;height:76px;border-radius:50%;flex:none;background:url('https://randomuser.me/api/portraits/men/32.jpg') center/cover;border:3px solid #fff;box-shadow:0 10px 22px -8px rgba(20,18,12,.3);position:relative;transition:transform .25s cubic-bezier(.2,.9,.3,1.4)}
+.pfa-pav.pop{transform:scale(1.07)}
+.pfa-pavb{position:absolute;bottom:-3px;right:-3px;width:28px;height:28px;border-radius:50%;background:linear-gradient(140deg,#FF8A5C,#F0492E);color:#fff;font-family:'Geist',sans-serif;font-weight:700;font-size:12px;display:grid;place-items:center;border:2.5px solid #fff}
+.pfa-pid{min-width:0;position:relative}
+.pfa-pname{font-family:'Geist',sans-serif;font-weight:700;letter-spacing:-.02em;font-size:24px;color:#15140F;line-height:1.02}
+.pfa-pmeta{font-size:13.5px;font-weight:600;color:#8E7064;margin-top:4px}
+.pfa-pgoal{display:inline-flex;align-items:center;gap:6px;margin-top:11px;background:#fff;border:1px solid #F2D7CA;border-radius:30px;padding:7px 13px;font-family:'Switzer',sans-serif;font-weight:700;font-size:12.5px;color:var(--accentD);box-shadow:0 6px 14px -6px rgba(20,18,12,.15);white-space:nowrap;max-width:100%}
 .pfa-pgoal i{color:var(--accent);font-size:15px}
+.pfa-rsub{font-size:13px;font-weight:600;color:#8A857D;margin:-8px 2px 14px}
+.pfa-row .l{flex:1;min-width:0}
+.pfa-row .l .lt{display:flex;flex-direction:column;min-width:0}
+.pfa-row .l .lt b{font-family:'Switzer',sans-serif;font-weight:700;font-size:14px;color:#15140F}
+.pfa-row .l .lt small{font-size:11.5px;font-weight:600;color:#9A938A;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pfa-step{margin-bottom:30px}
 .pfa-q{display:flex;align-items:center;gap:11px;font-family:'Geist',sans-serif;font-weight:700;letter-spacing:-.015em;font-size:20px;color:#15140F;margin-bottom:16px}
 .pfa-q .n{flex:none;width:26px;height:26px;border-radius:9px;background:var(--accent);color:#fff;font-family:'Geist',sans-serif;font-weight:700;font-size:13px;display:grid;place-items:center}
@@ -5090,10 +5143,13 @@ body.stepsview header{display:none}
     <button class="pfa-skip" type="button" onclick="savePfEdit()">OK</button>
   </div>
   <div class="pfa-prev">
-    <div class="pfa-av" id="pfaAv">A</div>
-    <div class="pfa-pname" id="pfaPName">Ton prénom</div>
-    <div class="pfa-pmeta" id="pfaPMeta">— ans · —</div>
-    <div class="pfa-pgoal" id="pfaPGoal"></div>
+    <svg class="pf3-strk" viewBox="0 0 170 200" preserveAspectRatio="none"><g stroke="var(--accent)" stroke-width="7" stroke-linecap="round"><line x1="58" y1="24" x2="166" y2="24"/><line x1="96" y1="50" x2="170" y2="50"/><line x1="40" y1="76" x2="160" y2="76"/><line x1="84" y1="102" x2="170" y2="102"/><line x1="58" y1="128" x2="156" y2="128"/><line x1="104" y1="154" x2="170" y2="154"/><line x1="72" y1="180" x2="164" y2="180"/></g></svg>
+    <div class="pfa-pav" id="pfaAv"><span class="pfa-pavb" id="pfaAvb">A</span></div>
+    <div class="pfa-pid">
+      <div class="pfa-pname" id="pfaPName">Ton prénom</div>
+      <div class="pfa-pmeta" id="pfaPMeta">— ans · —</div>
+      <div class="pfa-pgoal" id="pfaPGoal"></div>
+    </div>
   </div>
 
   <div class="pfa-step">
@@ -5127,11 +5183,12 @@ body.stepsview header{display:none}
 
   <div class="pfa-step">
     <div class="pfa-q sub"><i class="ti ti-target-arrow"></i>Tes cibles quotidiennes</div>
+    <div class="pfa-rsub">Ajuste tes repères pour des résultats durables.</div>
     <div class="pfa-rows">
-      <div class="pfa-row"><span class="l"><i class="ti ti-sunrise"></i>Réveil habituel</span><input id="pfWake" type="time" aria-label="Réveil habituel"></div>
-      <div class="pfa-row"><span class="l"><i class="ti ti-moon"></i>Sommeil visé</span><span class="stp"><button type="button" onclick="pfaStep('pfNeed',-0.5)" aria-label="Moins">−</button><input id="pfNeed" type="number" step="0.5" inputmode="decimal" aria-label="Sommeil visé"><b>h</b><button type="button" onclick="pfaStep('pfNeed',0.5)" aria-label="Plus">+</button></span></div>
-      <div class="pfa-row"><span class="l"><i class="ti ti-flame"></i>Calories / jour</span><span class="stp"><input id="pfKcal" type="number" inputmode="numeric" aria-label="Calories par jour"><b>kcal</b></span></div>
-      <div class="pfa-row"><span class="l"><i class="ti ti-meat"></i>Protéines / jour</span><span class="stp"><input id="pfProt" type="number" inputmode="numeric" aria-label="Protéines par jour"><b>g</b></span></div>
+      <div class="pfa-row"><span class="l"><i class="ti ti-sunrise"></i><span class="lt"><b>Réveil habituel</b><small>Heure à laquelle tu te lèves</small></span></span><input id="pfWake" type="time" aria-label="Réveil habituel"></div>
+      <div class="pfa-row"><span class="l"><i class="ti ti-moon"></i><span class="lt"><b>Sommeil visé</b><small>Durée de sommeil par nuit</small></span></span><span class="stp"><button type="button" onclick="pfaStep('pfNeed',-0.5)" aria-label="Moins">−</button><input id="pfNeed" type="number" step="0.5" inputmode="decimal" aria-label="Sommeil visé"><b>h</b><button type="button" onclick="pfaStep('pfNeed',0.5)" aria-label="Plus">+</button></span></div>
+      <div class="pfa-row"><span class="l"><i class="ti ti-flame"></i><span class="lt"><b>Calories / jour</b><small>Apport calorique quotidien</small></span></span><span class="stp"><input id="pfKcal" type="number" inputmode="numeric" aria-label="Calories par jour"><b>kcal</b></span></div>
+      <div class="pfa-row"><span class="l"><i class="ti ti-meat"></i><span class="lt"><b>Protéines / jour</b><small>Apport protéique quotidien</small></span></span><span class="stp"><input id="pfProt" type="number" inputmode="numeric" aria-label="Protéines par jour"><b>g</b></span></div>
     </div>
   </div>
   <div style="height:118px"></div>
@@ -5298,7 +5355,7 @@ function go(v,isBack){var _el=document.getElementById('v-'+v);if(!_el)return;hap
  document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));_el.classList.add('on');if(_back){_el.style.animation='vinBack .3s cubic-bezier(.22,.61,.36,1) both';setTimeout(function(){if(_el)_el.style.animation='';},340);}else{_el.style.animation='';}document.querySelectorAll('#nav button').forEach(function(b){var a=b.dataset.v===v;b.classList.toggle('on',a);if(a)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});if(window.moveNav)moveNav();var _ht=document.getElementById('hdTitle');if(_ht){var _tt=({sleep:'Sommeil',load:'Effort',nutrition:'Nutrition'}[v]||'');_ht.textContent=_tt;var _hd=document.querySelector('header');if(_hd){_hd.classList.toggle('has-title',!!_tt);_hd.classList.toggle('home-hdr',v==='today')}}document.body.classList.toggle('modalview',v==='journal'||v==='dashedit'||v==='stress'||v==='goal'||v==='coach'||v==='pfedit');document.body.classList.toggle('trendview',v==='metrend');document.body.classList.toggle('sleepview',v==='sleep');
  flWatchBatt();({today:renderToday,nutrition:renderNutrition,recovery:renderRecovery,sleep:renderSleep,sleepdetail:renderSleepDetail,load:renderLoad,effzones:renderEffZones,activitydetail:renderActivityDetail,fcdetail:renderHeartDetail,fczones:renderHeartZones,caltrend:renderCalTrend,efftrend:renderEffTrend,trends:renderTrends,profile:renderProfile,pfedit:renderPfEdit,journal:renderJournalView,behavior:renderBehavior,dashedit:renderDashEdit,metrend:renderMetrend,stress:renderStress,goal:renderGoal,coach:renderCoachIntro,howscore:renderHowScore,balance:renderBalance,baltrend:renderBalTrend,balcurve:renderBalCurve,nuthistory:renderNutHistory,mealdetail:renderMealDetail,nutbilan:renderNutBilan,nutgraph:renderNutGraph}[v]||(()=>{}))();
  if(!_back&&!matchMedia('(prefers-reduced-motion:reduce)').matches){var _cs=_el.querySelectorAll('.h2block,.h2list,.mjwrap,.bal4-goal,.bal4-solde,.bal4-chart,.bal4-foot,.elx-hero,.elx-card,.elx-tgt,.fc2 .card,.nut2-card,.nut2-scan,.nut2-acts,.rec2 .card');for(var _i=0;_i<_cs.length&&_i<10;_i++){var _c=_cs[_i];_c.style.animation='none';void _c.offsetWidth;_c.style.animation='flCardIn .5s cubic-bezier(.2,.8,.2,1) both';_c.style.animationDelay=(_i*0.05).toFixed(2)+'s';}}
- var _fab=document.getElementById('flintScanFab');if(_fab)_fab.style.display=(v==='coach'||v==='nutrition'||v==='pfedit')?'none':'flex';
+ var _fab=document.getElementById('flintScanFab');if(_fab)_fab.style.display=(v==='coach'||v==='nutrition'||v==='pfedit'||v==='profile')?'none':'flex';
  var y=window._scrollMem['v-'+v]||0;window.scrollTo(0,y);requestAnimationFrame(function(){window.scrollTo(0,y)})}
 function goBack(fb){window._navStack=window._navStack||[];var prev=window._navStack.pop();window._goAnim='back';go(prev||fb||'today',true)}
 document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>go(b.dataset.v));
@@ -7932,28 +7989,43 @@ function renderTrends(){const metrics=[['recov','Récupération','var(--accent)'
 /* ---------- PROFIL ---------- */
 function renderProfile(){const p=getProfile();document.getElementById('pfName').value=p.name;document.getElementById('pfAge').value=p.age;document.getElementById('pfWake').value=p.wake;document.getElementById('pfNeed').value=p.need;document.getElementById('pfKcal').value=p.kcalGoal;document.getElementById('pfProt').value=p.protGoal;set('verLine','Version : '+APP_VERSION+(DB.get('demo')?' · mode démo':''));var _pwl=document.getElementById('pfWatchLbl');if(_pwl)_pwl.textContent=window._watchWorn===false?'Simuler : remettre le bracelet':'Simuler : retirer le bracelet';renderJournal();
  const np=notifPrefs();const b=document.getElementById('ntBed');if(b)b.checked=np.bed;const m=document.getElementById('ntMorning');if(m)m.checked=np.morning;renderNotifNote(!!_LN());renderProfileHero()}
+function pfSpark(vals,w,h){
+  if(!vals||vals.length<2)vals=[50,52,50];
+  const mn=Math.min.apply(null,vals),mx=Math.max.apply(null,vals),rg=(mx-mn)||1,pad=6,n=vals.length;
+  const pts=vals.map(function(v,i){return [pad+i/(n-1)*(w-2*pad), h-pad-((v-mn)/rg)*(h-2*pad)]});
+  const line=pts.map(function(pp,i){return (i?'L':'M')+pp[0].toFixed(1)+' '+pp[1].toFixed(1)}).join(' ');
+  const area=line+' L'+(w-pad)+' '+(h-pad)+' L'+pad+' '+(h-pad)+' Z',last=pts[pts.length-1];
+  return '<svg class="pf3-inspark" viewBox="0 0 '+w+' '+h+'"><defs><linearGradient id="pfSpkG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--accent)" stop-opacity=".22"/><stop offset="1" stop-color="var(--accent)" stop-opacity="0"/></linearGradient></defs><path d="'+area+'" fill="url(#pfSpkG)"/><path d="'+line+'" fill="none" stroke="var(--accent)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="'+last[0].toFixed(1)+'" cy="'+last[1].toFixed(1)+'" r="3.2" fill="var(--accent)"/></svg>';
+}
 function renderProfileHero(){
   const p=getProfile();
   const initials=(String(p.name||'A').trim().split(/\s+/).map(function(w){return w.charAt(0)}).join('').slice(0,2).toUpperCase())||'A';
-  const av=document.getElementById('pf2Av');if(av)av.textContent=initials;
+  const avb=document.getElementById('pf3Avb');if(avb)avb.textContent=initials;
+  const av=document.getElementById('pf3Av');if(av)av.style.backgroundImage="url('https://randomuser.me/api/portraits/men/32.jpg')";
   set('pf2Name',p.name||'Arthur');
-  const handle='@'+String(p.name||'arthur').toLowerCase().replace(/\s+/g,'');
-  set('pf2Meta',handle+' · '+(p.age||28)+' ans · '+(p.region||'France'));
-  const _gl=(typeof PFA_GOALS!=='undefined')?(PFA_GOALS.filter(function(x){return x.k===(p.goal||'recup')})[0]||{}).t:'';
-  set('pfsName',p.name||'Arthur');set('pfsAge',(p.age||28)+' ans');set('pfsReg',p.region||'À renseigner');set('pfsGoal',_gl||'Mieux récupérer');
+  set('pf3Handle','@'+String(p.name||'arthur').toLowerCase().replace(/\s+/g,''));
+  set('pf2Meta',(p.age||28)+' ans · '+(p.region||'France'));
+  const GOAL=(typeof PFA_GOALS!=='undefined')?(PFA_GOALS.filter(function(x){return x.k===(p.goal||'recup')})[0]||{}):{};
+  set('pf3Goal',GOAL.t||'Mieux récupérer');
   const FM=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
   const streak=recovStreak()||0;
   let ms=DB.get('memberSince',null);if(!ms){ms=tk(-Math.max(75,streak*2));DB.set('memberSince',ms);}
   const mp=String(ms).split('-'),md=new Date(+mp[0],(+mp[1]||1)-1,+(mp[2]||1));
   set('pf2Since',(FM[md.getMonth()]||'')+' '+md.getFullYear());
+  let done=2;if(p.region)done++;done+=3;if(DB.get('avatarPhoto'))done++;
+  const pct=Math.round(done/7*100);set('pf3Pct',pct+' %');const pb=document.getElementById('pf3PctBar');if(pb)pb.style.width=pct+'%';
   const rv=[];for(let i=0;i<150;i++){const v=DB.get('recov_'+tk(-i),null);if(v!=null)rv.push(+v);}
   const rt=recovery();if(rt&&rt.s!=null)rv.unshift(rt.s);
-  const count=rv.length,lvl=Math.max(1,Math.floor(count/10)+1);
-  set('pf2Lvl',lvl);set('pf2LvlN',lvl);set('pf2LvlSub',count+' récupérations enregistrées');
-  const sEl=document.getElementById('pf2Streak');if(sEl)sEl.innerHTML='<i class="ti ti-flame"></i>'+streak+' j';
+  const count=rv.length,lvl=Math.max(1,Math.floor(count/10)+1),lvlPct=Math.round((count%10)/10*100);
   const best=rv.length?Math.max.apply(null,rv):0,avg=rv.length?Math.round(rv.reduce(function(a,b){return a+b},0)/rv.length):0;
   let nights=0;for(let j=0;j<150;j++){const s=sensorOf(tk(-j));if(s&&s.sleepMin)nights++;}
   const longest=Math.max(streak,DB.get('longestStreak',0));DB.set('longestStreak',longest);
+  const act=document.getElementById('pf3Act');
+  if(act)act.innerHTML=
+    '<button class="pf3-acard" type="button" onclick="go(\'howscore\')"><div class="pf3-aico pe"><span class="num">'+lvl+'</span></div><div class="pf3-alab">Niveau</div><div class="pf3-aval">'+lvl+'</div><div class="pf3-abwrap"><div class="pf3-abar"><i style="width:'+lvlPct+'%"></i></div></div></button>'+
+    '<button class="pf3-acard" type="button" onclick="go(\'trends\')"><div class="pf3-aico pe"><i class="ti ti-battery-charging"></i></div><div class="pf3-alab">Récupérations enregistrées</div><div class="pf3-aval">'+count+'</div></button>'+
+    '<button class="pf3-acard" type="button" onclick="go(\'today\')"><div class="pf3-aico am"><i class="ti ti-flame"></i></div><div class="pf3-alab">Série actuelle</div><div class="pf3-aval">'+streak+' <small style="font-size:16px;color:#8A857D;font-weight:700">j</small></div>'+(streak>=7?'<div class="pf3-anote">Bravo !</div>':'')+'</button>'+
+    '<button class="pf3-acard" type="button" onclick="go(\'coach\')"><div class="pf3-aico gr"><i class="ti ti-brain"></i></div><div class="pf3-alab">Ma mémoire</div><div class="pf3-asub">Ce que FLINT sait de toi</div><div class="pf3-achv"><i class="ti ti-chevron-right"></i></div></button>';
   const ach=[
     {ic:'ti-flame',col:'#E0922A',bg:'#FCEFD8',n:streak,name:'Série '+streak+' j'},
     {ic:'ti-battery-charging',col:'#2FA86A',bg:'#E4F5E9',n:count,name:'Récup pro'},
@@ -7961,8 +8033,9 @@ function renderProfileHero(){
     {ic:'ti-trophy',col:'#F0653E',bg:'#FCE7E0',n:best,name:'Top récup'},
     {ic:'ti-infinity',col:'#15140F',bg:'#F0EDE7',n:'∞',name:'Accès à vie'}
   ];
-  set('pf2AchN',ach.length);
   const ae=document.getElementById('pf2Ach');if(ae)ae.innerHTML=ach.map(function(a){return '<div class="pf2-acard"><div class="pf2-aic" style="color:'+a.col+';background:'+a.bg+'"><i class="ti '+a.ic+'"></i><span class="n">'+a.n+'</span></div><div class="pf2-aname">'+a.name+'</div></div>'}).join('');
+  const ins=document.getElementById('pf3Insight');
+  if(ins){const recent=rv.slice(0,14).reverse();let msg;if(streak>=7&&avg>=60)msg='Ta régularité et ta récupération sont en excellente forme.';else if(streak>=3)msg='Bonne dynamique — continue sur cette lancée.';else msg='Enregistre ta récup chaque jour pour révéler tes points forts.';ins.innerHTML='<div class="pf3-inico"><i class="ti ti-sparkles"></i></div><div class="pf3-intx"><b>Bravo '+(p.name||'Arthur')+' !</b><span>'+msg+'</span></div>'+pfSpark(recent,92,46);}
   const stats=[
     {l:'Meilleure récup',ic:'ti-trophy',v:best+'<small>%</small>'},
     {l:'Récup moyenne',ic:'ti-chart-line',v:avg+'<small>%</small>'},
@@ -8004,7 +8077,7 @@ function pfaSync(){
   const reg=document.getElementById('pfRegion').value||'—';
   const gk=document.getElementById('pfGoal').value;
   const g=PFA_GOALS.filter(function(x){return x.k===gk})[0];
-  const av=document.getElementById('pfaAv');if(av)av.textContent=(nm.split(/\s+/).map(function(w){return w.charAt(0)}).join('').slice(0,2).toUpperCase())||'?';
+  const av=document.getElementById('pfaAvb');if(av)av.textContent=(nm.split(/\s+/).map(function(w){return w.charAt(0)}).join('').slice(0,2).toUpperCase())||'?';
   set('pfaPName',nm||'Ton prénom');
   set('pfaPMeta',age+' ans · '+reg);
   const pg=document.getElementById('pfaPGoal');if(pg){if(g)pg.innerHTML='<i class="ti '+g.ic+'"></i>'+g.t;else pg.innerHTML='';}
@@ -8108,7 +8181,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v394';
+const APP_VERSION='flint-v395';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
