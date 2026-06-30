@@ -4747,6 +4747,7 @@ body.stepsview header{display:none}
   <div class="flcard">
     <div class="sect"><i class="ti ti-watch"></i>Capteur · Polar Loop</div>
     <button class="fbtn dark" onclick="pullHealthConnect()"><i class="ti ti-refresh"></i>Synchroniser mon capteur</button>
+    <button class="fbtn ghost" onclick="setWatchWorn(window._watchWorn===false)"><i class="ti ti-watch"></i><span id="pfWatchLbl">Simuler : retirer le bracelet</span></button>
     <div class="divlab">Ou saisir la nuit à la main</div>
     <div class="fgrid">
       <div class="fld"><span class="flab">HRV (ms)</span><input aria-label="HRV (ms)" id="snHrv" class="fin2" type="number" inputmode="decimal"></div>
@@ -6747,6 +6748,15 @@ function renderSleep(){var t=sensorOf(tk(gDay)),need=(getProfile().need||8)*60;l
  set('shStreak',recovStreak()||26);
  var rg=document.getElementById('shRing');
  if(!t||t.sleepMin==null){window._sleepScore=null;set('shHours','—');set('shNeed','');if(rg)rg.innerHTML=slDonutSVG([{v:1,color:'#ECE7DF'}]);set('shBed','—');set('shWake','—');set('shStages','');set('shRestore','—');set('shAwake','—');set('shAwakePc','—');set('shFcAvg','—');set('shScore','—');var sb0=document.getElementById('shScoreBar');if(sb0)sb0.style.width='0%';set('shCoachT','Pas de données');set('shCoachS','Connecte ta Polar Loop.');set('shScoreC','—');set('shInsight','Branche ta Polar Loop pour analyser tes nuits.');set('shEyebrow','En attente');var _vc0=document.getElementById('shVerdictChk');if(_vc0)_vc0.style.display='none';return}
+ if(t.sleepMin<45){window._sleepScore=0;
+  set('shHours',(t.sleepMin>0?Math.floor(t.sleepMin/60)+'<span class="u">h</span>'+String(t.sleepMin%60).padStart(2,'0'):'0<span class="u">h</span>00'));
+  var _nbh=Math.floor(need/60)+'h'+String(need%60).padStart(2,'0');set('shNeed','<i class="ti ti-target-arrow"></i> Besoin '+_nbh);
+  if(rg)rg.innerHTML=slDonutSVG([{v:1,color:'#F3C9BE'}]);
+  set('shBed','—');set('shWake','—');set('shStages','');set('shRestore','—');set('shAwake','—');set('shAwakePc','—');set('shFcAvg','—');
+  set('shScore','0<small> / 100</small>');var _sbn=document.getElementById('shScoreBar');if(_sbn)_sbn.style.width='4%';set('shScoreC','Nuit blanche');
+  set('shEyebrow','Nuit blanche');set('shCoachT','Nuit blanche détectée');set('shCoachS','Tu n\'as quasiment pas dormi cette nuit.');
+  set('shInsight','Ta récup va chuter aujourd\'hui : évite l\'effort intense, fais une sieste si tu peux et recouche-toi tôt ce soir pour rembourser ta dette.');
+  var _vcn=document.getElementById('shVerdictChk');if(_vcn)_vcn.style.display='none';return}
  var nm=sleepNight(tk(gDay));
  set('shHours',Math.floor(t.sleepMin/60)+'<span class="u">h</span>'+String(t.sleepMin%60).padStart(2,'0'));
  (function(){var nh=Math.floor(need/60)+'h'+String(need%60).padStart(2,'0'),reg=sleepConsistency(),el=document.getElementById('shNeed');if(el)el.innerHTML='<i class="ti ti-target-arrow"></i> Besoin '+nh+(reg!=null?' · Régularité '+reg+'%':'');})();
@@ -7452,7 +7462,7 @@ function renderTrends(){const metrics=[['recov','Récupération','var(--accent)'
  renderWeekly();renderCorr();set('tr7rec',a7(k=>DB.get('recov_'+k,null)));set('tr7sl',(function(){const x=a7(k=>{const s=sensorOf(k);return s?s.sleepMin/60:null},1);return x==='—'?'—':x+'h'})());set('tr7hrv',a7(k=>{const s=sensorOf(k);return s?s.hrv:null}));set('tr7load',Math.round(loadAvg(7)))}
 
 /* ---------- PROFIL ---------- */
-function renderProfile(){const p=getProfile();document.getElementById('pfName').value=p.name;document.getElementById('pfAge').value=p.age;document.getElementById('pfWake').value=p.wake;document.getElementById('pfNeed').value=p.need;document.getElementById('pfKcal').value=p.kcalGoal;document.getElementById('pfProt').value=p.protGoal;set('verLine','Version : '+APP_VERSION+(DB.get('demo')?' · mode démo':''));renderJournal();
+function renderProfile(){const p=getProfile();document.getElementById('pfName').value=p.name;document.getElementById('pfAge').value=p.age;document.getElementById('pfWake').value=p.wake;document.getElementById('pfNeed').value=p.need;document.getElementById('pfKcal').value=p.kcalGoal;document.getElementById('pfProt').value=p.protGoal;set('verLine','Version : '+APP_VERSION+(DB.get('demo')?' · mode démo':''));var _pwl=document.getElementById('pfWatchLbl');if(_pwl)_pwl.textContent=window._watchWorn===false?'Simuler : remettre le bracelet':'Simuler : retirer le bracelet';renderJournal();
  const np=notifPrefs();const b=document.getElementById('ntBed');if(b)b.checked=np.bed;const m=document.getElementById('ntMorning');if(m)m.checked=np.morning;renderNotifNote(!!_LN())}
 function saveProfile(){const p=getProfile();p.name=document.getElementById('pfName').value||'Arthur';p.age=+document.getElementById('pfAge').value||28;p.wake=document.getElementById('pfWake').value||'07:00';p.need=+document.getElementById('pfNeed').value||8;p.kcalGoal=+document.getElementById('pfKcal').value||2400;p.protGoal=+document.getElementById('pfProt').value||150;DB.set('profile',p);toast('Profil enregistré');renderToday()}
 function saveSensorManual(){const g=id=>parseFloat(document.getElementById(id).value)||null;const hrv=g('snHrv');if(!hrv){toast('Saisis au moins la HRV');return}const cur=sensorOf(tk())||{};DB.set('sensor_'+tk(),Object.assign(cur,{hrv,rhr:g('snRhr'),resp:g('snResp'),sleepMin:g('snSleep')?Math.round(g('snSleep')*60):cur.sleepMin,source:'manual'}));persistRecov();toast('Nuit enregistrée ⌚');go('today')}
@@ -7538,7 +7548,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v377';
+const APP_VERSION='flint-v378';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
@@ -7671,10 +7681,36 @@ document.addEventListener('visibilitychange',function(){if(document.hidden)retur
     b.onpointerdown=function(){b.style.transform='scale(.9)'};b.onpointerup=b.onpointerleave=function(){b.style.transform=''};
     document.body.appendChild(b);
   }
-  if(document.readyState!=='loading')addFab();else document.addEventListener('DOMContentLoaded',addFab);
+  /* ===== Bracelet retiré : bannière instantanée + notification (seam capteur off-wrist) ===== */
+  function addWatchBanner(){
+    if(document.getElementById('flintWatchBanner'))return;
+    var w=document.createElement('div');w.id='flintWatchBanner';
+    w.innerHTML='<span class="wbn-ic"><i class="ti ti-watch"></i></span><div class="wbn-tx"><b>Remets ton bracelet</b><span>Aucune mesure tant qu\'il n\'est pas au poignet.</span></div><button type="button" class="wbn-act" id="wbnAct">J\'ai remis</button>';
+    document.body.appendChild(w);
+    var a=document.getElementById('wbnAct');if(a)a.onclick=function(){window.setWatchWorn(true);};
+    var on=DB.get('watchWorn',1)===0;window._watchWorn=!on;if(on)w.classList.add('on');
+  }
+  window.notifyWatchOff=function(){
+    if(typeof haptic==='function')haptic(20);
+    try{if('Notification' in window){if(Notification.permission==='granted'){new Notification('FLINT — bracelet retiré',{body:'Remets ton bracelet : plus aucune mesure tant qu\'il n\'est pas au poignet.'});}else if(Notification.permission!=='denied'){Notification.requestPermission();}}}catch(e){}
+    if(typeof toast==='function')toast('Bracelet retiré — remets-le');
+  };
+  window.setWatchWorn=function(worn){worn=!!worn;var was=window._watchWorn!==false;window._watchWorn=worn;try{DB.set('watchWorn',worn?1:0)}catch(e){}var bn=document.getElementById('flintWatchBanner');if(bn)bn.classList.toggle('on',!worn);var pl=document.getElementById('pfWatchLbl');if(pl)pl.textContent=worn?'Simuler : retirer le bracelet':'Simuler : remettre le bracelet';if(!worn&&was)window.notifyWatchOff();};
+  function _flBoot(){addFab();addWatchBanner();}
+  if(document.readyState!=='loading')_flBoot();else document.addEventListener('DOMContentLoaded',_flBoot);
 })();
 </script>
 <style>
+/* ===== Bannière bracelet retiré ===== */
+#flintWatchBanner{position:fixed;left:0;right:0;top:0;z-index:70;display:flex;align-items:center;gap:12px;padding:calc(env(safe-area-inset-top) + 12px) 16px 13px;background:#F0492E;color:#fff;box-shadow:0 10px 28px rgba(240,73,46,.42);transform:translateY(-130%);transition:transform .42s cubic-bezier(.2,.9,.3,1.08);pointer-events:none;font-family:'Inter',sans-serif}
+#flintWatchBanner.on{transform:translateY(0);pointer-events:auto}
+#flintWatchBanner .wbn-ic{width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.2);display:grid;place-items:center;font-size:23px;flex:none;animation:wbnPulse 1.4s ease-in-out infinite}
+@keyframes wbnPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
+#flintWatchBanner .wbn-tx{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.2}
+#flintWatchBanner .wbn-tx b{font-size:15px;font-weight:800;letter-spacing:.2px}
+#flintWatchBanner .wbn-tx span{font-size:12px;opacity:.92;margin-top:2px}
+#flintWatchBanner .wbn-act{flex:none;border:0;background:#fff;color:#F0492E;font-family:inherit;font-weight:800;font-size:12.5px;padding:9px 13px;border-radius:22px;cursor:pointer}
+#flintWatchBanner .wbn-act:active{transform:scale(.94)}
 .flx-scan{position:fixed;inset:0;z-index:300;background:#000}
 .flx-scan video{width:100%;height:100%;object-fit:cover}
 .flx-scan-frame{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:74%;height:158px;border:3px solid rgba(255,255,255,.92);border-radius:18px;box-shadow:0 0 0 9999px rgba(0,0,0,.4)}
