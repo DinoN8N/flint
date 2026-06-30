@@ -4922,6 +4922,18 @@ body.stepsview header{display:none}
   .pf2-stat .l i{font-size:14px;color:var(--accent)}
   .pf2-stat .v{font-family:'Geist',sans-serif;font-weight:700;letter-spacing:-.02em;font-size:26px;color:#15140F;margin-top:9px;line-height:1}
   .pf2-stat .v small{font-family:'Switzer',sans-serif;font-weight:700;font-size:12px;color:#8A857D;letter-spacing:0}
+  .pf2-edcard{display:block;width:100%;text-align:left;background:#fff;border:1px solid var(--line);border-radius:22px;padding:0 0 14px;box-shadow:var(--sh-card);cursor:pointer;font-family:inherit;margin:22px 0 14px;transition:transform .12s}
+  .pf2-edcard:active{transform:scale(.99)}
+  .pf2-edtop{display:flex;align-items:center;gap:13px;padding:15px 15px 13px}
+  .pf2-edtop .ic{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:#FCE7E0;color:var(--accent);font-size:22px;flex:none}
+  .pf2-edtop .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+  .pf2-edtop .tx b{font-family:'Switzer',sans-serif;font-weight:800;font-size:15px;color:#15140F}
+  .pf2-edtop .tx span{font-size:12px;font-weight:600;color:#8A857D}
+  .pf2-edtop .chv{color:#C8C2B8;font-size:20px;flex:none}
+  .pf2-edgrid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border-radius:14px;overflow:hidden;margin:0 12px}
+  .pf2-edcell{background:#FAF8F5;padding:11px 13px;display:flex;flex-direction:column;gap:3px}
+  .pf2-edcell .k{font-family:'Switzer',sans-serif;font-weight:700;letter-spacing:.05em;text-transform:uppercase;font-size:9.5px;color:#9A938A}
+  .pf2-edcell b{font-family:'Geist',sans-serif;font-weight:600;font-size:14px;color:#15140F;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   </style>
   <div class="pf2-hd">
     <button class="bk" onclick="goBack('today')" aria-label="Retour">‹</button>
@@ -4947,22 +4959,15 @@ body.stepsview header{display:none}
   <div class="pf2-sect">Points forts des données</div>
   <div class="pf2-stats" id="pf2Stats"></div>
 
-  <div class="flcard" id="pfEditCard">
-    <div class="sect"><i class="ti ti-user"></i>Toi</div>
-    <div class="fgrid">
-      <div class="fld"><span class="flab">Prénom</span><input aria-label="Prénom" id="pfName" class="fin2"></div>
-      <div class="fld"><span class="flab">Âge</span><input aria-label="Âge" id="pfAge" class="fin2" type="number" inputmode="numeric"></div>
+  <button class="pf2-edcard" id="pfEditCard" type="button" onclick="go('pfedit')">
+    <div class="pf2-edtop"><span class="ic"><i class="ti ti-id-badge-2"></i></span><div class="tx"><b>Mes informations</b><span>Prénom, âge, région & objectif</span></div><i class="ti ti-chevron-right chv"></i></div>
+    <div class="pf2-edgrid">
+      <div class="pf2-edcell"><span class="k">Prénom</span><b id="pfsName">—</b></div>
+      <div class="pf2-edcell"><span class="k">Âge</span><b id="pfsAge">—</b></div>
+      <div class="pf2-edcell"><span class="k">Région</span><b id="pfsReg">—</b></div>
+      <div class="pf2-edcell"><span class="k">Objectif</span><b id="pfsGoal">—</b></div>
     </div>
-    <div class="fgrid" style="margin-top:10px">
-      <div class="fld"><span class="flab">Réveil cible</span><input aria-label="Réveil cible" id="pfWake" class="fin2" type="time"></div>
-      <div class="fld"><span class="flab">Besoin sommeil (h)</span><input aria-label="Besoin sommeil (h)" id="pfNeed" class="fin2" type="number" step="0.5"></div>
-    </div>
-    <div class="fgrid" style="margin-top:10px">
-      <div class="fld"><span class="flab">Objectif kcal</span><input aria-label="Objectif kcal" id="pfKcal" class="fin2" type="number" inputmode="numeric"></div>
-      <div class="fld"><span class="flab">Objectif protéines (g)</span><input aria-label="Objectif protéines (g)" id="pfProt" class="fin2" type="number" inputmode="numeric"></div>
-    </div>
-    <button class="fbtn primary" style="margin-top:16px" onclick="saveProfile()"><i class="ti ti-device-floppy"></i>Enregistrer</button>
-  </div>
+  </button>
 
   <div class="flcard" id="journalCard"></div>
 
@@ -5007,6 +5012,131 @@ body.stepsview header{display:none}
     <button class="fbtn danger" onclick="wipeData()"><i class="ti ti-trash"></i>Vider les données capteur</button>
   </div>
 </div>
+</section>
+
+<!-- ===================== ÉDITEUR DE PROFIL IMMERSIF ===================== -->
+<section class="view" id="v-pfedit">
+<style>
+.pfedit{padding:14px 18px 0;max-width:520px;margin:0 auto;min-height:100vh}
+.pfa-top{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+.pfa-bk{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:#fff;color:#15140F;font-size:21px;display:grid;place-items:center;cursor:pointer;flex:none;box-shadow:0 5px 14px rgba(20,18,12,.06);transition:transform .14s}
+.pfa-bk:active{transform:scale(.9)}
+.pfa-ttl{flex:1;text-align:center;font-family:'Switzer',sans-serif;font-weight:800;letter-spacing:.2em;text-transform:uppercase;font-size:12px;color:#15140F}
+.pfa-skip{border:none;background:transparent;font-family:'Switzer',sans-serif;font-weight:800;font-size:14px;color:var(--accent);cursor:pointer;width:40px;flex:none}
+.pfa-prev{display:flex;flex-direction:column;align-items:center;text-align:center;padding:6px 0 24px}
+.pfa-av{width:78px;height:78px;border-radius:50%;display:grid;place-items:center;font-family:'Geist',sans-serif;font-weight:700;font-size:29px;color:#fff;background:linear-gradient(140deg,#FF8A5C,#F0492E);box-shadow:0 16px 32px -10px rgba(240,73,46,.55);margin-bottom:13px;transition:transform .25s cubic-bezier(.2,.9,.3,1.4)}
+.pfa-av.pop{transform:scale(1.08)}
+.pfa-pname{font-family:'Geist',sans-serif;font-weight:700;letter-spacing:-.02em;font-size:24px;color:#15140F;line-height:1.05}
+.pfa-pmeta{font-size:13.5px;font-weight:600;color:#8A857D;margin-top:5px}
+.pfa-pgoal{display:inline-flex;align-items:center;gap:6px;margin-top:12px;background:#fff;border:1px solid var(--line);border-radius:30px;padding:7px 14px;font-family:'Switzer',sans-serif;font-weight:700;font-size:12.5px;color:var(--accentD);box-shadow:var(--sh-card)}
+.pfa-pgoal i{color:var(--accent);font-size:15px}
+.pfa-step{margin-bottom:30px}
+.pfa-q{display:flex;align-items:center;gap:11px;font-family:'Geist',sans-serif;font-weight:700;letter-spacing:-.015em;font-size:20px;color:#15140F;margin-bottom:16px}
+.pfa-q .n{flex:none;width:26px;height:26px;border-radius:9px;background:var(--accent);color:#fff;font-family:'Geist',sans-serif;font-weight:700;font-size:13px;display:grid;place-items:center}
+.pfa-q.sub{font-size:13px;color:#8A857D;font-family:'Switzer',sans-serif;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.pfa-q.sub i{color:var(--accent);font-size:16px}
+.pfa-name{width:100%;border:none;background:transparent;font-family:'Geist',sans-serif;font-weight:700;letter-spacing:-.02em;font-size:33px;color:#15140F;padding:4px 2px 9px;outline:none}
+.pfa-name::placeholder{color:#D3CCC1}
+.pfa-under{height:2.5px;background:linear-gradient(90deg,var(--accent),#FF8A5C);border-radius:3px;transform:scaleX(.18);transform-origin:left;transition:transform .4s cubic-bezier(.2,.8,.2,1);opacity:.45}
+.pfa-name:focus+.pfa-under{transform:scaleX(1);opacity:1}
+.pfa-agebig{text-align:center;font-family:'Geist',sans-serif;font-weight:700;letter-spacing:-.03em;font-size:52px;color:#15140F;line-height:1}
+.pfa-agebig small{font-family:'Switzer',sans-serif;font-weight:700;font-size:16px;color:#8A857D;letter-spacing:0;margin-left:5px}
+.pfa-rulerwrap{position:relative;margin-top:8px}
+.pfa-ruler{overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding:6px 0 28px}
+.pfa-ruler::-webkit-scrollbar{display:none}
+.pfa-strip{display:flex;align-items:flex-start;padding-inline:calc(50% - 11px)}
+.pfa-tick{flex:none;height:24px;display:flex;flex-direction:column;align-items:center;position:relative;scroll-snap-align:center}
+.pfa-tick i{width:2px;height:13px;background:#DAD4CA;border-radius:2px;display:block}
+.pfa-tick.maj i{height:22px;background:#B6AEA2}
+.pfa-tick span{position:absolute;top:26px;font-family:'Geist',sans-serif;font-weight:600;font-size:11px;color:#9A938A}
+.pfa-point{position:absolute;top:2px;left:50%;transform:translateX(-50%);width:3px;height:30px;background:var(--accent);border-radius:3px;pointer-events:none;box-shadow:0 0 0 5px rgba(240,73,46,.1)}
+.pfa-point::before{content:'';position:absolute;top:-8px;left:50%;transform:translateX(-50%);border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid var(--accent)}
+.pfa-hint{text-align:center;font-size:11.5px;font-weight:600;color:#B3ACA1;margin-top:2px}
+.pfa-chips{display:flex;flex-wrap:wrap;gap:9px}
+.pfa-chip{border:1.5px solid var(--line);background:#fff;border-radius:30px;padding:10px 15px;font-family:'Switzer',sans-serif;font-weight:600;font-size:13.5px;color:#56514B;cursor:pointer;transition:transform .14s ease,background .16s ease,color .16s ease,border-color .16s ease}
+.pfa-chip:active{transform:scale(.94)}
+.pfa-chip.on{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 8px 20px -6px rgba(240,73,46,.5)}
+.pfa-goals{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.pfa-goal{position:relative;text-align:left;background:#fff;border:1.5px solid var(--line);border-radius:20px;padding:16px 14px 15px;cursor:pointer;transition:transform .14s ease,border-color .16s ease,box-shadow .2s ease;display:flex;flex-direction:column;gap:4px;font-family:inherit}
+.pfa-goal:active{transform:scale(.97)}
+.pfa-goal .gi{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;background:#F4F1EB;color:#56514B;font-size:21px;margin-bottom:7px;transition:background .16s,color .16s}
+.pfa-goal b{font-family:'Switzer',sans-serif;font-weight:800;font-size:14.5px;color:#15140F}
+.pfa-goal .gd{font-size:11.5px;font-weight:600;color:#9A938A;line-height:1.3}
+.pfa-goal .ck{position:absolute;top:13px;right:13px;font-size:20px;color:#E2DCD2;transition:color .16s}
+.pfa-goal.on{border-color:var(--accent);box-shadow:0 12px 26px -10px rgba(240,73,46,.4)}
+.pfa-goal.on .gi{background:linear-gradient(140deg,#FF8A5C,#F0492E);color:#fff}
+.pfa-goal.on .ck{color:var(--accent)}
+.pfa-rows{background:#fff;border:1px solid var(--line);border-radius:20px;overflow:hidden;box-shadow:var(--sh-card)}
+.pfa-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line)}
+.pfa-row:last-child{border-bottom:none}
+.pfa-row .l{display:flex;align-items:center;gap:11px;font-family:'Switzer',sans-serif;font-weight:600;font-size:14px;color:#15140F}
+.pfa-row .l i{font-size:19px;color:var(--accent)}
+.pfa-row input[type=time]{border:1px solid var(--line);background:#FAF8F5;border-radius:11px;padding:8px 11px;font-family:'Geist',sans-serif;font-weight:600;font-size:15px;color:#15140F;outline:none}
+.pfa-row .stp{display:flex;align-items:center;gap:8px}
+.pfa-row .stp input{width:74px;text-align:right;border:1px solid var(--line);background:#FAF8F5;border-radius:11px;padding:8px 11px;font-family:'Geist',sans-serif;font-weight:700;font-size:16px;color:#15140F;outline:none}
+.pfa-row .stp b{font-family:'Switzer',sans-serif;font-weight:700;font-size:12px;color:#9A938A}
+.pfa-row .stp button{width:33px;height:33px;border-radius:11px;border:1px solid var(--line);background:#fff;font-size:19px;line-height:1;color:#15140F;cursor:pointer;display:grid;place-items:center}
+.pfa-row .stp button:active{transform:scale(.9);background:#F4F1EB}
+.pfa-cta{position:fixed;left:0;right:0;bottom:0;padding:16px 18px calc(20px + env(safe-area-inset-bottom));background:linear-gradient(180deg,rgba(250,248,245,0),#FAF8F5 32%);z-index:60}
+.pfa-cta>div{max-width:520px;margin:0 auto}
+.pfa-cta button{width:100%;border:none;background:var(--accent);color:#fff;font-family:'Switzer',sans-serif;font-weight:800;font-size:16px;padding:17px;border-radius:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;box-shadow:0 14px 30px -8px rgba(240,73,46,.55);transition:transform .12s}
+.pfa-cta button:active{transform:scale(.98)}
+.pfa-cta button i{font-size:19px}
+</style>
+<div class="pfedit">
+  <div class="pfa-top">
+    <button class="pfa-bk" type="button" onclick="goBack('profile')" aria-label="Retour"><i class="ti ti-chevron-left"></i></button>
+    <span class="pfa-ttl">Mon profil</span>
+    <button class="pfa-skip" type="button" onclick="savePfEdit()">OK</button>
+  </div>
+  <div class="pfa-prev">
+    <div class="pfa-av" id="pfaAv">A</div>
+    <div class="pfa-pname" id="pfaPName">Ton prénom</div>
+    <div class="pfa-pmeta" id="pfaPMeta">— ans · —</div>
+    <div class="pfa-pgoal" id="pfaPGoal"></div>
+  </div>
+
+  <div class="pfa-step">
+    <div class="pfa-q"><span class="n">1</span>Comment tu t'appelles&nbsp;?</div>
+    <input id="pfName" class="pfa-name" placeholder="Ton prénom" autocomplete="given-name" maxlength="20" enterkeyhint="done">
+    <div class="pfa-under"></div>
+  </div>
+
+  <div class="pfa-step">
+    <div class="pfa-q"><span class="n">2</span>Quel âge as-tu&nbsp;?</div>
+    <div class="pfa-agebig"><span id="pfaNum">28</span><small>ans</small></div>
+    <div class="pfa-rulerwrap">
+      <div class="pfa-ruler" id="pfaRuler"><div class="pfa-strip" id="pfaStrip"></div></div>
+      <div class="pfa-point"></div>
+    </div>
+    <div class="pfa-hint">Fais glisser pour ajuster</div>
+    <input type="hidden" id="pfAge" value="28">
+  </div>
+
+  <div class="pfa-step">
+    <div class="pfa-q"><span class="n">3</span>Tu vis dans quelle région&nbsp;?</div>
+    <div class="pfa-chips" id="pfaRegions"></div>
+    <input type="hidden" id="pfRegion" value="">
+  </div>
+
+  <div class="pfa-step">
+    <div class="pfa-q"><span class="n">4</span>Ton objectif n°1 avec FLINT&nbsp;?</div>
+    <div class="pfa-goals" id="pfaGoals"></div>
+    <input type="hidden" id="pfGoal" value="recup">
+  </div>
+
+  <div class="pfa-step">
+    <div class="pfa-q sub"><i class="ti ti-target-arrow"></i>Tes cibles quotidiennes</div>
+    <div class="pfa-rows">
+      <div class="pfa-row"><span class="l"><i class="ti ti-sunrise"></i>Réveil habituel</span><input id="pfWake" type="time" aria-label="Réveil habituel"></div>
+      <div class="pfa-row"><span class="l"><i class="ti ti-moon"></i>Sommeil visé</span><span class="stp"><button type="button" onclick="pfaStep('pfNeed',-0.5)" aria-label="Moins">−</button><input id="pfNeed" type="number" step="0.5" inputmode="decimal" aria-label="Sommeil visé"><b>h</b><button type="button" onclick="pfaStep('pfNeed',0.5)" aria-label="Plus">+</button></span></div>
+      <div class="pfa-row"><span class="l"><i class="ti ti-flame"></i>Calories / jour</span><span class="stp"><input id="pfKcal" type="number" inputmode="numeric" aria-label="Calories par jour"><b>kcal</b></span></div>
+      <div class="pfa-row"><span class="l"><i class="ti ti-meat"></i>Protéines / jour</span><span class="stp"><input id="pfProt" type="number" inputmode="numeric" aria-label="Protéines par jour"><b>g</b></span></div>
+    </div>
+  </div>
+  <div style="height:118px"></div>
+</div>
+<div class="pfa-cta"><div><button type="button" onclick="savePfEdit()"><i class="ti ti-check"></i>Enregistrer mon profil</button></div></div>
 </section>
 
 <!-- ===================== ADD ACTIVITY SHEET ===================== -->
@@ -5097,7 +5227,7 @@ const tk=(off)=>{const d=new Date();if(off)d.setDate(d.getDate()+off);return d.g
 const tmin=s=>{const a=(s||'07:00').split(':').map(Number);return a[0]*60+a[1]};
 const fmtN=n=>Math.round(n||0).toLocaleString('fr-FR').replace(/[  ]/g,' ');
 const fmtDur=m=>m>=60?Math.floor(m/60)+'H'+String(m%60).padStart(2,'0'):m+' MIN';
-function getProfile(){const o=Object.assign({name:'Arthur',age:28,wake:'07:00',need:8,kcalGoal:2400,protGoal:150},DB.get('profile',{}));if(typeof o.name!=='string'||!o.name)o.name='Arthur';return o}
+function getProfile(){const o=Object.assign({name:'Arthur',age:28,wake:'07:00',need:8,kcalGoal:2400,protGoal:150,region:'',goal:'recup'},DB.get('profile',{}));if(typeof o.name!=='string'||!o.name)o.name='Arthur';return o}
 let toastT;function toast(m){const e=document.getElementById('toast');e.textContent=m;e.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>e.classList.remove('show'),2200)}
 function set(id,v){const e=document.getElementById(id);if(e)e.innerHTML=v}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
@@ -5165,10 +5295,10 @@ function barsSVG(arr,opts){opts=opts||{};const W=320,H=opts.h||66,n=arr.length,p
 function go(v,isBack){var _el=document.getElementById('v-'+v);if(!_el)return;haptic(7);window._scrollMem=window._scrollMem||{};window._navStack=window._navStack||[];var _back=window._goAnim==='back';window._goAnim=null;
  var cur=document.querySelector('.view.on');
  if(cur){window._scrollMem[cur.id]=window.scrollY||document.documentElement.scrollTop||0;var curV=cur.id.replace('v-','');if(!isBack&&curV!==v)window._navStack.push(curV)}
- document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));_el.classList.add('on');if(_back){_el.style.animation='vinBack .3s cubic-bezier(.22,.61,.36,1) both';setTimeout(function(){if(_el)_el.style.animation='';},340);}else{_el.style.animation='';}document.querySelectorAll('#nav button').forEach(function(b){var a=b.dataset.v===v;b.classList.toggle('on',a);if(a)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});if(window.moveNav)moveNav();var _ht=document.getElementById('hdTitle');if(_ht){var _tt=({sleep:'Sommeil',load:'Effort',nutrition:'Nutrition'}[v]||'');_ht.textContent=_tt;var _hd=document.querySelector('header');if(_hd){_hd.classList.toggle('has-title',!!_tt);_hd.classList.toggle('home-hdr',v==='today')}}document.body.classList.toggle('modalview',v==='journal'||v==='dashedit'||v==='stress'||v==='goal'||v==='coach');document.body.classList.toggle('trendview',v==='metrend');document.body.classList.toggle('sleepview',v==='sleep');
- flWatchBatt();({today:renderToday,nutrition:renderNutrition,recovery:renderRecovery,sleep:renderSleep,sleepdetail:renderSleepDetail,load:renderLoad,effzones:renderEffZones,activitydetail:renderActivityDetail,fcdetail:renderHeartDetail,fczones:renderHeartZones,caltrend:renderCalTrend,efftrend:renderEffTrend,trends:renderTrends,profile:renderProfile,journal:renderJournalView,behavior:renderBehavior,dashedit:renderDashEdit,metrend:renderMetrend,stress:renderStress,goal:renderGoal,coach:renderCoachIntro,howscore:renderHowScore,balance:renderBalance,baltrend:renderBalTrend,balcurve:renderBalCurve,nuthistory:renderNutHistory,mealdetail:renderMealDetail,nutbilan:renderNutBilan,nutgraph:renderNutGraph}[v]||(()=>{}))();
+ document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));_el.classList.add('on');if(_back){_el.style.animation='vinBack .3s cubic-bezier(.22,.61,.36,1) both';setTimeout(function(){if(_el)_el.style.animation='';},340);}else{_el.style.animation='';}document.querySelectorAll('#nav button').forEach(function(b){var a=b.dataset.v===v;b.classList.toggle('on',a);if(a)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});if(window.moveNav)moveNav();var _ht=document.getElementById('hdTitle');if(_ht){var _tt=({sleep:'Sommeil',load:'Effort',nutrition:'Nutrition'}[v]||'');_ht.textContent=_tt;var _hd=document.querySelector('header');if(_hd){_hd.classList.toggle('has-title',!!_tt);_hd.classList.toggle('home-hdr',v==='today')}}document.body.classList.toggle('modalview',v==='journal'||v==='dashedit'||v==='stress'||v==='goal'||v==='coach'||v==='pfedit');document.body.classList.toggle('trendview',v==='metrend');document.body.classList.toggle('sleepview',v==='sleep');
+ flWatchBatt();({today:renderToday,nutrition:renderNutrition,recovery:renderRecovery,sleep:renderSleep,sleepdetail:renderSleepDetail,load:renderLoad,effzones:renderEffZones,activitydetail:renderActivityDetail,fcdetail:renderHeartDetail,fczones:renderHeartZones,caltrend:renderCalTrend,efftrend:renderEffTrend,trends:renderTrends,profile:renderProfile,pfedit:renderPfEdit,journal:renderJournalView,behavior:renderBehavior,dashedit:renderDashEdit,metrend:renderMetrend,stress:renderStress,goal:renderGoal,coach:renderCoachIntro,howscore:renderHowScore,balance:renderBalance,baltrend:renderBalTrend,balcurve:renderBalCurve,nuthistory:renderNutHistory,mealdetail:renderMealDetail,nutbilan:renderNutBilan,nutgraph:renderNutGraph}[v]||(()=>{}))();
  if(!_back&&!matchMedia('(prefers-reduced-motion:reduce)').matches){var _cs=_el.querySelectorAll('.h2block,.h2list,.mjwrap,.bal4-goal,.bal4-solde,.bal4-chart,.bal4-foot,.elx-hero,.elx-card,.elx-tgt,.fc2 .card,.nut2-card,.nut2-scan,.nut2-acts,.rec2 .card');for(var _i=0;_i<_cs.length&&_i<10;_i++){var _c=_cs[_i];_c.style.animation='none';void _c.offsetWidth;_c.style.animation='flCardIn .5s cubic-bezier(.2,.8,.2,1) both';_c.style.animationDelay=(_i*0.05).toFixed(2)+'s';}}
- var _fab=document.getElementById('flintScanFab');if(_fab)_fab.style.display=(v==='coach'||v==='nutrition')?'none':'flex';
+ var _fab=document.getElementById('flintScanFab');if(_fab)_fab.style.display=(v==='coach'||v==='nutrition'||v==='pfedit')?'none':'flex';
  var y=window._scrollMem['v-'+v]||0;window.scrollTo(0,y);requestAnimationFrame(function(){window.scrollTo(0,y)})}
 function goBack(fb){window._navStack=window._navStack||[];var prev=window._navStack.pop();window._goAnim='back';go(prev||fb||'today',true)}
 document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>go(b.dataset.v));
@@ -7808,7 +7938,9 @@ function renderProfileHero(){
   const av=document.getElementById('pf2Av');if(av)av.textContent=initials;
   set('pf2Name',p.name||'Arthur');
   const handle='@'+String(p.name||'arthur').toLowerCase().replace(/\s+/g,'');
-  set('pf2Meta',handle+' · '+(p.age||28)+' ans · France');
+  set('pf2Meta',handle+' · '+(p.age||28)+' ans · '+(p.region||'France'));
+  const _gl=(typeof PFA_GOALS!=='undefined')?(PFA_GOALS.filter(function(x){return x.k===(p.goal||'recup')})[0]||{}).t:'';
+  set('pfsName',p.name||'Arthur');set('pfsAge',(p.age||28)+' ans');set('pfsReg',p.region||'À renseigner');set('pfsGoal',_gl||'Mieux récupérer');
   const FM=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
   const streak=recovStreak()||0;
   let ms=DB.get('memberSince',null);if(!ms){ms=tk(-Math.max(75,streak*2));DB.set('memberSince',ms);}
@@ -7838,6 +7970,59 @@ function renderProfileHero(){
     {l:'Nuits suivies',ic:'ti-moon',v:nights+''}
   ];
   const st=document.getElementById('pf2Stats');if(st)st.innerHTML=stats.map(function(s){return '<div class="pf2-stat"><div class="l"><i class="ti '+s.ic+'"></i>'+s.l+'</div><div class="v">'+s.v+'</div></div>'}).join('');
+}
+/* ===== Éditeur de profil immersif ===== */
+var PFA_REGIONS=['Île-de-France','Auvergne-Rhône-Alpes','Hauts-de-France','Nouvelle-Aquitaine','Occitanie','Grand Est','Provence-Alpes-Côte d\'Azur','Pays de la Loire','Normandie','Bretagne','Bourgogne-Franche-Comté','Centre-Val de Loire','Corse','Outre-mer'];
+var PFA_GOALS=[
+  {k:'recup',ic:'ti-battery-charging',t:'Mieux récupérer',d:'Récup optimale jour après jour'},
+  {k:'perf',ic:'ti-bolt',t:'Performer',d:'Progresser sans me cramer'},
+  {k:'sleep',ic:'ti-moon',t:'Mieux dormir',d:'Sommeil plus profond'},
+  {k:'energy',ic:'ti-flame',t:'Plus d\'énergie',d:'Tenir le rythme au quotidien'},
+  {k:'body',ic:'ti-stretching',t:'Ma composition',d:'Affiner ou prendre du muscle'},
+  {k:'stress',ic:'ti-heart-rate-monitor',t:'Gérer le stress',d:'Apaiser la charge mentale'}
+];
+var PFA_AMIN=14,PFA_AMAX=90,PFA_TW=22;
+function renderPfEdit(){
+  const p=getProfile();
+  const nm=document.getElementById('pfName');if(nm)nm.value=p.name||'';
+  document.getElementById('pfWake').value=p.wake;document.getElementById('pfNeed').value=p.need;document.getElementById('pfKcal').value=p.kcalGoal;document.getElementById('pfProt').value=p.protGoal;
+  document.getElementById('pfAge').value=p.age;document.getElementById('pfRegion').value=p.region||'';document.getElementById('pfGoal').value=p.goal||'recup';
+  const strip=document.getElementById('pfaStrip'),ruler=document.getElementById('pfaRuler');
+  if(strip&&!strip.dataset.built){var h='';for(var a=PFA_AMIN;a<=PFA_AMAX;a++){var maj=(a%5===0);h+='<div class="pfa-tick'+(maj?' maj':'')+'" style="width:'+PFA_TW+'px"><i></i>'+(maj?'<span>'+a+'</span>':'')+'</div>';}strip.innerHTML=h;strip.dataset.built='1';
+    ruler.addEventListener('scroll',function(){if(ruler._raf)return;ruler._raf=requestAnimationFrame(function(){ruler._raf=0;var idx=Math.round(ruler.scrollLeft/PFA_TW);idx=Math.max(0,Math.min(PFA_AMAX-PFA_AMIN,idx));var age=PFA_AMIN+idx;var cur=+document.getElementById('pfAge').value;if(age!==cur){haptic(4);}document.getElementById('pfAge').value=age;document.getElementById('pfaNum').textContent=age;pfaSync();});},{passive:true});
+  }
+  document.getElementById('pfaRegions').innerHTML=PFA_REGIONS.map(function(r){return '<button type="button" class="pfa-chip'+(r===p.region?' on':'')+'" onclick="pfaPickRegion(this)">'+r+'</button>'}).join('');
+  document.getElementById('pfaGoals').innerHTML=PFA_GOALS.map(function(g){return '<button type="button" class="pfa-goal'+(g.k===(p.goal||'recup')?' on':'')+'" data-k="'+g.k+'" onclick="pfaPickGoal(this)"><span class="gi"><i class="ti '+g.ic+'"></i></span><b>'+g.t+'</b><span class="gd">'+g.d+'</span><i class="ti ti-circle-check ck"></i></button>'}).join('');
+  document.getElementById('pfaNum').textContent=p.age;
+  requestAnimationFrame(function(){if(ruler)ruler.scrollLeft=(p.age-PFA_AMIN)*PFA_TW;});
+  if(nm&&!nm._b){nm._b=1;nm.addEventListener('input',pfaSync);}
+  pfaSync();
+}
+function pfaSync(){
+  const nm=(document.getElementById('pfName').value||'').trim();
+  const age=document.getElementById('pfAge').value;
+  const reg=document.getElementById('pfRegion').value||'—';
+  const gk=document.getElementById('pfGoal').value;
+  const g=PFA_GOALS.filter(function(x){return x.k===gk})[0];
+  const av=document.getElementById('pfaAv');if(av)av.textContent=(nm.split(/\s+/).map(function(w){return w.charAt(0)}).join('').slice(0,2).toUpperCase())||'?';
+  set('pfaPName',nm||'Ton prénom');
+  set('pfaPMeta',age+' ans · '+reg);
+  const pg=document.getElementById('pfaPGoal');if(pg){if(g)pg.innerHTML='<i class="ti '+g.ic+'"></i>'+g.t;else pg.innerHTML='';}
+}
+function pfaPickRegion(el){haptic(6);document.getElementById('pfRegion').value=el.textContent;var sib=el.parentNode.querySelectorAll('.pfa-chip');for(var i=0;i<sib.length;i++)sib[i].classList.remove('on');el.classList.add('on');pfaSync();}
+function pfaPickGoal(el){haptic(6);document.getElementById('pfGoal').value=el.dataset.k;var sib=el.parentNode.querySelectorAll('.pfa-goal');for(var i=0;i<sib.length;i++)sib[i].classList.remove('on');el.classList.add('on');var av=document.getElementById('pfaAv');if(av){av.classList.remove('pop');void av.offsetWidth;av.classList.add('pop');}pfaSync();}
+function pfaStep(id,d){var e=document.getElementById(id);var v=(+e.value||0)+d;if(id==='pfNeed')v=Math.max(4,Math.min(12,v));e.value=Math.round(v*2)/2;haptic(4);}
+function savePfEdit(){
+  const p=getProfile();
+  p.name=(document.getElementById('pfName').value||'').trim()||'Arthur';
+  p.age=+document.getElementById('pfAge').value||28;
+  p.region=document.getElementById('pfRegion').value||'';
+  p.goal=document.getElementById('pfGoal').value||'recup';
+  p.wake=document.getElementById('pfWake').value||'07:00';
+  p.need=+document.getElementById('pfNeed').value||8;
+  p.kcalGoal=+document.getElementById('pfKcal').value||2400;
+  p.protGoal=+document.getElementById('pfProt').value||150;
+  DB.set('profile',p);toast('Profil enregistré ✓');renderToday();goBack('profile');
 }
 function saveProfile(){const p=getProfile();p.name=document.getElementById('pfName').value||'Arthur';p.age=+document.getElementById('pfAge').value||28;p.wake=document.getElementById('pfWake').value||'07:00';p.need=+document.getElementById('pfNeed').value||8;p.kcalGoal=+document.getElementById('pfKcal').value||2400;p.protGoal=+document.getElementById('pfProt').value||150;DB.set('profile',p);toast('Profil enregistré');renderToday()}
 function saveSensorManual(){const g=id=>parseFloat(document.getElementById(id).value)||null;const hrv=g('snHrv');if(!hrv){toast('Saisis au moins la HRV');return}const cur=sensorOf(tk())||{};DB.set('sensor_'+tk(),Object.assign(cur,{hrv,rhr:g('snRhr'),resp:g('snResp'),sleepMin:g('snSleep')?Math.round(g('snSleep')*60):cur.sleepMin,source:'manual'}));persistRecov();toast('Nuit enregistrée ⌚');go('today')}
@@ -7923,7 +8108,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v393';
+const APP_VERSION='flint-v394';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
