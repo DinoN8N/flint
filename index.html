@@ -14,7 +14,30 @@
 <title>FLINT</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://api.fontshare.com/v2/css?f[]=switzer@400,500,600,700,800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.0.0/dist/tabler-icons.min.css">
+<style id="studioProof">
+/* ===== STUDIO PROOF — Aujourd'hui (Geist + Switzer, clair niveau studio) ===== */
+.flhome{font-family:'Switzer','Inter',-apple-system,sans-serif}
+.flhome .pct,.flhome .lvl,.flhome .h2v,.flhome .h2plan-v,.flhome .h2plan-t .tv,.flhome .h3c .h3tx b{font-family:'Geist','Inter',sans-serif!important;font-style:normal!important;font-weight:700!important;font-feature-settings:"tnum" 1;letter-spacing:-.022em!important}
+.flhome .pct{font-weight:600!important;letter-spacing:-.035em!important}
+.flhome .pct small,.flhome .h2v small,.flhome .h2plan-v small,.flhome .h2plan-t .tv small{font-weight:600!important;letter-spacing:-.01em!important}
+.flhome .lvl{text-transform:uppercase!important;letter-spacing:-.01em!important;font-weight:800!important}
+.flhome .eyb,.flhome .h2t,.flhome .h2plan .eyb{font-family:'Switzer',sans-serif!important;font-weight:600!important;letter-spacing:.16em!important;text-transform:uppercase}
+.flhome .h2s,.flhome .delta{font-family:'Switzer',sans-serif!important}
+/* Hiérarchie : hero récup qui domine */
+.flhome .h2block{border:1px solid rgba(20,18,12,.05);box-shadow:0 1px 0 rgba(255,255,255,.6) inset,0 22px 46px -16px rgba(20,18,12,.18),0 2px 5px rgba(20,18,12,.03)}
+.flhome .h2block .h2hero{padding:22px 22px 18px}
+.flhome .h2block .h2hero .rw{width:130px;height:130px}
+.flhome .h2block .h2hero .pct{font-size:46px}
+.flhome .h2block .h2hr .lvl{font-size:33px;line-height:.96;margin:8px 0 9px}
+.flhome .h2block .h2hr .eyb{letter-spacing:.2em;font-size:11px}
+/* Liste : hairline nuancée + rythme + ombre plus discrète que le hero */
+.flhome .h2list{box-shadow:0 14px 34px -18px rgba(20,18,12,.16),0 1px 3px rgba(20,18,12,.03);border:1px solid rgba(20,18,12,.045)}
+.flhome .h2v{font-size:27px}
+.flhome .h2t{font-size:10.5px;color:#9A948A}
+</style>
 <style>
   :root{
     --bg:#FAF8F5; --bg2:#EBE6DC; --card:#FFFFFF;
@@ -7803,7 +7826,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v388';
+const APP_VERSION='flint-v389';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
