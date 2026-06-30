@@ -3115,21 +3115,31 @@ header.home-hdr .av:active,header.home-hdr .wbatt:active,header.home-hdr .hdmenu
   .nh-tx{flex:1;min-width:0}
   .nh-tx b{font-family:var(--sans);font-weight:800;font-size:15px;color:var(--ink);display:block}
   .nh-tx span{font-size:12.5px;font-weight:600;color:var(--ink2)}
-  .nh-ctl{display:flex;align-items:center;gap:10px;flex:none}
-  .nh-ctl button{width:34px;height:34px;border-radius:11px;border:1px solid var(--line);background:#fff;font-size:19px;line-height:1;color:var(--ink);cursor:pointer;display:grid;place-items:center}
-  .nh-ctl button:active{transform:scale(.9)}
-  .nh-ctl b{font-family:'Geist',sans-serif;font-weight:700;font-size:18px;color:var(--ink);min-width:20px;text-align:center}
+  .nh-count{font-family:'Geist',sans-serif;flex:none;color:var(--ink)}
+  .nh-count b{font-weight:700;font-size:22px}
+  .nh-count i{font-style:normal;font-weight:700;font-size:13px;color:var(--ink2);margin-left:2px}
   .nh-dots{display:flex;gap:6px;margin-top:14px}
-  .nh-dot{flex:1;height:9px;border-radius:5px;background:#E8EEF4;transition:background .2s}
+  .nh-dot{flex:1;height:11px;border-radius:5px;background:#E8EEF4;transition:background .25s}
   .nh-dot.on{background:linear-gradient(90deg,#5AB0F0,#2E8BD6)}
+  .nh-acts{display:flex;gap:8px;margin-top:14px}
+  .nh-undo{width:42px;flex:none;border:1px solid var(--line);background:#fff;border-radius:13px;color:var(--ink2);font-size:18px;cursor:pointer;display:grid;place-items:center}
+  .nh-undo:active{transform:scale(.92)}
+  .nh-add{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;border:1px solid #CDE4F6;background:#F2F8FD;border-radius:13px;padding:11px 8px;font-family:var(--sans);font-weight:800;font-size:12.5px;color:#1E73B8;cursor:pointer;transition:transform .12s}
+  .nh-add:active{transform:scale(.96)}
+  .nh-add i{font-size:17px}
   </style>
   <div class="nut2-hydro">
     <div class="nh-top">
       <span class="nh-ic"><i class="ti ti-droplet"></i></span>
-      <div class="nh-tx"><b>Hydratation</b><span id="hydroSub">0 / 8 verres</span></div>
-      <div class="nh-ctl"><button type="button" onclick="hydroAdd(-1)" aria-label="Retirer un verre">−</button><b id="hydroN">0</b><button type="button" onclick="hydroAdd(1)" aria-label="Ajouter un verre">+</button></div>
+      <div class="nh-tx"><b>Hydratation</b><span id="hydroSub">—</span></div>
+      <span class="nh-count"><b id="hydroN">0</b><i>/ 8</i></span>
     </div>
     <div class="nh-dots" id="hydroDots"></div>
+    <div class="nh-acts">
+      <button type="button" class="nh-undo" onclick="hydroAdd(-1)" aria-label="Retirer"><i class="ti ti-minus"></i></button>
+      <button type="button" class="nh-add" onclick="hydroAdd(1)"><i class="ti ti-glass-full"></i>Verre 25 cl</button>
+      <button type="button" class="nh-add" onclick="hydroAdd(2)"><i class="ti ti-bottle"></i>Bouteille 50 cl</button>
+    </div>
   </div>
   <div class="nutx-rh" style="margin:22px 10px 10px"><span><i class="ti ti-history"></i> Repas du jour</span><button type="button" onclick="event.stopPropagation();openNutHistory()" style="border:0;background:none;font-family:inherit;font-size:12px;font-weight:800;color:var(--accent);display:inline-flex;align-items:center;gap:2px;cursor:pointer;text-transform:none;letter-spacing:0">Tout voir <i class="ti ti-chevron-right"></i></button></div>
   <div id="nutRecent" style="padding:0 8px"></div>
@@ -3978,7 +3988,13 @@ button.bal2-cd,button.bal2-card{border:0;font:inherit;text-align:left;cursor:poi
   <div class="recov-img" id="recImg"></div>
   <div class="fc-grid" id="recCards"></div>
 
-  <div class="card rvcard" id="healthCard" style="margin-top:16px"></div>
+  <style>
+  .hm-hd{font-family:var(--disp,'Geist',sans-serif);font-weight:700;letter-spacing:-.01em;font-size:18px;color:var(--ink);margin:0 2px 13px}
+  .hm-empty{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:var(--sh-card);font-size:13px;font-weight:600;color:var(--ink2);line-height:1.4}
+  .hm-empty i{font-size:24px;color:var(--accent);flex:none}
+  #healthCard .fc-card.fc-na{opacity:.7}
+  </style>
+  <div id="healthCard" style="margin-top:20px"></div>
 
   <div class="card r2corr" id="recCorrCard"></div>
 
@@ -4476,27 +4492,36 @@ body.stepsview header{display:none}
   </div>
 
   <style>
-  .effvo-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border-radius:14px;overflow:hidden;margin-top:13px}
-  .effvo-cell{background:var(--card);padding:14px 15px}
-  .effvo-h{display:flex;align-items:center;gap:7px;font-family:var(--sans);font-weight:800;letter-spacing:.04em;text-transform:uppercase;font-size:10px;color:var(--ink2);line-height:1.25;min-height:26px}
-  .effvo-h i{font-size:15px;color:var(--accent);flex:none}
-  .effvo-v{font-family:'Geist',sans-serif;font-weight:700;letter-spacing:-.02em;font-size:27px;color:var(--ink);margin-top:9px;line-height:1}
-  .effvo-v small{font-family:var(--sans);font-weight:700;font-size:11px;color:var(--ink2);letter-spacing:0;margin-left:4px}
-  .effvo-s{font-size:11.5px;font-weight:700;color:var(--accent);margin-top:5px}
+  .vo2-hd{display:flex;align-items:center;gap:12px;margin-top:14px}
+  .vo2-ic{width:42px;height:42px;border-radius:13px;background:#FCE7E0;color:var(--accent);display:grid;place-items:center;font-size:21px;flex:none}
+  .vo2-lab{flex:1;min-width:0;font-family:var(--sans);font-weight:800;letter-spacing:.05em;text-transform:uppercase;font-size:10.5px;color:var(--ink2);display:flex;flex-direction:column;gap:3px;line-height:1.15}
+  .vo2-lab small{font-size:12px;font-weight:800;letter-spacing:0;text-transform:none;color:var(--accent)}
+  .vo2-big{font-family:'Geist',sans-serif;font-weight:700;letter-spacing:-.02em;font-size:24px;color:var(--ink);white-space:nowrap;flex:none}
+  .vo2-big span{font-family:var(--sans);font-weight:700;font-size:10.5px;color:var(--ink2);margin-left:3px}
+  .vo2-scale{position:relative;height:10px;border-radius:6px;margin-top:15px;background:linear-gradient(90deg,#8FB9D4,#5FB39A,#9CCB5A,#F2A93B,#E0533B)}
+  .vo2-mark{position:absolute;top:50%;width:16px;height:16px;border-radius:50%;background:#fff;border:3px solid var(--ink);transform:translate(-50%,-50%);box-shadow:0 2px 7px rgba(0,0,0,.22)}
+  .vo2-ticks{display:flex;justify-content:space-between;margin-top:8px;font-size:9px;font-weight:800;color:var(--faint);text-transform:uppercase;letter-spacing:.02em}
+  .vo2-rec{display:flex;align-items:center;gap:12px;margin-top:18px;padding-top:16px;border-top:1px solid var(--line);flex-wrap:wrap}
+  .vo2-ric{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;font-size:21px;flex:none;transition:background .2s,color .2s}
+  .vo2-rtx{flex:1;min-width:0}
+  .vo2-rtx b{font-family:'Geist',sans-serif;font-weight:700;font-size:21px;color:var(--ink);display:block;line-height:1.05}
+  .vo2-rtx span{font-size:12px;font-weight:600;color:var(--ink2)}
+  .vo2-rbarw{flex-basis:100%;height:7px;border-radius:4px;background:#EFEAE2;overflow:hidden;margin-top:6px}
+  .vo2-rbar{height:100%;border-radius:4px;transition:width .4s ease}
   </style>
   <section class="card elx-card">
     <div class="elx-ct">Forme &amp; récupération</div>
-    <div class="effvo-grid">
-      <div class="effvo-cell">
-        <div class="effvo-h"><i class="ti ti-lungs"></i>VO₂max estimé</div>
-        <div class="effvo-v"><b id="effVo2">—</b><small>ml/kg/min</small></div>
-        <div class="effvo-s" id="effVo2Lvl">—</div>
-      </div>
-      <div class="effvo-cell">
-        <div class="effvo-h"><i class="ti ti-battery-charging"></i>Prochaine grosse séance</div>
-        <div class="effvo-v"><b id="effRecov">—</b></div>
-        <div class="effvo-s" id="effRecovS">—</div>
-      </div>
+    <div class="vo2-hd">
+      <span class="vo2-ic"><i class="ti ti-lungs"></i></span>
+      <span class="vo2-lab">VO₂max estimé<small id="effVo2Lvl">—</small></span>
+      <span class="vo2-big"><b id="effVo2">—</b><span>ml/kg/min</span></span>
+    </div>
+    <div class="vo2-scale"><span class="vo2-mark" id="effVo2Mark" style="left:50%"></span></div>
+    <div class="vo2-ticks"><span>Faible</span><span>Correct</span><span>Bon</span><span>Excellent</span><span>Supérieur</span></div>
+    <div class="vo2-rec">
+      <span class="vo2-ric" id="effRecIc"><i class="ti ti-battery-charging"></i></span>
+      <div class="vo2-rtx"><b id="effRecov">—</b><span id="effRecovS">—</span></div>
+      <div class="vo2-rbarw"><div class="vo2-rbar" id="effRecBar" style="width:0%"></div></div>
     </div>
   </section>
 
@@ -5156,7 +5181,8 @@ body.stepsview header{display:none}
 .pfa-point{position:absolute;top:2px;left:50%;transform:translateX(-50%);width:3px;height:30px;background:var(--accent);border-radius:3px;pointer-events:none;box-shadow:0 0 0 5px rgba(240,73,46,.1)}
 .pfa-point::before{content:'';position:absolute;top:-8px;left:50%;transform:translateX(-50%);border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid var(--accent)}
 .pfa-hint{text-align:center;font-size:11.5px;font-weight:600;color:#B3ACA1;margin-top:2px}
-.pfa-gender{display:flex;gap:9px;margin-top:18px}
+.pfa-glabel{font-family:'Switzer',sans-serif;font-weight:800;letter-spacing:.06em;text-transform:uppercase;font-size:11px;color:#8A857D;margin:22px 2px 11px}
+.pfa-gender{display:flex;gap:9px}
 .pfa-gender button{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;border:1.5px solid var(--line);background:#fff;border-radius:16px;padding:13px 6px;font-family:'Switzer',sans-serif;font-weight:700;font-size:13px;color:#56514B;cursor:pointer;transition:transform .14s ease,border-color .16s ease,background .16s ease,color .16s ease}
 .pfa-gender button i{font-size:21px;color:#9A938A;transition:color .16s}
 .pfa-gender button:active{transform:scale(.96)}
@@ -5225,6 +5251,7 @@ body.stepsview header{display:none}
     </div>
     <div class="pfa-hint">Fais glisser pour ajuster</div>
     <input type="hidden" id="pfAge" value="28">
+    <div class="pfa-glabel">Tu es</div>
     <div class="pfa-gender" id="pfaGender" role="group" aria-label="Genre">
       <button type="button" data-g="h" onclick="pfaPickGender(this)"><i class="ti ti-gender-male"></i>Homme</button>
       <button type="button" data-g="f" onclick="pfaPickGender(this)"><i class="ti ti-gender-female"></i>Femme</button>
@@ -5420,7 +5447,7 @@ function go(v,isBack){var _el=document.getElementById('v-'+v);if(!_el)return;hap
  document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));_el.classList.add('on');if(_back){_el.style.animation='vinBack .3s cubic-bezier(.22,.61,.36,1) both';setTimeout(function(){if(_el)_el.style.animation='';},340);}else{_el.style.animation='';}document.querySelectorAll('#nav button').forEach(function(b){var a=b.dataset.v===v;b.classList.toggle('on',a);if(a)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});if(window.moveNav)moveNav();var _ht=document.getElementById('hdTitle');if(_ht){var _tt=({sleep:'Sommeil',load:'Effort',nutrition:'Nutrition'}[v]||'');_ht.textContent=_tt;var _hd=document.querySelector('header');if(_hd){_hd.classList.toggle('has-title',!!_tt);_hd.classList.toggle('home-hdr',v==='today')}}document.body.classList.toggle('modalview',v==='journal'||v==='dashedit'||v==='stress'||v==='goal'||v==='coach'||v==='pfedit');document.body.classList.toggle('trendview',v==='metrend');document.body.classList.toggle('sleepview',v==='sleep');
  flWatchBatt();({today:renderToday,nutrition:renderNutrition,recovery:renderRecovery,sleep:renderSleep,sleepdetail:renderSleepDetail,load:renderLoad,effzones:renderEffZones,activitydetail:renderActivityDetail,fcdetail:renderHeartDetail,fczones:renderHeartZones,caltrend:renderCalTrend,efftrend:renderEffTrend,trends:renderTrends,profile:renderProfile,pfedit:renderPfEdit,journal:renderJournalView,behavior:renderBehavior,dashedit:renderDashEdit,metrend:renderMetrend,stress:renderStress,goal:renderGoal,coach:renderCoachIntro,howscore:renderHowScore,balance:renderBalance,baltrend:renderBalTrend,balcurve:renderBalCurve,nuthistory:renderNutHistory,mealdetail:renderMealDetail,nutbilan:renderNutBilan,nutgraph:renderNutGraph}[v]||(()=>{}))();
  if(!_back&&!matchMedia('(prefers-reduced-motion:reduce)').matches){var _cs=_el.querySelectorAll('.h2block,.h2list,.mjwrap,.bal4-goal,.bal4-solde,.bal4-chart,.bal4-foot,.elx-hero,.elx-card,.elx-tgt,.fc2 .card,.nut2-card,.nut2-scan,.nut2-acts,.rec2 .card');for(var _i=0;_i<_cs.length&&_i<10;_i++){var _c=_cs[_i];_c.style.animation='none';void _c.offsetWidth;_c.style.animation='flCardIn .5s cubic-bezier(.2,.8,.2,1) both';_c.style.animationDelay=(_i*0.05).toFixed(2)+'s';}}
- var _fab=document.getElementById('flintScanFab');if(_fab)_fab.style.display=(v==='coach'||v==='nutrition'||v==='pfedit'||v==='profile')?'none':'flex';
+ var _fab=document.getElementById('flintScanFab');if(_fab)_fab.style.display=(v==='coach'||v==='nutrition'||v==='pfedit'||v==='profile'||v==='recovery')?'none':'flex';
  var y=window._scrollMem['v-'+v]||0;window.scrollTo(0,y);requestAnimationFrame(function(){window.scrollTo(0,y)})}
 function goBack(fb){window._navStack=window._navStack||[];var prev=window._navStack.pop();window._goAnim='back';go(prev||fb||'today',true)}
 document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>go(b.dataset.v));
@@ -5434,15 +5461,36 @@ requestAnimationFrame(moveNav);
 function hypnoSeq(s){const cyc=Math.max(3,Math.min(6,Math.round(s.sleepMin/95)));const seq=[];const dP=s.deep/cyc,rP=s.rem/cyc,lP=s.light/cyc;if(s.awake>3)seq.push([3,Math.round(s.awake*0.35)]);for(let c=0;c<cyc;c++){seq.push([1,Math.round(lP*0.45)]);const dw=Math.round(dP*Math.max(0.3,(2-c*1.4/cyc)));if(dw>2)seq.push([0,dw]);seq.push([1,Math.round(lP*0.3)]);const rw=Math.round(rP*(0.4+c*1.2/cyc));if(rw>2)seq.push([2,rw]);seq.push([1,Math.round(lP*0.25)])}if(s.awake>3)seq.push([3,Math.round(s.awake*0.3)]);return seq}
 function sleepNeedCalc(){const base=(getProfile().need||8)*60;const debt=Math.min(75,Math.round(sleepDebt()*60*0.35));const strain=Math.min(55,Math.round(loadStrain()*3.2));const nap=0;const need=base+debt+strain-nap;return {base,debt,strain,nap,need}}
 function sleepConsistency(){const a=[];for(let i=0;i<5;i++){const s=sensorOf(tk(-i));if(s&&s.sleepMin)a.push(s.sleepMin)}if(a.length<3)return null;const m=a.reduce((x,y)=>x+y,0)/a.length,sd=Math.sqrt(a.reduce((x,y)=>x+(y-m)*(y-m),0)/a.length);return Math.max(40,Math.min(100,Math.round(100-sd/2.4)))}
-function renderHealth(){var host=document.getElementById('healthCard');if(!host)return;var t=sensorOf(tk());
- if(!t){host.innerHTML='<div class="rvh"><span class="ic"><i class="ti ti-activity"></i></span><b>Health Monitor</b></div><p class="sci">Connecte ton capteur.</p>';return}
- var rows=[['ti-droplet','Oxygène (SpO₂)',t.spo2,'%',baseStat('spo2'),1],['ti-temperature','Temp. de peau',t.skinTemp,'°C',baseStat('skinTemp'),0]];
- var body=rows.map(function(v){
-  if(v[2]==null)return '<div class="hmr"><span class="hi"><i class="ti '+v[0]+'"></i></span><span class="hl">'+v[1]+'</span><span class="hv muted">non mesuré (Polar Loop)</span><span class="hs none"><i class="ti ti-minus"></i></span></div>';
-  var b=v[4],fav=true;if(b){var dev=(v[2]-b.m)/b.sd;fav=v[5]>0?dev>=-0.6:dev<=0.6;}
-  return '<div class="hmr"><span class="hi"><i class="ti '+v[0]+'"></i></span><span class="hl">'+v[1]+'</span><span class="hv">'+v[2]+' '+v[3]+'</span><span class="hs '+(fav?'ok':'bad')+'"><i class="ti ti-'+(fav?'check':'alert-triangle')+'"></i></span></div>';
- }).join('');
- host.innerHTML='<div class="rvh"><span class="ic"><i class="ti ti-activity"></i></span><b>Autres vitaux nocturnes</b></div>'+body+'<div class="hmleg"><span><span class="hs ok"><i class="ti ti-check"></i></span>Dans la plage normale</span><span><span class="hs bad"><i class="ti ti-alert-triangle"></i></span>Hors plage (signal à surveiller)</span></div>';}
+window._hmInfo={
+ spo2:['Oxygène du sang (SpO₂)','<p>La saturation en oxygène mesure le pourcentage d’oxygène transporté par ton sang pendant la nuit. Au-dessus de 95 % = normal. Des baisses répétées sous 92 % peuvent signaler un sommeil perturbé ou une mauvaise respiration nocturne.</p>'],
+ temp:['Température cutanée','<p>FLINT compare ta température de peau de la nuit à ta moyenne des 30 dernières nuits — pas à une valeur «&nbsp;standard&nbsp;». Un écart de +0,3&nbsp;°C ou plus, plusieurs nuits de suite, peut annoncer de la fatigue, ton cycle ou un début d’infection. C’est l’un des signaux les plus précoces de ton corps.</p>']
+};
+function flInfoHM(k){var d=window._hmInfo[k];if(d)flInfo(d[0],d[1]);}
+function renderHealth(off){off=off||0;var host=document.getElementById('healthCard');if(!host)return;var t=sensorOf(tk(off));
+ var hd='<div class="hm-hd">Autres signaux nocturnes</div>';
+ if(!t){host.innerHTML=hd+'<div class="hm-empty"><i class="ti ti-activity"></i><span>Connecte ta Polar Loop pour suivre ton oxygène et ta température nocturnes.</span></div>';return;}
+ function card(o){var tn=REC_TONE[o.t],dotc=o.t==='good'?'#15140F':tn[2],g=o.g,pc=function(v){return Math.max(0,Math.min(100,(v-g.tmin)/(g.tmax-g.tmin)*100))},zl=pc(g.low),zh=pc(g.high),dp=pc(g.cur);
+  return '<button class="fc-card" type="button" onclick="flInfoHM(\''+o.k+'\')">'
+   +'<div class="fc-top"><span class="fc-ic"><i class="ti '+o.ic+'"></i></span><span class="fc-name">'+o.title+'</span></div>'
+   +'<div class="fc-mid"><span class="fc-val">'+o.val+'</span><span class="fc-pill" style="color:'+tn[0]+';background:'+tn[1]+'">'+o.st+'</span></div>'
+   +'<div class="fc-sentence">'+o.sentence+'</div>'
+   +'<div class="fc-gauge"><span class="z" style="left:'+zl.toFixed(1)+'%;width:'+(zh-zl).toFixed(1)+'%"></span><span class="d" style="left:'+dp.toFixed(1)+'%;background:'+dotc+'"></span></div>'
+   +'<div class="fc-norme">'+o.norme+'</div></button>';}
+ function na(ic,title){return '<div class="fc-card fc-na"><div class="fc-top"><span class="fc-ic"><i class="ti '+ic+'"></i></span><span class="fc-name">'+title+'</span></div><div class="fc-mid"><span class="fc-val" style="color:var(--faint)">—</span></div><div class="fc-sentence">Non mesuré par ton capteur cette nuit.</div></div>';}
+ var cards=[];
+ if(t.spo2!=null){var sp=t.spo2,spt=sp>=95?'good':sp>=93?'warn':'bad';
+  cards.push(card({k:'spo2',ic:'ti-lungs',title:'Oxygène (SpO₂)',val:sp+'<small>%</small>',t:spt,st:sp>=95?'Normale':sp>=93?'Limite':'Basse',
+   sentence:sp>=95?'Bonne oxygénation du sang pendant ta nuit.':'Oxygénation un peu basse — surveille si ça se répète.',
+   g:{tmin:88,tmax:100,low:95,high:100,cur:sp},norme:'Norme 95–100 %'}));}
+ else cards.push(na('ti-lungs','Oxygène (SpO₂)'));
+ var bt=baseStat('skinTemp');
+ if(t.skinTemp!=null&&bt){var dlt=+(t.skinTemp-bt.m).toFixed(1),at=Math.abs(dlt),tt=at<=0.3?'good':at<=0.6?'warn':'bad';
+  cards.push(card({k:'temp',ic:'ti-temperature',title:'Temp. cutanée',val:(dlt>0?'+':(dlt<0?'−':'±'))+at.toFixed(1).replace('.',',')+'<small>°C</small>',t:tt,st:at<=0.3?'Stable':(dlt>0?'En hausse':'En baisse'),
+   sentence:at<=0.3?'Écart à ta température nocturne habituelle : tout est normal.':(dlt>0?'Au-dessus de ta normale : parfois fatigue, alcool ou début de maladie.':'Sous ta normale — souvent bénin (chambre fraîche, hormones).'),
+   g:{tmin:-1,tmax:1,low:-0.3,high:0.3,cur:dlt},norme:'Écart normal ±0,3 °C'}));}
+ else if(t.skinTemp!=null){cards.push(card({k:'temp',ic:'ti-temperature',title:'Temp. cutanée',val:t.skinTemp.toFixed(1).replace('.',',')+'<small>°C</small>',t:'good',st:'Mesurée',sentence:'On affichera l’écart à ta normale après quelques nuits.',g:{tmin:35,tmax:38,low:36,high:37,cur:t.skinTemp},norme:'Calibration en cours'}));}
+ else cards.push(na('ti-temperature','Temp. cutanée'));
+ host.innerHTML=hd+'<div class="fc-grid">'+cards.join('')+'</div>';}
 var V_MONTHS=['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
 function getMetricStatus(v,lo,hi){if(v==null||lo==null)return 'na';if(v<lo)return 'low';if(v>hi)return 'high';return 'in'}
 function renderVitaux(){var host=document.getElementById('vitauxCard');if(!host)return;var t=sensorOf(tk());
@@ -6248,7 +6296,8 @@ function nutTotals(k){return mealsOf(k).reduce((a,x)=>({kcal:a.kcal+(+x.kcal||0)
 function macroStat(lbl,val,goal,col){const pct=Math.min(100,goal?val/goal*100:0);return '<div class="stat"><div class="sl">'+lbl+'</div><div class="sv" style="font-size:23px">'+Math.round(val)+'<small style="font-size:11px;color:var(--ink2);font-family:var(--sans);font-weight:700"> /'+Math.round(goal)+'g</small></div><div class="progbar" style="margin-top:7px;height:8px"><i style="width:'+pct+'%;background:'+col+'"></i></div></div>'}
 function hydroKey(k){return 'hydro_'+(k||tk());}
 function renderHydro(){var n=DB.get(hydroKey(),0)||0,goal=8;
- var sub=document.getElementById('hydroSub');if(sub)sub.textContent=n+' / '+goal+' verres'+(n?' · '+(n*0.25).toFixed(2).replace('.',',')+' L':'');
+ var L=(n*0.25).toFixed(2).replace('.',','),gL=(goal*0.25).toFixed(1).replace('.',',');
+ var sub=document.getElementById('hydroSub');if(sub)sub.textContent=L+' L · objectif '+gL+' L'+(n>=goal?' ✓':'');
  var nn=document.getElementById('hydroN');if(nn)nn.textContent=n;
  var d=document.getElementById('hydroDots');if(d){var h='';for(var i=0;i<goal;i++)h+='<span class="nh-dot'+(i<n?' on':'')+'"></span>';d.innerHTML=h;}}
 function hydroAdd(delta){var k=hydroKey(),n=Math.max(0,Math.min(20,(DB.get(k,0)||0)+delta));DB.set(k,n);haptic(5);renderHydro();}
@@ -6902,7 +6951,7 @@ function renderRecovery(){renderRecCorr();var rv=recovery(window._recDay||0);
  var ch=document.getElementById('recTrendChart');if(ch)ch.innerHTML=recTrendChartSVG(window._recTrendMetric);
  var host=document.getElementById('recImg');if(host)host.innerHTML=recBuildOverlay(rv);
  renderFactorCards(rv);
- renderHealth();
+ renderHealth(window._recDay||0);
 }
 function recFactorSentence(d){
  var n={hrv:'variabilité cardiaque',rhr:'fréquence cardiaque au repos',resp:'fréquence respiratoire',sleepperf:'durée de sommeil'}[d.key]||'';
@@ -7470,17 +7519,20 @@ function renderLoad(){var off=_effDay||0,K=tk(off);
   var ds=document.getElementById('effDurSpk');if(ds)ds.innerHTML=effSpark(durArr,'#F0653E');
  })();
  (function(){
-  var s=sensorOf(K)||sensorOf(tk())||{},rhr=s.rhr||50,hrmax=effHRmax();
+  var s=sensorOf(K)||sensorOf(tk())||{},rhr=s.rhr||50,hrmax=effHRmax(),fem=getProfile().gender==='f';
   var vo2=Math.round(15.3*hrmax/rhr);
   set('effVo2',vo2);
-  var lvl=getProfile().gender==='f'
-    ?(vo2>=49?'Supérieur':vo2>=44?'Excellent':vo2>=38?'Bon':vo2>=33?'Correct':'À renforcer')
-    :(vo2>=56?'Supérieur':vo2>=51?'Excellent':vo2>=43?'Bon':vo2>=37?'Correct':'À renforcer');
+  var br=fem?[33,38,44,49]:[37,43,51,56];
+  var lvl=vo2>=br[3]?'Supérieur':vo2>=br[2]?'Excellent':vo2>=br[1]?'Bon':vo2>=br[0]?'Correct':'À renforcer';
   set('effVo2Lvl',lvl+' pour ton âge');
+  var lo=br[0]-7,hi=br[3]+6,pos=Math.max(3,Math.min(97,(vo2-lo)/(hi-lo)*100));
+  var mk=document.getElementById('effVo2Mark');if(mk)mk.style.left=pos.toFixed(1)+'%';
   var strain=loadStrain(K),rec=(recovery()&&recovery().s)||60;
-  var hrs=Math.max(0,Math.round(strain*2.6-rec*0.12));
-  if(hrs<=1){set('effRecov','Prêt 💪');set('effRecovS','Tu peux pousser fort');}
-  else{set('effRecov','~'+hrs+' h');set('effRecovS','Avant un nouvel effort intense');}
+  var hrs=Math.max(0,Math.round(strain*2.6-rec*0.12)),ready=hrs<=1;
+  var ic=document.getElementById('effRecIc');
+  if(ready){set('effRecov','Prêt 💪');set('effRecovS','Ton corps peut encaisser une grosse séance.');if(ic){ic.style.background='#E7F5EC';ic.style.color='#2FA86A';ic.innerHTML='<i class="ti ti-battery-charging"></i>';}}
+  else{set('effRecov','~'+hrs+' h');set('effRecovS','Avant un nouvel effort intense.');if(ic){ic.style.background='#FCEFD8';ic.style.color='#E0922A';ic.innerHTML='<i class="ti ti-hourglass"></i>';}}
+  var rbar=document.getElementById('effRecBar');if(rbar){var w=ready?100:Math.max(6,Math.round(100*(1-hrs/36)));rbar.style.width=w+'%';rbar.style.background=ready?'linear-gradient(90deg,#3FB57A,#2FA86A)':'linear-gradient(90deg,#F2A93B,#E0922A)';}
  })();
 }
 var EFF_ZONES=[
@@ -8270,7 +8322,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v396';
+const APP_VERSION='flint-v397';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
