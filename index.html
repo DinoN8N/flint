@@ -4334,7 +4334,8 @@ body.stepsview header{display:none}
 .elx-bc-leg .lg .bb{width:14px;height:4px;border-radius:2px;background:var(--accent)}
 .elx-bc-leg .lg .ll{width:15px;height:0;border-top:2px dashed #9A948A}
 .elx-stats3{display:flex;gap:10px;margin-bottom:16px}
-.elx-stat{flex:1;background:#fff;border:1px solid var(--line);border-radius:20px;padding:13px 12px;box-shadow:var(--shadow);min-width:0}
+.elx-stat{flex:1;background:#fff;border:1px solid var(--line);border-radius:20px;padding:13px 12px;box-shadow:var(--shadow);min-width:0;text-align:left;font-family:inherit;cursor:pointer;transition:transform .12s ease,box-shadow .15s ease}
+.elx-stat:active{transform:scale(.96)}
 .elx-stat .sh{display:flex;align-items:center;gap:5px;font-size:9px;font-weight:800;letter-spacing:.2px;color:#8A857D;text-transform:uppercase;line-height:1.1}
 .elx-stat .sh i{font-size:14px;color:var(--accent);flex:none}
 .elx-stat .sv{font-family:'Anton',sans-serif;font-weight:400;font-size:22px;color:#15140F;line-height:1;margin:9px 0 1px}
@@ -4406,9 +4407,9 @@ body.stepsview header{display:none}
   </section>
 
   <div class="elx-stats3">
-    <div class="elx-stat"><div class="sh"><i class="ti ti-walk"></i>Pas auj.</div><div class="sv" id="effStepV">—</div><div class="ss" id="effStepGoal">—</div><div class="sbar"><i id="effStepBar"></i></div></div>
-    <div class="elx-stat"><div class="sh"><i class="ti ti-flame"></i>Calories</div><div class="sv" id="effCalV">—</div><div class="ss">Dépensées</div><div class="spk" id="effCalSpk"></div></div>
-    <div class="elx-stat"><div class="sh"><i class="ti ti-clock"></i>Durée act.</div><div class="sv" id="effDurV">—</div><div class="ss">Temps total</div><div class="spk" id="effDurSpk"></div></div>
+    <button class="elx-stat" type="button" onclick="openMetricTrend('steps')"><div class="sh"><i class="ti ti-walk"></i>Pas auj.</div><div class="sv" id="effStepV">—</div><div class="ss" id="effStepGoal">—</div><div class="sbar"><i id="effStepBar"></i></div></button>
+    <button class="elx-stat" type="button" onclick="go('caltrend')"><div class="sh"><i class="ti ti-flame"></i>Calories</div><div class="sv" id="effCalV">—</div><div class="ss">Dépensées</div><div class="spk" id="effCalSpk"></div></button>
+    <button class="elx-stat" type="button" onclick="openTrend('charge')"><div class="sh"><i class="ti ti-clock"></i>Durée act.</div><div class="sv" id="effDurV">—</div><div class="ss">Temps total</div><div class="spk" id="effDurSpk"></div></button>
   </div>
 
   <div class="elx-acthd"><span class="t">Activités du jour</span><span class="more" onclick="openTrend('charge')">Voir l'évolution <i class="ti ti-chevron-right"></i></span></div>
@@ -7671,7 +7672,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v383';
+const APP_VERSION='flint-v384';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
