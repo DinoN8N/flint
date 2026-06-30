@@ -3983,8 +3983,40 @@ button.bal2-cd,button.bal2-card{border:0;font:inherit;text-align:left;cursor:poi
 </style>
 <section class="view" id="v-recovery">
 <div class="flrecovery rec2">
-  <button class="rec-back" type="button" onclick="goBack('today')" aria-label="Retour"><i class="ti ti-chevron-left"></i></button>
-  <div class="recov-img" id="recImg"></div>
+  <style>
+  .rec3-hd{display:flex;align-items:flex-start;gap:13px;padding:4px 2px 2px}
+  .rec3-bk{width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:#fff;color:#15140F;font-size:21px;display:grid;place-items:center;cursor:pointer;flex:none;box-shadow:0 5px 14px rgba(20,18,12,.06);transition:transform .14s}
+  .rec3-bk:active{transform:scale(.9)}
+  .rec3-tt{flex:1;min-width:0;padding-top:3px}
+  .rec3-tt h1{font-family:'Geist',sans-serif;font-weight:700;letter-spacing:-.03em;font-size:29px;color:#15140F;line-height:1}
+  .rec3-tt p{font-size:13.5px;font-weight:600;color:#8A857D;margin-top:5px}
+  .rec3-nav{display:flex;align-items:center;justify-content:center;gap:10px;margin:16px 0 14px}
+  .rec3-nav .a{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:#fff;color:#15140F;font-size:17px;display:grid;place-items:center;cursor:pointer}
+  .rec3-nav .a:disabled{opacity:.35;cursor:default}
+  .rec3-nav .d{display:inline-flex;align-items:center;gap:9px;border:1px solid var(--line);background:#fff;border-radius:30px;padding:10px 18px;font-family:'Switzer',sans-serif;font-weight:800;font-size:14px;color:#15140F;cursor:pointer;box-shadow:var(--sh-card)}
+  .rec3-nav .d i{color:var(--accent);font-size:16px}
+  .rec3-hero{position:relative;overflow:hidden;border-radius:26px;padding:22px 20px;display:flex;align-items:center;gap:18px;border:1px solid var(--line);box-shadow:0 16px 38px -22px rgba(20,18,12,.4)}
+  .rec3-ring{width:122px;height:122px;flex:none;position:relative}
+  .rec3-ring .v{position:absolute;left:50%;top:45%;transform:translate(-50%,-50%);font-family:'Geist',sans-serif;font-weight:700;letter-spacing:-.03em;font-size:38px;line-height:1}
+  .rec3-ring .v small{font-size:.42em;font-weight:700;margin-left:1px}
+  .rec3-ring .lb{position:absolute;left:50%;top:67%;transform:translateX(-50%);font-family:'Switzer',sans-serif;font-weight:800;letter-spacing:.08em;font-size:8.5px}
+  .rec3-vd{flex:1;min-width:0}
+  .rec3-vd .chip{display:inline-block;font-family:'Switzer',sans-serif;font-weight:800;letter-spacing:.1em;font-size:10px;color:#fff;padding:5px 11px;border-radius:8px;margin-bottom:9px}
+  .rec3-vd h2{font-family:'Geist',sans-serif;font-weight:700;letter-spacing:-.02em;font-size:23px;color:#15140F;line-height:1.05}
+  .rec3-vd .sub{font-size:13px;font-weight:600;color:#56514B;margin-top:4px;line-height:1.3}
+  .rec3-eff{display:inline-flex;align-items:center;gap:7px;margin-top:13px;background:rgba(255,255,255,.72);border:1px solid rgba(20,18,12,.06);border-radius:30px;padding:8px 13px;font-family:'Switzer',sans-serif;font-weight:700;font-size:12px;line-height:1.2}
+  .rec3-eff i{font-size:15px}
+  .rec3-empty{border:1px solid var(--line);background:var(--card);border-radius:22px;padding:26px 20px;text-align:center;font-size:14px;font-weight:600;color:var(--ink2);box-shadow:var(--sh-card)}
+  .rec3-ring .arc{animation:recRingDraw .9s cubic-bezier(.25,.8,.3,1) both}
+  .rec3-hero{animation:recPop .55s cubic-bezier(.2,.85,.25,1) both}
+  @media (prefers-reduced-motion:reduce){.rec3-ring .arc,.rec3-hero{animation-duration:.001s!important}}
+  @media(max-width:360px){.rec3-hero{flex-direction:column;text-align:center}.rec3-ring{width:112px;height:112px}}
+  </style>
+  <div class="rec3-hd">
+    <button class="rec3-bk" type="button" onclick="goBack('today')" aria-label="Retour">‹</button>
+    <div class="rec3-tt"><h1>Récupération</h1><p>Ton corps est-il prêt à encaisser&nbsp;?</p></div>
+  </div>
+  <div id="recImg"></div>
   <div class="fc-grid" id="recCards"></div>
 
   <style>
@@ -6976,24 +7008,25 @@ function renderFactorCards(rv){
 }
 function recBuildOverlay(rv){
  var off=window._recDay||0;
- var nav='<div class="ovnav" style="left:3.5%;top:40%">'
-  +'<button class="ovnav-a" onclick="recDay(-1)" aria-label="Jour précédent"><i class="ti ti-chevron-left"></i></button>'
-  +'<button class="ovnav-d" onclick="recCalOpen()"><span>'+recDateFmt(off)+'</span> <i class="ti ti-calendar"></i></button>'
-  +'<button class="ovnav-a" onclick="recDay(1)"'+(off>=0?' disabled':'')+' aria-label="Jour suivant"><i class="ti ti-chevron-right"></i></button></div>';
- if(!rv)return nav+'<div class="ov" style="left:6%;top:70%;font-size:4cqw;color:#6E6A62">'+(off?'Aucune nuit ce jour-là.':'Pas de donnée — recharge la démo.')+'</div>';
- var rc=rv.s>=67?'#3E9E6E':rv.s>=34?'#E0922A':'#CF4631';
- var C=2*Math.PI*43,o=C*(1-Math.max(0,Math.min(100,rv.s))/100),h=nav;
- h+='<div class="ovring" style="left:6%;top:55.5%;width:30%;aspect-ratio:1;animation-delay:.05s">'
-  +'<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="43" fill="none" stroke="#EAE4DA" stroke-width="7"/><circle class="arc" cx="50" cy="50" r="43" fill="none" stroke="'+rc+'" stroke-width="7" stroke-linecap="round" stroke-dasharray="'+C.toFixed(1)+'" stroke-dashoffset="'+o.toFixed(1)+'" transform="rotate(-90 50 50)" style="--c:'+C.toFixed(1)+';animation-delay:.12s"/></svg>'
-  +'<div class="ovv" style="position:absolute;left:50%;top:43%;transform:translate(-50%,-50%);font-size:9.5cqw;color:'+rc+'">'+rv.s+'<small style="font-family:inherit;color:'+rc+';font-size:.45em">%</small></div>'
-  +'<div style="position:absolute;left:50%;top:65%;transform:translateX(-50%);font-family:\'Geist\';font-style:normal;font-size:2.6cqw;letter-spacing:.05em;color:'+rc+'">RÉCUPÉRATION</div></div>';
+ var nav='<div class="rec3-nav">'
+  +'<button class="a" onclick="recDay(-1)" aria-label="Jour précédent"><i class="ti ti-chevron-left"></i></button>'
+  +'<button class="d" onclick="recCalOpen()"><span>'+recDateFmt(off)+'</span> <i class="ti ti-calendar"></i></button>'
+  +'<button class="a" onclick="recDay(1)"'+(off>=0?' disabled':'')+' aria-label="Jour suivant"><i class="ti ti-chevron-right"></i></button></div>';
+ if(!rv)return nav+'<div class="rec3-empty">'+(off?'Aucune nuit ce jour-là.':'Pas de donnée — recharge la démo dans Profil.')+'</div>';
+ var rc=rv.s>=67?'#2FA86A':rv.s>=34?'#E0922A':'#CF4631';
+ var tint=rv.s>=67?'linear-gradient(135deg,#EDF7F1,#E0F1E7)':rv.s>=34?'linear-gradient(135deg,#FCF3E2,#FAEBCF)':'linear-gradient(135deg,#FBEEEA,#F8E0D9)';
+ var C=2*Math.PI*43,o=C*(1-Math.max(0,Math.min(100,rv.s))/100);
  var title=rv.s>=67?'Prêt aujourd\'hui':rv.s>=34?'À doser':'Repos conseillé';
- var sub=rv.s>=67?'Ton corps est bien récupéré':rv.s>=34?'Récupération correcte':'Ton corps réclame du repos';
+ var sub=rv.s>=67?'Ton corps est bien récupéré.':rv.s>=34?'Récupération correcte.':'Ton corps réclame du repos.';
  var tg=rv.s>=67?[14,18]:rv.s>=34?[10,14]:[6,10],vk=rv.s>=67?'Pousse':rv.s>=34?'Maintiens':'Lève le pied';
- h+='<div class="ov ovv" style="left:46%;top:65.5%;font-size:6.6cqw;color:#15140F;animation-delay:.14s">'+title+'</div>';
- h+='<div class="ov ovnw" style="left:46%;top:77%;font-size:3cqw;color:#6E6A62;animation-delay:.19s">'+sub+'</div>';
- h+='<div class="ov" style="left:46%;top:84.2%;display:inline-flex;align-items:center;gap:1.4cqw;background:#EAF4EC;border-radius:30px;padding:1.5cqw 2.6cqw;max-width:46cqw;animation-delay:.24s"><i class="ti ti-arrow-up-right" style="color:'+rc+';font-size:3.2cqw"></i><span style="font-size:2.5cqw;font-weight:700;color:'+rc+';line-height:1.18">'+vk+' — vise un effort de '+tg[0]+'–'+tg[1]+'</span></div>';
- return h;
+ var ring='<div class="rec3-ring">'
+  +'<svg viewBox="0 0 100 100" style="width:100%;height:100%"><circle cx="50" cy="50" r="43" fill="none" stroke="rgba(20,18,12,.08)" stroke-width="7"/><circle class="arc" cx="50" cy="50" r="43" fill="none" stroke="'+rc+'" stroke-width="7" stroke-linecap="round" stroke-dasharray="'+C.toFixed(1)+'" stroke-dashoffset="'+o.toFixed(1)+'" transform="rotate(-90 50 50)" style="--c:'+C.toFixed(1)+'"/></svg>'
+  +'<div class="v" style="color:'+rc+'">'+rv.s+'<small>%</small></div>'
+  +'<div class="lb" style="color:'+rc+'">RÉCUP</div></div>';
+ var vd='<div class="rec3-vd"><span class="chip" style="background:'+rc+'">'+rv.state+'</span>'
+  +'<h2>'+title+'</h2><div class="sub">'+sub+'</div>'
+  +'<div class="rec3-eff"><i class="ti ti-arrow-up-right" style="color:'+rc+'"></i><span style="color:'+rc+'">'+vk+' — vise un effort de '+tg[0]+'–'+tg[1]+'</span></div></div>';
+ return nav+'<div class="rec3-hero" style="background:'+tint+'">'+ring+vd+'</div>';
 }
 var REC_TONE={good:['#2E7D4F','#EAF4EE','#3FB57A'],warn:['#9A6500','#FBF1DD','#E0922A'],bad:['#B23A22','#FBEAE6','#CF4631']};
 var REC_BEH_ICON={cafeine:'ti-coffee',alcool:'ti-glass-full',ecrans:'ti-device-mobile',sportintense:'ti-barbell',magnesium:'ti-pill',meditation:'ti-yoga',repastard:'ti-tools-kitchen-2',hydrate:'ti-droplet'};
@@ -8321,7 +8354,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v399';
+const APP_VERSION='flint-v400';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
