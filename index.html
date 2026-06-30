@@ -82,8 +82,9 @@
   header .hdmenu{display:none;width:42px;height:42px;border-radius:14px;border:1px solid rgba(120,110,95,.14);background:rgba(255,255,255,.55);color:#161512;font-size:20px;cursor:pointer;align-items:center;justify-content:center;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);flex:none}
   header.home-hdr{background:var(--bg)}
   header.home-hdr .hdmenu{display:flex}
-  header.home-hdr .logo{position:absolute;left:50%;transform:translateX(-50%);height:22px !important}
-  header.home-hdr .wbatt,header.home-hdr .hbell{display:none}
+  header.home-hdr .logo{position:static;transform:none;height:19px !important;margin:0 0 0 4px}
+  header.home-hdr .wbatt{padding:6px 10px;font-size:12px}
+  header.home-hdr .hbell{display:none}
   header .hddate{display:none;align-items:center;gap:1px;background:#fff;border:1px solid #ECE6DD;border-radius:30px;padding:3px;box-shadow:0 4px 14px rgba(22,21,18,.05);flex:none}
   header.has-date .hddate{display:inline-flex}
   header.has-date .hdtitle{display:none}
@@ -7828,7 +7829,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v391';
+const APP_VERSION='flint-v392';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
