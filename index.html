@@ -13,8 +13,9 @@
 <link rel="preload" as="image" href="icons/sleep/sleep_landscape.png?v=3">
 <title>FLINT</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Geist&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="preload" as="font" type="font/woff2" href="fonts/Geist.woff2" crossorigin>
+<style>@font-face{font-family:'Geist';font-style:normal;font-weight:100 900;font-display:swap;src:url('fonts/Geist.woff2') format('woff2')}</style>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link href="https://api.fontshare.com/v2/css?f[]=switzer@400,500,600,700,800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.0.0/dist/tabler-icons.min.css">
 <style id="studioProof">
@@ -45,8 +46,8 @@
     --accent:#F0492E; --accentL:#FF6A48; --accentD:#D63A20;
     --peach:#FCE7DF; --track:#ECE7DD; --line:rgba(20,18,12,.08);
     --green:#3FB57A; --amber:#F2A93B; --indigo:#6C7BD6; --exp:#F0492E; --cons:#6C7BD6;
-    --shadow:0 10px 34px rgba(20,18,12,.05),0 2px 6px rgba(20,18,12,.03); --shadowL:0 14px 34px rgba(240,73,46,.22);
-    --sh-card:0 10px 30px rgba(20,18,12,.05),0 1px 3px rgba(20,18,12,.03);
+    --shadow:0 1px 2px rgba(20,18,12,.04),0 10px 26px -12px rgba(20,18,12,.14); --shadowL:0 8px 26px -6px rgba(240,73,46,.30);
+    --sh-card:0 1px 2px rgba(20,18,12,.035),0 14px 34px -16px rgba(20,18,12,.16);
     --r:26px; --r-md:18px; --r-lg:24px; --r-xl:28px;
     /* couleurs par métrique (design system) */
     --m-sleep:#6C7BD6; --m-sleepL:#ECEAFB; --m-charge:#E0922A; --m-chargeL:#FCEFD8;
@@ -7827,7 +7828,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v390';
+const APP_VERSION='flint-v391';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
