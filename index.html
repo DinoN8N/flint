@@ -3593,7 +3593,7 @@ button.bal2-cd,button.bal2-card{border:0;font:inherit;text-align:left;cursor:poi
   </div>
 
   <div class="bal4-solde">
-    <span class="bal4-eyb ctr">SOLDE CALORIQUE</span>
+    <span class="bal4-eyb ctr">SOLDE CALORIQUE <button class="fl-q" type="button" onclick="flInfoKey('balance')" aria-label="C'est quoi ?">?</button></span>
     <div class="bal4-net" id="bal4Net">—</div>
     <div class="bal4-netu">kcal</div>
     <div class="bal4-verd">
@@ -3631,6 +3631,7 @@ button.bal2-cd,button.bal2-card{border:0;font:inherit;text-align:left;cursor:poi
     <span class="tx"><span class="eyb">ALIMENTATION & RÉCUP</span><span class="p" id="bal4LinkTxt">—</span></span>
     <i class="ti ti-chevron-right chev"></i>
   </button>
+  <div id="balRel"></div>
   <div class="bal4-foot">Chaque choix compte. <b>Reste aligné.</b></div>
   <input type="file" id="balFile" accept="image/*" capture="environment" style="display:none" onchange="balPhotoPick(this)">
 </div>
@@ -3945,6 +3946,34 @@ button.bal2-cd,button.bal2-card{border:0;font:inherit;text-align:left;cursor:poi
     <div id="recWhyBody"></div>
   </div>
 </div>
+
+<!-- Fiche d'explication générique (mini-aides) -->
+<div class="sheet" id="flInfoSheet">
+  <div class="ov" onclick="flInfoClose()"></div>
+  <div class="pan">
+    <div class="grab"></div>
+    <button class="ascl" type="button" onclick="flInfoClose()" aria-label="Fermer">✕</button>
+    <div id="flInfoBody"></div>
+  </div>
+</div>
+<style>
+.fli-t{font-family:'Anton',sans-serif;font-weight:400;letter-spacing:.2px;font-size:22px;color:#15140F;margin:2px 2px 12px}
+#flInfoBody p{font-size:14.5px;line-height:1.55;color:#4F4A44;margin:0 2px 11px}
+#flInfoBody p b{font-weight:800;color:#15140F}
+#flInfoBody .fli-tag{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:#56514B;background:#F5F1EB;border-radius:12px;padding:8px 11px;margin:0 6px 8px 0}
+#flInfoBody .fli-tag i{font-size:16px}
+.fl-q{display:inline-grid;place-items:center;width:19px;height:19px;border-radius:50%;background:rgba(20,18,12,.09);color:#8A857D;font-size:11px;font-weight:800;border:0;cursor:pointer;vertical-align:middle;margin-left:6px;font-family:inherit;flex:none;transition:transform .12s ease}
+.fl-q:active{transform:scale(.85)}
+/* Bande de liens croisés « RELIÉ À … » */
+.fl-rel{margin:6px 2px 4px}
+.fl-rel-h{font-size:11px;font-weight:800;letter-spacing:1.2px;color:#9A948A;margin:0 2px 9px}
+.fl-rel-row{display:flex;gap:9px}
+.fl-rel-c{flex:1;display:flex;flex-direction:column;align-items:flex-start;gap:8px;background:#FCFAF6;border:1px solid #F1EBE3;border-radius:18px;padding:13px 12px;cursor:pointer;font-family:inherit;text-align:left;box-shadow:var(--sh-card);transition:transform .12s ease}
+.fl-rel-c:active{transform:scale(.96)}
+.fl-rel-c .ic{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;font-size:18px;flex:none}
+.fl-rel-c .lb{font-size:12.5px;font-weight:800;color:#15140F;line-height:1.15}
+.fl-rel-c .sb{font-size:11px;font-weight:600;color:#8A857D;line-height:1.25}
+</style>
 
 <!-- ===================== PAS ===================== -->
 <style>
@@ -4348,6 +4377,7 @@ body.stepsview header{display:none}
   <div class="efftitle">Tes 7 derniers jours</div>
   <p class="elx-sub">Chaque indicateur est expliqué sous son graphe. Touche-le pour le détail jour par jour.</p>
   <div id="effTrends"></div>
+  <div id="effRel"></div>
 </div>
 </section>
 
@@ -6254,6 +6284,7 @@ function renderBalance(){
  }
  var bt=document.getElementById('bal4Txt');if(bt)bt.innerHTML=ct;
  var ww=document.getElementById('bal4Week');if(ww)ww.innerHTML=bal4WeekHTML();
+ var _brl=document.getElementById('balRel');if(_brl)_brl.innerHTML=flRelHTML(['recup','nutrition','effort']);
  (function(){var lk=balRecupLink();var lc=document.getElementById('bal4Link');if(!lc)return;if(!lk.show){lc.style.display='none';return;}lc.style.display='';var ic=document.getElementById('bal4LinkIc');if(ic){ic.innerHTML='<i class="ti '+lk.ic+'"></i>';ic.style.color=lk.col;ic.style.background=lk.tint}var lt=document.getElementById('bal4LinkTxt');if(lt)lt.innerHTML=lk.txt;})();
 }
 function bal4WeekHTML(){
@@ -6578,6 +6609,29 @@ function recWhyHTML(key,rv){
 }
 function recWhyOpen(key){var rv=recovery();if(!rv)return;var b=document.getElementById('recWhyBody');if(b)b.innerHTML=recWhyHTML(key,rv);var s=document.getElementById('recWhySheet');if(s)s.classList.add('on');if(typeof haptic==='function')haptic();}
 function recWhyClose(){var s=document.getElementById('recWhySheet');if(s)s.classList.remove('on');}
+/* ===== Mini-aides (fiche d'explication réutilisable) ===== */
+function flInfo(title,html){var b=document.getElementById('flInfoBody');if(b)b.innerHTML='<div class="fli-t">'+title+'</div>'+html;var s=document.getElementById('flInfoSheet');if(s)s.classList.add('on');if(typeof haptic==='function')haptic();}
+function flInfoClose(){var s=document.getElementById('flInfoSheet');if(s)s.classList.remove('on');}
+var FL_INFO={
+ recup:['Ta récupération','<p>Un score de <b>0 à 100</b> qui dit à quel point ton corps est <b>prêt à performer</b> aujourd\'hui. Il combine ta <b>VFC</b>, ta <b>FC de repos</b>, ton <b>sommeil</b> et ta <b>respiration</b>, comparés à ta normale perso.</p><p><span class="fli-tag"><i class="ti ti-flame"></i>Haute → pousse</span><span class="fli-tag"><i class="ti ti-adjustments"></i>Modérée → dose</span><span class="fli-tag"><i class="ti ti-zzz"></i>Basse → repos</span></p>'],
+ effort:['Ton effort du jour','<p>Une note de <b>0 à 21</b> qui résume la <b>charge cardiovasculaire</b> de ta journée : plus tes séances sont <b>intenses et longues</b> (mesuré via ta FC), plus la note monte.</p><p>Vise une charge alignée sur ta récup : pousser quand tu es frais, lever le pied quand tu es bas.</p>'],
+ sommeil:['Ton sommeil','<p>La <b>durée</b> et la <b>qualité</b> de ta nuit : sommeil profond et paradoxal (réparateurs), régularité des horaires, et FC nocturne. Comparés à ton <b>besoin</b> perso.</p><p>Le sommeil est le <b>premier moteur</b> de ta récupération.</p>'],
+ fc:['Ta fréquence cardiaque','<p>Tes battements par minute. Au <b>repos</b>, plus c\'est bas, mieux ton cœur récupère. Les <b>zones</b> (1 à 5) montrent l\'intensité de tes efforts.</p>'],
+ calories:['Tes calories','<p>L\'énergie que tu <b>dépenses</b> dans la journée : métabolisme de base + mouvements + entraînements (estimé via ta FC et ton activité).</p>'],
+ balance:['Le solde calorique','<p>La différence entre ce que tu as <b>consommé</b> (repas) et <b>dépensé</b> (bracelet). Positif = surplus, négatif = déficit. On le compare à la <b>cible</b> de ton objectif (sèche / maintien / muscle).</p>'],
+ pas:['Tes pas','<p>Ton activité quotidienne <b>hors entraînement</b>. Un bon volume de pas soutient ta dépense et ta santé sans entamer ta récup.</p>']
+};
+function flInfoKey(k){var d=FL_INFO[k];if(d)flInfo(d[0],d[1]);}
+/* ===== Bande de liens croisés « RELIÉ À … » ===== */
+var FL_REL={
+ recup:{ic:'ti-battery-charging',col:'#2FA86A',bg:'#E4F5E9',lb:'Récup',sb:'Ton état du jour',go:'recovery'},
+ sommeil:{ic:'ti-moon',col:'#6C7BD6',bg:'#ECEAFB',lb:'Sommeil',sb:'Ta nuit',go:'sleep'},
+ effort:{ic:'ti-bolt',col:'#E0922A',bg:'#FCEFD8',lb:'Effort',sb:'Ta charge',go:'load'},
+ fc:{ic:'ti-heart',col:'#2FA86A',bg:'#E4F5E9',lb:'Cœur',sb:'FC & zones',go:'fcdetail'},
+ balance:{ic:'ti-scale',col:'#F0653E',bg:'#FCE7E0',lb:'Balance',sb:'Conso ↔ dépense',go:'balance'},
+ nutrition:{ic:'ti-tools-kitchen-2',col:'#F0653E',bg:'#FCE7E0',lb:'Nutrition',sb:'Tes repas',go:'nutrition'}
+};
+function flRelHTML(keys){return '<div class="fl-rel"><div class="fl-rel-h">RELIÉ À</div><div class="fl-rel-row">'+keys.map(function(k){var d=FL_REL[k];if(!d)return '';return '<button class="fl-rel-c" type="button" onclick="go(\''+d.go+'\')"><span class="ic" style="color:'+d.col+';background:'+d.bg+'"><i class="ti '+d.ic+'"></i></span><span class="lb">'+d.lb+'</span><span class="sb">'+d.sb+'</span></button>';}).join('')+'</div></div>';}
 function recTrendChartSVG(mk){
  var M=TREND[mk]||TREND.recovery,DOW=['DIM','LUN','MAR','MER','JEU','VEN','SAM'],days=[];
  for(var i=6;i>=0;i--){var k=tk2off(tk(),-i),p=k.split('-'),dt=new Date(+p[0],+p[1]-1,+p[2]);days.push({v:M.val(k),lab:DOW[dt.getDay()]});}
@@ -6935,6 +6989,7 @@ function renderLoad(){var K=tk();
   else if(lo/tot>=0.8)txt='Majorité en zones faciles (1–3) — excellent socle d\'endurance.';
   else txt='Bon mélange endurance et intensité aujourd\'hui — entraînement équilibré.';
   set('effZtxt',txt);})();
+ var _er=document.getElementById('effRel');if(_er)_er.innerHTML=flRelHTML(['recup','sommeil','balance']);
  (function(){var ns=nextSession();
   set('effNextT',ns.t);set('effNextDur',ns.dur);set('effNextZone',ns.zone);set('effNextTxt',ns.txt);
   var bx=document.getElementById('effNextBox');if(bx)bx.style.background=ns.tint;
@@ -7548,7 +7603,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v380';
+const APP_VERSION='flint-v381';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
