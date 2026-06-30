@@ -4372,8 +4372,8 @@ body.stepsview header{display:none}
   </section>
 
   <div class="elx-2col">
-    <section class="card elx-card elx-zcard">
-      <div class="elx-ct">Répartition des zones</div>
+    <section class="card elx-card elx-zcard" onclick="window._ezSel=null;go('effzones')" style="cursor:pointer">
+      <div class="elx-ct" style="display:flex;align-items:center;justify-content:space-between">Répartition des zones <i class="ti ti-chevron-right" style="color:#C8C2B8;font-size:18px"></i></div>
       <div class="elx-zrow"><div class="elx-zdonut" id="effZdonut"></div><div class="elx-zlegend" id="effZleg"></div></div>
       <div class="elx-zverd" id="effZverd"><span class="ic"><i class="ti ti-heart"></i></span><span id="effZtxt">—</span></div>
     </section>
@@ -4415,6 +4415,47 @@ body.stepsview header{display:none}
   <div class="elx-acthd"><span class="t">Activités du jour</span><span class="more" onclick="openTrend('charge')">Voir l'évolution <i class="ti ti-chevron-right"></i></span></div>
   <div id="effActs"></div>
   <div id="effRel"></div>
+</div>
+</section>
+
+<!-- ===================== ZONES DE FC (interactif) ===================== -->
+<section class="view" id="v-effzones">
+<style>
+.ezv{padding:4px 16px 100px;font-family:'Inter',sans-serif}
+.ezv-hd{display:flex;align-items:center;gap:12px;padding:4px 0 14px}
+.ezv-hd .bk{width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:#fff;color:#15140F;font-size:20px;display:grid;place-items:center;cursor:pointer;flex:none;box-shadow:0 5px 14px rgba(20,18,12,.06);transition:transform .15s ease}
+.ezv-hd .bk:active{transform:scale(.88)}
+.ezv-hd .t{font-family:'Anton',sans-serif;font-weight:400;font-size:24px;text-transform:uppercase;color:#15140F;line-height:1}
+.ezv-hd .s{font-size:12px;font-weight:700;color:#8A857D;margin-top:3px}
+.ezv-donut{background:#fff;border:1px solid var(--line);border-radius:28px;padding:22px 18px 18px;box-shadow:var(--sh-card);margin-bottom:14px}
+.ezv-hint{text-align:center;font-size:11.5px;font-weight:700;color:#9A948A;margin-top:6px;letter-spacing:.2px}
+.ez-rows{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+.ez-row{display:flex;align-items:center;gap:11px;width:100%;background:#fff;border:1px solid var(--line);border-radius:16px;padding:13px 14px;cursor:pointer;font-family:inherit;text-align:left;box-shadow:var(--sh-card);transition:transform .12s ease,border-color .18s ease,box-shadow .18s ease}
+.ez-row:active{transform:scale(.98)}
+.ez-row.on{border-color:transparent;box-shadow:0 8px 22px rgba(20,18,12,.12);transform:translateY(-1px)}
+.ez-row .dot{width:13px;height:13px;border-radius:4px;flex:none}
+.ez-row .nm{display:flex;flex-direction:column;gap:2px;min-width:0;flex:none;width:34%}
+.ez-row .nm b{font-size:13px;font-weight:800;color:#15140F;white-space:nowrap}
+.ez-row .nm .rng{font-size:10.5px;font-weight:700;color:#9A948A}
+.ez-row .vbar{flex:1;height:8px;border-radius:5px;background:#EFEAE2;overflow:hidden;min-width:24px}
+.ez-row .vbar i{display:block;height:100%;border-radius:5px;transition:width .5s cubic-bezier(.2,.8,.2,1)}
+.ez-row .tm{flex:none;text-align:right;font-size:13.5px;font-weight:800;color:#15140F;white-space:nowrap}
+.ez-row .tm small{display:block;font-size:10.5px;font-weight:700;color:#9A948A}
+.ez-detail{display:flex;align-items:flex-start;gap:13px;background:#fff;border:1px solid var(--line);border-radius:18px;padding:15px 16px;box-shadow:var(--sh-card);margin-bottom:14px}
+.ez-detail .ic{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;font-size:21px;flex:none}
+.ez-detail .tx{min-width:0}
+.ez-detail .tx b{display:block;font-size:14px;font-weight:800;color:#15140F;line-height:1.3;margin-bottom:4px}
+.ez-detail .tx span{font-size:13px;font-weight:500;color:#56514B;line-height:1.45}
+</style>
+<div class="ezv">
+  <div class="ezv-hd">
+    <button class="bk" type="button" onclick="goBack('load')" aria-label="Retour"><i class="ti ti-chevron-left"></i></button>
+    <div><div class="t">Zones de FC</div><div class="s">Où ton cœur a travaillé aujourd'hui</div></div>
+  </div>
+  <div class="ezv-donut"><div id="ezDonut"></div><div class="ezv-hint">Touche une zone pour ses infos</div></div>
+  <div class="ez-rows" id="ezRows"></div>
+  <div class="ez-detail" id="ezDetail"></div>
+  <div id="ezRel"></div>
 </div>
 </section>
 
@@ -5011,7 +5052,7 @@ function go(v,isBack){var _el=document.getElementById('v-'+v);if(!_el)return;hap
  var cur=document.querySelector('.view.on');
  if(cur){window._scrollMem[cur.id]=window.scrollY||document.documentElement.scrollTop||0;var curV=cur.id.replace('v-','');if(!isBack&&curV!==v)window._navStack.push(curV)}
  document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));_el.classList.add('on');if(_back){_el.style.animation='vinBack .3s cubic-bezier(.22,.61,.36,1) both';setTimeout(function(){if(_el)_el.style.animation='';},340);}else{_el.style.animation='';}document.querySelectorAll('#nav button').forEach(function(b){var a=b.dataset.v===v;b.classList.toggle('on',a);if(a)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});if(window.moveNav)moveNav();var _ht=document.getElementById('hdTitle');if(_ht){var _tt=({sleep:'Sommeil',load:'Effort',nutrition:'Nutrition'}[v]||'');_ht.textContent=_tt;var _hd=document.querySelector('header');if(_hd){_hd.classList.toggle('has-title',!!_tt);_hd.classList.toggle('home-hdr',v==='today')}}document.body.classList.toggle('modalview',v==='journal'||v==='dashedit'||v==='stress'||v==='goal'||v==='coach');document.body.classList.toggle('trendview',v==='metrend');document.body.classList.toggle('sleepview',v==='sleep');
- flWatchBatt();({today:renderToday,nutrition:renderNutrition,recovery:renderRecovery,sleep:renderSleep,sleepdetail:renderSleepDetail,load:renderLoad,activitydetail:renderActivityDetail,fcdetail:renderHeartDetail,fczones:renderHeartZones,caltrend:renderCalTrend,efftrend:renderEffTrend,trends:renderTrends,profile:renderProfile,journal:renderJournalView,behavior:renderBehavior,dashedit:renderDashEdit,metrend:renderMetrend,stress:renderStress,goal:renderGoal,coach:renderCoachIntro,howscore:renderHowScore,balance:renderBalance,baltrend:renderBalTrend,balcurve:renderBalCurve,nuthistory:renderNutHistory,mealdetail:renderMealDetail,nutbilan:renderNutBilan,nutgraph:renderNutGraph}[v]||(()=>{}))();
+ flWatchBatt();({today:renderToday,nutrition:renderNutrition,recovery:renderRecovery,sleep:renderSleep,sleepdetail:renderSleepDetail,load:renderLoad,effzones:renderEffZones,activitydetail:renderActivityDetail,fcdetail:renderHeartDetail,fczones:renderHeartZones,caltrend:renderCalTrend,efftrend:renderEffTrend,trends:renderTrends,profile:renderProfile,journal:renderJournalView,behavior:renderBehavior,dashedit:renderDashEdit,metrend:renderMetrend,stress:renderStress,goal:renderGoal,coach:renderCoachIntro,howscore:renderHowScore,balance:renderBalance,baltrend:renderBalTrend,balcurve:renderBalCurve,nuthistory:renderNutHistory,mealdetail:renderMealDetail,nutbilan:renderNutBilan,nutgraph:renderNutGraph}[v]||(()=>{}))();
  if(!_back&&!matchMedia('(prefers-reduced-motion:reduce)').matches){var _cs=_el.querySelectorAll('.h2block,.h2list,.mjwrap,.bal4-goal,.bal4-solde,.bal4-chart,.bal4-foot,.elx-hero,.elx-card,.elx-tgt,.fc2 .card,.nut2-card,.nut2-scan,.nut2-acts,.rec2 .card');for(var _i=0;_i<_cs.length&&_i<10;_i++){var _c=_cs[_i];_c.style.animation='none';void _c.offsetWidth;_c.style.animation='flCardIn .5s cubic-bezier(.2,.8,.2,1) both';_c.style.animationDelay=(_i*0.05).toFixed(2)+'s';}}
  var _fab=document.getElementById('flintScanFab');if(_fab)_fab.style.display=(v==='coach'||v==='nutrition')?'none':'flex';
  var y=window._scrollMem['v-'+v]||0;window.scrollTo(0,y);requestAnimationFrame(function(){window.scrollTo(0,y)})}
@@ -7022,10 +7063,9 @@ function renderLoad(){var off=_effDay||0,K=tk(off);
  set('effTgtX',ctx+verdict);
  var ss=DB.get('sessions_'+K,[]).filter(function(s){return s.type!=='nap'});
  set('effActs',ss.length?ss.map(function(s,i){var sc=actStrain(s).toFixed(1).replace('.',',');var end=s.start?(function(){var sm=tmin(s.start)+(s.dur||0);return String(Math.floor(sm/60)%24).padStart(2,'0')+':'+String(sm%60).padStart(2,'0')})():'';return '<button class="eact" type="button" onclick="openActivity('+i+')"><span class="eai">'+(s.icon||'🏃')+'<b>'+sc+'</b></span><span class="ean">'+esc(s.name||'Activité')+'</span><span class="eat">'+(s.start||'')+'<br>'+end+'</span></button>'}).join(''):'<p class="sci" style="padding:2px 2px 14px;color:#7C766B">Aucune séance ce jour. Ajoute-en une pour suivre ta charge.</p>');
- (function(){var ZR=['#FAD9C9','#F4B093','#EE8B5F','#E96A3D','#DC481F'];
-  var zt=zonesToday(ss),z=zt.z,tot=zt.tot;
+ (function(){var zt=zonesToday(ss),z=zt.z,tot=zt.tot;
   var dn=document.getElementById('effZdonut');if(dn)dn.innerHTML=effZoneDonut(z);
-  var leg=document.getElementById('effZleg');if(leg)leg.innerHTML=z.map(function(v,i){return '<div class="elx-zleg2'+(v>0?'':' off')+'"><span class="d" style="background:'+ZR[i]+'"></span><span class="zl">Z'+(i+1)+'</span><span class="zv">'+(v>0?v+' min':'—')+'</span></div>';}).join('');
+  var leg=document.getElementById('effZleg');if(leg)leg.innerHTML=z.map(function(v,i){return '<div class="elx-zleg2'+(v>0?'':' off')+'"><span class="d" style="background:'+EFF_ZONES[i].c+'"></span><span class="zl">Z'+(i+1)+'</span><span class="zv">'+(v>0?v+' min':'—')+'</span></div>';}).join('');
   var loz=z[0]+z[1]+z[2],hiz=z[3]+z[4],txt;
   if(!tot)txt='Aucune séance — ajoute-en une pour voir où passe ton effort.';
   else if(hiz/tot>=0.35)txt='Beaucoup d\'intensité (Z4–5) — pense à bien récupérer.';
@@ -7052,11 +7092,46 @@ function renderLoad(){var off=_effDay||0,K=tk(off);
   var ds=document.getElementById('effDurSpk');if(ds)ds.innerHTML=effSpark(durArr,'#F0653E');
  })();
 }
-function effZoneDonut(z){var ZR=['#FAD9C9','#F4B093','#EE8B5F','#E96A3D','#DC481F'];var tot=z.reduce(function(a,b){return a+b},0);var r=42,c=2*Math.PI*r,sw=15,off=0,seg='';
- if(tot>0){for(var i=0;i<5;i++){if(z[i]<=0)continue;var len=z[i]/tot*c;seg+='<circle cx="60" cy="60" r="'+r+'" fill="none" stroke="'+ZR[i]+'" stroke-width="'+sw+'" stroke-dasharray="'+len.toFixed(1)+' '+(c-len).toFixed(1)+'" stroke-dashoffset="'+(-off).toFixed(1)+'" stroke-linecap="butt" transform="rotate(-90 60 60)"/>';off+=len;}}
+var EFF_ZONES=[
+ {n:'Récupération',c:'#8FB9D4',lo:0,hi:60,desc:'Récupération active. Brûle les graisses et construit ta base aérobie, sans fatigue.'},
+ {n:'Endurance',c:'#5FB39A',lo:60,hi:70,desc:'Endurance fondamentale. Améliore l\'économie d\'effort et l\'irrigation de tes muscles.'},
+ {n:'Tempo',c:'#9CCB5A',lo:70,hi:80,desc:'Allure soutenue mais tenable. Repousse ton seuil aérobie et ton endurance active.'},
+ {n:'Seuil',c:'#F2A93B',lo:80,hi:90,desc:'Seuil lactique. La puissance soutenable — le cœur de la performance, exigeant.'},
+ {n:'VO₂max',c:'#E0533B',lo:90,hi:100,desc:'Intensité maximale. Développe ta VO₂max et ta puissance — à doser, très fatigant.'}
+];
+function effHRmax(){var a=(getProfile().age)||30;return Math.round(208-0.7*a);}
+function effZBpm(i){var fm=effHRmax(),z=EFF_ZONES[i];return {lo:Math.round(fm*z.lo/100),hi:Math.round(fm*z.hi/100)};}
+function effZBpmTxt(i){var b=effZBpm(i);return i===0?('< '+b.hi+' bpm'):i===4?(b.lo+'+ bpm'):(b.lo+'–'+b.hi+' bpm');}
+function effZoneDonut(z){var tot=z.reduce(function(a,b){return a+b},0);var r=42,c=2*Math.PI*r,sw=15,off=0,seg='';
+ if(tot>0){for(var i=0;i<5;i++){if(z[i]<=0)continue;var len=z[i]/tot*c;seg+='<circle cx="60" cy="60" r="'+r+'" fill="none" stroke="'+EFF_ZONES[i].c+'" stroke-width="'+sw+'" stroke-dasharray="'+len.toFixed(1)+' '+(c-len).toFixed(1)+'" stroke-dashoffset="'+(-off).toFixed(1)+'" stroke-linecap="butt" transform="rotate(-90 60 60)"/>';off+=len;}}
  else seg='<circle cx="60" cy="60" r="'+r+'" fill="none" stroke="#EEE9E0" stroke-width="'+sw+'"/>';
  var h=Math.floor(tot/60),m=tot%60,lab=tot>0?(h>0?h+'h'+(m<10?'0'+m:m):m+'min'):'—';
  return '<svg viewBox="0 0 120 120">'+seg+'<text x="60" y="54" text-anchor="middle" font-size="11" font-weight="800" fill="#9A948A" font-family="Inter,sans-serif">Total</text><text x="60" y="78" text-anchor="middle" font-family="Anton,sans-serif" font-size="21" fill="#15140F">'+lab+'</text></svg>';}
+/* ===== Vue dédiée Zones de FC (interactive) ===== */
+function effBigDonut(z,sel){var tot=z.reduce(function(a,b){return a+b},0),r=66,c=2*Math.PI*r,off=0,seg='';
+ if(tot>0){for(var i=0;i<5;i++){if(z[i]<=0)continue;var len=z[i]/tot*c,on=(sel==null||sel===i),sw=(sel===i)?28:20;
+   seg+='<circle cx="100" cy="100" r="'+r+'" fill="none" stroke="'+EFF_ZONES[i].c+'" stroke-width="'+sw+'" stroke-dasharray="'+len.toFixed(1)+' '+(c-len).toFixed(1)+'" stroke-dashoffset="'+(-off).toFixed(1)+'" transform="rotate(-90 100 100)" opacity="'+(on?1:.3)+'" style="cursor:pointer;transition:stroke-width .2s ease,opacity .2s ease" onclick="effZonesSel('+i+')"/>';
+   off+=len;}}
+ else seg='<circle cx="100" cy="100" r="'+r+'" fill="none" stroke="#EEE9E0" stroke-width="20"/>';
+ var ctr;
+ if(sel==null||tot===0){var h=Math.floor(tot/60),m=tot%60;ctr='<text x="100" y="93" text-anchor="middle" font-size="11" font-weight="800" letter-spacing="1" fill="#9A948A" font-family="Inter,sans-serif">TOTAL</text><text x="100" y="120" text-anchor="middle" font-family="Anton,sans-serif" font-size="32" fill="#15140F">'+(tot>0?(h>0?h+'h'+(m<10?'0'+m:m):m+'min'):'—')+'</text>';}
+ else {var v=z[sel],pc=tot?Math.round(v/tot*100):0;ctr='<text x="100" y="84" text-anchor="middle" font-size="10.5" font-weight="800" letter-spacing=".5" fill="'+EFF_ZONES[sel].c+'" font-family="Inter,sans-serif">Z'+(sel+1)+' · '+EFF_ZONES[sel].n.toUpperCase()+'</text><text x="100" y="116" text-anchor="middle" font-family="Anton,sans-serif" font-size="32" fill="#15140F">'+v+'<tspan font-size="15"> min</tspan></text><text x="100" y="135" text-anchor="middle" font-size="11.5" font-weight="700" fill="#8A857D" font-family="Inter,sans-serif">'+pc+'% du temps</text>';}
+ return '<svg viewBox="0 0 200 200" style="width:100%;height:auto;display:block;max-width:240px;margin:0 auto">'+seg+ctr+'</svg>';}
+function effZonesSel(i){window._ezSel=(window._ezSel===i?null:i);if(typeof haptic==='function')haptic(5);renderEffZones();}
+function renderEffZones(){var off=_effDay||0,K=tk(off);
+ var ss=DB.get('sessions_'+K,[]).filter(function(s){return s.type!=='nap'});
+ var zt=zonesToday(ss),z=zt.z,tot=zt.tot,sel=window._ezSel;
+ document.getElementById('ezDonut').innerHTML=effBigDonut(z,sel);
+ document.getElementById('ezRows').innerHTML=EFF_ZONES.map(function(zo,i){var v=z[i],pc=tot?Math.round(v/tot*100):0,on=sel===i;
+   return '<button class="ez-row'+(on?' on':'')+'" type="button" onclick="effZonesSel('+i+')"><span class="dot" style="background:'+zo.c+'"></span><span class="nm"><b>Z'+(i+1)+' · '+zo.n+'</b><span class="rng">'+effZBpmTxt(i)+'</span></span><span class="vbar"><i style="width:'+(tot?Math.max(2,v/Math.max.apply(null,z.concat([1]))*100):0).toFixed(0)+'%;background:'+zo.c+'"></i></span><span class="tm">'+(v>0?v+' min':'—')+'<small>'+pc+'%</small></span></button>';
+ }).join('');
+ var det=document.getElementById('ezDetail');
+ if(sel!=null){var zo=EFF_ZONES[sel];det.innerHTML='<span class="ic" style="color:'+zo.c+';background:'+hexA(zo.c,.13)+'"><i class="ti ti-heart"></i></span><div class="tx"><b>Zone '+(sel+1)+' · '+zo.n+' <span style="color:'+zo.c+'">'+effZBpmTxt(sel)+'</span></b><span>'+zo.desc+'</span></div>';det.style.display='';}
+ else {var loz=z[0]+z[1]+z[2],hiz=z[3]+z[4],txt;if(!tot)txt='Aucune séance ce jour — ajoute-en une pour voir tes zones.';else if(hiz/tot>=0.35)txt='Beaucoup d\'intensité (Z4–5) aujourd\'hui — pense à bien récupérer.';else if(loz/tot>=0.8)txt='Majorité en zones faciles — excellent socle d\'endurance.';else txt='Bon mélange endurance / intensité — entraînement équilibré.';
+   det.innerHTML='<span class="ic" style="color:var(--accent);background:#FCE7E0"><i class="ti ti-bulb"></i></span><div class="tx"><b>Touche une zone pour le détail</b><span>'+txt+'</span></div>';det.style.display='';}
+ var er=document.getElementById('ezRel');if(er)er.innerHTML=flRelHTML(['effort','recup','fc']);
+}
+function hexA(h,a){h=h.replace('#','');var r=parseInt(h.substr(0,2),16),g=parseInt(h.substr(2,2),16),b=parseInt(h.substr(4,2),16);return 'rgba('+r+','+g+','+b+','+a+')';}
 function effBalChart(){var w=TR.charge.weekly,cb=chargeBalance();var W=330,H=152,padL=20,padR=8,padT=20,padB=26,maxY=21;
  function X(i){return padL+(i+0.5)/w.length*(W-padL-padR)}function Y(v){return padT+(1-Math.min(v,maxY)/maxY)*(H-padT-padB)}
  var s='<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto;display:block">';
@@ -7672,7 +7747,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v384';
+const APP_VERSION='flint-v385';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
