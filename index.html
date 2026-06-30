@@ -4883,14 +4883,71 @@ body.stepsview header{display:none}
 <!-- ===================== PROFIL ===================== -->
 <section class="view" id="v-profile">
 <div class="flprofile">
-  <div class="pfhero">
-    <svg class="strk" width="150" height="120" viewBox="0 0 150 120" preserveAspectRatio="none"><g stroke="#3C3A35" stroke-width="3.4" stroke-linecap="round"><line x1="70" y1="20" x2="140" y2="20"/><line x1="95" y1="34" x2="150" y2="34"/><line x1="55" y1="48" x2="148" y2="48"/><line x1="90" y1="62" x2="150" y2="62"/><line x1="65" y1="76" x2="142" y2="76"/><line x1="100" y1="90" x2="150" y2="90"/><line x1="78" y1="104" x2="146" y2="104"/></g></svg>
-    <button class="bk2" onclick="goBack('today')" aria-label="Retour">‹</button>
-    <svg class="flame" width="30" height="38" viewBox="0 0 24 24" fill="none" stroke="#E8674A" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12c2 -2.96 0 -7 -1 -8c0 3.038 -1.773 4.741 -3 6c-1.226 1.26 -2 3.24 -2 5a6 6 0 1 0 12 0c0 -1.532 -1.056 -3.94 -2 -5c-1.786 3 -2.791 3 -4 2z"/></svg>
-    <div style="flex:1;min-width:0"><div class="ttl">Profil</div><div class="sub">Tes objectifs, ton capteur et tes réglages.</div></div>
+  <style>
+  .pf2-hd{display:flex;align-items:center;gap:10px;padding:4px 2px 20px}
+  .pf2-hd .bk{width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:#fff;color:#15140F;font-size:21px;display:grid;place-items:center;cursor:pointer;flex:none;box-shadow:0 5px 14px rgba(20,18,12,.06);transition:transform .15s ease}
+  .pf2-hd .bk:active{transform:scale(.88)}
+  .pf2-hd .t{flex:1;text-align:center;font-family:'Switzer',sans-serif;font-weight:800;letter-spacing:.2em;text-transform:uppercase;font-size:12.5px;color:#15140F}
+  .pf2-tier{font-family:'Switzer',sans-serif;font-weight:800;letter-spacing:.18em;font-size:10.5px;color:#fff;background:var(--accent);padding:7px 12px;border-radius:10px;flex:none;box-shadow:0 6px 16px -4px rgba(240,73,46,.5)}
+  .pf2-hero{margin-bottom:20px}
+  .pf2-av{width:84px;height:84px;border-radius:50%;display:grid;place-items:center;font-family:'Geist',sans-serif;font-weight:700;font-size:31px;color:#fff;background:linear-gradient(140deg,#FF8A5C,#F0492E);box-shadow:0 16px 34px -10px rgba(240,73,46,.55);margin-bottom:16px;background-size:cover;background-position:center}
+  .pf2-namerow{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+  .pf2-name{font-family:'Geist',sans-serif;font-weight:700;letter-spacing:-.025em;font-size:29px;color:#15140F;line-height:1.02}
+  .pf2-meta{font-size:14px;font-weight:600;color:#8A857D;margin-top:7px}
+  .pf2-edit{flex:none;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:#fff;border-radius:13px;padding:9px 13px;font-family:'Switzer',sans-serif;font-weight:800;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#15140F;cursor:pointer;box-shadow:var(--sh-card);transition:transform .12s ease;margin-top:3px}
+  .pf2-edit:active{transform:scale(.95)}.pf2-edit i{font-size:14px;color:var(--accent)}
+  .pf2-since{display:inline-flex;align-items:center;gap:9px;margin-top:15px;background:#fff;border:1px solid var(--line);border-radius:30px;padding:9px 15px;font-size:13px;font-weight:600;color:#56514B;box-shadow:var(--sh-card)}
+  .pf2-since b{color:#15140F;font-weight:800}.pf2-since .ic{display:grid;place-items:center;color:var(--accent);font-size:15px}
+  .pf2-row{display:flex;align-items:center;gap:14px;width:100%;background:#fff;border:1px solid var(--line);border-radius:20px;padding:15px 16px;margin-bottom:11px;box-shadow:var(--sh-card);cursor:pointer;font-family:inherit;text-align:left;transition:transform .12s ease,box-shadow .18s ease}
+  .pf2-row:active{transform:scale(.985)}
+  .pf2-row .lvl{width:50px;height:50px;border-radius:16px;display:grid;place-items:center;flex:none;background:linear-gradient(140deg,#FFE7DC,#FCD3C4);font-family:'Geist',sans-serif;font-weight:700;font-size:21px;color:var(--accentD)}
+  .pf2-row .ic{width:50px;height:50px;border-radius:16px;display:grid;place-items:center;flex:none;font-size:23px}
+  .pf2-row .ic.amber{background:#FCEFD8;color:#E0922A}.pf2-row .ic.mem{background:#E9F6EE;color:#2FA86A}
+  .pf2-row .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+  .pf2-row .tx b{font-family:'Switzer',sans-serif;font-weight:800;letter-spacing:.06em;text-transform:uppercase;font-size:13px;color:#15140F}
+  .pf2-row .tx span{font-size:12.5px;font-weight:600;color:#8A857D}
+  .pf2-row .val{font-family:'Geist',sans-serif;font-weight:700;font-size:18px;color:#15140F;flex:none;display:flex;align-items:center;gap:7px}
+  .pf2-row .val i{color:var(--accent);font-size:18px}
+  .pf2-row .chv{color:#C8C2B8;font-size:20px;flex:none}
+  .pf2-sect{font-family:'Geist',sans-serif;font-weight:700;letter-spacing:-.01em;font-size:22px;color:#15140F;margin:22px 2px 14px}
+  .pf2-ach{display:flex;gap:11px;overflow-x:auto;padding:2px 2px 6px;scrollbar-width:none}
+  .pf2-ach::-webkit-scrollbar{display:none}
+  .pf2-acard{flex:none;width:104px;background:#fff;border:1px solid var(--line);border-radius:20px;padding:15px 10px 13px;box-shadow:var(--sh-card);text-align:center}
+  .pf2-aic{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;margin:0 auto 9px;font-size:24px;position:relative}
+  .pf2-aic .n{position:absolute;bottom:-2px;right:-2px;background:#15140F;color:#fff;font-family:'Geist',sans-serif;font-weight:700;font-size:11px;min-width:20px;height:20px;border-radius:10px;display:grid;place-items:center;border:2px solid #fff;padding:0 4px}
+  .pf2-aname{font-size:11px;font-weight:700;color:#56514B;line-height:1.25}
+  .pf2-stats{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+  .pf2-stat{background:#fff;border:1px solid var(--line);border-radius:20px;padding:15px 16px;box-shadow:var(--sh-card)}
+  .pf2-stat .l{display:flex;align-items:center;gap:7px;font-family:'Switzer',sans-serif;font-weight:800;letter-spacing:.06em;text-transform:uppercase;font-size:10px;color:#8A857D}
+  .pf2-stat .l i{font-size:14px;color:var(--accent)}
+  .pf2-stat .v{font-family:'Geist',sans-serif;font-weight:700;letter-spacing:-.02em;font-size:26px;color:#15140F;margin-top:9px;line-height:1}
+  .pf2-stat .v small{font-family:'Switzer',sans-serif;font-weight:700;font-size:12px;color:#8A857D;letter-spacing:0}
+  </style>
+  <div class="pf2-hd">
+    <button class="bk" onclick="goBack('today')" aria-label="Retour">‹</button>
+    <span class="t">Profil</span>
+    <span class="pf2-tier">À VIE</span>
+  </div>
+  <div class="pf2-hero">
+    <div class="pf2-av" id="pf2Av">—</div>
+    <div class="pf2-namerow">
+      <div style="min-width:0"><div class="pf2-name" id="pf2Name">—</div><div class="pf2-meta" id="pf2Meta">—</div></div>
+      <button class="pf2-edit" onclick="document.getElementById('pfEditCard').scrollIntoView({behavior:'smooth',block:'center'})"><i class="ti ti-pencil"></i>Modifier</button>
+    </div>
+    <div class="pf2-since"><span class="ic"><i class="ti ti-rosette"></i></span>Membre depuis <b id="pf2Since">—</b></div>
   </div>
 
-  <div class="flcard">
+  <button class="pf2-row" type="button" onclick="go('howscore')"><span class="lvl" id="pf2Lvl">—</span><div class="tx"><b>Niveau <span id="pf2LvlN">—</span></b><span id="pf2LvlSub">—</span></div><i class="ti ti-chevron-right chv"></i></button>
+  <button class="pf2-row" type="button" onclick="go('today')"><span class="ic amber"><i class="ti ti-flame"></i></span><div class="tx"><b>Série de jours</b></div><span class="val" id="pf2Streak">—</span><i class="ti ti-chevron-right chv"></i></button>
+  <button class="pf2-row" type="button" onclick="go('coach')"><span class="ic mem"><i class="ti ti-bulb"></i></span><div class="tx"><b>Ma mémoire</b><span>Ce que FLINT sait de toi</span></div><i class="ti ti-chevron-right chv"></i></button>
+
+  <div class="pf2-sect">Objectifs atteints (<span id="pf2AchN">—</span>)</div>
+  <div class="pf2-ach" id="pf2Ach"></div>
+
+  <div class="pf2-sect">Points forts des données</div>
+  <div class="pf2-stats" id="pf2Stats"></div>
+
+  <div class="flcard" id="pfEditCard">
     <div class="sect"><i class="ti ti-user"></i>Toi</div>
     <div class="fgrid">
       <div class="fld"><span class="flab">Prénom</span><input aria-label="Prénom" id="pfName" class="fin2"></div>
@@ -7744,7 +7801,44 @@ function renderTrends(){const metrics=[['recov','Récupération','var(--accent)'
 
 /* ---------- PROFIL ---------- */
 function renderProfile(){const p=getProfile();document.getElementById('pfName').value=p.name;document.getElementById('pfAge').value=p.age;document.getElementById('pfWake').value=p.wake;document.getElementById('pfNeed').value=p.need;document.getElementById('pfKcal').value=p.kcalGoal;document.getElementById('pfProt').value=p.protGoal;set('verLine','Version : '+APP_VERSION+(DB.get('demo')?' · mode démo':''));var _pwl=document.getElementById('pfWatchLbl');if(_pwl)_pwl.textContent=window._watchWorn===false?'Simuler : remettre le bracelet':'Simuler : retirer le bracelet';renderJournal();
- const np=notifPrefs();const b=document.getElementById('ntBed');if(b)b.checked=np.bed;const m=document.getElementById('ntMorning');if(m)m.checked=np.morning;renderNotifNote(!!_LN())}
+ const np=notifPrefs();const b=document.getElementById('ntBed');if(b)b.checked=np.bed;const m=document.getElementById('ntMorning');if(m)m.checked=np.morning;renderNotifNote(!!_LN());renderProfileHero()}
+function renderProfileHero(){
+  const p=getProfile();
+  const initials=(String(p.name||'A').trim().split(/\s+/).map(function(w){return w.charAt(0)}).join('').slice(0,2).toUpperCase())||'A';
+  const av=document.getElementById('pf2Av');if(av)av.textContent=initials;
+  set('pf2Name',p.name||'Arthur');
+  const handle='@'+String(p.name||'arthur').toLowerCase().replace(/\s+/g,'');
+  set('pf2Meta',handle+' · '+(p.age||28)+' ans · France');
+  const FM=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+  const streak=recovStreak()||0;
+  let ms=DB.get('memberSince',null);if(!ms){ms=tk(-Math.max(75,streak*2));DB.set('memberSince',ms);}
+  const mp=String(ms).split('-'),md=new Date(+mp[0],(+mp[1]||1)-1,+(mp[2]||1));
+  set('pf2Since',(FM[md.getMonth()]||'')+' '+md.getFullYear());
+  const rv=[];for(let i=0;i<150;i++){const v=DB.get('recov_'+tk(-i),null);if(v!=null)rv.push(+v);}
+  const rt=recovery();if(rt&&rt.s!=null)rv.unshift(rt.s);
+  const count=rv.length,lvl=Math.max(1,Math.floor(count/10)+1);
+  set('pf2Lvl',lvl);set('pf2LvlN',lvl);set('pf2LvlSub',count+' récupérations enregistrées');
+  const sEl=document.getElementById('pf2Streak');if(sEl)sEl.innerHTML='<i class="ti ti-flame"></i>'+streak+' j';
+  const best=rv.length?Math.max.apply(null,rv):0,avg=rv.length?Math.round(rv.reduce(function(a,b){return a+b},0)/rv.length):0;
+  let nights=0;for(let j=0;j<150;j++){const s=sensorOf(tk(-j));if(s&&s.sleepMin)nights++;}
+  const longest=Math.max(streak,DB.get('longestStreak',0));DB.set('longestStreak',longest);
+  const ach=[
+    {ic:'ti-flame',col:'#E0922A',bg:'#FCEFD8',n:streak,name:'Série '+streak+' j'},
+    {ic:'ti-battery-charging',col:'#2FA86A',bg:'#E4F5E9',n:count,name:'Récup pro'},
+    {ic:'ti-moon',col:'#6C7BD6',bg:'#ECEAFB',n:nights,name:'Nuits suivies'},
+    {ic:'ti-trophy',col:'#F0653E',bg:'#FCE7E0',n:best,name:'Top récup'},
+    {ic:'ti-infinity',col:'#15140F',bg:'#F0EDE7',n:'∞',name:'Accès à vie'}
+  ];
+  set('pf2AchN',ach.length);
+  const ae=document.getElementById('pf2Ach');if(ae)ae.innerHTML=ach.map(function(a){return '<div class="pf2-acard"><div class="pf2-aic" style="color:'+a.col+';background:'+a.bg+'"><i class="ti '+a.ic+'"></i><span class="n">'+a.n+'</span></div><div class="pf2-aname">'+a.name+'</div></div>'}).join('');
+  const stats=[
+    {l:'Meilleure récup',ic:'ti-trophy',v:best+'<small>%</small>'},
+    {l:'Récup moyenne',ic:'ti-chart-line',v:avg+'<small>%</small>'},
+    {l:'Plus longue série',ic:'ti-flame',v:longest+'<small> j</small>'},
+    {l:'Nuits suivies',ic:'ti-moon',v:nights+''}
+  ];
+  const st=document.getElementById('pf2Stats');if(st)st.innerHTML=stats.map(function(s){return '<div class="pf2-stat"><div class="l"><i class="ti '+s.ic+'"></i>'+s.l+'</div><div class="v">'+s.v+'</div></div>'}).join('');
+}
 function saveProfile(){const p=getProfile();p.name=document.getElementById('pfName').value||'Arthur';p.age=+document.getElementById('pfAge').value||28;p.wake=document.getElementById('pfWake').value||'07:00';p.need=+document.getElementById('pfNeed').value||8;p.kcalGoal=+document.getElementById('pfKcal').value||2400;p.protGoal=+document.getElementById('pfProt').value||150;DB.set('profile',p);toast('Profil enregistré');renderToday()}
 function saveSensorManual(){const g=id=>parseFloat(document.getElementById(id).value)||null;const hrv=g('snHrv');if(!hrv){toast('Saisis au moins la HRV');return}const cur=sensorOf(tk())||{};DB.set('sensor_'+tk(),Object.assign(cur,{hrv,rhr:g('snRhr'),resp:g('snResp'),sleepMin:g('snSleep')?Math.round(g('snSleep')*60):cur.sleepMin,source:'manual'}));persistRecov();toast('Nuit enregistrée ⌚');go('today')}
 async function pullHealthConnect(){const HC=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.HealthConnect;if(!HC){toast('Dispo sur l\'app Android avec ta Polar Loop');return}try{if(HC.isAvailable){const a=await HC.isAvailable();if(!a||!a.available){toast('Active Health Connect');return}}if(HC.requestAuth)await HC.requestAuth();let added=0;if(HC.readSessions){try{const sg=await HC.readSessions();added=importDetectedSessions(sg&&sg.items)}catch(e){}}const r=await HC.readNight();if(r&&r.hrv!=null){DB.set('sensor_'+tk(),Object.assign({source:'polar'},r));DB.set('demo',0);persistRecov();toast('Capteur synchronisé ⌚'+(added?' · '+added+' séance'+(added>1?'s':'')+' détectée'+(added>1?'s':''):''));go('today')}else if(added){DB.set('demo',0);toast(added+' séance'+(added>1?'s':'')+' détectée'+(added>1?'s':''));go('today')}else toast('Pas de données cette nuit')}catch(e){toast('Sync impossible')}}
@@ -7829,7 +7923,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v392';
+const APP_VERSION='flint-v393';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
