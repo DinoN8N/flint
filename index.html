@@ -6911,11 +6911,11 @@ function balRecupLink(){
  return {show:true,col:'#2FA86A',tint:'#EAF6EF',ic:'ti-battery-charging',txt:'Tes apports <b>soutiennent bien ta récup</b>'+(rs!=null?' (récup '+rs+'%)':'')+' ces derniers jours. Continue comme ça.'};
 }
 function balPhotoStart(){var f=document.getElementById('balFile');if(f){f.value='';f.click()}}
-function _downscaleImg(dataUrl,maxw,cb){var img=new Image();img.onload=function(){var s=Math.min(1,maxw/img.width),w=Math.round(img.width*s),h=Math.round(img.height*s);var c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);try{cb(c.toDataURL('image/jpeg',0.7))}catch(e){cb(null)}};img.onerror=function(){cb(null)};img.src=dataUrl}
+function _downscaleImg(dataUrl,maxw,cb,q){var img=new Image();img.onload=function(){var s=Math.min(1,maxw/img.width),w=Math.round(img.width*s),h=Math.round(img.height*s);var c=document.createElement('canvas');c.width=w;c.height=h;var ctx=c.getContext('2d');ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';ctx.drawImage(img,0,0,w,h);try{cb(c.toDataURL('image/jpeg',q||0.7))}catch(e){cb(null)}};img.onerror=function(){cb(null)};img.src=dataUrl}
 function balPhotoPick(input){var file=input.files&&input.files[0];if(file)processMealPhoto(file);}
 window.processMealPhoto=function(file){if(!file)return;if(typeof haptic==='function')haptic();
  var reader=new FileReader();
- reader.onload=function(e){_downscaleImg(e.target.result,200,function(thumb){
+ reader.onload=function(e){_downscaleImg(e.target.result,720,function(thumb){
   _balPhoto=thumb;
   var img=document.getElementById('balShImg');if(img){if(thumb){img.style.backgroundImage='url('+thumb+')';img.innerHTML=''}else{img.style.backgroundImage='';img.innerHTML='<i class="ti ti-photo"></i>'}}
   document.getElementById('balShForm').style.display='none';
@@ -6930,7 +6930,7 @@ window.processMealPhoto=function(file){if(!file)return;if(typeof haptic==='funct
    window._flintScanItems=[{name:r.name,kcal:r.kcal,prot:r.prot,carb:r.carb,fat:r.fat,grams:100}];
    gg('balShForm').style.display='';if(window.syncUI)window.syncUI();if(typeof haptic==='function')haptic();
   });
- })};
+ },0.85)};
  reader.readAsDataURL(file);
 }
 function balSheetOpen(){document.getElementById('balSheet').classList.add('on')}
@@ -8430,7 +8430,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v402';
+const APP_VERSION='flint-v403';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
