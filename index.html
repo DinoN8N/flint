@@ -3834,6 +3834,25 @@ button.bal2-cd,button.bal2-card{border:0;font:inherit;text-align:left;cursor:poi
     .bsh2-actions .fix{flex:0 0 38%;border:1px solid var(--line);background:#fff;color:#15140F}
     .bsh2-actions .save{flex:1;border:0;background:var(--accent);color:#fff;box-shadow:0 12px 26px -8px rgba(240,73,46,.5)}
     .bsh2-actions i{font-size:17px}
+    .bsh2-verdict{display:flex;align-items:center;gap:11px;background:#F1ECE4;border-radius:16px;padding:14px 16px}
+    .bsh2-verdict .dot{width:15px;height:15px;border-radius:50%;flex:none;background:#C8C2B8}
+    .bsh2-verdict .sc{font-family:'Geist',sans-serif;font-weight:700;font-size:22px;color:#15140F}
+    .bsh2-verdict .sc small{font-size:.6em;font-weight:700;color:#9A938A}
+    .bsh2-verdict .wd{font-family:'Switzer',sans-serif;font-weight:800;font-size:15px;color:#56514B}
+    .bsh2-verdict .kc{margin-left:auto;font-family:'Switzer',sans-serif;font-weight:700;font-size:12px;color:#9A938A;white-space:nowrap}
+    .bsh2-verdict .kc b{font-family:'Geist',sans-serif;font-weight:700;font-size:19px;color:#15140F}
+    .bsh2-sec{display:flex;align-items:baseline;justify-content:space-between;margin:18px 2px 0}
+    .bsh2-sec h4{font-family:'Geist',sans-serif;font-weight:700;letter-spacing:-.01em;font-size:18px;color:#15140F;margin:0}
+    .bsh2-sec span{font-size:12px;font-weight:600;color:#9A938A}
+    .bsh2-row{display:flex;align-items:center;gap:13px;padding:13px 0;border-top:1px solid var(--line)}
+    .bsh2-row .ic{font-size:21px;color:#8A857D;width:24px;text-align:center;flex:none}
+    .bsh2-row .tx{flex:1;min-width:0}
+    .bsh2-row .tx b{display:block;font-family:'Switzer',sans-serif;font-weight:700;font-size:15px;color:#15140F}
+    .bsh2-row .tx span{font-size:12px;font-weight:600;color:#9A938A}
+    .bsh2-row .val{font-family:'Geist',sans-serif;font-weight:700;font-size:14px;color:#56514B}
+    .bsh2-row .rd{width:11px;height:11px;border-radius:50%;flex:none}
+    .bsh2-row .cv{font-size:16px;color:#C8C2B8;flex:none}
+    .bsh2-empty{padding:13px 0;font-size:13px;font-weight:600;color:#9A938A;border-top:1px solid var(--line)}
     </style>
     <div class="bsh2-wrap">
       <div class="bsh2-photo" id="balShImg"><i class="ti ti-photo"></i><div class="bsh-pills" id="bshPills"></div></div>
@@ -3842,19 +3861,16 @@ button.bal2-cd,button.bal2-card{border:0;font:inherit;text-align:left;cursor:poi
         <div class="bsh2-when"><i class="ti ti-clock"></i> <span id="bshTag">Repas</span> · <span id="bshTime"></span></div>
         <div class="bsh2-status" id="balShSub"><span class="bal-spin"></span>L'IA estime les calories</div>
       </div>
-      <div class="bsh2-hero">
-        <div class="bsh2-ring"><div class="rg" id="bshMacroRing"></div><div class="ctr"><b id="bshKcal">—</b><span>kcal</span></div></div>
-        <div class="bsh2-legend">
-          <div class="lg"><span class="d" style="background:#5A8DEE"></span><span class="nm">Protéines</span><span class="gr"><b id="bshProt">—</b> g</span><span class="pc" id="bshProtPc">—</span></div>
-          <div class="lg"><span class="d" style="background:#E0922A"></span><span class="nm">Glucides</span><span class="gr"><b id="bshCarb">—</b> g</span><span class="pc" id="bshCarbPc">—</span></div>
-          <div class="lg"><span class="d" style="background:#9B86D8"></span><span class="nm">Lipides</span><span class="gr"><b id="bshFat">—</b> g</span><span class="pc" id="bshFatPc">—</span></div>
-        </div>
+      <div class="bsh2-verdict">
+        <span class="dot" id="bshDot"></span>
+        <span class="sc"><b id="bshHealth">—</b><small>/10</small></span>
+        <span class="wd" id="bshHealthLbl">—</span>
+        <span class="kc"><b id="bshKcal">—</b> kcal</span>
       </div>
-      <div class="bsh2-health">
-        <span class="ic"><i class="ti ti-heart"></i></span>
-        <div class="mid"><div class="l">Score santé · <span id="bshHealthLbl">—</span></div><span class="track"><i id="bshHealthBar"></i></span></div>
-        <span class="v"><b id="bshHealth">—</b><small>/10</small></span>
-      </div>
+      <div class="bsh2-sec"><h4>Points forts</h4><span>par portion</span></div>
+      <div class="bsh2-rows" id="bshForts"></div>
+      <div class="bsh2-sec"><h4>Points faibles</h4><span>par portion</span></div>
+      <div class="bsh2-rows" id="bshFaibles"></div>
       <div id="balShForm" style="display:none">
         <input id="balFKcal" type="hidden"><input id="balFProt" type="hidden"><input id="balFCarb" type="hidden"><input id="balFFat" type="hidden">
         <div class="bsh2-qty"><span class="ql">Quantité estimée</span><div class="bsh2-step"><button type="button" onclick="bshQty(-10)" aria-label="Moins">−</button><span><b id="bshQtyV">100</b> g</span><button type="button" onclick="bshQty(10)" aria-label="Plus">+</button></div></div>
@@ -8430,7 +8446,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v403';
+const APP_VERSION='flint-v404';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
@@ -8480,6 +8496,24 @@ document.addEventListener('visibilitychange',function(){if(document.hidden)retur
   function nowHM(){var d=new Date();return _two(d.getHours())+':'+_two(d.getMinutes());}
   function mealTag(){var h=new Date().getHours();return h<10.5?'Petit-déj':(h<15?'Déjeuner':(h<18.5?'Collation':'Dîner'));}
   function healthScore(k,p,c,f){if(!k)return 7;var protPct=(p*4)/k,fatPct=(f*9)/k;var s=5.2+protPct*9-Math.max(0,fatPct-0.4)*7;return Math.max(1,Math.min(10,Math.round(s)));}
+  window.bshRenderNutrition=function(kc,pp,cc,ff,ex){ex=ex||{};
+   var TC={g:'#2FA86A',m:'#E0922A',b:'#D8503A'},list=[];
+   function fmt(v,u){var n=Math.round(v*10)/10,s=(n%1===0?String(n):n.toFixed(1).replace('.',','));return s+(u?' '+u:'');}
+   function add(name,ic,val,unit,tone,lab){list.push({name:name,ic:ic,val:fmt(val,unit),tone:tone,lab:lab});}
+   add('Protéines','ti-meat',pp,'g', pp>=15?'g':pp>=8?'m':'m', pp>=25?'Riche en protéines':pp>=15?'Bon apport':pp>=8?'Apport correct':'Peu de protéines');
+   if(ex.fiber!=null)add('Fibres','ti-leaf',ex.fiber,'g', ex.fiber>=3?'g':'m', ex.fiber>=6?'Riche en fibres':ex.fiber>=3?'Bonne source':'Peu de fibres');
+   if(ex.sugar!=null)add('Sucres','ti-cube',ex.sugar,'g', ex.sugar>=20?'b':ex.sugar>=10?'m':'g', ex.sugar>=20?'Trop sucré':ex.sugar>=10?'Assez sucré':'Peu sucré');
+   if(ex.satFat!=null)add('Graisses saturées','ti-droplet',ex.satFat,'g', ex.satFat>=6?'b':ex.satFat>=3?'m':'g', ex.satFat>=6?'Trop de saturées':ex.satFat>=3?'Un peu élevé':'Peu de saturées');
+   else add('Lipides','ti-droplet',ff,'g', ff>=30?'b':ff>=18?'m':'g', ff>=30?'Assez gras':ff>=18?'Modéré':'Peu de lipides');
+   var salt=ex.salt!=null?ex.salt:(ex.sodium!=null?ex.sodium/400:null);
+   if(salt!=null)add('Sel','ti-salt',salt,'g', salt>=1.5?'b':salt>=0.8?'m':'g', salt>=1.5?'Trop salé':salt>=0.8?'Un peu salé':'Peu salé');
+   add('Calories','ti-flame',kc,'kcal', kc>=900?'b':kc>=700?'m':'g', kc>=900?'Très calorique':kc>=700?'Assez calorique':'Raisonnable');
+   function row(x){return '<div class="bsh2-row"><i class="ti '+x.ic+' ic"></i><div class="tx"><b>'+x.name+'</b><span>'+x.lab+'</span></div><span class="val">'+x.val+'</span><span class="rd" style="background:'+TC[x.tone]+'"></span><i class="ti ti-chevron-down cv"></i></div>';}
+   var forts=list.filter(function(x){return x.tone==='g'}),faibles=list.filter(function(x){return x.tone!=='g'});
+   var ef=document.getElementById('bshForts'),ep=document.getElementById('bshFaibles');
+   if(ef)ef.innerHTML=forts.length?forts.map(row).join(''):'<div class="bsh2-empty">Données en cours…</div>';
+   if(ep)ep.innerHTML=faibles.length?faibles.map(row).join(''):'<div class="bsh2-empty">Rien à signaler 👌</div>';
+  };
   function syncUI(){
     var g=function(id){return document.getElementById(id);};
     var kc=parseInt(g('balFKcal')&&g('balFKcal').value)||0;
@@ -8497,17 +8531,10 @@ document.addEventListener('visibilitychange',function(){if(document.hidden)retur
     if(g('bshHealthLbl')){g('bshHealthLbl').textContent=hs>=8?'Excellent':(hs>=6?'Plutôt bon':(hs>=4?'Moyen':'À surveiller'));g('bshHealthLbl').style.color=hcol;}
     if(g('bshHealthBar'))g('bshHealthBar').style.background=hcol;
     if(g('bshHealth'))g('bshHealth').style.color=hcol;
-    (function(){var pk=pp*4,ck=cc*4,fk=ff*9,tot=pk+ck+fk;
-     if(g('bshProtPc'))g('bshProtPc').textContent=tot?Math.round(pk/tot*100)+'%':'—';
-     if(g('bshCarbPc'))g('bshCarbPc').textContent=tot?Math.round(ck/tot*100)+'%':'—';
-     if(g('bshFatPc'))g('bshFatPc').textContent=tot?Math.round(fk/tot*100)+'%':'—';
-     var ring=g('bshMacroRing');if(ring){var R=42,CC=2*Math.PI*R,cols=['#5A8DEE','#E0922A','#9B86D8'],vals=[pk,ck,fk],s='';
-      if(tot>0){var acc=0,nz=vals.filter(function(v){return v>0}).length,gap=nz>1?5:0;
-       vals.forEach(function(v,i){if(v<=0)return;var frac=v/tot,len=Math.max(0.6,frac*CC-gap);s+='<circle cx="50" cy="50" r="'+R+'" fill="none" stroke="'+cols[i]+'" stroke-width="9" stroke-linecap="round" stroke-dasharray="'+len.toFixed(1)+' '+(CC-len).toFixed(1)+'" stroke-dashoffset="'+(-acc).toFixed(1)+'" transform="rotate(-90 50 50)"/>';acc+=frac*CC;});
-      }else{s='<circle cx="50" cy="50" r="42" fill="none" stroke="rgba(20,18,12,.07)" stroke-width="9"/>';}
-      ring.innerHTML='<svg viewBox="0 0 100 100" style="width:100%;height:100%">'+s+'</svg>';}
-    })();
-    var it0=(window._flintScanItems||[])[0];
+    var it0=(window._flintScanItems||[])[0]||{};
+    var dot=g('bshDot');if(dot)dot.style.background=hcol;
+    if(g('bshHealthLbl'))g('bshHealthLbl').style.color=hcol;
+    bshRenderNutrition(kc,pp,cc,ff,{sugar:it0.sugar,satFat:(it0.satFat!=null?it0.satFat:it0.satfat),fiber:it0.fiber,salt:it0.salt,sodium:it0.sodium});
     if(g('bshQtyV')&&it0&&it0.grams)g('bshQtyV').textContent=it0.grams;
     if(g('bshTime')&&!g('bshTime').textContent)g('bshTime').textContent=nowHM();
     if(g('bshTag'))g('bshTag').textContent=mealTag();
