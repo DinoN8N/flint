@@ -2730,9 +2730,33 @@ header.home-hdr .av:active,header.home-hdr .wbatt:active,header.home-hdr .hdmenu
   .ajh-mstat{display:inline-flex;align-items:center;gap:5px;font-family:'Geist',sans-serif;font-weight:700;font-size:13px;color:#17161A}
   .ajh-mstat .d{width:8px;height:8px;border-radius:50%}
   .ajh-more{display:flex;align-items:center;gap:8px;margin-top:30px;font-family:'Archivo Black',system-ui,sans-serif;font-weight:400;font-size:26px;letter-spacing:-1px;color:#C4C4C8}
-  .ajh-more i{font-size:22px}
-  #v-today .mjtitle,#v-today .mjwave{display:none}
-  #v-today .mjwrap{margin-top:2px}
+  #v-today .mjwave{display:none}
+  #v-today .mjwrap{margin-top:8px;background:#fff}
+  #v-today .actwrap2{padding:0 20px}
+  #v-today .mjtitle{display:block;font-family:'Archivo Black',system-ui,sans-serif;font-weight:400;font-size:64px;letter-spacing:-2px;line-height:.9;color:#17161A;margin:26px 0 0;border:0;background:none}
+  #v-today .mjtitle::after,#v-today .mjtitle::before{display:none!important}
+  #v-today .actmeta2{font-family:'Geist',sans-serif;font-weight:500;font-size:15px;color:#8B8B90;margin-top:12px}
+  #v-today .actcard{background:none;border:0;box-shadow:none;padding:0;margin:0}
+  #v-today .acthd,#v-today .actsep{display:none}
+  #v-today .actinner{padding:0;border:0!important;box-shadow:none!important;background:none!important}
+  #v-today #flActNight:empty{display:none}
+  #v-today .acttl{margin-top:16px}
+  #v-today .tlrow{position:relative;display:grid;grid-template-columns:50px 44px 1fr auto 18px;align-items:center;column-gap:12px;width:100%;background:none;border:0;padding:12px 0;cursor:pointer;text-align:left;font-family:'Geist',sans-serif}
+  #v-today .tltime{display:flex;flex-direction:column;line-height:1.2}
+  #v-today .tltime .s{font-weight:700;font-size:15px;color:#17161A}
+  #v-today .tltime .e{font-weight:500;font-size:15px;color:#8B8B90}
+  #v-today .tlnode{position:relative;display:flex;justify-content:center;align-self:stretch;align-items:center}
+  #v-today .tlnode .nd{width:44px;height:44px;border-radius:50%;border:1.5px solid #ECECEE;background:#fff;display:grid;place-items:center;color:#17161A;font-size:20px;position:relative;z-index:1}
+  #v-today .tlrow:not(:last-of-type) .tlnode::after{content:'';position:absolute;left:50%;transform:translateX(-50%);top:calc(50% + 24px);height:calc(50% + 4px);border-left:2px dotted #D0CFD3}
+  #v-today .tlmid{display:flex;flex-direction:column;min-width:0;gap:2px}
+  #v-today .tlmid .nm{font-weight:700;font-size:17px;letter-spacing:-.01em;color:#17161A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #v-today .tlmid .mt{font-weight:500;font-size:12px;color:#8B8B90}
+  #v-today .tlval{background:#F1F0F4;border-radius:14px;padding:9px 14px;font-family:'Geist',sans-serif;font-weight:700;font-size:15px;color:#17161A;white-space:nowrap}
+  #v-today .tlchev{font-size:18px;color:#C4C4C8}
+  #v-today .actcta{margin-top:16px;background:#F1F0F4;color:#17161A;border:0;border-radius:14px}
+  #v-today .actcard{background:none!important;border:0!important;box-shadow:none!important;padding:0!important}
+  #v-today .mjrnl,#v-today .dashhd,#v-today #flDash,#v-today .flad{display:none}
+  #v-today .mjwrap{padding-bottom:24px}
   </style>
   <div class="ajh">
     <div class="ajh-h1">Aujourd'hui</div>
@@ -2753,7 +2777,6 @@ header.home-hdr .av:active,header.home-hdr .wbatt:active,header.home-hdr .hdmenu
       <button class="ajh-m" type="button" onclick="go('load')"><span class="ajh-ml">EFFORT</span><span class="ajh-ring"><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="26" fill="none" stroke="#ECECEE" stroke-width="5"/><circle id="ajEffortArc" cx="32" cy="32" r="26" fill="none" stroke="#2E2E32" stroke-width="5" stroke-linecap="round" transform="rotate(-90 32 32)" stroke-dasharray="0 164"/></svg><span class="ajh-mv"><b id="ajEffortV">—</b><span id="ajEffortSub">—</span></span></span><span class="ajh-mstat" id="ajEffortStat">—</span></button>
       <button class="ajh-m" type="button" onclick="go('balance')"><span class="ajh-ml">ÉNERGIE</span><span class="ajh-ring"><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="26" fill="none" stroke="#ECECEE" stroke-width="5"/><circle id="ajEnergyArc" cx="32" cy="32" r="26" fill="none" stroke="#1FA24F" stroke-width="5" stroke-linecap="round" transform="rotate(-90 32 32)" stroke-dasharray="0 164"/></svg><span class="ajh-mv"><b id="ajEnergyV">—</b><span id="ajEnergySub">—</span></span></span><span class="ajh-mstat" id="ajEnergyStat">—</span></button>
     </div>
-    <div class="ajh-more">Ma journée <i class="ti ti-arrow-down"></i></div>
   </div>
 
   <div class="mjwrap">
@@ -5577,7 +5600,7 @@ function go(v,isBack){var _el=document.getElementById('v-'+v);if(!_el)return;hap
  document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));_el.classList.add('on');if(_back){_el.style.animation='vinBack .3s cubic-bezier(.22,.61,.36,1) both';setTimeout(function(){if(_el)_el.style.animation='';},340);}else{_el.style.animation='';}document.querySelectorAll('#nav button').forEach(function(b){var a=b.dataset.v===v;b.classList.toggle('on',a);if(a)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});if(window.moveNav)moveNav();var _ht=document.getElementById('hdTitle');if(_ht){var _tt=({sleep:'Sommeil',load:'Effort',nutrition:'Nutrition'}[v]||'');_ht.textContent=_tt;var _hd=document.querySelector('header');if(_hd){_hd.classList.toggle('has-title',!!_tt);_hd.classList.toggle('home-hdr',v==='today')}}document.body.classList.toggle('modalview',v==='journal'||v==='dashedit'||v==='stress'||v==='goal'||v==='coach'||v==='pfedit');document.body.classList.toggle('trendview',v==='metrend');document.body.classList.toggle('sleepview',v==='sleep');
  flWatchBatt();({today:renderToday,nutrition:renderNutrition,recovery:renderRecovery,sleep:renderSleep,sleepdetail:renderSleepDetail,load:renderLoad,effzones:renderEffZones,activitydetail:renderActivityDetail,fcdetail:renderHeartDetail,fczones:renderHeartZones,caltrend:renderCalTrend,efftrend:renderEffTrend,trends:renderTrends,profile:renderProfile,pfedit:renderPfEdit,journal:renderJournalView,behavior:renderBehavior,dashedit:renderDashEdit,metrend:renderMetrend,stress:renderStress,goal:renderGoal,coach:renderCoachIntro,howscore:renderHowScore,balance:renderBalance,baltrend:renderBalTrend,balcurve:renderBalCurve,nuthistory:renderNutHistory,mealdetail:renderMealDetail,nutbilan:renderNutBilan,nutgraph:renderNutGraph}[v]||(()=>{}))();
  if(!_back&&!matchMedia('(prefers-reduced-motion:reduce)').matches){var _cs=_el.querySelectorAll('.h2block,.h2list,.mjwrap,.bal4-goal,.bal4-solde,.bal4-chart,.bal4-foot,.elx-hero,.elx-card,.elx-tgt,.fc2 .card,.nut2-card,.nut2-scan,.nut2-acts,.rec2 .card');for(var _i=0;_i<_cs.length&&_i<10;_i++){var _c=_cs[_i];_c.style.animation='none';void _c.offsetWidth;_c.style.animation='flCardIn .5s cubic-bezier(.2,.8,.2,1) both';_c.style.animationDelay=(_i*0.05).toFixed(2)+'s';}}
- var _fab=document.getElementById('flintScanFab');if(_fab)_fab.style.display=(v==='today')?'flex':'none';
+ var _fab=document.getElementById('flintScanFab');if(_fab)_fab.style.display='none';
  var y=window._scrollMem['v-'+v]||0;window.scrollTo(0,y);requestAnimationFrame(function(){window.scrollTo(0,y)})}
 function goBack(fb){window._navStack=window._navStack||[];var prev=window._navStack.pop();window._goAnim='back';go(prev||fb||'today',true)}
 document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>go(b.dataset.v));
@@ -6117,13 +6140,15 @@ function flActIcon(name,nap){if(nap)return 'zzz';const n=String(name||'').toLowe
 function flHM(m){m=((Math.round(m)%1440)+1440)%1440;return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0')}
 function flDurHM(min){min=Math.max(0,Math.round(min||0));return Math.floor(min/60)+':'+String(min%60).padStart(2,'0')}
 function flEndTime(start,min){if(!start)return '';var p=String(start).split(':');return flHM((+p[0])*60+(+p[1])+(min||0))}
-function flRow(opt){var sl=opt.sleep?' sleep':'';var meta=(opt.start?opt.start+(opt.end?' → '+opt.end:''):'')+((opt.start||opt.end)?' · ':'')+opt.tag;
- return '<div class="tlrow'+sl+'" onclick="'+opt.onc+'">'
-  +'<div class="tltime"><span class="s">'+(opt.start||'')+'</span><span class="e">'+(opt.end||'')+'</span></div>'
-  +'<div class="tlnode"><span class="nd"><i class="ti ti-'+opt.icon+'"></i></span></div>'
-  +'<div class="tlcard'+sl+'"><div class="tile'+sl+'"><i class="ti ti-'+opt.icon+'"></i><b>'+opt.value+'</b></div>'
-  +'<div class="md"><div class="nm">'+esc(opt.title)+'</div><div class="mt">'+meta+'</div></div></div>'
-  +'</div>'}
+function flRow(opt){var sl=opt.sleep?' sleep':'';
+ var mt=(opt.start?opt.start+(opt.end?' → '+opt.end:''):'')+(((opt.start||opt.end)&&opt.tag)?' · ':'')+(opt.tag||'');
+ return '<button class="tlrow'+sl+'" type="button" onclick="'+opt.onc+'">'
+  +'<span class="tltime"><span class="s">'+(opt.start||'')+'</span><span class="e">'+(opt.end||'')+'</span></span>'
+  +'<span class="tlnode"><span class="nd"><i class="ti ti-'+opt.icon+'"></i></span></span>'
+  +'<span class="tlmid"><span class="nm">'+esc(opt.title)+'</span><span class="mt">'+mt+'</span></span>'
+  +'<span class="tlval">'+opt.value+'</span>'
+  +'<i class="ti ti-chevron-right tlchev"></i>'
+  +'</button>'}
 function flSetDay(off){if(off>0)return;gDay=off;renderToday();window.scrollTo(0,0)}
 function flRenderWkStrip(){var host=document.getElementById('flWkStrip');if(!host)return;var DOW=['LUN','MAR','MER','JEU','VEN','SAM','DIM'];
  var today=new Date();today.setHours(0,0,0,0);var sel=new Date(today);sel.setDate(sel.getDate()+gDay);
@@ -6138,12 +6163,13 @@ function flNightCard(k){const nm=sleepNight(k||tk());if(!nm)return '';
   +'<div class="annt"><div class="annm">NUIT</div><div class="anmt">'+flHM(nm.bedMin)+' → '+flHM(nm.wakeMin)+' · sommeil</div></div>'
   +'</div>'}
 function flRenderActivities(k){k=k||tk();const ss=DB.get('sessions_'+k,[]);
- const nightHTML=flNightCard(k);
- const nRows=(nightHTML?1:0)+ss.length;
+ const nm=sleepNight(k);
+ const nRows=(nm?1:0)+ss.length;
  set('flActMeta',nRows?nRows+' entrée'+(nRows>1?'s':'')+' · cumul '+loadStrain(k).toFixed(1).replace('.',','):'');
- var _an=document.getElementById('flActNight');if(_an)_an.innerHTML=nightHTML;
+ var _an=document.getElementById('flActNight');if(_an)_an.innerHTML='';
+ const nightRow=nm?flRow({sleep:true,icon:'moon',value:flDurHM(nm.asleep),title:'NUIT',start:flHM(nm.bedMin),end:flHM(nm.wakeMin),tag:'sommeil',onc:'openSleepNight()'}):'';
  const dayHTML=ss.map((s,i)=>{const nap=s.type==='nap';const oi=nap?-1:ss.slice(0,i+1).filter(x=>x.type!=='nap').length-1;const start=s.start||'';return flRow({sleep:nap,icon:nap?'moon':flActIcon(s.name,nap),value:nap?flDurHM(s.dur):actStrain(s).toFixed(1).replace('.',','),title:(s.name||'Séance'),start:start,end:start?flEndTime(start,s.dur):'',tag:nap?'sommeil':(s.auto?'auto':'manuel'),onc:nap?'openNapDetail('+i+')':'openActivity('+oi+')'})}).join('');
- set('flActList',dayHTML||(nightHTML?'':'<p class="muted" style="font-size:13px;padding:6px 2px">Aucune activité détectée. Branche ta Polar Loop ou ajoute-la à la main.</p>'))}
+ set('flActList',(nightRow+dayHTML)||'<p class="muted" style="font-size:13px;padding:6px 2px">Aucune activité détectée. Branche ta Polar Loop ou ajoute-la à la main.</p>')}
 function flWkData(range){var out=[];
  if(range==='4S'||range==='12S'){var weeks=range==='4S'?4:12;for(var w=weeks-1;w>=0;w--){var sum=0;for(var j=0;j<7;j++)sum+=loadStrain(tk(gDay-(w*7+j)));var dd=new Date();dd.setDate(dd.getDate()+gDay-w*7);out.push({lab:dd.getDate()+'/'+(dd.getMonth()+1),v:+(sum/7).toFixed(1)})}}
  else{for(var i=6;i>=0;i--){var d=new Date();d.setDate(d.getDate()+gDay-i);out.push({lab:['DIM','LUN','MAR','MER','JEU','VEN','SAM'][d.getDay()],v:+loadStrain(tk(gDay-i)).toFixed(1)})}}
@@ -8479,7 +8505,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v406';
+const APP_VERSION='flint-v407';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
