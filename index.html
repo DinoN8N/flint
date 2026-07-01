@@ -14,7 +14,8 @@
 <title>FLINT</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preload" as="font" type="font/woff2" href="fonts/Geist.woff2" crossorigin>
-<style>@font-face{font-family:'Geist';font-style:normal;font-weight:100 900;font-display:swap;src:url('fonts/Geist.woff2') format('woff2')}</style>
+<link rel="preload" as="font" type="font/woff2" href="fonts/ArchivoBlack.woff2" crossorigin>
+<style>@font-face{font-family:'Geist';font-style:normal;font-weight:100 900;font-display:swap;src:url('fonts/Geist.woff2') format('woff2')}@font-face{font-family:'Archivo Black';font-style:normal;font-weight:400;font-display:swap;src:url('fonts/ArchivoBlack.woff2') format('woff2')}</style>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link href="https://api.fontshare.com/v2/css?f[]=switzer@400,500,600,700,800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.0.0/dist/tabler-icons.min.css">
@@ -2702,51 +2703,55 @@ header.home-hdr .av:active,header.home-hdr .wbatt:active,header.home-hdr .hdmenu
   .flhome .h3c .h3lbl{font-size:9.5px;font-weight:800;letter-spacing:.5px;color:#8A857D;margin-top:2px}
   .flhome .h3rf{transition:stroke-dasharray .55s cubic-bezier(.2,.8,.2,1)}
   </style>
-  <div class="h3cond"><div class="h3cond-in">
-    <button class="h3c" type="button" onclick="go('sleep')"><svg class="h3ring" viewBox="0 0 32 32"><circle cx="16" cy="16" r="14" fill="none" stroke="#E7E1D7" stroke-width="3.5"/><circle class="h3rf" id="h3SleepArc" cx="16" cy="16" r="14" fill="none" stroke="#6C7BD6" stroke-width="3.5" stroke-linecap="round" transform="rotate(-90 16 16)" stroke-dasharray="0 88"/></svg><span class="h3tx"><b id="h3SleepV">—</b><span class="h3lbl">SOMMEIL</span></span></button>
-    <button class="h3c" type="button" onclick="go('recovery')"><svg class="h3ring" viewBox="0 0 32 32"><circle cx="16" cy="16" r="14" fill="none" stroke="#E7E1D7" stroke-width="3.5"/><circle class="h3rf" id="h3RecupArc" cx="16" cy="16" r="14" fill="none" stroke="#2FA86A" stroke-width="3.5" stroke-linecap="round" transform="rotate(-90 16 16)" stroke-dasharray="0 88"/></svg><span class="h3tx"><b id="h3RecupV">—</b><span class="h3lbl">RÉCUP</span></span></button>
-    <button class="h3c" type="button" onclick="go('load')"><svg class="h3ring" viewBox="0 0 32 32"><circle cx="16" cy="16" r="14" fill="none" stroke="#E7E1D7" stroke-width="3.5"/><circle class="h3rf" id="h3EffortArc" cx="16" cy="16" r="14" fill="none" stroke="#E0922A" stroke-width="3.5" stroke-linecap="round" transform="rotate(-90 16 16)" stroke-dasharray="0 88"/></svg><span class="h3tx"><b id="h3EffortV">—</b><span class="h3lbl">EFFORT</span></span></button>
-  </div></div>
-  <div class="h2dn">
-    <button class="nav" onclick="flDay(-1)" aria-label="Jour précédent"><i class="ti ti-chevron-left"></i></button>
-    <button class="lbl" onclick="flOpenPicker()"><i class="ti ti-calendar"></i><span id="flDateHd">Aujourd'hui</span></button>
-    <button class="nav" id="hdNext" onclick="flDay(1)" aria-label="Jour suivant"><i class="ti ti-chevron-right"></i></button>
-  </div>
-  <div class="h2block">
-  <div class="h2hero" onclick="go('recovery')">
-    <div class="rw">
-      <svg class="es-ring" viewBox="0 0 120 120"><defs><linearGradient id="flRingGrad" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#8FD6AF"/><stop offset="1" stop-color="#2FA86A"/></linearGradient></defs><circle cx="60" cy="60" r="46" fill="none" stroke="rgba(120,110,95,.12)" stroke-width="8"/><circle class="ring-fill es-fill" cx="60" cy="60" r="46" fill="none" stroke="url(#flRingGrad)" stroke-width="8" stroke-linecap="round" transform="rotate(-90 60 60)"/></svg>
-      <div class="pct"><span id="flRecup">—</span><small>%</small></div>
+  <style>
+  #v-today,#v-today .flhome{background:#fff}
+  header.home-hdr{background:#fff!important}
+  .ajh{padding:2px 20px 8px;background:#fff;font-family:'Geist',sans-serif}
+  .ajh-h1{font-family:'Archivo Black',system-ui,sans-serif;font-weight:400;font-size:44px;letter-spacing:-2px;line-height:.96;color:#17161A;margin:8px 0 0}
+  .ajh-date{font-family:'Geist',sans-serif;font-weight:500;font-size:15px;color:#8B8B90;margin-top:7px}
+  .ajh-hero{text-align:center;margin-top:20px}
+  .ajh-eyb{font-family:'Geist',sans-serif;font-weight:700;letter-spacing:.14em;font-size:12px;color:#8B8B90}
+  .ajh-big{display:inline-flex;align-items:flex-end;justify-content:center;line-height:.82;margin-top:2px}
+  .ajh-big b{font-family:'Archivo Black',system-ui,sans-serif;font-weight:400;font-size:112px;letter-spacing:-4px;color:#17161A;font-variant-numeric:tabular-nums}
+  .ajh-big i{font-style:normal;font-family:'Geist',sans-serif;font-weight:700;font-size:30px;color:#B8B8BC;letter-spacing:-1px;margin:0 0 16px 5px}
+  .ajh-arc{display:block;width:78%;max-width:290px;height:auto;margin:0 auto}
+  .ajh-verdict{font-family:'Archivo Black',system-ui,sans-serif;font-weight:400;font-size:46px;letter-spacing:-1px;line-height:.9;color:#17161A;margin-top:6px}
+  .ajh-cta{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;margin-top:24px;background:#F0492E;color:#fff;border:0;border-radius:999px;padding:19px;font-family:'Geist',sans-serif;font-weight:700;font-size:16px;cursor:pointer;box-shadow:0 14px 30px -8px rgba(240,73,46,.5);transition:transform .12s}
+  .ajh-cta:active{transform:scale(.98)}
+  .ajh-trio{display:grid;grid-template-columns:1fr 1fr 1fr;margin-top:28px}
+  .ajh-m{background:none;border:0;border-right:1px solid #ECECEE;padding:0 4px;cursor:pointer;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:9px}
+  .ajh-m:last-child{border-right:0}
+  .ajh-ml{font-family:'Geist',sans-serif;font-weight:700;letter-spacing:.08em;font-size:10.5px;color:#8B8B90}
+  .ajh-ring{position:relative;width:86px;height:86px}
+  .ajh-ring svg{width:100%;height:100%;display:block}
+  .ajh-mv{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0}
+  .ajh-mv b{font-family:'Geist',sans-serif;font-weight:700;font-size:19px;letter-spacing:-.03em;color:#17161A}
+  .ajh-mv span{font-size:10px;font-weight:500;color:#8B8B90;margin-top:2px}
+  .ajh-mstat{display:inline-flex;align-items:center;gap:5px;font-family:'Geist',sans-serif;font-weight:700;font-size:13px;color:#17161A}
+  .ajh-mstat .d{width:8px;height:8px;border-radius:50%}
+  .ajh-more{display:flex;align-items:center;gap:8px;margin-top:30px;font-family:'Archivo Black',system-ui,sans-serif;font-weight:400;font-size:26px;letter-spacing:-1px;color:#C4C4C8}
+  .ajh-more i{font-size:22px}
+  </style>
+  <div class="ajh">
+    <div class="ajh-h1">Aujourd'hui</div>
+    <div class="ajh-date" id="ajDate">—</div>
+    <div class="ajh-hero" onclick="go('recovery')">
+      <div class="ajh-eyb">RÉCUPÉRATION</div>
+      <div class="ajh-big"><b id="ajRecup">—</b><i>/100</i></div>
+      <svg class="ajh-arc" viewBox="0 0 320 88" fill="none">
+        <path id="ajArcBg" d="M18 26 Q160 84 302 26" stroke="#ECECEE" stroke-width="7" stroke-linecap="round"/>
+        <path id="ajArcFill" d="M18 26 Q160 84 302 26" stroke="#1FA24F" stroke-width="7" stroke-linecap="round" stroke-dasharray="0 500" style="transition:stroke-dasharray .7s cubic-bezier(.2,.8,.2,1)"/>
+        <circle id="ajArcDot" cx="18" cy="26" r="7.5" fill="#1FA24F" style="opacity:0"/>
+      </svg>
+      <div class="ajh-verdict" id="ajVerdict">—</div>
     </div>
-    <div class="h2hr">
-      <div class="eyb">RÉCUPÉRATION</div>
-      <div class="lvl" id="h2Level">—</div>
-      <div class="delta" id="flDelta"></div>
+    <button class="ajh-cta" type="button" onclick="go('load')"><span id="ajCta">Vise ton effort</span><i class="ti ti-arrow-right"></i></button>
+    <div class="ajh-trio">
+      <button class="ajh-m" type="button" onclick="go('sleep')"><span class="ajh-ml">SOMMEIL</span><span class="ajh-ring"><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="26" fill="none" stroke="#ECECEE" stroke-width="5"/><circle id="ajSleepArc" cx="32" cy="32" r="26" fill="none" stroke="#1FA24F" stroke-width="5" stroke-linecap="round" transform="rotate(-90 32 32)" stroke-dasharray="0 164"/></svg><span class="ajh-mv"><b id="ajSleepV">—</b><span id="ajSleepSub">—</span></span></span><span class="ajh-mstat" id="ajSleepStat">—</span></button>
+      <button class="ajh-m" type="button" onclick="go('load')"><span class="ajh-ml">EFFORT</span><span class="ajh-ring"><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="26" fill="none" stroke="#ECECEE" stroke-width="5"/><circle id="ajEffortArc" cx="32" cy="32" r="26" fill="none" stroke="#2E2E32" stroke-width="5" stroke-linecap="round" transform="rotate(-90 32 32)" stroke-dasharray="0 164"/></svg><span class="ajh-mv"><b id="ajEffortV">—</b><span id="ajEffortSub">—</span></span></span><span class="ajh-mstat" id="ajEffortStat">—</span></button>
+      <button class="ajh-m" type="button" onclick="go('balance')"><span class="ajh-ml">ÉNERGIE</span><span class="ajh-ring"><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="26" fill="none" stroke="#ECECEE" stroke-width="5"/><circle id="ajEnergyArc" cx="32" cy="32" r="26" fill="none" stroke="#1FA24F" stroke-width="5" stroke-linecap="round" transform="rotate(-90 32 32)" stroke-dasharray="0 164"/></svg><span class="ajh-mv"><b id="ajEnergyV">—</b><span id="ajEnergySub">—</span></span></span><span class="ajh-mstat" id="ajEnergyStat">—</span></button>
     </div>
-    <div class="h2chk" id="flCheck"><i class="ti ti-check"></i></div>
-  </div>
-  <div class="h2sep"></div>
-  <div class="h2plan" id="planCard">
-    <button class="h2plan-top" type="button" onclick="planToggle()" aria-expanded="false">
-      <span class="h2plan-badge" id="planBadge"><i class="ti ti-bolt"></i></span>
-      <div class="h2plan-htx"><span class="eyb">TON PLAN DU JOUR</span><div class="h2plan-v" id="planVerdict">—</div></div>
-      <i class="ti ti-chevron-down h2plan-caret"></i>
-    </button>
-    <div class="h2plan-fold"><div class="h2plan-foldin">
-      <div class="h2plan-tiles">
-        <button class="h2plan-t t-charge" type="button" onclick="go('load')"><span class="ic"><i class="ti ti-bolt"></i></span><span class="tl">Effort</span><span class="tv" id="planEffort">—</span></button>
-        <button class="h2plan-t t-cal" type="button" onclick="go('nutrition')"><span class="ic"><i class="ti ti-flame"></i></span><span class="tl">Manger</span><span class="tv" id="planNut">—</span></button>
-        <button class="h2plan-t t-sleep" type="button" onclick="go('sleep')"><span class="ic"><i class="ti ti-moon"></i></span><span class="tl">Coucher</span><span class="tv" id="planSleep">—</span></button>
-      </div>
-    </div></div>
-  </div>
-  </div>
-  <div class="h2list">
-    <button class="h2row" type="button" onclick="go('sleep')"><span class="h2ic m-vio"><i class="ti ti-moon"></i></span><span class="h2bd"><span class="h2t">SOMMEIL</span><span class="h2l"><span class="h2v" id="flSleep">—</span><span class="h2s" id="h2SleepS"></span></span><span class="h2bar m-vio"><i id="h2SleepBar"></i></span></span><i class="ti ti-chevron-right h2chev"></i></button>
-    <button class="h2row" type="button" onclick="go('load')"><span class="h2ic m-amb"><i class="ti ti-bolt"></i></span><span class="h2bd"><span class="h2t">EFFORT</span><span class="h2l"><span class="h2v"><span id="flLoad">—</span><small>/21</small></span><span class="h2s" id="h2LoadS"></span></span><span class="h2bar m-amb"><i id="h2LoadBar"></i></span></span><i class="ti ti-chevron-right h2chev"></i></button>
-    <button class="h2row" type="button" onclick="go('caltrend')"><span class="h2ic m-red"><i class="ti ti-flame"></i></span><span class="h2bd"><span class="h2t">CALORIES</span><span class="h2l"><span class="h2v"><span id="flKcal">—</span><small>kcal</small></span><span class="h2s" id="h2KcalS"></span></span><span class="h2bar m-red"><i id="h2KcalBar"></i></span></span><i class="ti ti-chevron-right h2chev"></i></button>
-    <button class="h2row" type="button" onclick="go('fcdetail')"><span class="h2ic m-cor"><i class="ti ti-heart"></i></span><span class="h2bd"><span class="h2t">FC</span><span class="h2l"><span class="h2v"><span id="flFcEgg">—</span><small>bpm</small></span><span class="h2s" id="h2FcS"></span></span><span class="h2bar m-cor"><i id="h2FcBar"></i></span></span><i class="ti ti-chevron-right h2chev"></i></button>
-    <button class="h2row" type="button" onclick="openMetricTrend('steps')"><span class="h2ic m-grn"><i class="ti ti-walk"></i></span><span class="h2bd"><span class="h2t">PAS</span><span class="h2l"><span class="h2v"><span id="flSteps">—</span><small>pas</small></span><span class="h2s" id="h2StepS"></span></span><span class="h2bar m-grn"><i id="h2StepBar"></i></span></span><i class="ti ti-chevron-right h2chev"></i></button>
+    <div class="ajh-more">Ma journée <i class="ti ti-arrow-down"></i></div>
   </div>
 
   <div class="mjwrap">
@@ -6207,6 +6212,31 @@ function flFcMiniSVG(rhr){var pts=[62,59,61,65,63,57,64,62,60,66,55,49,rhr||47],
  [40,60,80].forEach(function(tt){var Y=gy(tt);s+='<line x1="'+pad+'" x2="'+(W-22)+'" y1="'+Y.toFixed(1)+'" y2="'+Y.toFixed(1)+'" stroke="rgba(22,21,18,.06)" stroke-dasharray="3 5"/><text x="'+(W-17)+'" y="'+(Y+3).toFixed(1)+'" font-size="8.5" fill="#9A988F" font-family="Inter,sans-serif">'+tt+'</text>'});
  s+='<path d="'+area+'" fill="rgba(240,73,46,.10)"/><path d="'+line+'" fill="none" stroke="#F0492E" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="'+gx(pts.length-1).toFixed(1)+'" cy="'+gy(pts[pts.length-1]).toFixed(1)+'" r="3.6" fill="#FAF8F5" stroke="#F0492E" stroke-width="2.4"/></svg>';
  return s}
+function ajMetric(key,val,sub,frac,statTxt,statCol,ringCol){
+ set('aj'+key+'V',val);set('aj'+key+'Sub',sub);
+ var arc=document.getElementById('aj'+key+'Arc');
+ if(arc){var C=2*Math.PI*26,f=Math.max(.02,Math.min(1,frac||0));if(ringCol)arc.setAttribute('stroke',ringCol);arc.style.strokeDasharray=(C*f).toFixed(1)+' '+C.toFixed(1);}
+ var s=document.getElementById('aj'+key+'Stat');if(s)s.innerHTML='<span class="d" style="background:'+statCol+'"></span>'+statTxt;
+}
+function renderAjHero(){
+ var K=tk(gDay),today=gDay===0;
+ var d=new Date();d.setDate(d.getDate()+gDay);
+ var ds=d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});set('ajDate',ds.charAt(0).toUpperCase()+ds.slice(1));
+ var rv=today?recovery():{s:DB.get('recov_'+K,null)};var sc=rv&&rv.s!=null?Math.round(rv.s):null;
+ set('ajRecup',sc==null?'—':sc);
+ set('ajVerdict',sc==null?'—':sc>=67?'PRÊT.':sc>=34?'À DOSER.':'REPOS.');
+ var vcol=sc==null?'#8B8B90':sc>=67?'#1FA24F':sc>=34?'#E0922A':'#E14434';
+ var bg=document.getElementById('ajArcBg'),fill=document.getElementById('ajArcFill'),dot=document.getElementById('ajArcDot');
+ if(bg&&fill){var L=bg.getTotalLength(),pct=sc==null?0:Math.max(0,Math.min(1,sc/100)),gl=L*pct;fill.setAttribute('stroke',vcol);fill.style.strokeDasharray=gl.toFixed(1)+' '+L.toFixed(1);if(dot){if(sc==null){dot.style.opacity=0;}else{var pt=bg.getPointAtLength(gl);dot.setAttribute('cx',pt.x.toFixed(1));dot.setAttribute('cy',pt.y.toFixed(1));dot.setAttribute('fill',vcol);dot.style.opacity=1;}}}
+ var tg=(typeof strainTarget==='function'?strainTarget():[12,16]);set('ajCta','Vise un effort de '+tg[0]+'–'+tg[1]);
+ var t=sensorOf(K),need=(getProfile().need||8)*60;
+ var slMin=(t&&t.sleepMin)||0,slPerf=need?Math.min(1.2,slMin/need):0;
+ ajMetric('Sleep',slMin?Math.floor(slMin/60)+'h'+String(slMin%60).padStart(2,'0'):'—',Math.round(need/60)+'h cible',slPerf,slMin?(slPerf>=.9?'Bon':slPerf>=.7?'Correct':'Court'):'—',slMin?(slPerf>=.9?'#1FA24F':slPerf>=.7?'#E0922A':'#E14434'):'#B8B8BC','#1FA24F');
+ var str=loadStrain(K);
+ ajMetric('Effort',(Math.round(str*10)/10+'').replace('.',','),'charge',str/21,str>=14?'Élevé':str>=10?'Modéré':'Léger',str>=14?'#E14434':str>=10?'#2E2E32':'#1FA24F','#2E2E32');
+ var disp=Math.max(0,Math.min(100,sc==null?Math.round(slPerf*80):Math.round(sc*0.6+Math.min(1,slPerf)*100*0.4)));
+ ajMetric('Energy',disp+'%','dispo',disp/100,disp>=67?'Bonne':disp>=40?'Moyenne':'Basse',disp>=67?'#1FA24F':disp>=40?'#E0922A':'#E14434','#1FA24F');
+}
 function renderHome2(){var K=tk(gDay),today=gDay===0;
  var rv=today?recovery():{s:DB.get('recov_'+K,null)};var sc=rv&&rv.s!=null?Math.round(rv.s):null;
  var col=sc==null?'#9A988F':sc>=67?'#2FA86A':sc>=34?'#F2922B':'#E14434';
@@ -6241,6 +6271,7 @@ function renderHome2(){var K=tk(gDay),today=gDay===0;
 function planToggle(){var c=document.getElementById('planCard');if(!c)return;var op=!c.classList.contains('open');c.classList.toggle('open',op);DB.set('planOpen',op?1:0);var tp=c.querySelector('.h2plan-top');if(tp)tp.setAttribute('aria-expanded',op?'true':'false');if(typeof haptic==='function')haptic(6);}
 function renderToday(){
  var _tv=document.getElementById('v-today');if(_tv&&!_tv.classList.contains('on'))return;
+ try{renderAjHero()}catch(e){}
  const p=getProfile(),K=tk(gDay),today=gDay===0,t=sensorOf(K),cal=calibNights(),calib=today&&cal<4;
  let rv=null;
  if(!calib){if(today){rv=recovery()}else{const _s=DB.get('recov_'+K,null);if(_s!=null)rv={s:_s}}}
@@ -8446,7 +8477,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v404';
+const APP_VERSION='flint-v405';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
