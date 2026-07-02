@@ -2629,7 +2629,7 @@ header.home-hdr .av:active,header.home-hdr .wbatt:active,header.home-hdr .hdmenu
   #v-today.on{height:100dvh;overflow-y:auto;overflow-x:hidden;scroll-snap-type:y mandatory;scroll-behavior:smooth;-webkit-overflow-scrolling:touch;background:#fff}
   #v-today::-webkit-scrollbar{width:0;height:0}
   #v-today .dcsec{scroll-snap-align:start;min-height:100dvh;display:flex;flex-direction:column;padding:22px 22px 0}
-  #v-today #screen-journee{padding-bottom:calc(96px + env(safe-area-inset-bottom))}
+  #v-today #screen-journee{padding-bottom:calc(96px + env(safe-area-inset-bottom));background:radial-gradient(115% 70% at -12% 32%, rgba(255,94,46,0.10) 0%, rgba(255,94,46,0.05) 30%, rgba(255,94,46,0.02) 55%, rgba(255,94,46,0) 82%), radial-gradient(90% 60% at 6% 78%, rgba(255,94,46,0.06) 0%, rgba(255,94,46,0.02) 45%, rgba(255,94,46,0) 78%)}
   @keyframes ajGlow{0%,100%{opacity:.1}50%{opacity:.42}}
   @media (prefers-reduced-motion:reduce){#v-today{scroll-behavior:auto;scroll-snap-type:none}}
   </style>
@@ -2756,7 +2756,7 @@ header.home-hdr .av:active,header.home-hdr .wbatt:active,header.home-hdr .hdmenu
       </a>
       <div id="ajDaySub" style="font-size:19px;font-weight:500;color:#6F7078;margin-top:8px;">—</div>
       <div id="ajDayBadge" style="align-self:flex-start;margin-top:14px;background:#F0492E;color:#fff;font-size:15px;font-weight:600;padding:9px 18px;border-radius:999px;letter-spacing:-0.01em;">Journée bien remplie</div>
-      <div id="ajTimeline" style="margin-top:28px;display:flex;flex-direction:column;"></div>
+      <div id="ajTimeline" style="margin-top:22px;display:flex;flex-direction:column;"></div>
       <a onclick="ajSnapTop()" style="text-decoration:none;cursor:pointer;margin-top:auto;padding-top:30px;display:flex;align-items:center;gap:12px;color:#F0492E;font-size:26px;font-weight:800;letter-spacing:-0.01em;">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F0492E" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M6 11l6-6 6 6"/></svg>
         <span>Aujourd'hui</span>
@@ -6221,7 +6221,7 @@ function ajTLrow(o){
   +'</div>'
  +'</div>';
 }
-function ajConnector(){return '<div style="display:flex;height:52px;"><div style="width:58px;flex-shrink:0;"></div><div style="width:64px;flex-shrink:0;display:flex;justify-content:center;"><div style="border-left:2px dotted #d6d6da;height:100%;position:relative;"><span style="position:absolute;left:1px;top:50%;transform:translate(-50%,-50%);width:7px;height:7px;border-radius:999px;background:#F0492E;box-shadow:0 0 0 5px rgba(240,73,46,0.06),0 0 14px 6px rgba(240,73,46,0.10);"></span></div></div></div>';}
+function ajConnector(){return '<div style="display:flex;height:36px;"><div style="width:58px;flex-shrink:0;"></div><div style="width:64px;flex-shrink:0;display:flex;justify-content:center;"><div style="border-left:2px dotted #d6d6da;height:100%;position:relative;"><span style="position:absolute;left:-1px;top:50%;transform:translate(-50%,-50%);width:13px;height:13px;border-radius:999px;background:radial-gradient(circle, #ff4a1c 0%, #ff4a1c 32%, rgba(255,74,28,0.22) 54%, rgba(255,74,28,0.07) 72%, rgba(255,74,28,0) 86%);pointer-events:none;"></span></div></div></div>';}
 function ajRenderTimeline(k){
  var host=document.getElementById('ajTimeline');if(!host)return;
  var nm=sleepNight(k),ss=DB.get('sessions_'+k,[]),meals=mealsOf(k),ev=[];
@@ -8496,7 +8496,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v414';
+const APP_VERSION='flint-v415';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
