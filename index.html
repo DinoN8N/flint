@@ -2750,6 +2750,15 @@ header.home-hdr .av:active,header.home-hdr .wbatt:active,header.home-hdr .hdmenu
         </div>
 
       </div>
+    </section>
+    <section id="screen-journee" class="dcsec">
+      <a onclick="ajSnapTop()" style="text-decoration:none;cursor:pointer;display:flex;align-items:center;gap:12px;">
+        <span style="font-family:'Arial Black','Archivo',sans-serif;font-weight:900;font-size:56px;letter-spacing:-0.03em;color:#0B0B0D;line-height:0.9;">Ma journée</span>
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#F0492E" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M6 11l6-6 6 6"/></svg>
+      </a>
+      <div id="ajDaySub" style="font-size:19px;font-weight:500;color:#6F7078;margin-top:8px;">—</div>
+      <div id="ajDayBadge" style="align-self:flex-start;margin-top:14px;background:#F0492E;color:#fff;font-size:15px;font-weight:600;padding:9px 18px;border-radius:999px;letter-spacing:-0.01em;">Journée bien remplie</div>
+      <div id="ajTimeline" style="margin-top:22px;display:flex;flex-direction:column;"></div>
 
       <div onclick="jrnlGo()" style="margin:24px -6px 0;background:#ffffff;border-radius:26px;padding:15px 18px 15px;box-shadow:0 0 0 1px rgba(255,74,28,0.025), 0 8px 34px rgba(255,74,28,0.05), 0 2px 10px rgba(0,0,0,0.02);cursor:pointer;">
         <div style="display:flex;align-items:center;gap:16px;">
@@ -2768,15 +2777,6 @@ header.home-hdr .av:active,header.home-hdr .wbatt:active,header.home-hdr .hdmenu
         </div>
         <div id="ajJournalDays" style="display:flex;gap:8px;margin-top:13px;"></div>
       </div>
-    </section>
-    <section id="screen-journee" class="dcsec">
-      <a onclick="ajSnapTop()" style="text-decoration:none;cursor:pointer;display:flex;align-items:center;gap:12px;">
-        <span style="font-family:'Arial Black','Archivo',sans-serif;font-weight:900;font-size:56px;letter-spacing:-0.03em;color:#0B0B0D;line-height:0.9;">Ma journée</span>
-        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#F0492E" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M6 11l6-6 6 6"/></svg>
-      </a>
-      <div id="ajDaySub" style="font-size:19px;font-weight:500;color:#6F7078;margin-top:8px;">—</div>
-      <div id="ajDayBadge" style="align-self:flex-start;margin-top:14px;background:#F0492E;color:#fff;font-size:15px;font-weight:600;padding:9px 18px;border-radius:999px;letter-spacing:-0.01em;">Journée bien remplie</div>
-      <div id="ajTimeline" style="margin-top:22px;display:flex;flex-direction:column;"></div>
     </section>
 
   <!-- ===================== SCREEN 3 · JOURNAL (check-in) ===================== -->
@@ -8652,7 +8652,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v430';
+const APP_VERSION='flint-v431';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
