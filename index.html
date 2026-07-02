@@ -2650,8 +2650,8 @@ header.home-hdr .av:active,header.home-hdr .wbatt:active,header.home-hdr .hdmenu
         <div onclick="go('profile')" style="width:44px;height:44px;border-radius:50%;border:1px solid #ececea;box-shadow:0 2px 10px rgba(0,0,0,.05);cursor:pointer;background:url('https://randomuser.me/api/portraits/men/32.jpg') center/cover;"></div>
       </div>
 
-      <div style="display:flex;align-items:center;gap:6px;margin:0 0 4px;">
-        <span style="font-size:15px;font-weight:600;color:#14110f;">Aujourd'hui</span>
+      <div onclick="flOpenPicker()" style="display:flex;align-items:center;gap:6px;margin:0 0 4px;cursor:pointer;-webkit-tap-highlight-color:transparent;">
+        <span id="ajDayLabel" style="font-size:15px;font-weight:600;color:#14110f;">Aujourd'hui</span>
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#14110f" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
       </div>
       <h1 style="font-size:48px;font-weight:800;line-height:0.94;letter-spacing:-0.035em;margin:0;color:#14110f;">Bonjour <span id="ajGreet">Dino</span><span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#ff4a1c;margin-left:4px;vertical-align:baseline;"></span></h1>
@@ -6248,6 +6248,7 @@ function ajRenderTimeline(k){
 function renderAjHero(){
  var K=tk(gDay),today=gDay===0;
  var nm=(getProfile().name||'').trim();set('ajGreet',nm?nm.split(' ')[0]:'Dino');
+ var _dl=document.getElementById('ajDayLabel');if(_dl){if(gDay===0)_dl.textContent='Aujourd\'hui';else if(gDay===-1)_dl.textContent='Hier';else{var _dd=new Date();_dd.setDate(_dd.getDate()+gDay);var _s=_dd.toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'});_dl.textContent=_s.charAt(0).toUpperCase()+_s.slice(1);}}
  var rv=today?recovery():{s:DB.get('recov_'+K,null)};var sc=rv&&rv.s!=null?Math.round(rv.s):null;
  set('ajScore',sc==null?'—':sc);
  set('ajVerdict',sc==null?'—':sc>=80?'PRÊT':sc>=20?'MODÉRÉ':'REPOS');
@@ -8504,7 +8505,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v420';
+const APP_VERSION='flint-v421';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
