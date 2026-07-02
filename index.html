@@ -6280,25 +6280,29 @@ function renderAjHero(){
  ajRenderTimeline(K);
  ajJournalDays();
 }
+function ajToggleGlow(off){if(typeof haptic==='function')haptic(6);window._ajGlow=window._ajGlow||{};window._ajGlow[off]=!window._ajGlow[off];ajJournalDays();}
 function ajJournalDays(){
  var host=document.getElementById('ajJournalDays');if(!host)return;
+ window._ajGlow=window._ajGlow||{};
  var DOW=['L','M','M','J','V','S','D'];
  var today=new Date();today.setHours(0,0,0,0);
  var mon=new Date(today);mon.setDate(mon.getDate()-((mon.getDay()+6)%7));
  var html='';
  for(var i=0;i<7;i++){var d=new Date(mon);d.setDate(mon.getDate()+i);
-  var off=Math.round((d-today)/86400000),fut=off>0,isToday=off===0;
+  var off=Math.round((d-today)/86400000),fut=off>0;
   var j=fut?null:DB.get('journal_'+tk(off),null);
-  var checked=!!(j&&(j._saved||Object.keys(j).length>0));
+  var filled=!!(j&&(j._saved||Object.keys(j).length>0));
+  var glow=!!window._ajGlow[off];
+  var on=filled||glow;
   var bg,shadow,labelColor,dotBg,dotBorder;
-  if(checked){bg='#ffffff';shadow='0 0 0 1px rgba(255,74,28,.06), 0 4px 12px rgba(255,74,28,.07)';labelColor='#83838a';dotBg='#ff4a1c';dotBorder='none';}
-  else if(isToday){bg='#ffffff';shadow='0 0 0 1px rgba(255,74,28,.14)';labelColor='#ff4a1c';dotBg='transparent';dotBorder='2px solid #ffb59e';}
+  if(glow){bg='#ffffff';shadow='0 0 0 1.5px rgba(255,74,28,.35), 0 0 20px 3px rgba(255,74,28,.22), 0 4px 12px rgba(255,74,28,.10)';labelColor='#ff4a1c';dotBg='#ff4a1c';dotBorder='none';}
+  else if(filled){bg='#ffffff';shadow='0 0 0 1px rgba(255,74,28,.06), 0 4px 12px rgba(255,74,28,.07)';labelColor='#83838a';dotBg='#ff4a1c';dotBorder='none';}
   else if(fut){bg='#faf9f8';shadow='none';labelColor='#cfcdc9';dotBg='#eeece9';dotBorder='none';}
   else{bg='#f7f6f4';shadow='none';labelColor='#b8b6b2';dotBg='#e6e4e1';dotBorder='none';}
-  html+='<div style="flex:1;aspect-ratio:0.97/1;border-radius:17px;background:'+bg+';box-shadow:'+shadow+';display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;">'
+  html+='<div'+(fut?'':' onclick="event.stopPropagation();ajToggleGlow('+off+')"')+' style="flex:1;aspect-ratio:0.97/1;border-radius:17px;background:'+bg+';box-shadow:'+shadow+';display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;'+(fut?'':'cursor:pointer;')+'transition:box-shadow .2s ease">'
    +'<span style="font-size:9.5px;font-weight:300;color:'+labelColor+';letter-spacing:0.04em;">'+DOW[i]+'</span>'
    +'<div style="width:16px;height:16px;border-radius:999px;background:'+dotBg+';border:'+dotBorder+';display:flex;align-items:center;justify-content:center;">'
-     +(checked?'<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>':'')
+     +(on?'<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>':'')
    +'</div></div>';
  }
  host.innerHTML=html;
@@ -8543,7 +8547,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v428';
+const APP_VERSION='flint-v429';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
