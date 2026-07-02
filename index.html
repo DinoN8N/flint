@@ -2629,9 +2629,7 @@ header.home-hdr .av:active,header.home-hdr .wbatt:active,header.home-hdr .hdmenu
   #v-today.on{height:100dvh;overflow-y:auto;overflow-x:hidden;scroll-snap-type:y mandatory;scroll-behavior:smooth;-webkit-overflow-scrolling:touch;background:#fff}
   #v-today::-webkit-scrollbar{width:0;height:0}
   #v-today .dcsec{scroll-snap-align:start;min-height:100dvh;display:flex;flex-direction:column;padding:22px 22px 22px}
-  #v-today #screen-accueil{padding-bottom:calc(94px + env(safe-area-inset-bottom));background:radial-gradient(125% 78% at 50% 33%, #ffffff 0%, #fdf7f2 44%, #f8eee6 100%)}
-  #v-today #ajScore{text-shadow:0 1px 0 rgba(255,255,255,.55), 0 7px 16px rgba(30,20,14,.18)}
-  #v-today #ajVerdict{text-shadow:0 1px 0 rgba(255,255,255,.5), 0 5px 12px rgba(30,20,14,.14)}
+  #v-today #screen-accueil{padding-bottom:calc(94px + env(safe-area-inset-bottom))}
   #v-today #screen-journee{padding-top:max(52px,calc(env(safe-area-inset-top,0px) + 24px));padding-bottom:calc(96px + env(safe-area-inset-bottom));background:radial-gradient(115% 70% at -12% 32%, rgba(255,94,46,0.10) 0%, rgba(255,94,46,0.05) 30%, rgba(255,94,46,0.02) 55%, rgba(255,94,46,0) 82%), radial-gradient(90% 60% at 6% 78%, rgba(255,94,46,0.06) 0%, rgba(255,94,46,0.02) 45%, rgba(255,94,46,0) 78%)}
   @keyframes ajGlow{0%,100%{opacity:.1}50%{opacity:.42}}
   @media (prefers-reduced-motion:reduce){#v-today{scroll-behavior:auto;scroll-snap-type:none}}
@@ -2699,11 +2697,6 @@ header.home-hdr .av:active,header.home-hdr .wbatt:active,header.home-hdr .hdmenu
 
       <div style="flex:1 1 0;min-height:18px;max-height:48px;"></div>
 
-      <button onclick="go('load')" style="align-self:center;margin:2px 0 16px;background:rgba(255,255,255,.75);color:#14110f;border:1.2px solid #ff8556;border-radius:999px;padding:12px 26px;font-family:inherit;font-size:15px;font-weight:400;display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer;box-shadow:inset 0 1.5px 0 rgba(255,255,255,.95), 0 2px 5px rgba(255,74,28,.22), 0 8px 18px rgba(255,74,28,.12);">
-        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#ff4a1c" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 17.5h18.5a1.5 1.5 0 0 0 1.46-1.86l-.3-1.2a2 2 0 0 0-1.3-1.4l-4.2-1.5a2 2 0 0 1-.86-.6L12.5 7a1.2 1.2 0 0 0-1.9.06l-.9 1.3"/><path d="M2 17.5V13a1 1 0 0 1 1-1h1.5l2 2 2.5-1.2"/><path d="M2 20.5h20"/></svg>
-        <span style="white-space:nowrap;"><span id="ajSteps" style="color:#ff4a1c;font-weight:700;">—</span> pas aujourd'hui</span>
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ff4a1c" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>
-      </button>
       <div style="margin-bottom:0;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
 
         <div onclick="go('sleep')" style="background:#fff;border:1px solid #efeeeb;border-radius:18px;padding:12px 6px 10px;display:flex;flex-direction:column;align-items:center;gap:9px;box-shadow:inset 0 1.5px 0 rgba(255,255,255,.9), 0 3px 8px rgba(255,74,28,.10), 0 8px 20px rgba(255,74,28,.07);cursor:pointer;">
@@ -8508,7 +8501,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v425';
+const APP_VERSION='flint-v424';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
