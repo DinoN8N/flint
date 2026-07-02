@@ -8497,7 +8497,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v416';
+const APP_VERSION='flint-v417';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
@@ -8642,14 +8642,8 @@ document.addEventListener('visibilitychange',function(){if(document.hidden)retur
   if(typeof _pick==='function'){window.balPhotoPick=function(){var r=_pick.apply(this,arguments);var n=0;var iv=setInterval(function(){n++;syncUI();var form=document.getElementById('balShForm');if((form&&form.style.display!=='none')||n>40)clearInterval(iv);},150);return r;};}
   /* Bouton caméra flottant : scanner son plat en 1 tap depuis N'IMPORTE QUEL écran */
   function addFab(){
-    if(document.getElementById('flintScanFab'))return;
-    var b=document.createElement('button');
-    b.id='flintScanFab';b.type='button';b.setAttribute('aria-label','Scanner mon repas');
-    b.onclick=function(){haptic&&haptic(10); if(typeof balPhotoStart==='function')balPhotoStart();};
-    b.innerHTML='<i class="ti ti-camera"></i>';
-    b.style.cssText='position:fixed;right:16px;bottom:calc(80px + env(safe-area-inset-bottom));z-index:45;width:60px;height:60px;border:none;border-radius:50%;background:#F0492E;color:#fff;font-size:27px;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 22px rgba(240,73,46,.45);cursor:pointer;transition:transform .12s ease';
-    b.onpointerdown=function(){b.style.transform='scale(.9)'};b.onpointerup=b.onpointerleave=function(){b.style.transform=''};
-    document.body.appendChild(b);
+    /* Bouton caméra flottant retiré à la demande du founder — le scan reste dispo via l'onglet Nutrition */
+    var e=document.getElementById('flintScanFab');if(e)e.remove();
   }
   /* ===== Bracelet retiré : bannière instantanée + notification (seam capteur off-wrist) ===== */
   function addWatchBanner(){
