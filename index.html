@@ -6224,6 +6224,12 @@ function ajTLrow(o){
  +'</div>';
 }
 function ajConnector(){return '<div style="display:flex;height:36px;"><div style="width:58px;flex-shrink:0;"></div><div style="width:64px;flex-shrink:0;display:flex;justify-content:center;"><div style="border-left:2px dotted #d6d6da;height:100%;position:relative;"><span style="position:absolute;left:-1px;top:50%;transform:translate(-50%,-50%);width:13px;height:13px;border-radius:999px;background:radial-gradient(circle, #ff4a1c 0%, #ff4a1c 32%, rgba(255,74,28,0.22) 54%, rgba(255,74,28,0.07) 72%, rgba(255,74,28,0) 86%);pointer-events:none;"></span></div></div></div>';}
+function ajPlainConnector(){return '<div style="display:flex;height:30px;"><div style="width:58px;flex-shrink:0;"></div><div style="width:64px;flex-shrink:0;display:flex;justify-content:center;"><div style="border-left:2px dotted #d6d6da;height:100%;"></div></div></div>';}
+function ajAddRow(){return '<div style="display:flex;align-items:center;cursor:pointer;" onclick="openActSheet()">'
+ +'<div style="width:58px;flex-shrink:0;"></div>'
+ +'<div style="width:64px;flex-shrink:0;display:flex;justify-content:center;"><button type="button" onclick="event.stopPropagation();openActSheet()" style="width:60px;height:60px;border-radius:50%;background:#fff;border:1.6px dashed #f0b7a6;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#ff4a1c" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg></button></div>'
+ +'<div style="flex:1;padding-left:16px;"><div style="font-size:25px;font-weight:600;color:#ff4a1c;line-height:1;letter-spacing:-0.01em;">Ajouter une activité</div><div style="font-size:15px;font-weight:500;color:#8B8B90;margin-top:7px;">manuelle \u00b7 sport, repas\u2026</div></div>'
++'</div>';}
 function ajRenderTimeline(k){
  var host=document.getElementById('ajTimeline');if(!host)return;
  var nm=sleepNight(k),ss=DB.get('sessions_'+k,[]),meals=mealsOf(k),ev=[];
@@ -6235,7 +6241,7 @@ function ajRenderTimeline(k){
   ev.push({t:ajParseHM(tm),start:tm,end:'',icon:'tools-kitchen-2',title:m.name||'Repas',sub:tm+' · repas',value:ajN(m.kcal||0),onc:"go('nutrition')"});});
  ev.sort(function(a,b){return a.t-b.t});
  if(!ev.length){host.innerHTML='<p style="color:#8B8B90;font-size:15px;padding:4px 2px;">Aucune activité aujourd\'hui.</p>';set('ajDaySub','0 entrée');set('ajDayBadge','Journée calme');return;}
- host.innerHTML=ev.map(function(e,i){return ajTLrow(e)+(i<ev.length-1?ajConnector():'')}).join('');
+ host.innerHTML=ev.map(function(e,i){return ajTLrow(e)+(i<ev.length-1?ajConnector():'')}).join('')+ajPlainConnector()+ajAddRow();
  set('ajDaySub',ev.length+' entrée'+(ev.length>1?'s':'')+' · cumul '+loadStrain(k).toFixed(1).replace('.',','));
  var bdg=document.getElementById('ajDayBadge');if(bdg)bdg.textContent=ev.length>=5?'Journée bien remplie':ev.length>=3?'Bonne journée':'Journée calme';
 }
@@ -8499,7 +8505,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v422';
+const APP_VERSION='flint-v423';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
