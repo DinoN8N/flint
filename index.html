@@ -6194,7 +6194,7 @@ function tabRenderVals(){Object.keys(TAB_KEYS).forEach(function(key){tabRenderBo
 function injectTodayLoop(){var n=0;injectToday();var iv=setInterval(function(){injectToday();if(++n>18)clearInterval(iv);},350);}
 function injectToday(){
  var f=document.getElementById('frToday');if(!f)return;var doc;try{doc=f.contentDocument;}catch(e){return;}if(!doc||!doc.body)return;
- if(!doc._linkFix){doc._linkFix=true;try{var _st=doc.createElement('style');_st.textContent='a,button{color:inherit;-webkit-text-fill-color:currentColor}a{text-decoration:none}';(doc.head||doc.documentElement).appendChild(_st);}catch(e){}}
+ if(!doc._linkFix){doc._linkFix=true;try{var _st=doc.createElement('style');_st.textContent='a,button{color:inherit;-webkit-text-fill-color:currentColor}a{text-decoration:none}[style*="font-size: 56px"],[style*="font-size: 54px"],[style*="font-size: 48px"],[style*="font-size: 41px"]{font-family:Archivo,-apple-system,sans-serif!important;font-weight:700!important}';(doc.head||doc.documentElement).appendChild(_st);}catch(e){}}
  if(!doc._mdWired){doc._mdWired=true;if(!MD_LABEL2KEY)mdBuildLabels();try{doc.addEventListener('click',function(ev){var el=ev.target;for(var dd=0;dd<7&&el;dd++,el=el.parentElement){var txt=(el.textContent||'').trim();for(var lab in MD_LABEL2KEY){if(txt.indexOf(lab)===0&&txt.length<lab.length+14){ev.preventDefault();ev.stopPropagation();openMetricDetail(MD_LABEL2KEY[lab]);return;}}}},true);}catch(e){}}
  function setText(oldT,val){var e=doc.querySelectorAll('span,div,p,h1,button');for(var i=0;i<e.length;i++){var x=e[i];if(x.children.length===0&&(x.textContent||'').trim()===oldT){x.textContent=val;return true;}}return false;}
  try{
@@ -6277,7 +6277,7 @@ function openMetricDetail(key){
     +'<div style="width:44px;height:44px;border-radius:50%;background:#fff;border:1px solid #ececea;box-shadow:0 2px 10px rgba(0,0,0,.05);display:flex;align-items:center;justify-content:center;"><i class="ti ti-user" style="font-size:22px;color:#14110f;"></i></div>'
   +'</div>'
   +'<div style="display:flex;align-items:center;gap:8px;margin-top:30px;"><i class="ti '+G.ic+'" style="font-size:16px;color:#14110f;"></i><span style="font-family:-apple-system,system-ui,sans-serif;font-size:11.5px;font-weight:600;letter-spacing:0.16em;color:#6b6b70;">'+G.label.toUpperCase()+'</span></div>'
-  +'<h1 style="font-family:Archivo,-apple-system,system-ui,sans-serif;font-size:40px;font-weight:600;letter-spacing:-0.03em;color:#14110f;margin:12px 0 0;line-height:1.02;display:flex;align-items:flex-end;gap:4px;">Analyse détaillée<span style="width:8px;height:8px;border-radius:50%;background:#ff4a1c;margin-bottom:8px;"></span></h1>'
+  +'<h1 style="font-family:Archivo,-apple-system,system-ui,sans-serif;font-size:40px;font-weight:700;letter-spacing:-0.03em;color:#14110f;margin:12px 0 0;line-height:1.02;display:flex;align-items:flex-end;gap:4px;">Analyse détaillée<span style="width:8px;height:8px;border-radius:50%;background:#ff4a1c;margin-bottom:8px;"></span></h1>'
   +'<p style="font-family:-apple-system,system-ui,sans-serif;font-size:15px;font-weight:300;color:#6b6b70;margin:14px 0 0;line-height:1.4;">Comprends l’évolution de ta métrique '+esc(m.l.toLowerCase())+'.</p>'
   +'<div style="background:#fff;border-radius:22px;padding:18px 20px;margin-top:28px;box-shadow:0 3px 12px rgba(150,118,72,0.045), inset 0 0 0 1px rgba(20,17,15,0.05);">'
     +'<div style="display:flex;align-items:center;justify-content:space-between;"><span style="font-family:-apple-system,system-ui,sans-serif;font-size:12.5px;font-weight:400;letter-spacing:0.08em;color:#14110f;">'+esc((key==='hrv'?'VARIABILITÉ CARDIAQUE':m.l).toUpperCase())+'</span></div>'
@@ -8548,7 +8548,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v440';
+const APP_VERSION='flint-v441';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
