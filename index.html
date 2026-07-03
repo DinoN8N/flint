@@ -12,6 +12,7 @@
 <link rel="preload" as="image" href="icons/sleep/mockup_empty.png?v=4">
 <link rel="preload" as="image" href="icons/sleep/sleep_landscape.png?v=3">
 <title>FLINT</title>
+<link href="https://fonts.googleapis.com/css2?family=Albert+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preload" as="font" type="font/woff2" href="fonts/Geist.woff2" crossorigin>
 <link rel="preload" as="font" type="font/woff2" href="fonts/ArchivoBlack.woff2" crossorigin>
@@ -1911,8 +1912,8 @@ header{padding:11px 16px 7px}
 .flhome .mjinfo .mjib{color:#F0492E;font-size:17px;display:inline-flex}
 body.modalview nav,body.modalview header{display:none}
 body.trendview header{display:none}
-body.sleepview header,body.sleepview nav{display:none}
-body.sleepview{padding-bottom:0}
+body.sleepview>header{display:none}
+body.sleepview{padding-bottom:88px}
 /* ===================== ÉCRAN SOMMEIL — maquette image + overlay valeurs (.slp) ===================== */
 body.sleepview{background:#FAF7F5}
 .slp{position:relative;font-family:'Switzer','Inter',sans-serif;color:#111111;background:#FAF7F5;min-height:100vh;padding:0 0 28px;max-width:465px;margin:0 auto;-webkit-font-smoothing:antialiased}
@@ -4152,73 +4153,212 @@ body.stepsview header{display:none}
 <!-- ===================== SOMMEIL ===================== -->
 <section class="view" id="v-sleep">
 <div class="slp">
+<!-- ═══════ FLINT v2 — page Sommeil (maquettes Dino, assemblage 5 sections) ═══════ -->
+<style id="fsl-style">
+/* ═══════ FLINT v3 — Sommeil : système de design unifié ═══════ */
+.fslwrap,.fslsub{position:relative;width:390px;margin:0 auto;font-family:'Albert Sans',-apple-system,sans-serif;color:#0B0B0B;background:#fff;padding:calc(env(safe-area-inset-top) + 8px) 24px 30px;
+ --o:#F93A00;--ink:#0B0B0B;--gray:#77787B;--faint:#A6A7AA;--line:#F1EFED;--pale:#FFF3EC}
+#v-sleep,#v-sl2need,#v-sl2reg,#v-sl2eff,#v-sl2stress,body.sleepview{background:#fff}
+/* header */
+.fsl-head{display:flex;align-items:center;justify-content:space-between;height:52px;margin-bottom:6px}
+.fsl-logo{display:flex;align-items:center;gap:8px;border:0;background:none;padding:0;cursor:pointer;font-family:inherit}
+.fsl-logo svg{display:block}
+.fsl-logo span{font-size:23px;font-weight:800;font-style:italic;letter-spacing:-.02em;color:var(--ink)}
+.fsl-av,.fsl-back{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:#fff;color:var(--ink);font-size:20px;display:grid;place-items:center;cursor:pointer;padding:0;line-height:0;transition:transform .12s}
+.fsl-av:active,.fsl-back:active{transform:scale(.9)}
+.fsl-headspace{width:40px}
+/* eyebrow + titres */
+.fsl-eyebrow{display:flex;align-items:center;gap:10px;margin:14px 0 0;font-size:12px;font-weight:700;letter-spacing:.14em;color:#3A3B3E}
+.fsl-eyebrow i{font-size:17px;color:var(--o)}
+.fsl-h1{margin:14px 0 0;font-size:38px;font-weight:800;line-height:1.14;letter-spacing:-.022em;color:var(--ink)}
+.fsl-h1 em{font-style:normal;color:var(--o)}
+.fsl-sub{margin:9px 0 0;font-size:16.5px;font-weight:500;color:#85868A;letter-spacing:-.01em}
+/* hero cercle */
+.fsl-ring{position:relative;width:238px;height:238px;margin:30px auto 0;background:#fff;border-radius:50%;
+ box-shadow:0 24px 70px rgba(249,58,0,.13),0 4px 18px rgba(20,10,5,.05),inset 0 0 0 1px #F6F4F2;
+ display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:transform .15s}
+.fsl-ring:active{transform:scale(.98)}
+.fsl-ring .rarc{position:absolute;inset:-11px;width:calc(100% + 22px);height:calc(100% + 22px);pointer-events:none}
+.fsl-durd{text-align:center;font-size:12.5px;font-weight:600;color:#A6A7AA;margin-top:6px}
+.fsl-durd b{color:#F93A00;font-weight:700}
+.fsl-durd b.dn{color:#6D6D6D}
+.crans{display:flex;gap:3px;margin-top:6px;justify-content:center}
+.crans i{width:9px;height:3.5px;border-radius:2px;background:#EFEFEF;font-style:normal}
+.crans i.on{background:#F93A00}
+.fsl-seg{display:flex;gap:2px;background:#F5F4F2;border-radius:999px;padding:2.5px}
+.fsl-seg button{border:0;background:none;font-family:inherit;font-size:11px;font-weight:700;color:#A6A7AA;padding:4px 10px;border-radius:999px;cursor:pointer}
+.fsl-seg button.on{background:#fff;color:#0B0B0B;box-shadow:0 2px 6px rgba(20,10,5,.08)}
+.fsl-total .dlt{font-style:normal;font-size:11.5px;font-weight:600;color:#A6A7AA;margin-left:7px}
+.fsl-total .dlt b{color:#F93A00}
+.fsl-ring .rlbl{font-size:13px;font-weight:700;letter-spacing:.14em;color:#2E2E2E}
+.fsl-ring .rscore{display:flex;align-items:baseline;margin-top:2px}
+.fsl-ring .rscore b{font-size:78px;font-weight:800;letter-spacing:-.03em;line-height:1.1}
+.fsl-ring .rscore i{font-style:normal;font-size:26px;font-weight:800;margin-left:6px;color:var(--ink)}
+.fsl-ring .rhint{font-size:11.5px;font-weight:600;color:var(--faint);margin-top:2px}
+.fsl-dur{text-align:center;font-size:34px;font-weight:800;letter-spacing:-.02em;margin-top:22px}
+.fsl-times{text-align:center;font-size:15px;font-weight:500;color:#85868A;margin-top:7px}
+.fsl-times .sep{margin:0 10px;color:var(--faint)}
+/* tuiles métriques */
+.fsl-mets{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-top:30px}
+.fsl-met{display:flex;flex-direction:column;align-items:center;background:#fff;border:1px solid var(--line);border-radius:18px;padding:13px 4px 11px;font-family:inherit;cursor:pointer;transition:transform .12s;box-shadow:0 6px 18px rgba(20,10,5,.03)}
+.fsl-met:active{transform:scale(.94)}
+.fsl-met i{font-size:19px;color:var(--o);line-height:1}
+.fsl-met b{font-size:19px;font-weight:800;margin-top:7px;letter-spacing:-.02em}
+.fsl-met span{font-size:10.5px;font-weight:600;color:#85868A;margin-top:3px}
+/* section titres */
+.fsl-sect{margin:30px 0 12px;font-size:13px;font-weight:700;letter-spacing:.1em;color:#2E2E2E}
+/* nuits */
+.fsl-nights{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.fsl-nights::-webkit-scrollbar{display:none}
+.fsl-nights .nt{flex:none;width:70px;background:#fff;border:1px solid var(--line);border-radius:16px;padding:11px 2px 9px;text-align:center;cursor:pointer;transition:transform .12s,border-color .15s;font-family:inherit}
+.fsl-nights .nt:active{transform:scale(.93)}
+.fsl-nights .nt.sel{border:1.6px solid var(--ink)}
+.fsl-nights .nd{font-size:10.5px;font-weight:600;color:#85868A;white-space:nowrap}
+.fsl-nights .nt.sel .nd{color:var(--ink);font-weight:700}
+.fsl-nights .nv{font-size:17px;font-weight:800;margin-top:4px}
+.fsl-nights .nv i{font-style:normal;font-size:10.5px;font-weight:700;color:var(--gray);margin-left:1px}
+.fsl-nights .nq{font-size:9.5px;font-weight:500;color:var(--faint);margin-top:2px}
+/* cartes */
+.fsl-card{background:#fff;border:1px solid var(--line);border-radius:22px;padding:18px;margin-top:14px;box-shadow:0 10px 28px rgba(20,10,5,.04)}
+.fsl-chead{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px}
+.fsl-chead h3{margin:0;font-size:12.5px;font-weight:700;letter-spacing:.08em;color:#2E2E2E}
+.fsl-cinfo{border:0;background:none;color:#C6C7CA;font-size:16px;cursor:pointer;padding:2px;line-height:0}
+/* stats en tête de carte */
+.fsl-kv{display:flex;align-items:baseline;gap:10px;margin-top:8px}
+.fsl-kv b{font-size:30px;font-weight:800;letter-spacing:-.02em}
+.fsl-kv .u{font-size:14px;font-weight:600;color:var(--gray)}
+.fsl-kr{font-size:12.5px;font-weight:500;color:var(--faint);margin-top:3px}
+/* graphes : largeur unique */
+.fsl-chart{display:block;width:100%;height:auto;margin-top:12px;cursor:crosshair;touch-action:none}
+.fsl-chart text{font-family:'Albert Sans',sans-serif}
+.fsl-chart .axt{font-size:9.5px;font-weight:600;fill:#B9BABD}
+.fsl-chart .dyt{font-size:10px;font-weight:600;fill:#9A9B9E}
+.fsl-chart .dyt.on{fill:var(--o);font-weight:700}
+.fsl-chart .cvt{font-size:10px;font-weight:700}
+/* légende stades */
+.fsl-leg{list-style:none;margin:14px 0 0;padding:0}
+.fsl-leg li{display:flex;align-items:center;padding:7px 0;cursor:pointer}.fsl-leg li:active{opacity:.6}
+.fsl-leg .dot{width:8px;height:8px;border-radius:50%;margin-right:11px;flex:none}
+.fsl-leg .lbl{font-size:14px;font-weight:600;color:#2E2E2E;flex:1}
+.fsl-leg .t{font-size:14px;font-weight:700;width:52px;text-align:right;font-variant-numeric:tabular-nums}
+.fsl-leg .p{font-size:13.5px;font-weight:700;width:46px;text-align:right;color:var(--gray);font-variant-numeric:tabular-nums}
+.fsl-total{display:flex;align-items:center;border-top:1px solid var(--line);margin-top:8px;padding-top:12px}
+.fsl-total span{font-size:14.5px;font-weight:700;flex:1}
+.fsl-total .t{font-size:14.5px;font-weight:800;width:52px;text-align:right}
+.fsl-total .p{font-size:13.5px;font-weight:700;width:46px;text-align:right;color:var(--gray)}
+/* coach / explication */
+.fsl-coach{display:flex;gap:13px;background:var(--pale);border-radius:22px;padding:16px;margin-top:14px}
+.fsl-coach .ic{width:42px;height:42px;border-radius:50%;background:#fff;display:grid;place-items:center;color:var(--o);font-size:20px;flex:none}
+.fsl-coach .lab{font-size:11px;font-weight:700;letter-spacing:.09em;color:var(--o)}
+.fsl-coach p{margin:4px 0 0;font-size:14px;font-weight:500;line-height:1.45;color:var(--ink)}
+/* sous-pages : hero valeur */
+.fsl-hero{display:flex;align-items:center;gap:14px;margin-top:22px}
+.fsl-hero b{font-size:58px;font-weight:800;letter-spacing:-.03em;line-height:1}
+.fsl-hero .delta{display:inline-flex;align-items:center;gap:5px;background:var(--pale);color:var(--o);font-size:13px;font-weight:700;border-radius:999px;padding:7px 12px}
+.fsl-hero .delta.neg{background:#F4F4F5;color:#77787B}
+/* barre besoin (sous-page atteint) */
+.fsl-needbar{cursor:pointer;touch-action:none;height:12px;border-radius:999px;background:#F4F2F0;overflow:hidden;margin-top:14px}
+.fsl-needbar i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#FF7A33,var(--o));transition:width .5s cubic-bezier(.2,.8,.2,1)}
+.fsl-needcap{font-size:13px;font-weight:500;color:var(--gray);margin-top:10px}
+/* barre efficacité segmentée */
+.fsl-effrow{display:flex;align-items:center;justify-content:space-between;margin-top:16px}
+.fsl-effrow .l{font-size:11.5px;font-weight:700;letter-spacing:.08em;color:#85868A}
+.fsl-effrow .v{font-size:14px;font-weight:800;font-variant-numeric:tabular-nums}
+.fsl-effbar{position:relative;height:14px;margin-top:8px;cursor:crosshair;touch-action:none}
+.fsl-effbar i{position:absolute;top:0;height:14px;border-radius:7px;background:#FDCBB2}
+.fsl-hatchbar{position:relative;height:12px;margin-top:8px;border-radius:6px;overflow:hidden;background:repeating-linear-gradient(45deg,#F0EEEC 0 4px,#FAF9F8 4px 8px);cursor:crosshair;touch-action:none}
+.fsl-hatchbar u{position:absolute;top:0;height:12px;background:var(--o);border-radius:2px}
+.fsl-noct{display:flex;align-items:center;border-top:1px solid var(--line);margin-top:16px;padding-top:13px}
+.fsl-noct .sq{width:11px;height:11px;border-radius:3.5px;background:var(--o);margin-right:11px;flex:none}
+.fsl-noct span{font-size:12.5px;font-weight:700;letter-spacing:.07em;color:#2E2E2E;flex:1}
+.fsl-noct b{font-size:16px;font-weight:800}
+/* tooltip scrub */
+.fslTip{position:absolute;z-index:40;background:var(--ink);color:#fff;font-size:12.5px;font-weight:700;padding:8px 12px;border-radius:12px;pointer-events:none;white-space:nowrap;transform:translate(-50%,-140%);box-shadow:0 10px 26px rgba(0,0,0,.22);opacity:0;transition:opacity .1s}
+.fslTip.on{opacity:1}
+.fslTip i{font-style:normal;font-weight:500;color:#C9CACB;margin-left:7px}
 
-  <style>
-  .slp3-hd{display:flex;align-items:flex-start;gap:13px;padding:4px 2px 2px}
-  .slp3-bk{width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:#fff;color:#15140F;font-size:21px;display:grid;place-items:center;cursor:pointer;flex:none;box-shadow:0 5px 14px rgba(20,18,12,.06);transition:transform .14s}
-  .slp3-bk:active{transform:scale(.9)}
-  .slp3-tt{flex:1;min-width:0;padding-top:3px}
-  .slp3-tt h1{font-family:'Geist',sans-serif;font-weight:700;letter-spacing:-.03em;font-size:29px;color:#15140F;line-height:1}
-  .slp3-tt p{font-size:13.5px;font-weight:600;color:#8A857D;margin-top:5px}
-  .slp3-dots{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:#fff;color:#8A857D;display:grid;place-items:center;font-size:18px;flex:none;cursor:pointer}
-  .slp3-nav{display:flex;align-items:center;justify-content:center;gap:10px;margin:16px 0 14px}
-  .slp3-nav .a{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:#fff;color:#15140F;font-size:17px;display:grid;place-items:center;cursor:pointer}
-  .slp3-nav .a:disabled{opacity:.35;cursor:default}
-  .slp3-nav .d{display:inline-flex;align-items:center;gap:9px;border:1px solid var(--line);background:#fff;border-radius:30px;padding:10px 18px;font-family:'Switzer',sans-serif;font-weight:800;font-size:14px;color:#15140F;cursor:pointer;box-shadow:var(--sh-card)}
-  .slp3-nav .d i{color:#6C7BD6;font-size:16px}
-  .slp3-hero{position:relative;overflow:hidden;border-radius:26px;padding:22px 20px;text-align:center;border:1px solid #E2E0F4;background:linear-gradient(160deg,#F0EFFC,#E4E2F8);box-shadow:0 16px 38px -22px rgba(91,71,224,.42);animation:recPop .55s cubic-bezier(.2,.85,.25,1) both}
-  .slp3-moon{position:absolute;top:15px;right:17px;width:60px;height:60px;opacity:.85;pointer-events:none}
-  .slp3-eyb{display:inline-flex;align-items:center;gap:7px;font-family:'Switzer',sans-serif;font-weight:800;letter-spacing:.06em;text-transform:uppercase;font-size:12px;color:#5B47E0}
-  .slp3-eyb i{font-size:15px}
-  .slp3-big{font-family:'Geist',sans-serif;font-weight:700;letter-spacing:-.03em;font-size:52px;color:#1A1730;line-height:1;margin-top:10px}
-  .slp3-big .u{font-size:.5em;font-weight:700;color:#8A86A8;margin:0 1px}
-  .slp3-cap{font-size:13px;font-weight:600;color:#7C77A0;margin-top:4px}
-  .slp3-need{display:inline-flex;align-items:center;gap:6px;margin-top:14px;background:rgba(255,255,255,.78);border:1px solid rgba(91,71,224,.12);border-radius:30px;padding:8px 14px;font-family:'Switzer',sans-serif;font-weight:700;font-size:12.5px;color:#5B47E0}
-  .slp3-need i{font-size:14px}
-  .slp3-verdict{display:flex;align-items:center;gap:11px;margin-top:16px;background:rgba(255,255,255,.62);border-radius:16px;padding:12px 14px;text-align:left}
-  .slp3-verdict .chk{width:30px;height:30px;border-radius:50%;background:#2FA86A;color:#fff;display:grid;place-items:center;font-size:16px;flex:none}
-  .slp3-verdict .tx{min-width:0}
-  .slp3-verdict .tx b{display:block;font-family:'Switzer',sans-serif;font-weight:800;font-size:14px;color:#1A1730}
-  .slp3-verdict .tx span{font-size:12.5px;font-weight:600;color:#7C77A0}
-  .slp3-times{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-top:12px}
-  .slp3-times .cell{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px 15px;box-shadow:var(--sh-card)}
-  .slp3-times .ic{width:40px;height:40px;border-radius:13px;display:grid;place-items:center;font-size:20px;flex:none}
-  .slp3-times .ic.bed{background:#ECEAFB;color:#6C7BD6}.slp3-times .ic.wake{background:#FCEFD8;color:#E0922A}
-  .slp3-times .k{font-family:'Switzer',sans-serif;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#9A938A;display:block;margin-bottom:1px}
-  .slp3-times b{font-family:'Geist',sans-serif;font-weight:700;font-size:20px;color:#15140F}
-  .slp3-mets{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--line);border-radius:16px;overflow:hidden;margin-top:11px}
-  .slp3-mets .m{background:var(--card);padding:13px 8px;text-align:center;cursor:pointer;font-family:inherit;border:0}
-  .slp3-mets .m:active{background:#F4F1EB}
-  .slp3-mets .k{display:block;font-family:'Switzer',sans-serif;font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:.03em;color:#9A938A;margin-bottom:5px}
-  .slp3-mets b{font-family:'Geist',sans-serif;font-weight:700;font-size:18px;color:#15140F}
-  .slp3-mets b small{font-size:.6em;font-weight:700;color:#9A938A;margin-left:1px}
-  </style>
-  <div class="slp3-hd">
-    <button class="slp3-bk" type="button" onclick="go('today')" aria-label="Retour">‹</button>
-    <div class="slp3-tt"><h1>Sommeil</h1><p>Ta nuit, décortiquée.</p></div>
-    <button class="slp3-dots" type="button" onclick="openSleepNight()" aria-label="Détails"><i class="ti ti-chart-line"></i></button>
+</style>
+<div class="fslwrap">
+  <header class="fsl-head">
+    <button class="fsl-logo" type="button" onclick="go('today')" aria-label="Accueil">
+      <svg width="24" height="20" viewBox="0 0 22 20"><g fill="#F93A00"><rect x="2" y="3.5" width="12" height="3.2" rx="1.6" transform="skewX(-14)"/><rect x="3.5" y="8.6" width="9" height="3.2" rx="1.6" transform="skewX(-14)"/><rect x="1.5" y="13.7" width="12" height="3.2" rx="1.6" transform="skewX(-14)"/></g></svg>
+      <span>FLINT</span>
+    </button>
+    <button class="fsl-av" type="button" onclick="go('profile')" aria-label="Profil"><i class="ti ti-user"></i></button>
+  </header>
+
+  <div class="fsl-eyebrow"><i class="ti ti-moon-stars"></i><span>SOMMEIL</span></div>
+  <h1 class="fsl-h1" id="fslT1">Nuit réparatrice,<br>Arthur<em>.</em></h1>
+  <p class="fsl-sub" id="fslSub">Ta nuit t&rsquo;a bien régénéré.</p>
+
+  <div class="fsl-ring" onclick="fslScrollTo('fslNightCard')" role="button">
+    <svg class="rarc" viewBox="0 0 260 260" aria-hidden="true">
+      <circle cx="130" cy="130" r="124" fill="none" stroke="#F5F3F1" stroke-width="6"/>
+      <circle id="fslArc" cx="130" cy="130" r="124" fill="none" stroke="#F93A00" stroke-width="6" stroke-linecap="round" transform="rotate(-90 130 130)" stroke-dasharray="0 779.1"/>
+    </svg>
+    <div class="rlbl">SOMMEIL</div>
+    <div class="rscore"><b id="fslScore">96</b><i>%</i></div>
+    <div class="rhint">score de la nuit</div>
   </div>
-  <div class="slp3-nav">
-    <button class="a" type="button" onclick="slpDay(-1)" aria-label="Nuit précédente"><i class="ti ti-chevron-left"></i></button>
-    <button class="d" type="button" onclick="slpOpenPicker()"><span id="slpDate">Aujourd'hui</span> <i class="ti ti-calendar"></i></button>
-    <button class="a" id="slpNext" type="button" onclick="slpDay(1)" aria-label="Nuit suivante"><i class="ti ti-chevron-right"></i></button>
+  <div class="fsl-dur" id="fslDur">7h42</div>
+  <div class="fsl-durd" id="fslDurD"></div>
+  <div class="fsl-times" id="fslTimes">Coucher 23:06<span class="sep">·</span>Réveil 07:00</div>
+
+  <div class="fsl-mets">
+    <button class="fsl-met" type="button" onclick="fslOpenSub('need')"><i class="ti ti-target-arrow"></i><b id="fslB0">96%</b><span>Atteint</span><span class="crans" id="fslCr0"><i></i><i></i><i></i></span></button>
+    <button class="fsl-met" type="button" onclick="fslOpenSub('reg')"><i class="ti ti-clock-check"></i><b id="fslB1">86%</b><span>Régulier</span><span class="crans" id="fslCr1"><i></i><i></i><i></i></span></button>
+    <button class="fsl-met" type="button" onclick="fslOpenSub('eff')"><i class="ti ti-gauge"></i><b id="fslB2">97%</b><span>Efficace</span><span class="crans" id="fslCr2"><i></i><i></i><i></i></span></button>
+    <button class="fsl-met" type="button" onclick="fslOpenSub('stress')"><i class="ti ti-wave-sine"></i><b id="fslB3">6%</b><span>Stress</span><span class="crans" id="fslCr3"><i></i><i></i><i></i></span></button>
   </div>
-  <div class="slp3-hero">
-    <svg class="slp3-moon" viewBox="0 0 100 100" fill="none"><path d="M44 38a18 18 0 1 1-14-29 14 14 0 0 0 14 29z" fill="#C9C3F2"/><circle cx="20" cy="14" r="1.6" fill="#B7AFEC"/><circle cx="50" cy="20" r="1.2" fill="#B7AFEC"/><circle cx="14" cy="30" r="1.1" fill="#B7AFEC"/></svg>
-    <div class="slp3-eyb"><i class="ti ti-moon"></i> <span id="shEyebrow">Très bonne nuit</span></div>
-    <div class="slp3-big" id="shHours">7<span class="u">h</span>42</div>
-    <div class="slp3-cap">Heures de sommeil</div>
-    <div class="slp3-need" id="shNeed"><i class="ti ti-target-arrow"></i> Besoin 8h00 · Régularité 95%</div>
-    <div class="slp3-verdict"><span class="chk" id="shVChk"><i class="ti ti-check"></i></span><div class="tx"><b id="shCoachT">Excellente nuit.</b><span id="shCoachS">Tu es dans ta cible.</span></div></div>
+
+  <h2 class="fsl-sect">DERNIÈRES NUITS</h2>
+  <div class="fsl-nights" id="fslNights"></div>
+
+  <div class="fsl-card" id="fslNightCard">
+    <div class="fsl-chead"><h3>TA NUIT</h3><span style="display:flex;align-items:center;gap:8px"><span class="fsl-seg" id="fslNSeg"><button type="button" class="on" onclick="fslNightMode('st')">Stades</button><button type="button" onclick="fslNightMode('fc')">FC</button></span><button class="fsl-cinfo" type="button" onclick="fslInfo('Stades : ton hypnogramme. FC : ta fréquence cardiaque pendant la nuit. Glisse pour explorer.')"><i class="ti ti-info-circle"></i></button></span></div>
+    <div class="fsl-kv"><b id="fslP5Dur">7h54</b><span class="u">au lit</span></div>
+    <div class="fsl-kr" id="fslP5Range">Plage habituelle 7h – 8h</div>
+    <svg class="fsl-chart" id="fslNightChart" viewBox="0 0 342 132"></svg>
+    <ul class="fsl-leg" id="fslP5Leg"></ul>
+    <div class="fsl-total"><span>Sommeil réparateur <em class="dlt" id="fslRepD"></em></span><b class="t" id="fslRepT">4:15</b><b class="p" id="fslRepP">56%</b></div>
   </div>
-  <div class="slp3-times">
-    <button class="cell" type="button" onclick="openSleepNight()"><span class="ic bed"><i class="ti ti-bed"></i></span><div><span class="k">Coucher</span><b id="shBed">23:06</b></div></button>
-    <button class="cell" type="button" onclick="openSleepNight()"><span class="ic wake"><i class="ti ti-sunrise"></i></span><div><span class="k">Réveil</span><b id="shWake">07:00</b></div></button>
+
+  <div class="fsl-coach">
+    <div class="ic"><i class="ti ti-sparkles"></i></div>
+    <div><div class="lab">RECOMMANDATION COACH</div><p id="fslCoachP">Te coucher 15 min plus tôt pourrait améliorer ta récupération.</p></div>
   </div>
-  <div class="slp3-mets">
-    <button class="m" type="button" onclick="slpJump('recovery')"><span class="k">Réparateur</span><b id="shRestore">3h42</b></button>
-    <button class="m" type="button" onclick="slpJump('awake')"><span class="k">Réveils</span><b id="shAwake">12<small>min</small></b></button>
-    <button class="m" type="button" onclick="slpJump('fc')"><span class="k">FC nocturne</span><b id="shFcAvg">47<small>bpm</small></b></button>
+</div>
+
+<div class="fl-oldsleep" style="display:none" aria-hidden="true">
+
+  <div class="slp2">
+    <div class="slp-hdr">
+      <button class="slp-bk" type="button" onclick="go('today')" aria-label="Retour"><i class="ti ti-chevron-left"></i></button>
+      <h1 class="slp-h1">Sommeil</h1>
+      <button class="slp-dots" type="button" aria-label="Options"><i class="ti ti-dots"></i></button>
+    </div>
+    <div class="slp-daterow2">
+      <button class="slp-da" type="button" onclick="slpDay(-1)" aria-label="Nuit précédente"><i class="ti ti-chevron-left"></i></button>
+      <button class="slp-dlbl2" type="button" onclick="slpOpenPicker()"><span id="slpDate">Aujourd'hui</span> <i class="ti ti-calendar"></i></button>
+      <button class="slp-da" id="slpNext" type="button" onclick="slpDay(1)" aria-label="Nuit suivante"><i class="ti ti-chevron-right"></i></button>
+    </div>
+    <div class="slp2-eyb"><i class="ti ti-moon"></i> <span id="shEyebrow">Très bonne nuit</span></div>
+    <div class="slp2-hours" id="shHours">7<span class="u">h</span>42</div>
+    <div class="slp2-need" id="shNeed"><i class="ti ti-target-arrow"></i> Besoin 8h00 · Régularité 95%</div>
+    <div class="slp2-times">
+      <div class="slp2-t"><i class="ti ti-moon"></i><div><span>Coucher</span><b id="shBed">23:06</b></div></div>
+      <div class="slp2-tdiv"></div>
+      <div class="slp2-t"><i class="ti ti-sun"></i><div><span>Réveil</span><b id="shWake">07:00</b></div></div>
+    </div>
+    <div class="slp-vbox">
+      <span class="slp-vchk" id="shVChk"><i class="ti ti-check"></i></span>
+      <div class="slp-vtx"><b id="shCoachT">Excellente nuit.</b><span id="shCoachS">Tu es dans ta cible.</span></div>
+    </div>
+    <div class="slp2-tiles">
+      <button type="button" onclick="slpJump('recovery')"><span class="l">Récupérateur</span><b id="shRestore">3h42</b><span class="s">réparateur</span></button>
+      <button type="button" onclick="slpJump('awake')"><span class="l">Éveil</span><b id="shAwake">12<small>min</small></b><span class="s">de la nuit</span></button>
+      <button type="button" onclick="slpJump('fc')"><span class="l">FC nocturne</span><b id="shFcAvg">47<small>bpm</small></b><span class="s">moyenne</span></button>
+    </div>
   </div>
 
   <div class="slp-more">
@@ -4261,8 +4401,13 @@ body.stepsview header{display:none}
     </div>
   </div>
 
+</div><!-- /fl-oldsleep -->
 </div>
 </section>
+<section class="view" id="v-sl2need"><div class="fslsub" id="fslsub-need"></div></section>
+<section class="view" id="v-sl2reg"><div class="fslsub" id="fslsub-reg"></div></section>
+<section class="view" id="v-sl2eff"><div class="fslsub" id="fslsub-eff"></div></section>
+<section class="view" id="v-sl2stress"><div class="fslsub" id="fslsub-stress"></div></section>
 
 <!-- ===================== SOMMEIL · DÉTAIL ===================== -->
 <section class="view" id="v-sleepdetail">
@@ -5414,7 +5559,7 @@ function barsSVG(arr,opts){opts=opts||{};const W=320,H=opts.h||66,n=arr.length,p
 function go(v,isBack){var _el=document.getElementById('v-'+v);if(!_el)return;haptic(7);window._scrollMem=window._scrollMem||{};window._navStack=window._navStack||[];var _back=window._goAnim==='back';window._goAnim=null;
  var cur=document.querySelector('.view.on');
  if(cur){window._scrollMem[cur.id]=window.scrollY||document.documentElement.scrollTop||0;var curV=cur.id.replace('v-','');if(!isBack&&curV!==v)window._navStack.push(curV)}
- document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));_el.classList.add('on');if(_back){_el.style.animation='vinBack .3s cubic-bezier(.22,.61,.36,1) both';setTimeout(function(){if(_el)_el.style.animation='';},340);}else{_el.style.animation='';}document.querySelectorAll('#nav button').forEach(function(b){var a=b.dataset.v===v;b.classList.toggle('on',a);if(a)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});if(window.moveNav)moveNav();var _ht=document.getElementById('hdTitle');if(_ht){var _tt=({sleep:'Sommeil',load:'Effort',nutrition:'Nutrition'}[v]||'');_ht.textContent=_tt;var _hd=document.querySelector('header');if(_hd){_hd.classList.toggle('has-title',!!_tt);_hd.classList.toggle('home-hdr',v==='today')}}document.body.classList.toggle('modalview',v==='journal'||v==='dashedit'||v==='stress'||v==='goal'||v==='coach'||v==='pfedit');document.body.classList.toggle('trendview',v==='metrend');document.body.classList.toggle('sleepview',v==='sleep');
+ document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));_el.classList.add('on');if(_back){_el.style.animation='vinBack .3s cubic-bezier(.22,.61,.36,1) both';setTimeout(function(){if(_el)_el.style.animation='';},340);}else{_el.style.animation='';}document.querySelectorAll('#nav button').forEach(function(b){var a=b.dataset.v===v;b.classList.toggle('on',a);if(a)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});if(window.moveNav)moveNav();var _ht=document.getElementById('hdTitle');if(_ht){var _tt=({sleep:'Sommeil',load:'Effort',nutrition:'Nutrition'}[v]||'');_ht.textContent=_tt;var _hd=document.querySelector('header');if(_hd){_hd.classList.toggle('has-title',!!_tt);_hd.classList.toggle('home-hdr',v==='today')}}document.body.classList.toggle('modalview',v==='journal'||v==='dashedit'||v==='stress'||v==='goal'||v==='coach'||v==='pfedit');document.body.classList.toggle('trendview',v==='metrend');document.body.classList.toggle('sleepview',v==='sleep'||v.indexOf('sl2')===0);
  flWatchBatt();({today:renderToday,nutrition:renderNutrition,recovery:renderRecovery,sleep:renderSleep,sleepdetail:renderSleepDetail,load:renderLoad,effzones:renderEffZones,activitydetail:renderActivityDetail,fcdetail:renderHeartDetail,fczones:renderHeartZones,caltrend:renderCalTrend,efftrend:renderEffTrend,trends:renderTrends,profile:renderProfile,pfedit:renderPfEdit,journal:renderJournalView,behavior:renderBehavior,dashedit:renderDashEdit,metrend:renderMetrend,stress:renderStress,goal:renderGoal,coach:renderCoachIntro,howscore:renderHowScore,balance:renderBalance,baltrend:renderBalTrend,balcurve:renderBalCurve,nuthistory:renderNutHistory,mealdetail:renderMealDetail,nutbilan:renderNutBilan,nutgraph:renderNutGraph}[v]||(()=>{}))();
  if(!_back&&!matchMedia('(prefers-reduced-motion:reduce)').matches){var _cs=_el.querySelectorAll('.h2block,.h2list,.mjwrap,.bal4-goal,.bal4-solde,.bal4-chart,.bal4-foot,.elx-hero,.elx-card,.elx-tgt,.fc2 .card,.nut2-card,.nut2-scan,.nut2-acts,.rec2 .card');for(var _i=0;_i<_cs.length&&_i<10;_i++){var _c=_cs[_i];_c.style.animation='none';void _c.offsetWidth;_c.style.animation='flCardIn .5s cubic-bezier(.2,.8,.2,1) both';_c.style.animationDelay=(_i*0.05).toFixed(2)+'s';}}
  var _fab=document.getElementById('flintScanFab');if(_fab)_fab.style.display='none';
@@ -8548,7 +8693,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v441';
+const APP_VERSION='flint-v442';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
@@ -8868,6 +9013,433 @@ document.addEventListener('visibilitychange',function(){if(document.hidden)retur
  window.nutBarcode=function(code){if(code&&typeof code==='string'){barcodeLookup(code);return;}openScanner();};
  window.nutDescribe=function(){var q=window.prompt('Décris ton plat / l\'aliment (ex : « yaourt grec », « pâtes bolognaise ») :');if(q)searchFood(q);};
 })();
+
+/* ═══════ FLINT v3 : Sommeil — données simulées + kit graphes + sous-pages ═══════ */
+function fslFmtH(min){min=Math.max(0,Math.round(min));return Math.floor(min/60)+'h'+String(min%60).padStart(2,'0')}
+function fslFmtT(min){min=Math.max(0,Math.round(min));return Math.floor(min/60)+':'+String(min%60).padStart(2,'0')}
+function fslRng(key){var h=2166136261;for(var i=0;i<key.length;i++){h^=key.charCodeAt(i);h=Math.imul(h,16777619)}var a=h>>>0;return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function fslQuali(sc){return sc>=88?'Excellente':sc>=83?'Très bonne':sc>=75?'Bonne':sc>=65?'Correcte':sc>=50?'Moyenne':'Difficile'}
+function fslGoDay(off){if(off>0)return;gDay=off;renderSleep()}
+function fslScrollTo(id){var e=document.getElementById(id);if(e){haptic(6);e.scrollIntoView({behavior:'smooth',block:'center'})}}
+function fslInfo(m){haptic(6);toast(m)}
+var FSL_NORM={rev:[3,10],leg:[40,55],pro:[18,30],par:[18,30]}
+function fslStgInfo(k){var D=window._fslD;if(!D){return}
+ var nm=D.nm,v={rev:nm.awake,leg:nm.light,pro:nm.deep,par:nm.rem}[k]
+ var p=Math.round(v/nm.inBed*100),N=FSL_NORM[k]
+ var st=p<N[0]?'sous ta normale':p>N[1]?'au-dessus de ta normale':'dans ta normale ✓'
+ haptic(6);toast(FSL_STG[k]+' Cette nuit : '+p+'% — normale '+N[0]+'–'+N[1]+'%, '+st)}
+var FSL_STG={rev:"Réveil : moments éveillé pendant la nuit, souvent brefs et normaux.",leg:"Sommeil léger : transition, la moitié d'une nuit typique.",pro:"Sommeil profond : la récupération physique, surtout en début de nuit.",par:"Sommeil paradoxal (REM) : mémoire et récupération mentale, surtout au petit matin."}
+function fslOpenSub(t){haptic(6);try{renderFslSub(t)}catch(e){}go('sl2'+t)}
+
+/* ── données : une seule source de vérité ── */
+function fslData(){var need=(getProfile().need||8)
+ function nOf(off){return sleepNight(tk(gDay-off))}
+ function scOf(n){if(!n)return null;var att=Math.min(100,Math.round(n.asleep/(need*60)*100));return Math.max(20,Math.min(99,Math.round(att*.62+(n.efficiency||88)*.38)))}
+ var nm=nOf(0);if(!nm)return null
+ var rnd=fslRng(tk(gDay))
+ var week=[],prev=[]
+ for(var i=6;i>=0;i--)week.push(nOf(i))
+ for(i=13;i>=7;i--)prev.push(nOf(i))
+ function avg(a){var v=a.filter(function(x){return x!=null});return v.length?v.reduce(function(x,y){return x+y})/v.length:null}
+ function bedDevOf(arr){var v=arr.filter(function(x){return x!=null}).map(function(b){return (b+720)%1440});if(v.length<2)return 20;var m=avg(v);return Math.round(avg(v.map(function(x){return Math.abs(x-m)})))}
+ var bedDev=bedDevOf(week.map(function(n){return n?n.bedMin:null}))
+ var bedDevPrev=bedDevOf(prev.map(function(n){return n?n.bedMin:null}))
+ var reg=Math.max(40,Math.min(99,Math.round(100-bedDev/1.6)))
+ var regPrev=Math.max(40,Math.min(99,Math.round(100-bedDevPrev/1.6)))
+ var att=Math.min(100,Math.round(nm.asleep/(need*60)*100))
+ var stress=Math.round(rnd()*6)
+ var r2=fslRng('reg'+tk(gDay))
+ var wLab=[];for(i=6;i>=0;i--){var dd=new Date();dd.setHours(0,0,0,0);dd.setDate(dd.getDate()+gDay-i);wLab.push(['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'][dd.getDay()])}
+ var nights=[];for(i=0;i<7;i++){var n=sleepNight(tk(-i)),d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-i)
+  nights.push({off:-i,sel:(-i)===gDay,lab:i===0?"Auj.":['Dim.','Lun.','Mar.','Mer.','Jeu.','Ven.','Sam.'][d.getDay()]+' '+d.getDate(),sc:scOf(n),q:n?fslQuali(scOf(n)):'—'})}
+ var wDur=week.map(function(n){return n?n.asleep:null})
+ var wAtt=week.map(function(n){return n?Math.min(100,Math.round(n.asleep/(need*60)*100)):null})
+ var wEff=week.map(function(n){return n?(n.efficiency||88):null})
+ var wWake=week.map(function(n){return n?n.wakeMin:null})
+ var wReg=week.map(function(n){return n?Math.max(40,Math.min(99,reg+Math.round((r2()-0.5)*8))):null})
+ var wStress=week.map(function(n,j){return n?Math.round(fslRng('st'+j+tk(gDay))()*7):null})
+ var n5=[];for(i=0;i<5;i++){var o5=gDay-(4-i);n5.push({n:sleepNight(tk(o5)),off:o5})}
+ /* meilleure nuit de la semaine (score) */
+ var best=null,bestV=-1
+ week.forEach(function(n,j){var s=scOf(n);if(s!=null&&s>bestV){bestV=s;best=j}})
+ var sc=scOf(nm)
+ var ph1=rnd()*6.3,ph2=rnd()*6.3
+ /* FC de la nuit (échantillons réels sinon simulation seedée) */
+ var hr=[]
+ if(nm.hrSamples&&nm.hrSamples.length>10){var st2=Math.max(1,Math.floor(nm.hrSamples.length/60))
+  for(i=0;i<nm.hrSamples.length&&hr.length<61;i+=st2)hr.push(Math.round(nm.hrSamples[i]))}
+ else{var hb=(nm.lowestHr!=null?nm.lowestHr+4:52),ph4=rnd()*6.3
+  for(i=0;i<=59;i++){var tf=i/59
+   hr.push(Math.round(hb+9*Math.abs(Math.sin(tf*5.2+ph4))+4.5*Math.sin(tf*11+ph1)+(tf<.07?8*(1-tf/.07):0)+(tf>.88?9*(tf-.88)/.12:0)))}}
+ var hrMin=Math.min.apply(null,hr),hrMax=Math.max.apply(null,hr)
+ /* besoin décomposé (moteur app) + dette */
+ var nc;try{nc=sleepNeedCalc()}catch(e){nc={base:need*60,debt:0,strain:0,need:need*60}}
+ function debtOf(off){var d=0;for(var k2=1;k2<=3;k2++){var n2=nOf(off+k2);if(n2)d+=Math.max(0,need*60-n2.asleep)}return Math.round(d*.55)}
+ var wDebt=[];for(i=6;i>=0;i--)wDebt.push(debtOf(i))
+ var wNeedMin=wDebt.map(function(d){return need*60+Math.min(90,Math.round(d*.35))+28})
+ var wRep=week.map(function(n){return n?{deep:n.deep||0,rem:n.rem||0}:null})
+ var wSSplit=week.map(function(n,j){if(!n)return null;var sp2=Math.round(fslRng('st'+j+tk(gDay))()*7)
+  var moy=Math.round(n.inBed*sp2/100);return {fai:n.inBed-moy,moy:moy,ele:0}})
+ /* courbe stress (plate, ondulée) */
+ var sps=[],ph3=rnd()*6.3
+ for(i=0;i<=59;i++){var t2=i/59;sps.push(.5+.09*Math.sin(t2*9.2+ph3)+.06*Math.sin(t2*17+ph1)+(stress/6)*.06*Math.sin(t2*4+ph2))}
+ return {nm:nm,need:need,score:sc,att:att,reg:reg,dReg:reg-regPrev,bedDev:bedDev,eff:nm.efficiency||88,
+  dEff:Math.round((nm.efficiency||88)-(avg(prev.map(function(n){return n?(n.efficiency||88):null}))||86)),
+  dAtt:Math.round(att-(avg(prev.map(function(n){return n?Math.min(100,Math.round(n.asleep/(need*60)*100)):null}))||80)),
+  stress:stress,dStress:stress-Math.round(fslRng('st3'+tk(gDay-7))()*7),
+  moyenMin:Math.round(nm.inBed*stress/100),nights:nights,wLab:wLab,n5:n5,best:best,bestV:bestV,
+  wDur:wDur,avgDur:avg(wDur),dDur:Math.round((avg(wDur)||0)-(avg(prev.map(function(n){return n?n.asleep:null}))||0)),
+  wAtt:wAtt,wEff:wEff,avgEff:Math.round(avg(wEff)||88),wWake:wWake,avgWake:avg(wWake),wReg:wReg,wStress:wStress,
+  sps:sps,rnd:rnd,hr:hr,hrMin:hrMin,hrMax:hrMax,nc:nc,wDebt:wDebt,wNeedMin:wNeedMin,wRep:wRep,wSSplit:wSSplit,
+  title:sc>=85?'Nuit réparatrice,':sc>=70?'Bonne nuit,':sc>=55?'Nuit correcte,':'Nuit difficile,',
+  sub:sc>=85?'Ta nuit t’a bien régénéré.':sc>=70?'Ta nuit t’a bien reposé.':sc>=55?'Récupération partielle cette nuit.':'Ta nuit a été agitée.'}}
+
+/* ── kit graphes : géométrie unique (viewBox 342 de large) ── */
+var fslC={W:342,PX0:6,PX1:294,AXX:302}
+function fslSlotX(i,n){return fslC.PX0+(i+.5)*(fslC.PX1-fslC.PX0)/n}
+function fslCatmull(pts){var d='M'+pts[0][0].toFixed(1)+' '+pts[0][1].toFixed(1)
+ for(var i=0;i<pts.length-1;i++){var p0=pts[Math.max(0,i-1)],p1=pts[i],p2=pts[i+1],p3=pts[Math.min(pts.length-1,i+2)]
+  d+=' C'+(p1[0]+(p2[0]-p0[0])/6).toFixed(1)+' '+(p1[1]+(p2[1]-p0[1])/6).toFixed(1)+','+(p2[0]-(p3[0]-p1[0])/6).toFixed(1)+' '+(p2[1]-(p3[1]-p1[1])/6).toFixed(1)+','+p2[0].toFixed(1)+' '+p2[1].toFixed(1)}
+ return d}
+function fslTipEl(host){var w=host.closest('.fslwrap,.fslsub');if(!w)return null
+ var t=w.querySelector('.fslTip');if(!t){t=document.createElement('div');t.className='fslTip';w.appendChild(t)}return t}
+function fslShowTip(host,ev,html){var t=fslTipEl(host);if(!t)return
+ var w=host.closest('.fslwrap,.fslsub'),wr=w.getBoundingClientRect()
+ var cx=(ev.touches?ev.touches[0].clientX:ev.clientX)
+ var r=host.getBoundingClientRect()
+ t.innerHTML=html;t.style.left=Math.max(58,Math.min(wr.width-58,cx-wr.left))+'px';t.style.top=(r.top-wr.top+2)+'px';t.classList.add('on')}
+function fslHideTip(host){var t=fslTipEl(host);if(t)t.classList.remove('on')}
+function fslBind(el,pick,end){if(!el)return
+ el.onpointerdown=function(ev){try{el.setPointerCapture(ev.pointerId)}catch(e){}pick(ev)}
+ el.onpointermove=function(ev){if(ev.buttons)pick(ev)}
+ el.onpointerup=el.onpointercancel=function(){fslHideTip(el);if(end)end()}}
+function fslLocX(el,ev,vbW){var r=el.getBoundingClientRect(),cx=(ev.touches?ev.touches[0].clientX:ev.clientX)
+ return Math.max(0,Math.min(vbW,(cx-r.left)/r.width*vbW))}
+/* barres hebdo */
+function fslBars(el,o){if(!el)return
+ var H=o.H||128,bot=H-28,top=14,n=o.vals.length
+ function draw(sel){var s='<defs><linearGradient id="'+o.gid+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FF7A33"/><stop offset="1" stop-color="#F93A00"/></linearGradient></defs>'
+  o.vals.forEach(function(v,i){if(v==null)return
+   var f=Math.max(0,Math.min(1,(v-o.min)/(o.max-o.min))),y=bot-f*(bot-top),xc=fslSlotX(i,n)
+   var bh=bot-y;if(bh<6){bh=6;y=bot-6}
+   var on=sel!=null?i===sel:i===n-1
+   s+='<rect x="'+(xc-10).toFixed(1)+'" y="'+y.toFixed(1)+'" width="20" height="'+bh.toFixed(1)+'" rx="'+Math.min(9,bh/2).toFixed(1)+'" fill="'+(on?'url(#'+o.gid+')':'#FBEFE8')+'"/>'})
+  if(o.avg!=null){var ay=bot-Math.max(0,Math.min(1,(o.avg-o.min)/(o.max-o.min)))*(bot-top)
+   s+='<line x1="'+fslC.PX0+'" y1="'+ay.toFixed(1)+'" x2="'+fslC.PX1+'" y2="'+ay.toFixed(1)+'" stroke="#F93A00" stroke-width="1.2" stroke-dasharray="3 2.4" opacity=".75"/>'}
+  if(o.targets)o.targets.forEach(function(tv,i){if(tv==null||o.vals[i]==null)return
+   var ty=bot-Math.max(0,Math.min(1,(tv-o.min)/(o.max-o.min)))*(bot-top),xc2=fslSlotX(i,n)
+   s+='<line x1="'+(xc2-11).toFixed(1)+'" y1="'+ty.toFixed(1)+'" x2="'+(xc2+11).toFixed(1)+'" y2="'+ty.toFixed(1)+'" stroke="#6D6D6D" stroke-width="2" stroke-linecap="round"/>'})
+  o.ticks.forEach(function(tk2){var ty=bot-Math.max(0,Math.min(1,(tk2.v-o.min)/(o.max-o.min)))*(bot-top)
+   s+='<text class="axt" x="'+fslC.AXX+'" y="'+(ty+3).toFixed(1)+'">'+tk2.l+'</text>'})
+  o.labels.forEach(function(l,i){s+='<text class="dyt'+((sel!=null?i===sel:i===n-1)?' on':'')+'" text-anchor="middle" x="'+fslSlotX(i,n).toFixed(1)+'" y="'+(H-8)+'">'+l+'</text>'})
+  el.setAttribute('viewBox','0 0 342 '+H);el.innerHTML=s}
+ draw(null)
+ fslBind(el,function(ev){var x=fslLocX(el,ev,342),best=0,bd=1e9
+  for(var i=0;i<n;i++){var d=Math.abs(fslSlotX(i,n)-x);if(d<bd){bd=d;best=i}}
+  if(o.vals[best]==null){fslHideTip(el);draw(null);return}
+  draw(best);fslShowTip(el,ev,'<b>'+o.fmt(o.vals[best])+'</b><i>'+o.labels[best]+'</i>')},function(){draw(null)})}
+/* ligne hebdo */
+function fslLine(el,o){if(!el)return
+ var H=o.H||128,bot=H-28,top=14,n=o.vals.length
+ function pt(i){var v=o.vals[i]!=null?o.vals[i]:(o.min+o.max)/2
+  return [fslSlotX(i,n),bot-Math.max(0,Math.min(1,(v-o.min)/(o.max-o.min)))*(bot-top)]}
+ function draw(sel){var pts=[];for(var i=0;i<n;i++)pts.push(pt(i))
+  var d=fslCatmull(pts)
+  var s='<defs><linearGradient id="'+o.gid+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFE3D3"/><stop offset="1" stop-color="#FFF8F3"/></linearGradient></defs>'
+  s+='<path d="'+d+' L'+pts[n-1][0].toFixed(1)+' '+bot+' L'+pts[0][0].toFixed(1)+' '+bot+' Z" fill="url(#'+o.gid+')" stroke="none"/>'
+  s+='<path d="'+d+'" fill="none" stroke="#F93A00" stroke-width="2" stroke-linecap="round"/>'
+  pts.forEach(function(p,i){var on=sel===i
+   s+='<circle cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="'+(on?4.4:3)+'" fill="'+(on?'#F93A00':'#fff')+'" stroke="#F93A00" stroke-width="1.8"/>'})
+  o.ticks.forEach(function(tk2){var ty=bot-Math.max(0,Math.min(1,(tk2.v-o.min)/(o.max-o.min)))*(bot-top)
+   s+='<text class="axt" x="'+fslC.AXX+'" y="'+(ty+3).toFixed(1)+'">'+tk2.l+'</text>'})
+  o.labels.forEach(function(l,i){s+='<text class="dyt'+(sel===i?' on':'')+'" text-anchor="middle" x="'+fslSlotX(i,n).toFixed(1)+'" y="'+(H-8)+'">'+l+'</text>'})
+  el.setAttribute('viewBox','0 0 342 '+H);el.innerHTML=s}
+ draw(null)
+ fslBind(el,function(ev){var x=fslLocX(el,ev,342),best=0,bd=1e9
+  for(var i=0;i<n;i++){var d=Math.abs(fslSlotX(i,n)-x);if(d<bd){bd=d;best=i}}
+  if(o.vals[best]==null){fslHideTip(el);draw(null);return}
+  draw(best);fslShowTip(el,ev,'<b>'+o.fmt(o.vals[best])+'</b><i>'+o.labels[best]+'</i>')},function(){draw(null)})}
+/* barres empilées (réparateur, stress) */
+function fslStack(el,o){if(!el)return
+ var H=o.H||128,bot=H-28,top=14,n=o.labels.length
+ function draw(sel){var sdefs='',sbody=''
+  for(var i=0;i<n;i++){var tot=0
+   o.series.forEach(function(sr){tot+=(sr.vals[i]||0)})
+   if(!tot){continue}
+   var f=Math.max(0,Math.min(1,(tot-o.min)/(o.max-o.min))),y0=bot-f*(bot-top),xc=fslSlotX(i,n)
+   var bh=bot-y0;if(bh<6){bh=6;y0=bot-6}
+   sdefs+='<clipPath id="'+o.gid+'cp'+i+'"><rect x="'+(xc-10).toFixed(1)+'" y="'+y0.toFixed(1)+'" width="20" height="'+bh.toFixed(1)+'" rx="'+Math.min(9,bh/2).toFixed(1)+'"/></clipPath>'
+   var yy=bot,on=sel===i
+   var g2='<g clip-path="url(#'+o.gid+'cp'+i+')"'+(on?'':' opacity=".92"')+'>'
+   o.series.forEach(function(sr){var sh=(sr.vals[i]||0)/tot*bh
+    g2+='<rect x="'+(xc-10).toFixed(1)+'" y="'+(yy-sh).toFixed(1)+'" width="20" height="'+(sh+.5).toFixed(1)+'" fill="'+sr.color+'"/>';yy-=sh})
+   sbody+=g2+'</g>'}
+  o.ticks.forEach(function(tk2){var ty=bot-Math.max(0,Math.min(1,(tk2.v-o.min)/(o.max-o.min)))*(bot-top)
+   sbody+='<text class="axt" x="'+fslC.AXX+'" y="'+(ty+3).toFixed(1)+'">'+tk2.l+'</text>'})
+  o.labels.forEach(function(l,i){sbody+='<text class="dyt'+(sel===i?' on':'')+'" text-anchor="middle" x="'+fslSlotX(i,n).toFixed(1)+'" y="'+(H-8)+'">'+l+'</text>'})
+  el.setAttribute('viewBox','0 0 342 '+H);el.innerHTML='<defs>'+sdefs+'</defs>'+sbody}
+ draw(null)
+ fslBind(el,function(ev){var x=fslLocX(el,ev,342),best=0,bd=1e9
+  for(var i=0;i<n;i++){var d=Math.abs(fslSlotX(i,n)-x);if(d<bd){bd=d;best=i}}
+  var r=o.fmt(best);if(!r){fslHideTip(el);draw(null);return}
+  draw(best);fslShowTip(el,ev,'<b>'+r[0]+'</b><i>'+r[1]+'</i>')},function(){draw(null)})}
+/* courbe continue (nuit / stress) */
+function fslCurveChart(el,o){if(!el)return
+ var H=o.H||132,bot=H-26,top=10,W2=342
+ var pts=o.pts.map(function(v,i){return [i/(o.pts.length-1)*W2,top+(1-v)*(bot-top)]})
+ var d=fslCatmull(pts)
+ function base(cx,cy){var s=''
+  if(o.win){var wx0=o.win[0]*W2,wx1=o.win[1]*W2
+   s+='<rect x="'+wx0.toFixed(1)+'" y="'+(top-6)+'" width="'+(wx1-wx0).toFixed(1)+'" height="'+(bot-top+10)+'" rx="9" fill="#FBEFE8"/>'
+   s+='<line x1="'+wx0.toFixed(1)+'" y1="'+(top-6)+'" x2="'+wx0.toFixed(1)+'" y2="'+bot+'" stroke="#C9C9C9" stroke-width="1" stroke-dasharray="3 3"/>'
+   s+='<line x1="'+wx1.toFixed(1)+'" y1="'+(top-6)+'" x2="'+wx1.toFixed(1)+'" y2="'+bot+'" stroke="#C9C9C9" stroke-width="1" stroke-dasharray="3 3"/>'
+   var mx=(wx0+wx1)/2
+   s+='<circle cx="'+mx.toFixed(1)+'" cy="'+(top+2)+'" r="4.6" fill="#A6A7AA"/><circle cx="'+(mx+2.6).toFixed(1)+'" cy="'+(top+.6)+'" r="4.2" fill="#FBEFE8"/>'}
+  if(o.levels)o.levels.forEach(function(lv){var ly=top+(1-lv.v)*(bot-top)
+   s+='<line x1="0" y1="'+ly.toFixed(1)+'" x2="'+(W2-40)+'" y2="'+ly.toFixed(1)+'" stroke="#EDEBE9" stroke-width="1" stroke-dasharray="3 3"/><text class="axt" x="'+(W2-34)+'" y="'+(ly+3).toFixed(1)+'">'+lv.l+'</text>'})
+  if(o.area)s+='<path d="'+d+' L'+W2+' '+bot+' L0 '+bot+' Z" fill="url(#'+o.gid+')" stroke="none"/>'
+  s+='<path d="'+d+'" fill="none" stroke="'+o.color+'" stroke-width="'+(o.sw||3)+'" stroke-linecap="round"/>'
+  if(cx!=null){s+='<line x1="'+cx.toFixed(1)+'" y1="'+(top-2)+'" x2="'+cx.toFixed(1)+'" y2="'+bot+'" stroke="'+o.color+'" stroke-width="1.3" opacity=".4"/>'
+   s+='<circle cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="6" fill="'+o.color+'" stroke="#fff" stroke-width="2.6"/>'}
+  else s+='<circle cx="'+Math.min(335,pts[pts.length-1][0]).toFixed(1)+'" cy="'+pts[pts.length-1][1].toFixed(1)+'" r="5.5" fill="'+o.color+'"/>'
+  o.axis.forEach(function(a,i){s+='<text class="axt" x="'+(i===0?2:i===1?(W2-40)/2:W2-42)+'" y="'+(H-6)+'" text-anchor="'+(i===0?'start':i===1?'middle':'end')+'">'+a+'</text>'})
+  return '<defs><linearGradient id="'+o.gid+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+o.color+'" stop-opacity=".16"/><stop offset="1" stop-color="'+o.color+'" stop-opacity="0"/></linearGradient></defs>'+s}
+ el.setAttribute('viewBox','0 0 342 '+H);el.innerHTML=base(null)
+ fslBind(el,function(ev){var x=fslLocX(el,ev,W2)
+  var idx=Math.max(0,Math.min(o.pts.length-1,Math.round(x/W2*(o.pts.length-1))))
+  var p=pts[idx];el.innerHTML=base(p[0],p[1])
+  var r=o.fmt(idx,o.pts[idx])
+  fslShowTip(el,ev,'<b>'+r[0]+'</b><i>'+r[1]+'</i>')},function(){el.innerHTML=base(null)})}
+/* hypnogramme : stades au fil de la nuit */
+function fslHypno(el,segs,o){if(!el||!segs||!segs.length)return
+ var H=168,X0=52,X1=340,top=14,laneH=13
+ var LANES={awake:0,rem:1,light:2,deep:3}
+ var COLS={awake:'#6D6D6D',rem:'#FF8A5C',light:'#FFD9C4',deep:'#F93A00'}
+ var NAMES={awake:'Éveil',rem:'Paradoxal',light:'Léger',deep:'Profond'}
+ var laneY=function(l){return top+l*32}
+ var total=0;segs.forEach(function(sg){total+=sg.durMin})
+ var x=function(t){return X0+t/total*(X1-X0)}
+ function draw(cur){var h=''
+  ;['awake','rem','light','deep'].forEach(function(k){var y=laneY(LANES[k])
+   h+='<text class="axt" x="0" y="'+(y+laneH/2+3)+'">'+NAMES[k]+'</text>'
+   h+='<line x1="'+X0+'" y1="'+(y+laneH/2)+'" x2="'+X1+'" y2="'+(y+laneH/2)+'" stroke="#F4F2F0" stroke-width="1"/>'})
+  /* connecteurs verticaux (l enchainement) */
+  var t=0
+  segs.forEach(function(sg,i){if(i>0){var xx=x(t)
+    var y1=laneY(LANES[segs[i-1].stage])+laneH/2,y2=laneY(LANES[sg.stage])+laneH/2
+    h+='<line x1="'+xx.toFixed(1)+'" y1="'+Math.min(y1,y2).toFixed(1)+'" x2="'+xx.toFixed(1)+'" y2="'+Math.max(y1,y2).toFixed(1)+'" stroke="#E5E3E1" stroke-width="1.2"/>'}
+   t+=sg.durMin})
+  /* segments */
+  t=0
+  segs.forEach(function(sg,i){var x0=x(t),x1=x(t+sg.durMin),y=laneY(LANES[sg.stage])
+   var on=cur===i
+   h+='<rect x="'+x0.toFixed(1)+'" y="'+(on?y-1.5:y)+'" width="'+Math.max(3,x1-x0).toFixed(1)+'" height="'+(on?laneH+3:laneH)+'" rx="'+(laneH/2+(on?1.5:0))+'" fill="'+COLS[sg.stage]+'"'+(on?'':' opacity=".92"')+'/>'
+   t+=sg.durMin})
+  if(cur!=null){var ct=0;for(var j=0;j<cur;j++)ct+=segs[j].durMin
+   var cx=x(ct+segs[cur].durMin/2)
+   h+='<line x1="'+cx.toFixed(1)+'" y1="6" x2="'+cx.toFixed(1)+'" y2="'+(laneY(3)+laneH+6)+'" stroke="#B9B9B9" stroke-width="1.1" stroke-dasharray="3 3"/>'}
+  o.axis.forEach(function(a,i){h+='<text class="axt" x="'+(i===0?X0:i===1?(X0+X1)/2:X1)+'" y="'+(H-6)+'" text-anchor="'+(i===0?'start':i===1?'middle':'end')+'">'+a+'</text>'})
+  el.setAttribute('viewBox','0 0 342 '+H);el.innerHTML=h}
+ draw(null)
+ fslBind(el,function(ev){var xx=fslLocX(el,ev,342)
+  var tt=Math.max(0,Math.min(total,(xx-X0)/(X1-X0)*total)),t=0,idx=0
+  for(var i=0;i<segs.length;i++){if(tt>=t&&tt<=t+segs[i].durMin){idx=i;break}t+=segs[i].durMin}
+  draw(idx)
+  var clock=Math.round((o.bed+tt/total*o.span)%1440)
+  fslShowTip(el,ev,'<b>'+flHM(clock)+'</b><i>'+NAMES[segs[idx].stage]+'</i>')},function(){draw(null)})}
+/* colonnes fenêtres de sommeil (régularité) */
+function fslCols(el,n5,fmtDay,opt){if(!el)return
+ var H=196,top=16,bot=158,pxm=(bot-top)/720
+ function draw(sel){var s=''
+  if(opt){[opt.bed,opt.wake].forEach(function(m){if(m==null)return
+   var y=top+Math.max(0,Math.min(720,m))*pxm
+   s+='<line x1="40" y1="'+y.toFixed(1)+'" x2="'+fslC.W+'" y2="'+y.toFixed(1)+'" stroke="#6D6D6D" stroke-width="1.2" stroke-dasharray="5 4" opacity=".55"/>'})}
+  ;[0,180,360,540,720].forEach(function(m){var y=top+m*pxm
+   s+='<line x1="40" y1="'+y.toFixed(1)+'" x2="'+fslC.W+'" y2="'+y.toFixed(1)+'" stroke="#EFEDEB" stroke-width="1" stroke-dasharray="3 3"/><text class="axt" text-anchor="end" x="34" y="'+(y+3).toFixed(1)+'">'+['22:00','01:00','04:00','07:00','10:00'][m/180]+'</text>'})
+  n5.forEach(function(it,i){if(!it.n)return
+   var xc=52+(i+.5)*(fslC.W-64)/5
+   var off=((it.n.bedMin-1320+720)%1440+1440)%1440-720
+   var y0=top+off*pxm,y1=y0+it.n.inBed*pxm
+   var cy0=Math.max(top,y0),cy1=Math.min(bot,y1);if(cy1-cy0<6)return
+   var on=sel===i
+   s+='<rect x="'+(xc-6.5).toFixed(1)+'" y="'+cy0.toFixed(1)+'" width="13" height="'+(cy1-cy0).toFixed(1)+'" rx="6.5" fill="'+(on?'#F93A00':'#EDEBE9')+'"'+(on?'':' opacity=".9"')+'/>'
+   if(on){s+='<text class="cvt" text-anchor="middle" x="'+xc.toFixed(1)+'" y="'+Math.max(11,cy0-6).toFixed(1)+'" fill="#F93A00">'+flHM(it.n.bedMin)+'</text>'
+    s+='<text class="cvt" text-anchor="middle" x="'+xc.toFixed(1)+'" y="'+Math.min(bot+14,cy1+12).toFixed(1)+'" fill="#F93A00">'+flHM(it.n.wakeMin)+'</text>'}
+   s+='<text class="dyt'+(on?' on':'')+'" text-anchor="middle" x="'+xc.toFixed(1)+'" y="'+(H-8)+'">'+fmtDay(it.off)+'</text>'})
+  el.setAttribute('viewBox','0 0 342 '+H);el.innerHTML=s}
+ var last=null;n5.forEach(function(it,i){if(it.n)last=i})
+ draw(last)
+ fslBind(el,function(ev){var x=fslLocX(el,ev,fslC.W),best=null,bd=1e9
+  n5.forEach(function(it,i){if(!it.n)return;var d=Math.abs(52+(i+.5)*(fslC.W-64)/5-x);if(d<bd){bd=d;best=i}})
+  if(best!=null){haptic(3);draw(best)}},function(){})}
+
+/* ── rendu page principale ── */
+function renderFslSleep(){var D=fslData();if(!D)return
+ window._fslD=D
+ var nm=D.nm,g=function(id){return document.getElementById(id)}
+ var set=function(id,v){var e=g(id);if(e)e.innerHTML=v}
+ var pn=String((getProfile().name||'')).trim().split(/\s+/)[0]||'toi'
+ set('fslT1',D.title+'<br>'+pn+'<em>.</em>')
+ set('fslSub',D.sub)
+ set('fslScore',D.score)
+ var arc=g('fslArc');if(arc)arc.setAttribute('stroke-dasharray',(D.score/100*779.1).toFixed(1)+' 779.1')
+ set('fslDur',fslFmtH(nm.asleep))
+ var pv=sleepNight(tk(gDay-1))
+ if(pv){var dd=nm.asleep-pv.asleep
+  set('fslDurD','<b'+(dd<0?' class="dn"':'')+'>'+(dd>=0?'▲':'▼')+'</b> '+(dd>=0?'+':'−')+Math.abs(Math.round(dd))+' min vs hier ('+fslFmtH(pv.asleep)+')')}
+ else set('fslDurD','')
+ function cran(id,lv){var e=g(id);if(!e)return;var els=e.querySelectorAll('i')
+  els.forEach(function(x,j){x.className=j===lv?'on':''})}
+ cran('fslCr0',D.att>=85?2:D.att>=70?1:0)
+ cran('fslCr1',D.reg>=85?2:D.reg>=70?1:0)
+ cran('fslCr2',D.eff>=90?2:D.eff>=80?1:0)
+ cran('fslCr3',D.stress<=4?2:D.stress<=10?1:0)
+ set('fslTimes','Coucher '+flHM(nm.bedMin)+'<span class="sep">·</span>Réveil '+flHM(nm.wakeMin))
+ set('fslB0',D.att+'%');set('fslB1',D.reg+'%');set('fslB2',D.eff+'%');set('fslB3',D.stress+'%')
+ var nh=g('fslNights');if(nh)nh.innerHTML=D.nights.map(function(n){
+  return '<button class="nt'+(n.sel?' sel':'')+'" type="button" onclick="fslGoDay('+n.off+')"><div class="nd">'+n.lab+'</div><div class="nv">'+(n.sc!=null?n.sc:'—')+'<i>%</i></div><div class="nq">'+n.q+'</div></button>'}).join('')
+ set('fslP5Dur',fslFmtH(nm.inBed))
+ set('fslP5Range','Plage habituelle '+(D.need-1)+'h – '+D.need+'h · efficacité '+D.eff+'%')
+ var span=((nm.wakeMin-nm.bedMin)%1440+1440)%1440
+ fslDrawNight()
+ var pc=function(m){return Math.round(m/nm.inBed*100)}
+ set('fslP5Leg','<li onclick="fslStgInfo(\'rev\')"><i class="dot" style="background:#6D6D6D"></i><span class="lbl">Réveil</span><b class="t">'+fslFmtT(nm.awake)+'</b><b class="p">'+pc(nm.awake)+'%</b></li>'
+  +'<li onclick="fslStgInfo(\'leg\')"><i class="dot" style="background:#FFD9C4"></i><span class="lbl">Léger</span><b class="t">'+fslFmtT(nm.light)+'</b><b class="p">'+pc(nm.light)+'%</b></li>'
+  +'<li onclick="fslStgInfo(\'pro\')"><i class="dot" style="background:#F93A00"></i><span class="lbl">Sommeil profond</span><b class="t">'+fslFmtT(nm.deep)+'</b><b class="p">'+pc(nm.deep)+'%</b></li>'
+  +'<li onclick="fslStgInfo(\'par\')"><i class="dot" style="background:#FF8A5C"></i><span class="lbl">Sommeil paradoxal</span><b class="t">'+fslFmtT(nm.rem)+'</b><b class="p">'+pc(nm.rem)+'%</b></li>')
+ set('fslRepT',fslFmtT(nm.restorative));set('fslRepP',pc(nm.restorative)+'%')
+ if(pv&&pv.restorative!=null){var dr=nm.restorative-pv.restorative
+  set('fslRepD','<b>'+(dr>=0?'▲':'▼')+'</b> hier '+fslFmtT(pv.restorative))}
+ set('fslCoachP',D.reg<88?'Te coucher 15 min plus tôt pourrait améliorer ta récupération.':'Belle régularité cette semaine, continue sur cette lancée.')
+}
+
+/* mode du chart de nuit : stades ou FC */
+window._fslNM='st'
+function fslNightMode(m){window._fslNM=m;haptic(5)
+ var seg=document.getElementById('fslNSeg')
+ if(seg)seg.querySelectorAll('button').forEach(function(b,i){b.classList.toggle('on',(m==='st')===(i===0))})
+ fslDrawNight()}
+function fslDrawNight(){var D=window._fslD;if(!D)return
+ var nm=D.nm,el=document.getElementById('fslNightChart');if(!el)return
+ var span=((nm.wakeMin-nm.bedMin)%1440+1440)%1440
+ var axis=[flHM(nm.bedMin),flHM(Math.round((nm.bedMin+span/2)%1440)),flHM(nm.wakeMin)]
+ if(window._fslNM==='fc'){var lo=D.hrMin-4,hi=D.hrMax+4
+  fslCurveChart(el,{pts:D.hr.map(function(v){return (v-lo)/(hi-lo)}),gid:'fslgFC',color:'#F93A00',sw:2.6,area:true,H:168,
+   levels:[{v:(D.hrMax-lo)/(hi-lo),l:D.hrMax},{v:(((D.hrMax+D.hrMin)/2)-lo)/(hi-lo),l:Math.round((D.hrMax+D.hrMin)/2)},{v:(D.hrMin-lo)/(hi-lo),l:D.hrMin}],
+   axis:axis,fmt:function(i,v){var t=Math.round((nm.bedMin+i/(D.hr.length-1)*span)%1440)
+    return [flHM(t),Math.round(lo+v*(hi-lo))+' bpm']}})}
+ else fslHypno(el,flStageSegs(nm),{bed:nm.bedMin,span:span,axis:axis})}
+/* ── sous-pages ── */
+var FSL_SUBS={
+ need:{t:'Sommeil atteint',s:'Temps dormi comparé à ton besoin.',ic:'ti-target-arrow'},
+ reg:{t:'Régularité',s:'La constance de tes heures de coucher.',ic:'ti-clock-check'},
+ eff:{t:'Efficacité',s:'La part de ta nuit réellement dormie.',ic:'ti-gauge'},
+ stress:{t:'Stress nocturne',s:'Ton niveau de stress pendant la nuit.',ic:'ti-wave-sine'}}
+function fslDayShort(off){var d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()+off)
+ return off===gDay?'auj.':['dim.','lun.','mar.','mer.','jeu.','ven.','sam.'][d.getDay()]}
+function renderFslSub(type){var D=window._fslD||fslData();if(!D)return
+ var nm=D.nm,cfg=FSL_SUBS[type]
+ var host=document.getElementById('fslsub-'+type);if(!host)return
+ var hero={need:[D.att+'%',D.dAtt,'vs sem. dernière'],reg:[D.reg+'%',D.dReg,'vs sem. dernière'],eff:[D.eff+'%',D.dEff,'vs sem. dernière'],stress:[D.stress+'%',-D.dStress,'vs sem. dernière']}[type]
+ var dl=hero[1],neg=dl<0
+ var h='<header class="fsl-head"><button class="fsl-back" type="button" onclick="go(\'sleep\')"><i class="ti ti-chevron-left"></i></button>'
+  +'<div class="fsl-eyebrow" style="margin:0"><i class="ti '+cfg.ic+'"></i><span>SOMMEIL</span></div><span class="fsl-headspace"></span></header>'
+  +'<h1 class="fsl-h1">'+cfg.t+'<em>.</em></h1><p class="fsl-sub">'+cfg.s+'</p>'
+  +'<div class="fsl-hero"><b>'+hero[0]+'</b><span class="delta'+(neg?' neg':'')+'">'+(dl===0?'<i class="ti ti-minus"></i>stable ':'<i class="ti ti-trending-'+(neg?'down':'up')+'"></i>'+(dl>0?'+':'−')+Math.abs(dl)+'% ')+hero[2]+'</span></div>'
+ /* carte principale par métrique */
+ if(type==='need'){var nc=D.nc
+  h+='<div class="fsl-card"><div class="fsl-chead"><h3>CETTE NUIT</h3><button class="fsl-cinfo" type="button" onclick="fslInfo(\'Ton besoin réel = ton minimum sain + ta dette de sommeil + l\\\'effort du jour.\')"><i class="ti ti-info-circle"></i></button></div>'
+   +'<div class="fsl-effrow" style="margin-top:12px"><span class="l">DORMI</span><span class="v">'+fslFmtT(nm.asleep)+'</span></div>'
+   +'<div class="fsl-needbar" id="fslNeedBar-'+type+'"><i style="width:'+Math.min(100,Math.round(nm.asleep/nc.need*100))+'%"></i></div>'
+   +'<div class="fsl-effrow" style="margin-top:14px"><span class="l">NÉCESSAIRE</span><span class="v">'+fslFmtT(nc.need)+'</span></div>'
+   +'<div class="fsl-needbar" style="background:none;display:flex;gap:2px">'
+    +'<i style="width:'+(nc.base/nc.need*100).toFixed(1)+'%;background:#FFD9C4"></i>'
+    +(nc.debt?'<i style="width:'+(nc.debt/nc.need*100).toFixed(1)+'%;background:#FF8A5C"></i>':'')
+    +(nc.strain?'<i style="width:'+(nc.strain/nc.need*100).toFixed(1)+'%;background:#F93A00"></i>':'')+'</div>'
+   +'<ul class="fsl-leg" style="margin-top:12px">'
+    +'<li><i class="dot" style="background:#FFD9C4"></i><span class="lbl">Minimum sain</span><b class="t">'+fslFmtT(nc.base)+'</b><b class="p"></b></li>'
+    +'<li><i class="dot" style="background:#FF8A5C"></i><span class="lbl">Dette de sommeil</span><b class="t">+'+fslFmtT(nc.debt)+'</b><b class="p"></b></li>'
+    +'<li><i class="dot" style="background:#F93A00"></i><span class="lbl">Effort récent</span><b class="t">+'+fslFmtT(nc.strain)+'</b><b class="p"></b></li></ul></div>'
+  h+='<div class="fsl-card"><div class="fsl-chead"><h3>7 DERNIERS JOURS</h3><button class="fsl-cinfo" type="button" onclick="fslInfo(\'Barres = temps dormi. Tirets gris = ton besoin ce jour-là.\')"><i class="ti ti-info-circle"></i></button></div><svg class="fsl-chart" id="fslSubC1-'+type+'"></svg></div>'
+  h+='<div class="fsl-card"><div class="fsl-chead"><h3>DETTE DE SOMMEIL</h3><button class="fsl-cinfo" type="button" onclick="fslInfo(\'Le sommeil manqué qui s\\\'accumule sur les derniers jours.\')"><i class="ti ti-info-circle"></i></button></div><svg class="fsl-chart" id="fslSubC2-'+type+'"></svg></div>'
+ }else if(type==='reg'){
+  h+='<div class="fsl-card"><div class="fsl-chead"><h3>FENÊTRES DE SOMMEIL</h3><button class="fsl-cinfo" type="button" onclick="fslInfo(\'Chaque barre = une nuit, du coucher au réveil. Touche une nuit pour voir ses heures.\')"><i class="ti ti-info-circle"></i></button></div>'
+   +'<svg class="fsl-chart" id="fslSubC0-'+type+'"></svg>'
+   +'<div style="font-size:11px;font-weight:600;color:#A6A7AA;margin-top:6px">– – –&nbsp;&nbsp;heures optimales de coucher et de réveil</div></div>'
+  h+='<div class="fsl-card"><div class="fsl-chead"><h3>7 DERNIERS JOURS</h3></div><svg class="fsl-chart" id="fslSubC1-'+type+'"></svg></div>'
+ }else if(type==='eff'){
+  h+='<div class="fsl-card"><div class="fsl-chead"><h3>CETTE NUIT</h3><button class="fsl-cinfo" type="button" onclick="fslInfo(\'Sommeil réel vs temps passé éveillé au lit.\')"><i class="ti ti-info-circle"></i></button></div>'
+   +'<div class="fsl-effrow"><span class="l">SOMMEIL</span><span class="v">'+fslFmtT(nm.asleep)+'</span></div><div class="fsl-effbar" id="fslEffSegs-'+type+'"></div>'
+   +'<div class="fsl-effrow"><span class="l">RÉVEIL</span><span class="v">'+fslFmtT(nm.awake)+'</span></div><div class="fsl-hatchbar" id="fslEffTicks-'+type+'"></div>'
+   +'<div class="fsl-noct"><span class="sq"></span><span>RÉVEILS NOCTURNES</span><b>'+(nm.wakeEvents!=null?nm.wakeEvents:6)+'</b></div></div>'
+  h+='<div class="fsl-card"><div class="fsl-chead"><h3>SOMMEIL RÉPARATEUR · 7 JOURS</h3><button class="fsl-cinfo" type="button" onclick="fslInfo(\'Profond + paradoxal : les deux stades qui te régénèrent.\')"><i class="ti ti-info-circle"></i></button></div>'
+   +'<svg class="fsl-chart" id="fslSubC2-'+type+'"></svg>'
+   +'<div style="display:flex;gap:16px;margin-top:8px"><span style="display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;color:#77787B"><i style="width:8px;height:8px;border-radius:50%;background:#F93A00"></i>Profond</span><span style="display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;color:#77787B"><i style="width:8px;height:8px;border-radius:50%;background:#FF8A5C"></i>Paradoxal</span></div></div>'
+  h+='<div class="fsl-card"><div class="fsl-chead"><h3>EFFICACITÉ · 7 JOURS</h3></div><svg class="fsl-chart" id="fslSubC1-'+type+'"></svg></div>'
+ }else{
+  h+='<div class="fsl-card"><div class="fsl-chead"><h3>PENDANT LA NUIT</h3></div><svg class="fsl-chart" id="fslSubC0-'+type+'"></svg>'
+   +'<ul class="fsl-leg" style="margin-top:10px">'
+   +'<li><i class="dot" style="background:#F93A00"></i><span class="lbl">Élevé</span><b class="t">0:00</b><b class="p">0%</b></li>'
+   +'<li><i class="dot" style="background:#6D6D6D"></i><span class="lbl">Moyen</span><b class="t">'+fslFmtT(D.moyenMin)+'</b><b class="p">'+D.stress+'%</b></li>'
+   +'<li><i class="dot" style="background:#C9C9C9"></i><span class="lbl">Faible</span><b class="t">'+fslFmtT(nm.inBed-D.moyenMin)+'</b><b class="p">'+(100-D.stress)+'%</b></li></ul></div>'
+  h+='<div class="fsl-card"><div class="fsl-chead"><h3>7 DERNIERS JOURS</h3></div><svg class="fsl-chart" id="fslSubC1-'+type+'"></svg></div>'
+ }
+ /* insight calculé */
+ var ins={need:(D.nc.debt>45?'Dette de '+fslFmtT(D.nc.debt)+' accumulée — vise '+fslFmtT(D.nc.need)+' cette nuit pour la combler.':'Ta meilleure nuit sur 7 jours : '+(D.best!=null?D.wLab[D.best]+' ('+D.bestV+'%)':'—')+'.'),
+  reg:'Ton heure de coucher varie de ±'+D.bedDev+' min en moyenne cette semaine.',
+  eff:(nm.wakeEvents!=null?nm.wakeEvents:6)+' réveils cette nuit, pour '+fslFmtT(nm.awake)+' éveillé au total.',
+  stress:'Nuit '+(D.stress<=3?'très calme':'globalement calme')+' : '+(100-D.stress)+'% du temps en stress faible.'}[type]
+ h+='<div class="fsl-coach"><div class="ic"><i class="ti ti-bulb"></i></div><div><div class="lab">À RETENIR</div><p>'+ins+'</p></div></div>'
+ host.innerHTML=h
+ /* graphes */
+ var span=((nm.wakeMin-nm.bedMin)%1440+1440)%1440
+ var wk={labels:D.wLab}
+ if(type==='need'){var nbEl=document.getElementById('fslNeedBar-'+type)
+  fslBind(nbEl,function(ev){var reste=D.nc.need-nm.asleep
+   fslShowTip(nbEl,ev,'<b>'+fslFmtT(nm.asleep)+' / '+fslFmtT(D.nc.need)+'</b><i>'+(reste>0?'il manque '+fslFmtT(reste):'besoin atteint')+'</i>')})
+  fslBars(document.getElementById('fslSubC1-'+type),{vals:D.wDur.map(function(v){return v!=null?v/60:null}),targets:D.wNeedMin.map(function(v,i){return D.wDur[i]!=null?v/60:null}),labels:D.wLab,min:3,max:10,avg:null,gid:'fgn1',ticks:[{v:9,l:'9h'},{v:7,l:'7h'},{v:5,l:'5h'},{v:3,l:'3h'}],fmt:function(v,i2){return fslFmtH(v*60)}})
+  fslBars(document.getElementById('fslSubC2-'+type),{vals:D.wDebt.map(function(v,i){return D.wDur[i]!=null?v/60:null}),labels:D.wLab,min:0,max:3,avg:null,gid:'fgn2',ticks:[{v:3,l:'3h'},{v:1.5,l:'1h30'},{v:0,l:'0'}],fmt:function(v){return fslFmtT(v*60)+' de dette'}})}
+ if(type==='reg'){var bw=[],ww=[]
+  D.n5.forEach(function(it){if(!it.n)return;bw.push(((it.n.bedMin-1320+720)%1440+1440)%1440-720);ww.push(((it.n.wakeMin-1320)%1440+1440)%1440)})
+  var opt={bed:bw.length?bw.reduce(function(a,b){return a+b})/bw.length:null,wake:ww.length?ww.reduce(function(a,b){return a+b})/ww.length:null}
+  fslCols(document.getElementById('fslSubC0-'+type),D.n5,fslDayShort,opt)
+  fslLine(document.getElementById('fslSubC1-'+type),{vals:D.wReg,labels:D.wLab,min:40,max:100,gid:'fgr1',ticks:[{v:100,l:'100%'},{v:75,l:'75%'},{v:50,l:'50%'}],fmt:function(v){return v+'%'}})}
+ if(type==='eff'){
+  var wev=nm.wakeEvents!=null?nm.wakeEvents:6,rnd=fslRng('eff'+tk(gDay))
+  var segN=Math.max(3,Math.min(9,wev)),ws=[],wsum=0,i
+  for(i=0;i<segN;i++){var w=.4+rnd();ws.push(w);wsum+=w}
+  var gapP=1.4,totP=100-(segN-1)*gapP,segs='',xp=0,segRanges=[]
+  for(i=0;i<segN;i++){var swp=ws[i]/wsum*totP;segRanges.push([xp,xp+swp]);segs+='<i style="left:'+xp.toFixed(2)+'%;width:'+swp.toFixed(2)+'%"></i>';xp+=swp+gapP}
+  var segEl=document.getElementById('fslEffSegs-'+type);segEl.innerHTML=segs
+  var ticks='';for(i=0;i<wev;i++)ticks+='<u style="left:'+(2+rnd()*95).toFixed(2)+'%;width:'+(.7+rnd()*1).toFixed(2)+'%"></u>'
+  var tickEl=document.getElementById('fslEffTicks-'+type);tickEl.innerHTML=ticks
+  var spanE=((nm.wakeMin-nm.bedMin)%1440+1440)%1440
+  function effPick(el){return function(ev){var r=el.getBoundingClientRect()
+   var cx=(ev.touches?ev.touches[0].clientX:ev.clientX)
+   var f=Math.max(0,Math.min(100,(cx-r.left)/r.width*100))
+   var t=Math.round((nm.bedMin+f/100*spanE)%1440)
+   var inSeg=segRanges.some(function(rg){return f>=rg[0]&&f<=rg[1]})
+   fslShowTip(el,ev,'<b>'+flHM(t)+'</b><i>'+(inSeg?'Endormi':'Éveillé')+'</i>')}}
+  fslBind(segEl,effPick(segEl));fslBind(tickEl,effPick(tickEl))
+  fslLine(document.getElementById('fslSubC1-'+type),{vals:D.wEff,labels:D.wLab,min:60,max:100,gid:'fge1',ticks:[{v:100,l:'100%'},{v:80,l:'80%'},{v:60,l:'60%'}],fmt:function(v){return v+'%'}})
+  fslStack(document.getElementById('fslSubC2-'+type),{series:[{vals:D.wRep.map(function(r){return r?r.deep/60:0}),color:'#F93A00'},{vals:D.wRep.map(function(r){return r?r.rem/60:0}),color:'#FF8A5C'}],labels:D.wLab,min:0,max:6,gid:'fge2',ticks:[{v:6,l:'6h'},{v:3,l:'3h'},{v:0,l:'0'}],H:128,fmt:function(i){var r=D.wRep[i];if(!r)return null
+   return [fslFmtT(r.deep+r.rem),'P '+fslFmtT(r.deep)+' · SP '+fslFmtT(r.rem)]}})}
+ if(type==='stress'){
+  var pad=8,pre=[],post=[]
+  for(var pi=0;pi<pad;pi++){pre.push(.72-pi*.022+.03*Math.sin(pi*2.3));post.push(.52+pi*.028+.03*Math.sin(pi*1.7))}
+  var sps2=pre.concat(D.sps,post),padMin=Math.round(span*pad/60)
+  var tot2=span+2*padMin,t0=nm.bedMin-padMin
+  fslCurveChart(document.getElementById('fslSubC0-'+type),{pts:sps2,gid:'fgs0',color:'#6D6D6D',sw:2.6,area:false,H:132,
+   win:[pad/(sps2.length-1),(pad+60)/(sps2.length-1)],
+   levels:[{v:.85,l:'Élevé'},{v:.65,l:'Moyen'},{v:.35,l:'Faible'}],
+   axis:[flHM(((t0%1440)+1440)%1440),flHM(Math.round(((t0+tot2/2)%1440+1440)%1440),0),flHM(nm.wakeMin+padMin)],
+   fmt:function(i,v){var t=Math.round(((t0+i/(sps2.length-1)*tot2)%1440+1440)%1440)
+    return [flHM(t),'Stress '+(v>.8?'élevé':v>.62?'moyen':'faible')]}})
+  fslStack(document.getElementById('fslSubC1-'+type),{series:[{vals:D.wSSplit.map(function(x){return x?x.fai/60:0}),color:'#D9D8D7'},{vals:D.wSSplit.map(function(x){return x?x.moy/60:0}),color:'#6D6D6D'},{vals:D.wSSplit.map(function(x){return x?x.ele/60:0}),color:'#F93A00'}],labels:D.wLab,min:0,max:10,gid:'fgs1',ticks:[{v:9,l:'9h'},{v:4.5,l:'4h30'},{v:0,l:'0'}],H:128,fmt:function(i){var x=D.wSSplit[i];if(!x)return null
+   return [D.wStress[i]+'% moyen',fslFmtT(x.moy)+' moyen · '+fslFmtT(x.fai)+' faible']}})
+  var slgs=document.querySelectorAll('#fslsub-stress .fsl-card .fsl-chead h3');if(slgs[1])slgs[1].textContent='RÉPARTITION · 7 JOURS'}
+}
+var _fslRSOrig=renderSleep;renderSleep=function(){try{_fslRSOrig()}catch(e){}try{renderFslSleep()}catch(e){}}
 </script>
 </body>
 </html>
