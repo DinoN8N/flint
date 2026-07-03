@@ -6194,7 +6194,7 @@ function tabRenderVals(){Object.keys(TAB_KEYS).forEach(function(key){tabRenderBo
 function injectTodayLoop(){var n=0;injectToday();var iv=setInterval(function(){injectToday();if(++n>18)clearInterval(iv);},350);}
 function injectToday(){
  var f=document.getElementById('frToday');if(!f)return;var doc;try{doc=f.contentDocument;}catch(e){return;}if(!doc||!doc.body)return;
- if(!doc._linkFix){doc._linkFix=true;try{var _st=doc.createElement('style');_st.textContent='a{color:inherit;text-decoration:none}';(doc.head||doc.documentElement).appendChild(_st);}catch(e){}}
+ if(!doc._linkFix){doc._linkFix=true;try{var _st=doc.createElement('style');_st.textContent='a,button{color:inherit;-webkit-text-fill-color:currentColor}a{text-decoration:none}';(doc.head||doc.documentElement).appendChild(_st);}catch(e){}}
  function setText(oldT,val){var e=doc.querySelectorAll('span,div,p,h1,button');for(var i=0;i<e.length;i++){var x=e[i];if(x.children.length===0&&(x.textContent||'').trim()===oldT){x.textContent=val;return true;}}return false;}
  try{
   var K=tk(0),rv=(typeof recovery==='function'?recovery():null),sc=rv&&rv.s!=null?Math.round(rv.s):null;
@@ -8449,7 +8449,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v438';
+const APP_VERSION='flint-v439';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
