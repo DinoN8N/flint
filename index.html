@@ -2877,7 +2877,132 @@ header.home-hdr .av:active,header.home-hdr .wbatt:active,header.home-hdr .hdmenu
       <button onclick="openDashEdit()" style="flex-shrink:0;display:inline-flex;align-items:center;gap:8px;border:1.4px solid #ff8556;background:#fff;color:#ff4a1c;border-radius:999px;padding:9px 16px;font-family:-apple-system,system-ui,sans-serif;font-size:14px;font-weight:500;cursor:pointer;"><i class="ti ti-adjustments-horizontal" style="font-size:18px;"></i>Personnaliser</button>
     </div>
     <span style="display:block;margin-top:22px;font-family:'Archivo',-apple-system,system-ui,sans-serif;font-weight:800;font-size:41px;letter-spacing:-0.03em;color:#14110f;line-height:1;">Tableau de bord<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ff4a1c;margin-left:5px;vertical-align:baseline;"></span></span>
-    <div id="tabBoardCards" style="display:flex;flex-direction:column;gap:16px;margin-top:22px;"></div>
+    <!-- Cards -->
+    <div style="display: flex; flex-direction: column; gap: 16px; margin-top: 22px;">
+
+      <!-- RÉCUPÉRATION -->
+      <div style="background: #ffffff; border-style: solid; border-width: 0; border-color: transparent; border-radius: 26px; box-shadow: 0 0 0 1px rgba(255,74,28,0.16), 0 12px 34px rgba(255,74,28,0.07); transition: box-shadow .3s ease, background .3s ease;">
+        <button onclick="tabToggle2('recup')" id="tabhead_recup" style="display: flex; align-items: center; width: 100%; cursor: pointer; padding: 24px 22px;">
+          <span style="width: 26px; height: 26px; display: flex; flex-shrink: 0;">
+            <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#14110f" stroke-width="1.8" stroke-linejoin="round"><path d="M12 20.5C12 20.5 3.5 15 3.5 8.8C3.5 6 5.7 4 8.2 4C9.9 4 11.3 4.9 12 6.2C12.7 4.9 14.1 4 15.8 4C18.3 4 20.5 6 20.5 8.8C20.5 15 12 20.5 12 20.5Z"></path></svg>
+          </span>
+          <span style="margin-left: 16px; font-size: 15px; font-weight: 500; letter-spacing: 1px;">RÉCUPÉRATION</span>
+          <span style="margin-left: 12px; min-width: 24px; height: 24px; padding: 0 7px; border-radius: 12px; background: #f3f2f1; color: #9f9e9b; font-family: -apple-system, system-ui, sans-serif; font-size: 12px; font-weight: 500; display: flex; align-items: center; justify-content: center;">3</span>
+          <span style="margin-left: auto; display: flex; transition: transform .3s ease; transform: rotate(180deg);" data-tabchev="recup">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#14110f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9L12 15L18 9"></path></svg>
+          </span>
+        </button>
+        <div id="tabbody_recup" data-tabkey="recup" style="display:block;">
+          <div style="padding: 0 22px 10px; animation: flintUnfold .42s cubic-bezier(.32,.72,0,1) both;">
+            <div  role="button" tabindex="0" style="display: flex; align-items: center; padding: 22px 0; border-top: 1px solid #efeae2; cursor: pointer;">
+              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#14110f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12H6L8.5 6L12 18L14.5 12H22"></path></svg>
+              <span style="margin-left: 16px; font-family: -apple-system, system-ui, sans-serif; font-size: 15px; font-weight: 300; color: #14110f;">VFC</span>
+              <span style="margin-left: auto; display: flex; align-items: baseline;"><span data-tv style="min-width: 40px; text-align: right; font-size: 24px; font-weight: 500; letter-spacing: -0.02em;">42</span><span data-tu style="width: 44px; margin-left: 8px; white-space: nowrap; font-size: 14px; color: #b3ab9f;">ms</span></span>
+              <span style="margin-left: 16px; display: flex; color: #c9c2b6;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6L15 12L9 18"></path></svg></span>
+            </div>
+            <div style="display: flex; align-items: center; padding: 22px 0; border-top: 1px solid #efeae2;">
+              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#14110f" stroke-width="1.8" stroke-linejoin="round"><path d="M12 20.5C12 20.5 3.5 15 3.5 8.8C3.5 6 5.7 4 8.2 4C9.9 4 11.3 4.9 12 6.2C12.7 4.9 14.1 4 15.8 4C18.3 4 20.5 6 20.5 8.8C20.5 15 12 20.5 12 20.5Z"></path></svg>
+              <span style="margin-left: 16px; font-family: -apple-system, system-ui, sans-serif; font-size: 15px; font-weight: 300; color: #14110f;">FC au repos</span>
+              <span style="margin-left: auto; display: flex; align-items: baseline;"><span data-tv style="min-width: 40px; text-align: right; font-size: 24px; font-weight: 500; letter-spacing: -0.02em;">48</span><span data-tu style="width: 44px; margin-left: 8px; white-space: nowrap; font-size: 14px; color: #b3ab9f;">bpm</span></span>
+              <span style="margin-left: 16px; display: flex; color: #c9c2b6;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6L15 12L9 18"></path></svg></span>
+            </div>
+            <div style="display: flex; align-items: center; padding: 22px 0; border-top: 1px solid #efeae2;">
+              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#14110f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 8A8 8 0 0 0 6.3 5.4L4 7.6"></path><path d="M4 3.5V7.8H8.3"></path><path d="M4 16A8 8 0 0 0 17.7 18.6L20 16.4"></path><path d="M20 20.5V16.2H15.7"></path></svg>
+              <span style="margin-left: 16px; font-family: -apple-system, system-ui, sans-serif; font-size: 15px; font-weight: 300; color: #14110f;">Récupération</span>
+              <span style="margin-left: auto; display: flex; align-items: baseline;"><span data-tv style="min-width: 40px; text-align: right; font-size: 24px; font-weight: 500; letter-spacing: -0.02em;">82</span><span data-tu style="width: 44px; margin-left: 8px; white-space: nowrap; font-size: 14px; color: #b3ab9f;">%</span></span>
+              <span style="margin-left: 16px; display: flex; color: #c9c2b6;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6L15 12L9 18"></path></svg></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SOMMEIL -->
+      <div style="background: #fdf3ee; border-style: solid; border-width: 0; border-color: transparent; border-radius: 26px; box-shadow: none; transition: box-shadow .3s ease, background .3s ease;">
+        <button onclick="tabToggle2('sommeil')" id="tabhead_sommeil" style="display: flex; align-items: center; width: 100%; cursor: pointer; padding: 24px 22px;">
+          <span style="width: 26px; height: 26px; display: flex; flex-shrink: 0;">
+            <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#14110f" stroke-width="1.8" stroke-linejoin="round"><path d="M20.5 14A8.4 8.4 0 1 1 10 3.5A6.5 6.5 0 0 0 20.5 14Z"></path></svg>
+          </span>
+          <span style="margin-left: 16px; font-size: 15px; font-weight: 500; letter-spacing: 1px;">SOMMEIL</span>
+          <span style="margin-left: 12px; min-width: 24px; height: 24px; padding: 0 7px; border-radius: 12px; background: #f3f2f1; color: #9f9e9b; font-family: -apple-system, system-ui, sans-serif; font-size: 12px; font-weight: 500; display: flex; align-items: center; justify-content: center;">5</span>
+          <span style="margin-left: auto; display: flex; transition: transform .3s ease; transform: rotate(0deg);" data-tabchev="sommeil">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#14110f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9L12 15L18 9"></path></svg>
+          </span>
+        </button>
+        <div id="tabbody_sommeil" data-tabkey="sommeil" style="display:none;">
+          <div style="padding: 0 22px 10px; animation: flintUnfold .42s cubic-bezier(.32,.72,0,1) both;">
+            <div style="display: flex; align-items: center; padding: 20px 0; border-top: 1px solid #efeae2;"><span style="font-family: -apple-system, system-ui, sans-serif; font-size: 15px; font-weight: 300; color: #14110f;">Sommeil réparateur</span><span style="margin-left: auto; display: flex; align-items: baseline;"><span data-tv style="min-width: 40px; text-align: right; font-size: 24px; font-weight: 500; letter-spacing: -0.02em;">68</span><span data-tu style="width: 44px; margin-left: 8px; white-space: nowrap; font-size: 14px; color: #b3ab9f;">%</span></span></div>
+            <div style="display: flex; align-items: center; padding: 20px 0; border-top: 1px solid #efeae2;"><span style="font-family: -apple-system, system-ui, sans-serif; font-size: 15px; font-weight: 300; color: #14110f;">Dette de sommeil</span><span style="margin-left: auto; display: flex; align-items: baseline;"><span data-tv style="min-width: 40px; text-align: right; font-size: 24px; font-weight: 500; letter-spacing: -0.02em;">-1,2</span><span data-tu style="width: 44px; margin-left: 8px; white-space: nowrap; font-size: 14px; color: #b3ab9f;">h</span></span></div>
+            <div style="display: flex; align-items: center; padding: 20px 0; border-top: 1px solid #efeae2;"><span style="font-family: -apple-system, system-ui, sans-serif; font-size: 15px; font-weight: 300; color: #14110f;">Efficacité du sommeil</span><span style="margin-left: auto; display: flex; align-items: baseline;"><span data-tv style="min-width: 40px; text-align: right; font-size: 24px; font-weight: 500; letter-spacing: -0.02em;">91</span><span data-tu style="width: 44px; margin-left: 8px; white-space: nowrap; font-size: 14px; color: #b3ab9f;">%</span></span></div>
+            <div style="display: flex; align-items: center; padding: 20px 0; border-top: 1px solid #efeae2;"><span style="font-family: -apple-system, system-ui, sans-serif; font-size: 15px; font-weight: 300; color: #14110f;">Temps passé au lit</span><span style="margin-left: auto; display: flex; align-items: baseline;"><span data-tv style="min-width: 40px; text-align: right; font-size: 24px; font-weight: 500; letter-spacing: -0.02em;">8h10</span><span style="width: 44px; margin-left: 8px;"></span></span></div>
+            <div style="display: flex; align-items: center; padding: 20px 0; border-top: 1px solid #efeae2;"><span style="font-family: -apple-system, system-ui, sans-serif; font-size: 15px; font-weight: 300; color: #14110f;">Durée de sommeil</span><span style="margin-left: auto; display: flex; align-items: baseline;"><span data-tv style="min-width: 40px; text-align: right; font-size: 24px; font-weight: 500; letter-spacing: -0.02em;">7h42</span><span style="width: 44px; margin-left: 8px;"></span></span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ACTIVITÉ -->
+      <div style="background: #fdf3ee; border-style: solid; border-width: 0; border-color: transparent; border-radius: 26px; box-shadow: none; transition: box-shadow .3s ease, background .3s ease;">
+        <button onclick="tabToggle2('activite')" id="tabhead_activite" style="display: flex; align-items: center; width: 100%; cursor: pointer; padding: 24px 22px;">
+          <span style="width: 26px; height: 26px; display: flex; flex-shrink: 0;">
+            <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#14110f" stroke-width="1.8" stroke-linecap="round"><path d="M5 20V16"></path><path d="M10 20V11"></path><path d="M15 20V14"></path><path d="M20 20V7"></path></svg>
+          </span>
+          <span style="margin-left: 16px; font-size: 15px; font-weight: 500; letter-spacing: 1px;">ACTIVITÉ</span>
+          <span style="margin-left: 12px; min-width: 24px; height: 24px; padding: 0 7px; border-radius: 12px; background: #f3f2f1; color: #9f9e9b; font-family: -apple-system, system-ui, sans-serif; font-size: 12px; font-weight: 500; display: flex; align-items: center; justify-content: center;">3</span>
+          <span style="margin-left: auto; display: flex; transition: transform .3s ease; transform: rotate(0deg);" data-tabchev="activite">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#14110f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9L12 15L18 9"></path></svg>
+          </span>
+        </button>
+        <div id="tabbody_activite" data-tabkey="activite" style="display:none;">
+          <div style="padding: 0 22px 10px; animation: flintUnfold .42s cubic-bezier(.32,.72,0,1) both;">
+            <div style="display: flex; align-items: center; padding: 20px 0; border-top: 1px solid #efeae2;"><span style="font-family: -apple-system, system-ui, sans-serif; font-size: 15px; font-weight: 300; color: #14110f;">Pas</span><span style="margin-left: auto; display: flex; align-items: baseline;"><span data-tv style="min-width: 40px; text-align: right; font-size: 24px; font-weight: 500; letter-spacing: -0.02em;">11 182</span><span style="margin-left: 6px; font-size: 16px; font-weight: 500; color: #14110f;">pas</span><span style="width: 44px; margin-left: 8px;"></span></span></div>
+            <div style="display: flex; align-items: center; padding: 20px 0; border-top: 1px solid #efeae2;"><span style="font-family: -apple-system, system-ui, sans-serif; font-size: 15px; font-weight: 300; color: #14110f;">Calories</span><span style="margin-left: auto; display: flex; align-items: baseline;"><span data-tv style="min-width: 40px; text-align: right; font-size: 24px; font-weight: 500; letter-spacing: -0.02em;">2 480</span><span data-tu style="width: 44px; margin-left: 8px; white-space: nowrap; font-size: 14px; color: #b3ab9f;">kcal</span></span></div>
+            <div style="display: flex; align-items: center; padding: 20px 0; border-top: 1px solid #efeae2;"><span style="font-family: -apple-system, system-ui, sans-serif; font-size: 15px; font-weight: 300; color: #14110f;">Effort et récupération</span><span style="margin-left: auto; display: flex; align-items: baseline;"><span data-tv style="min-width: 40px; text-align: right; font-size: 24px; font-weight: 500; letter-spacing: -0.02em;">15,7</span><span data-tu style="width: 44px; margin-left: 8px; white-space: nowrap; font-size: 14px; color: #b3ab9f;">/21</span></span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CARDIO -->
+      <div style="background: #fdf3ee; border-style: solid; border-width: 0; border-color: transparent; border-radius: 26px; box-shadow: none; transition: box-shadow .3s ease, background .3s ease;">
+        <button onclick="tabToggle2('cardio')" id="tabhead_cardio" style="display: flex; align-items: center; width: 100%; cursor: pointer; padding: 24px 22px;">
+          <span style="width: 26px; height: 26px; display: flex; flex-shrink: 0;">
+            <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#14110f" stroke-width="1.8" stroke-linejoin="round"><path d="M12 20.5C12 20.5 3.5 15 3.5 8.8C3.5 6 5.7 4 8.2 4C9.9 4 11.3 4.9 12 6.2C12.7 4.9 14.1 4 15.8 4C18.3 4 20.5 6 20.5 8.8C20.5 15 12 20.5 12 20.5Z"></path></svg>
+          </span>
+          <span style="margin-left: 16px; font-size: 15px; font-weight: 500; letter-spacing: 1px;">CARDIO</span>
+          <span style="margin-left: 12px; min-width: 24px; height: 24px; padding: 0 7px; border-radius: 12px; background: #f3f2f1; color: #9f9e9b; font-family: -apple-system, system-ui, sans-serif; font-size: 12px; font-weight: 500; display: flex; align-items: center; justify-content: center;">4</span>
+          <span style="margin-left: auto; display: flex; transition: transform .3s ease; transform: rotate(0deg);" data-tabchev="cardio">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#14110f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9L12 15L18 9"></path></svg>
+          </span>
+        </button>
+        <div id="tabbody_cardio" data-tabkey="cardio" style="display:none;">
+          <div style="padding: 0 22px 10px; animation: flintUnfold .42s cubic-bezier(.32,.72,0,1) both;">
+            <div style="display: flex; align-items: center; padding: 20px 0; border-top: 1px solid #efeae2;"><span style="font-family: -apple-system, system-ui, sans-serif; font-size: 15px; font-weight: 300; color: #14110f;">VO₂ max</span><span style="margin-left: auto; display: flex; align-items: baseline;"><span data-tv style="min-width: 40px; text-align: right; font-size: 24px; font-weight: 500; letter-spacing: -0.02em;">52</span><span style="width: 44px; margin-left: 8px;"></span></span></div>
+            <div style="display: flex; align-items: center; padding: 20px 0; border-top: 1px solid #efeae2;"><span style="font-family: -apple-system, system-ui, sans-serif; font-size: 15px; font-weight: 300; color: #14110f;">FC moyenne</span><span style="margin-left: auto; display: flex; align-items: baseline;"><span data-tv style="min-width: 40px; text-align: right; font-size: 24px; font-weight: 500; letter-spacing: -0.02em;">61</span><span data-tu style="width: 44px; margin-left: 8px; white-space: nowrap; font-size: 14px; color: #b3ab9f;">bpm</span></span></div>
+            <div style="display: flex; align-items: center; padding: 20px 0; border-top: 1px solid #efeae2;"><span style="font-family: -apple-system, system-ui, sans-serif; font-size: 15px; font-weight: 300; color: #14110f;">Fréquence respiratoire</span><span style="margin-left: auto; display: flex; align-items: baseline;"><span data-tv style="min-width: 40px; text-align: right; font-size: 24px; font-weight: 500; letter-spacing: -0.02em;">14,2</span><span data-tu style="width: 44px; margin-left: 8px; white-space: nowrap; font-size: 14px; color: #b3ab9f;">r/m</span></span></div>
+            <div style="display: flex; align-items: center; padding: 20px 0; border-top: 1px solid #efeae2;"><span style="font-family: -apple-system, system-ui, sans-serif; font-size: 15px; font-weight: 300; color: #14110f;">Zones de FC (hebdo)</span><span style="margin-left: auto; font-size: 17px; font-weight: 600; color: #ff4a1c;">voir</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CORPS -->
+      <div style="background: #fdf3ee; border-style: solid; border-width: 0; border-color: transparent; border-radius: 26px; box-shadow: none; transition: box-shadow .3s ease, background .3s ease;">
+        <button onclick="tabToggle2('corps')" id="tabhead_corps" style="display: flex; align-items: center; width: 100%; cursor: pointer; padding: 24px 22px;">
+          <span style="width: 26px; height: 26px; display: flex; flex-shrink: 0;">
+            <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#14110f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.4"></circle><path d="M5.5 20C5.5 16.4 8.4 14 12 14C15.6 14 18.5 16.4 18.5 20"></path></svg>
+          </span>
+          <span style="margin-left: 16px; font-size: 15px; font-weight: 500; letter-spacing: 1px;">CORPS</span>
+          <span style="margin-left: 12px; min-width: 24px; height: 24px; padding: 0 7px; border-radius: 12px; background: #f3f2f1; color: #9f9e9b; font-family: -apple-system, system-ui, sans-serif; font-size: 12px; font-weight: 500; display: flex; align-items: center; justify-content: center;">2</span>
+          <span style="margin-left: auto; display: flex; transition: transform .3s ease; transform: rotate(0deg);" data-tabchev="corps">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#14110f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9L12 15L18 9"></path></svg>
+          </span>
+        </button>
+        <div id="tabbody_corps" data-tabkey="corps" style="display:none;">
+          <div style="padding: 0 22px 10px; animation: flintUnfold .42s cubic-bezier(.32,.72,0,1) both;">
+            <div style="display: flex; align-items: center; padding: 20px 0; border-top: 1px solid #efeae2;"><span style="font-family: -apple-system, system-ui, sans-serif; font-size: 15px; font-weight: 300; color: #14110f;">Poids</span><span style="margin-left: auto; display: flex; align-items: baseline;"><span data-tv style="min-width: 40px; text-align: right; font-size: 24px; font-weight: 500; letter-spacing: -0.02em;">74</span><span data-tu style="width: 44px; margin-left: 8px; white-space: nowrap; font-size: 14px; color: #b3ab9f;">kg</span></span></div>
+            <div style="display: flex; align-items: center; padding: 20px 0; border-top: 1px solid #efeae2;"><span style="font-family: -apple-system, system-ui, sans-serif; font-size: 15px; font-weight: 300; color: #14110f;">Masse corporelle maigre</span><span style="margin-left: auto; display: flex; align-items: baseline;"><span data-tv style="min-width: 40px; text-align: right; font-size: 24px; font-weight: 500; letter-spacing: -0.02em;">62</span><span data-tu style="width: 44px; margin-left: 8px; white-space: nowrap; font-size: 14px; color: #b3ab9f;">kg</span></span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
   </section>
 
 
@@ -6433,39 +6558,14 @@ function jrnlClosePicker(){var p=document.getElementById('jrnlPicker');if(p)p.st
 function jrnlColVal(id){var col=document.getElementById(id);if(!col)return '00';var items=col.querySelectorAll('[data-v]');var idx=Math.round(col.scrollTop/44);var el=items[Math.max(0,Math.min(items.length-1,idx))];return el?el.getAttribute('data-v'):'00';}
 function jrnlConfirmPicker(){window._jrnl=window._jrnl||{};window._jrnl.alcoolHeure=jrnlColVal('jrnlColH')+':'+jrnlColVal('jrnlColM');jrnlClosePicker();if(typeof haptic==='function')haptic(6);jrnlRender();}
 function jrnlSave(){window._jrnl=window._jrnl||{};window._jrnl._saved=true;try{DB.set(jrnlKey(),window._jrnl);}catch(e){}if(typeof haptic==='function')haptic(12);if(typeof toast==='function')toast('Journal enregistre !');ajJournalDays();try{if(typeof persistRecov==='function')persistRecov();}catch(e){}var el=document.getElementById('screen-journal');if(el)el.style.display='none';}
-/* ===== Tableau de bord (overlay) ===== */
-function tabBoardGo(){renderTabBoard();var el=document.getElementById('screen-tableau');if(el){el.style.display='flex';el.scrollTop=0;}if(typeof haptic==='function')haptic();}
-function tabBoardBack(){var el=document.getElementById('screen-tableau');if(el)el.style.display='none';}
-function tabToggle(g){window._tabOpen=window._tabOpen||{recup:true};window._tabOpen[g]=!window._tabOpen[g];if(typeof haptic==='function')haptic(6);renderTabBoard();}
+/* ===== Tableau de bord (overlay) — markup verbatim de la maquette, on branche seulement les donnees ===== */
+var TAB_KEYS={recup:['hrv','rhr','recovery'],sommeil:['sleepresto','sleepdebt','sleepeff','timeinbed','sleep'],activite:['steps','calories','effortrecup'],cardio:['vo2','fcavg','resp','hrzall'],corps:['weight','leanmass']};
 function tabValParts(v){var str=''+v;var m=str.match(/^(.+?)\s*([a-zA-Z%\/]+)$/);if(m)return[m[1],m[2]];return[str,''];}
-function tabShortLabel(k,l){if(k==='hrv')return 'VFC';return String(l).replace(' (version bêta)','');}
-function renderTabBoard(){
- var host=document.getElementById('tabBoardCards');if(!host)return;
- window._tabOpen=window._tabOpen||{recup:true};
- var glow='0 0 0 1px rgba(255,74,28,0.16), 0 12px 34px rgba(255,74,28,0.07)';
- host.innerHTML=DASH_GROUPS.map(function(G){
-  var open=!!window._tabOpen[G.g];
-  var head='<button onclick="tabToggle(\''+G.g+'\')" style="display:flex;align-items:center;width:100%;cursor:pointer;padding:24px 22px;background:none;border:0;font-family:inherit;text-align:left;">'
-   +'<i class="ti '+G.ic+'" style="font-size:24px;color:#14110f;flex-shrink:0;width:26px;text-align:center;"></i>'
-   +'<span style="margin-left:16px;font-family:-apple-system,system-ui,sans-serif;font-size:15px;font-weight:500;letter-spacing:1px;color:#14110f;">'+G.label.toUpperCase()+'</span>'
-   +'<span style="margin-left:12px;min-width:24px;height:24px;padding:0 7px;border-radius:12px;background:#f3f2f1;color:#9f9e9b;font-family:-apple-system,system-ui,sans-serif;font-size:12px;font-weight:500;display:flex;align-items:center;justify-content:center;">'+G.keys.length+'</span>'
-   +'<span style="margin-left:auto;display:flex;transition:transform .3s ease;transform:rotate('+(open?180:0)+'deg);"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#14110f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9L12 15L18 9"/></svg></span>'
-   +'</button>';
-  var body='';
-  if(open){
-   var rows=G.keys.map(function(k,ri){var m=DASH[k];if(!m)return '';var p=tabValParts(m.v());
-    return '<div onclick="tabBoardBack();dashOpen(\''+k+'\')" role="button" style="display:flex;align-items:center;padding:22px 0;'+(ri>0?'border-top:1px solid #efeae2;':'')+'cursor:pointer;">'
-     +'<i class="ti '+m.i+'" style="font-size:22px;color:#14110f;flex-shrink:0;width:24px;text-align:center;"></i>'
-     +'<span style="margin-left:16px;font-family:-apple-system,system-ui,sans-serif;font-size:15px;font-weight:300;color:#14110f;">'+esc(tabShortLabel(k,m.l))+'</span>'
-     +'<span style="margin-left:auto;display:flex;align-items:baseline;"><span style="min-width:40px;text-align:right;font-size:24px;font-weight:500;letter-spacing:-0.02em;color:#14110f;font-variant-numeric:tabular-nums;">'+p[0]+'</span><span style="width:44px;margin-left:8px;white-space:nowrap;font-size:14px;color:#b3ab9f;">'+p[1]+'</span></span>'
-     +'<span style="margin-left:16px;display:flex;color:#c9c2b6;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6L15 12L9 18"/></svg></span>'
-     +'</div>';
-   }).join('');
-   body='<div style="padding:0 22px 10px;">'+rows+'</div>';
-  }
-  return '<div style="border-radius:26px;background:'+(open?'#ffffff':'#fdf3ee')+';box-shadow:'+(open?glow:'none')+';transition:box-shadow .3s ease, background .3s ease;">'+head+body+'</div>';
- }).join('');
-}
+function tabBoardGo(){tabRenderVals();var el=document.getElementById('screen-tableau');if(el){el.style.display='flex';el.scrollTop=0;}if(typeof haptic==='function')haptic();}
+function tabBoardBack(){var el=document.getElementById('screen-tableau');if(el)el.style.display='none';}
+function tabToggle2(key){var body=document.getElementById('tabbody_'+key),head=document.getElementById('tabhead_'+key);if(!body||!head)return;var open=getComputedStyle(body).display==='none';body.style.display=open?'block':'none';var card=head.parentElement;card.style.background=open?'#ffffff':'#fdf3ee';card.style.boxShadow=open?'0 0 0 1px rgba(255,74,28,0.16), 0 12px 34px rgba(255,74,28,0.07)':'none';var chev=head.querySelector('[data-tabchev]');if(chev)chev.style.transform=open?'rotate(180deg)':'rotate(0deg)';if(typeof haptic==='function')haptic(6);if(open)tabRenderBody(key);}
+function tabRenderBody(key){var body=document.getElementById('tabbody_'+key);if(!body)return;var vs=body.querySelectorAll('[data-tv]');(TAB_KEYS[key]||[]).forEach(function(k,i){var v=vs[i];if(!v)return;var m=DASH[k];if(!m)return;var p=tabValParts(m.v());v.textContent=p[0];var u=v.parentElement.querySelector('[data-tu]');if(u)u.textContent=p[1];var row=v.closest('div');if(row){row.style.cursor='pointer';row.onclick=function(){tabBoardBack();dashOpen(k);};}});}
+function tabRenderVals(){Object.keys(TAB_KEYS).forEach(function(key){tabRenderBody(key);});}
 function renderHome2(){var K=tk(gDay),today=gDay===0;
  var rv=today?recovery():{s:DB.get('recov_'+K,null)};var sc=rv&&rv.s!=null?Math.round(rv.s):null;
  var col=sc==null?'#9A988F':sc>=67?'#2FA86A':sc>=34?'#F2922B':'#E14434';
@@ -8706,7 +8806,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v434';
+const APP_VERSION='flint-v435';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
