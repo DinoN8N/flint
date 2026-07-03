@@ -2622,391 +2622,15 @@ header.home-hdr .av:active,header.home-hdr .wbatt:active,header.home-hdr .hdmenu
 <div id="updBanner" onclick="forceUpdate()"></div>
 
 <!-- ===================== AUJOURD'HUI ===================== -->
-<section class="view on" id="v-today">
+<section class="view on" id="v-today" style="padding:0;">
   <style>
   body:has(#v-today.on) header.home-hdr{display:none}
   body:has(#v-today.on) #updBanner{display:none}
-  #v-today.on{height:100dvh;overflow-y:auto;overflow-x:hidden;scroll-snap-type:y mandatory;scroll-behavior:smooth;-webkit-overflow-scrolling:touch;background:#fff}
-  #v-today::-webkit-scrollbar{width:0;height:0}
-  #v-today .dcsec{scroll-snap-align:start;min-height:100dvh;display:flex;flex-direction:column;padding:22px 22px 22px}
-  #v-today #screen-accueil{padding-bottom:calc(94px + env(safe-area-inset-bottom))}
-  #v-today #screen-journee{padding-top:max(52px,calc(env(safe-area-inset-top,0px) + 24px));padding-bottom:calc(96px + env(safe-area-inset-bottom));background:radial-gradient(115% 70% at -12% 32%, rgba(255,94,46,0.10) 0%, rgba(255,94,46,0.05) 30%, rgba(255,94,46,0.02) 55%, rgba(255,94,46,0) 82%), radial-gradient(90% 60% at 6% 78%, rgba(255,94,46,0.06) 0%, rgba(255,94,46,0.02) 45%, rgba(255,94,46,0) 78%)}
-  @keyframes ajGlow{0%,100%{opacity:.1}50%{opacity:.42}}
-  @media (prefers-reduced-motion:reduce){#v-today{scroll-behavior:auto;scroll-snap-type:none}}
+  body:has(#v-today.on) #nav{display:none}
+  #v-today.on{height:100dvh;overflow:hidden;background:#fff}
+  #frToday{width:100%;height:100%;border:0;display:block}
   </style>
-  <div id="flint-scroller" style="font-family:'Archivo',-apple-system,system-ui,sans-serif;color:#14110f;background:#fff;width:100%;max-width:464px;margin:0 auto;">
-
-    <!-- ===== SCREEN 1 · ACCUEIL ===== -->
-    <section id="screen-accueil" class="dcsec">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-        <div style="display:flex;align-items:center;gap:10px;">
-          <div style="display:flex;flex-direction:column;gap:3.5px;transform:skewX(-11deg);">
-            <div style="width:24px;height:3.5px;border-radius:2px;background:#ff4a1c;"></div>
-            <div style="width:24px;height:3.5px;border-radius:2px;background:#ff4a1c;"></div>
-            <div style="width:24px;height:3.5px;border-radius:2px;background:#ff4a1c;"></div>
-          </div>
-          <span style="font-size:26px;font-weight:800;font-style:italic;letter-spacing:-0.5px;color:#14110f;">FLINT</span>
-        </div>
-        <div onclick="go('profile')" style="width:44px;height:44px;border-radius:50%;border:1px solid #ececea;box-shadow:0 2px 10px rgba(0,0,0,.05);cursor:pointer;background:url('https://randomuser.me/api/portraits/men/32.jpg') center/cover;"></div>
-      </div>
-
-      <div onclick="flOpenPicker()" style="display:flex;align-items:center;gap:6px;margin:0 0 4px;cursor:pointer;-webkit-tap-highlight-color:transparent;">
-        <span id="ajDayLabel" style="font-size:15px;font-weight:600;color:#14110f;">Aujourd'hui</span>
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#14110f" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
-      </div>
-      <h1 style="font-size:48px;font-weight:800;line-height:0.94;letter-spacing:-0.035em;margin:0;color:#14110f;">Bonjour <span id="ajGreet">Dino</span><span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#ff4a1c;margin-left:4px;vertical-align:baseline;"></span></h1>
-      <p style="font-size:16px;font-weight:400;color:#a2a09c;margin:6px 0 0;">Voici ton état du jour.</p>
-
-      <div style="flex:1 1 0;min-height:32px;max-height:72px;"></div>
-
-      <div style="text-align:center;font-size:12px;font-weight:400;letter-spacing:0.2em;color:#14110f;">RÉCUPÉRATION</div>
-      <div onclick="go('recovery')" style="position:relative;width:360px;height:360px;margin:6px auto 0;cursor:pointer;max-width:100%;">
-        <svg viewBox="0 0 320 320" width="360" height="360" style="display:block;max-width:100%;height:auto;">
-          <defs>
-            <linearGradient id="gBig" x1="63.6" y1="261.6" x2="160" y2="120" gradientUnits="userSpaceOnUse">
-              <stop offset="0" stop-color="#fff4ee" stop-opacity="0"/>
-              <stop offset="0.06" stop-color="#fff2ea" stop-opacity="1"/>
-              <stop offset="0.4" stop-color="#ffc9ac"/>
-              <stop offset="0.75" stop-color="#ff9163"/>
-              <stop offset="1" stop-color="#ff6a38"/>
-            </linearGradient>
-            <radialGradient id="dotGrad" cx="38%" cy="34%" r="75%"><stop offset="0" stop-color="#ff7a4d"/><stop offset="1" stop-color="#ff4a1c"/></radialGradient>
-            <radialGradient id="dotGlow" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#ff4a1c" stop-opacity="0.4"/><stop offset="0.6" stop-color="#ff4a1c" stop-opacity="0.12"/><stop offset="1" stop-color="#ff4a1c" stop-opacity="0"/></radialGradient>
-            <filter id="arcSoft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="1.4"/></filter>
-          </defs>
-          <path d="M 63.6 261.6 A 140 140 0 1 1 297.6 185.8" pathLength="100" fill="none" stroke="#E6E6E9" stroke-width="4.8" stroke-linecap="round"/>
-          <path id="ajArcSoft" d="M 63.6 261.6 A 140 140 0 1 1 297.6 185.8" pathLength="100" fill="none" stroke="#ff8a52" stroke-width="5.4" stroke-linecap="round" opacity="0.12" filter="url(#arcSoft)" stroke-dasharray="0 100"/>
-          <path id="ajArcFill" d="M 63.6 261.6 A 140 140 0 1 1 297.6 185.8" pathLength="100" fill="none" stroke="url(#gBig)" stroke-width="4" stroke-linecap="round" stroke-dasharray="0 100" style="transition:stroke-dasharray .8s cubic-bezier(.2,.8,.2,1)"/>
-          <g id="ajArcDot">
-            <circle cx="297.6" cy="185.8" r="17" fill="url(#dotGlow)" style="animation:ajGlow 2.6s ease-in-out infinite"/>
-            <circle cx="297.6" cy="185.8" r="9" fill="#ffffff"/>
-            <circle cx="297.6" cy="185.8" r="7" fill="url(#dotGrad)"/>
-          </g>
-        </svg>
-        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
-          <div style="display:flex;align-items:flex-end;transform:translateY(-4px);">
-            <span id="ajScore" style="font-size:172px;font-weight:800;line-height:0.8;letter-spacing:-0.04em;color:#14110f;display:inline-block;transform:scaleY(1.18);transform-origin:center;">—</span>
-            <span style="font-size:16px;font-weight:400;color:#54514C;margin-bottom:-4px;margin-left:6px;">/100</span>
-          </div>
-        </div>
-      </div>
-
-      <div style="flex:1 1 0;min-height:16px;max-height:54px;"></div>
-
-      <div style="text-align:center;margin-top:0;font-size:44px;font-weight:700;letter-spacing:-0.02em;color:#14110f;line-height:1;"><span id="ajVerdict">—</span><span style="display:inline-block;width:11px;height:11px;border-radius:50%;background:#ff4a1c;margin-left:5px;vertical-align:baseline;"></span></div>
-
-      <div style="flex:1 1 0;min-height:18px;max-height:48px;"></div>
-
-      <div style="margin-bottom:0;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
-
-        <div onclick="go('sleep')" style="background:#fff;border:1px solid #efeeeb;border-radius:18px;padding:12px 6px 10px;display:flex;flex-direction:column;align-items:center;gap:9px;box-shadow:inset 0 1.5px 0 rgba(255,255,255,.9), 0 3px 8px rgba(255,74,28,.10), 0 8px 20px rgba(255,74,28,.07);cursor:pointer;">
-          <div style="font-size:11px;font-weight:500;letter-spacing:0.14em;color:#14110f;">SOMMEIL</div>
-          <div style="position:relative;width:104px;height:104px;max-width:100%;">
-            <svg viewBox="0 0 132 132" width="104" height="104" style="display:block;max-width:100%;height:auto;">
-              <defs>
-                <linearGradient id="gSom" x1="66" y1="13" x2="66" y2="119" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#ffe6da"/><stop offset="0.55" stop-color="#ff9066"/><stop offset="1" stop-color="#ff4a1c"/></linearGradient>
-                <linearGradient id="gEff" x1="66" y1="13" x2="66" y2="119" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#eceae7"/><stop offset="0.55" stop-color="#b4b1ab"/><stop offset="1" stop-color="#8a8781"/></linearGradient>
-                <linearGradient id="gEne" x1="66" y1="13" x2="66" y2="119" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#ffe6da"/><stop offset="0.55" stop-color="#ff9066"/><stop offset="1" stop-color="#ff4a1c"/></linearGradient>
-              </defs>
-              <path d="M 47.9 115.8 A 53 53 0 1 1 84.1 115.8" fill="none" stroke="#E6E6E9" stroke-width="4" stroke-linecap="round"/>
-              <path id="ajSleepArc" d="M 47.9 115.8 A 53 53 0 1 1 84.1 115.8" pathLength="100" fill="none" stroke="url(#gSom)" stroke-width="4" stroke-linecap="round" stroke-dasharray="0 100"/>
-            </svg>
-            <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
-              <span id="ajSleepV" style="font-size:22px;font-weight:500;letter-spacing:-0.02em;color:#14110f;line-height:1;">—</span>
-              <span id="ajSleepSub" style="font-size:11px;font-weight:400;color:#a2a09c;margin-top:2px;">—</span>
-            </div>
-          </div>
-          <div id="ajSleepStat" style="display:flex;align-items:center;gap:7px;font-size:14px;font-weight:400;color:#14110f;">—</div>
-        </div>
-
-        <div onclick="go('load')" style="background:#fff;border:1px solid #efeeeb;border-radius:18px;padding:12px 6px 10px;display:flex;flex-direction:column;align-items:center;gap:9px;box-shadow:inset 0 1.5px 0 rgba(255,255,255,.9), 0 3px 8px rgba(255,74,28,.10), 0 8px 20px rgba(255,74,28,.07);cursor:pointer;">
-          <div style="font-size:11px;font-weight:500;letter-spacing:0.14em;color:#14110f;">EFFORT</div>
-          <div style="position:relative;width:104px;height:104px;max-width:100%;">
-            <svg viewBox="0 0 132 132" width="104" height="104" style="display:block;max-width:100%;height:auto;">
-              <path d="M 47.9 115.8 A 53 53 0 1 1 84.1 115.8" fill="none" stroke="#E6E6E9" stroke-width="4" stroke-linecap="round"/>
-              <path id="ajEffortArc" d="M 47.9 115.8 A 53 53 0 1 1 84.1 115.8" pathLength="100" fill="none" stroke="url(#gEff)" stroke-width="4" stroke-linecap="round" stroke-dasharray="0 100"/>
-            </svg>
-            <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
-              <div style="display:flex;align-items:flex-end;gap:2px;"><span id="ajEffortV" style="font-size:22px;font-weight:500;letter-spacing:-0.02em;color:#14110f;line-height:1;">—</span><span style="font-size:11px;font-weight:700;color:#bdbbb7;margin-bottom:1px;">/21</span></div>
-              <span id="ajEffortSub" style="font-size:11px;font-weight:400;color:#a2a09c;margin-top:2px;">soutenu</span>
-            </div>
-          </div>
-          <div id="ajEffortStat" style="display:flex;align-items:center;gap:7px;font-size:14px;font-weight:400;color:#14110f;">—</div>
-        </div>
-
-        <div onclick="go('balance')" style="background:#fff;border:1px solid #efeeeb;border-radius:18px;padding:12px 6px 10px;display:flex;flex-direction:column;align-items:center;gap:9px;box-shadow:inset 0 1.5px 0 rgba(255,255,255,.9), 0 3px 8px rgba(255,74,28,.10), 0 8px 20px rgba(255,74,28,.07);cursor:pointer;">
-          <div style="font-size:11px;font-weight:500;letter-spacing:0.14em;color:#14110f;">CALORIES</div>
-          <div style="position:relative;width:104px;height:104px;max-width:100%;">
-            <svg viewBox="0 0 132 132" width="104" height="104" style="display:block;max-width:100%;height:auto;">
-              <path d="M 47.9 115.8 A 53 53 0 1 1 84.1 115.8" fill="none" stroke="#E6E6E9" stroke-width="4" stroke-linecap="round"/>
-              <path id="ajCalArc" d="M 47.9 115.8 A 53 53 0 1 1 84.1 115.8" pathLength="100" fill="none" stroke="url(#gEne)" stroke-width="4" stroke-linecap="round" stroke-dasharray="0 100"/>
-            </svg>
-            <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
-              <span id="ajCalV" style="font-size:22px;font-weight:500;letter-spacing:-0.02em;color:#14110f;line-height:1;">—</span>
-              <span id="ajCalSub" style="font-size:11px;font-weight:400;color:#a2a09c;margin-top:2px;">brûlées</span>
-            </div>
-          </div>
-          <div id="ajCalStat" style="display:flex;align-items:center;gap:7px;font-size:14px;font-weight:400;color:#14110f;">—</div>
-        </div>
-
-      </div>
-    </section>
-    <section id="screen-journee" class="dcsec">
-      <a onclick="ajSnapTop()" style="text-decoration:none;cursor:pointer;display:flex;align-items:center;gap:12px;">
-        <span style="font-family:'Arial Black','Archivo',sans-serif;font-weight:900;font-size:56px;letter-spacing:-0.03em;color:#0B0B0D;line-height:0.9;">Ma journée</span>
-        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#F0492E" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M6 11l6-6 6 6"/></svg>
-      </a>
-      <div id="ajDaySub" style="font-size:19px;font-weight:500;color:#6F7078;margin-top:8px;">—</div>
-      <div id="ajDayBadge" style="align-self:flex-start;margin-top:14px;background:#F0492E;color:#fff;font-size:15px;font-weight:600;padding:9px 18px;border-radius:999px;letter-spacing:-0.01em;">Journée bien remplie</div>
-      <div id="ajTimeline" style="margin-top:22px;display:flex;flex-direction:column;"></div>
-
-      <div onclick="jrnlGo()" style="margin:24px -6px 0;background:#ffffff;border-radius:26px;padding:15px 18px 15px;box-shadow:0 0 0 1px rgba(255,74,28,0.025), 0 8px 34px rgba(255,74,28,0.05), 0 2px 10px rgba(0,0,0,0.02);cursor:pointer;">
-        <div style="display:flex;align-items:center;gap:16px;">
-          <div style="width:56px;height:56px;flex-shrink:0;border-radius:16px;background:#fff2ec;display:flex;align-items:center;justify-content:center;">
-            <svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="#ff4a1c" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4.2A1.6 1.6 0 0 1 6.6 2.6H18a1.2 1.2 0 0 1 1.2 1.2v15.4a1.2 1.2 0 0 1-1.2 1.2H6.6A1.6 1.6 0 0 1 5 19.8z"/><path d="M9 2.6v18.8"/><path d="M12.4 7.2h3.6"/><path d="M12.4 10.6h3.6"/><path d="M12.4 14h2.2"/></svg>
-          </div>
-          <div style="flex:1;min-width:0;">
-            <div style="font-weight:500;font-size:22px;letter-spacing:-0.025em;color:#0B0B0D;line-height:1;">Journal du jour</div>
-            <div style="font-size:13px;font-weight:200;color:#83838a;margin-top:4px;line-height:1.1;letter-spacing:0.03em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">15 secondes pour comprendre ta récup</div>
-            <div style="display:flex;align-items:center;gap:6px;margin-top:7px;">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#ff5731" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>
-              <span style="font-size:13px;font-weight:200;color:#ff5731;letter-spacing:0.01em;">Remplis ton check-in</span>
-            </div>
-          </div>
-          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#ff4a1c" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M9 6l6 6-6 6"/></svg>
-        </div>
-        <div id="ajJournalDays" style="display:flex;gap:8px;margin-top:13px;"></div>
-      </div>
-
-      <div onclick="tabBoardGo()" style="margin:14px -6px 0;background:#ffffff;border-radius:26px;padding:15px 18px;box-shadow:0 0 0 1px rgba(255,74,28,0.025), 0 8px 34px rgba(255,74,28,0.05), 0 2px 10px rgba(0,0,0,0.02);cursor:pointer;display:flex;align-items:center;gap:16px;">
-        <div style="width:56px;height:56px;flex-shrink:0;border-radius:16px;background:#fff2ec;display:flex;align-items:center;justify-content:center;color:#ff4a1c;"><i class="ti ti-layout-grid" style="font-size:26px;"></i></div>
-        <div style="flex:1;min-width:0;"><div style="font-weight:500;font-size:22px;letter-spacing:-0.025em;color:#0B0B0D;line-height:1;">Tableau de bord</div><div style="font-size:13px;font-weight:400;color:#83838a;margin-top:5px;letter-spacing:0.02em;">Toutes tes métriques en un coup d'œil</div></div>
-        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#ff4a1c" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M9 6l6 6-6 6"/></svg>
-      </div>
-    </section>
-
-  <!-- ===================== SCREEN 3 · JOURNAL (check-in) ===================== -->
-  <section id="screen-journal" style="position:fixed;inset:0;z-index:60;display:none;flex-direction:column;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:max(20px, calc(env(safe-area-inset-top, 0px) + 12px)) 22px calc(26px + env(safe-area-inset-bottom, 0px));background:#f6f0e8;">
-    <button onclick="jrnlBack()" aria-label="Retour" style="position:absolute;left:16px;top:max(16px, calc(env(safe-area-inset-top,0px) + 8px));width:40px;height:40px;border-radius:50%;border:none;background:#ffffff;box-shadow:0 2px 12px rgba(0,0,0,.07);display:flex;align-items:center;justify-content:center;cursor:pointer;color:#14110f;z-index:2;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>
-    <h1 style="text-align:center;font-family:-apple-system, 'Helvetica Neue', system-ui, sans-serif;font-size:54px;font-weight:600;letter-spacing:-0.03em;margin:26px 0 0;color:#14110f;line-height:1;">Journal<span style="display:inline-block;width:13px;height:13px;border-radius:50%;background:#ff4a1c;margin-left:5px;vertical-align:baseline;"></span></h1>
-    <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:14px;">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#5c5c60" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="2.5"/><path d="M3 9h18"/><path d="M8 2.5v3"/><path d="M16 2.5v3"/></svg>
-      <span id="jrnlDate" style="font-family:-apple-system, 'Geist', system-ui, sans-serif;font-size:17px;font-weight:400;color:#3c3c40;">—</span>
-    </div>
-    <p style="text-align:center;font-family:-apple-system, 'Geist', system-ui, sans-serif;font-size:16px;font-weight:400;color:#46464a;margin:14px 0 0;">4 questions. 15 secondes pour toi.</p>
-
-    <div style="align-self:center;position:relative;width:200px;height:200px;margin:16px 0 8px;">
-      <div style="position:absolute;inset:-48px;border-radius:50%;background:radial-gradient(circle at 50% 50%, rgba(255,125,64,0.11) 55%, rgba(255,125,64,0.055) 72%, rgba(255,125,64,0) 90%);filter:blur(16px);pointer-events:none;"></div>
-      <div style="position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 50% 42%, #fffefb 0%, #fdfaf3 58%, #f5eee2 88%, #f1e9dc 100%);box-shadow:0 16px 52px rgba(150,118,72,0.10), inset 0 2px 10px rgba(255,255,255,0.7);"></div>
-      <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
-        <span style="font-size:13px;font-weight:600;letter-spacing:0.13em;color:#14110f;">SOMMEIL</span>
-        <div style="position:relative;font-family:Arial, 'Helvetica Neue', sans-serif;font-size:68px;letter-spacing:-0.03em;color:#0B0B0D;line-height:1.0;margin-top:4px;"><span id="jrnlSleepPct" style="font-weight:700;">—</span><span style="position:absolute;left:100%;bottom:4px;margin-left:2px;font-size:18px;font-weight:700;">%</span></div>
-        <span id="jrnlSleepH" style="display:inline-block;font-family:'Helvetica Neue', Arial, sans-serif;font-size:24px;font-weight:500;color:#0B0B0D;margin-top:4px;letter-spacing:-0.01em;">—</span>
-      </div>
-      <div style="position:absolute;left:175px;top:150px;width:15px;height:15px;border-radius:50%;background:#ff5722;box-shadow:0 0 6px 2px rgba(255,87,34,0.28), 0 0 16px 7px rgba(255,87,34,0.14), 0 0 30px 14px rgba(255,87,34,0.06);"></div>
-    </div>
-
-    <div style="margin-top:10px;">
-      <div style="display:flex;align-items:center;gap:16px;padding:18px 0;">
-        <svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="#14110f" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path transform="rotate(-45 12 12)" d="M16 10h4a2 2 0 0 1 0 4h-4l-4 7h-3l2 -7h-4l-2 2h-3l2 -4l-2 -4h3l2 2h4l-2 -7h3z"/></svg>
-        <div style="width:241px;flex-shrink:0;font-family:-apple-system, system-ui, sans-serif;font-size:17px;font-weight:500;color:#1a1a1c;line-height:1.25;letter-spacing:-0.01em;">As-tu pris l'avion aujourd'hui&nbsp;?</div>
-        <div style="display:flex;gap:12px;flex-shrink:0;">
-          <button id="jq_avion_non" onclick="jrnlSet('avion',0)" style="padding:11px 15px;border-radius:14px;border:1.5px solid #e6dfd1;background:#fff;color:#46464a;font-size:16px;font-weight:500;cursor:pointer;font-family:-apple-system,system-ui,sans-serif;transition:all .15s">Non</button>
-          <button id="jq_avion_oui" onclick="jrnlSet('avion',1)" style="padding:11px 15px;border-radius:14px;border:1.5px solid #e6dfd1;background:#fff;color:#46464a;font-size:16px;font-weight:500;cursor:pointer;font-family:-apple-system,system-ui,sans-serif;transition:all .15s">Oui</button>
-        </div>
-      </div>
-
-      <div style="border-top:1px solid #e6dfd1;padding:18px 0;">
-        <div style="display:flex;align-items:center;gap:16px;">
-          <svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="#14110f" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M8 3h8c0 4.4-1.7 7.4-4 7.4S8 7.4 8 3z"/><path d="M12 10.4V20.2"/><path d="M8.4 20.4h7.2"/></svg>
-          <div style="width:241px;flex-shrink:0;font-family:-apple-system, system-ui, sans-serif;font-size:17px;font-weight:500;color:#1a1a1c;line-height:1.25;letter-spacing:-0.01em;">As-tu consommé de l'alcool aujourd'hui&nbsp;?</div>
-          <div style="display:flex;gap:12px;flex-shrink:0;">
-            <button id="jq_alcool_non" onclick="jrnlSet('alcool',0)" style="padding:11px 15px;border-radius:14px;border:1.5px solid #e6dfd1;background:#fff;color:#46464a;font-size:16px;font-weight:500;cursor:pointer;font-family:-apple-system,system-ui,sans-serif;transition:all .15s">Non</button>
-            <button id="jq_alcool_oui" onclick="jrnlSet('alcool',1)" style="padding:11px 15px;border-radius:14px;border:1.5px solid #e6dfd1;background:#fff;color:#46464a;font-size:16px;font-weight:500;cursor:pointer;font-family:-apple-system,system-ui,sans-serif;transition:all .15s">Oui</button>
-          </div>
-        </div>
-        <div id="jrnlHeureRow" style="display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:22px;padding-left:43px;">
-          <span style="font-size:14px;font-weight:300;color:#9a9284;">Si oui, à quelle heure&nbsp;?</span>
-          <div id="jrnlHeure" onclick="jrnlOpenPicker()" style="width:152px;text-align:center;font-size:16px;font-weight:500;color:#c9c2b4;background:#ffffff;border:1px solid #e6dfd1;border-radius:14px;padding:10px 0;cursor:pointer;user-select:none;font-family:inherit;">Choisir</div>
-        </div>
-      </div>
-
-      <div style="display:flex;align-items:center;gap:16px;border-top:1px solid #e6dfd1;padding:18px 0;">
-        <svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="#14110f" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M4 8h13v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M17 9h1.6a2.4 2.4 0 0 1 0 4.8H17"/><path d="M7 3.5c-.5.7-.5 1.3 0 2"/><path d="M11 3.5c-.5.7-.5 1.3 0 2"/></svg>
-        <div style="width:241px;flex-shrink:0;font-family:-apple-system, system-ui, sans-serif;font-size:17px;font-weight:500;color:#1a1a1c;line-height:1.25;letter-spacing:-0.01em;">As-tu consommé de la caféine après 14h&nbsp;?</div>
-        <div style="display:flex;gap:12px;flex-shrink:0;">
-          <button id="jq_cafeine_non" onclick="jrnlSet('cafeine',0)" style="padding:11px 15px;border-radius:14px;border:1.5px solid #e6dfd1;background:#fff;color:#46464a;font-size:16px;font-weight:500;cursor:pointer;font-family:-apple-system,system-ui,sans-serif;transition:all .15s">Non</button>
-          <button id="jq_cafeine_oui" onclick="jrnlSet('cafeine',1)" style="padding:11px 15px;border-radius:14px;border:1.5px solid #e6dfd1;background:#fff;color:#46464a;font-size:16px;font-weight:500;cursor:pointer;font-family:-apple-system,system-ui,sans-serif;transition:all .15s">Oui</button>
-        </div>
-      </div>
-
-      <div style="display:flex;align-items:center;gap:16px;border-top:1px solid #e6dfd1;padding:18px 0;">
-        <svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="#14110f" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M6 3v6a2.2 2.2 0 0 0 4.4 0V3"/><path d="M8.2 9v12"/><path d="M16.6 3c-1.5 0-2.7 2.3-2.7 5s1.2 4 2.7 4"/><path d="M16.6 3v18"/></svg>
-        <div style="width:241px;flex-shrink:0;font-family:-apple-system, system-ui, sans-serif;font-size:17px;font-weight:500;color:#1a1a1c;line-height:1.25;letter-spacing:-0.01em;">As-tu dîné tard ou lourd (moins de 3h avant le coucher)&nbsp;?</div>
-        <div style="display:flex;gap:12px;flex-shrink:0;">
-          <button id="jq_diner_non" onclick="jrnlSet('diner',0)" style="padding:11px 15px;border-radius:14px;border:1.5px solid #e6dfd1;background:#fff;color:#46464a;font-size:16px;font-weight:500;cursor:pointer;font-family:-apple-system,system-ui,sans-serif;transition:all .15s">Non</button>
-          <button id="jq_diner_oui" onclick="jrnlSet('diner',1)" style="padding:11px 15px;border-radius:14px;border:1.5px solid #e6dfd1;background:#fff;color:#46464a;font-size:16px;font-weight:500;cursor:pointer;font-family:-apple-system,system-ui,sans-serif;transition:all .15s">Oui</button>
-        </div>
-      </div>
-    </div>
-
-    <button onclick="jrnlSave()" style="margin-top:20px;width:100%;background:#14110f;color:#e8e6e3;font-size:18px;font-weight:400;letter-spacing:-0.01em;border:none;border-radius:20px;padding:21px 0;cursor:pointer;font-family:-apple-system, system-ui, sans-serif;box-shadow:0 10px 30px rgba(255,74,28,0.12);">Sauvegarder le journal</button>
-
-    <div id="jrnlPicker" onclick="jrnlClosePicker()" style="display:none;position:fixed;inset:0;z-index:70;background:rgba(20,17,15,0.34);align-items:flex-end;justify-content:center;">
-      <div onclick="event.stopPropagation()" style="width:100%;max-width:440px;background:#ffffff;border-radius:26px 26px 0 0;padding:18px 20px calc(20px + env(safe-area-inset-bottom, 0px));box-shadow:0 -12px 40px rgba(0,0,0,0.16);">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-          <button onclick="jrnlClosePicker()" style="border:none;background:none;font-size:16px;font-weight:400;color:#9a9284;cursor:pointer;font-family:inherit;padding:6px 2px;">Annuler</button>
-          <span style="font-size:14px;font-weight:600;letter-spacing:0.02em;color:#14110f;">Heure</span>
-          <span style="width:52px;"></span>
-        </div>
-        <div style="position:relative;height:220px;display:flex;justify-content:center;gap:4px;">
-          <div style="position:absolute;left:8px;right:8px;top:88px;height:44px;border-top:1px solid #e6dfd1;border-bottom:1px solid #e6dfd1;pointer-events:none;"></div>
-          <div style="position:absolute;left:50%;top:110px;transform:translate(-50%,-50%);font-size:24px;font-weight:700;color:#14110f;pointer-events:none;">:</div>
-          <div id="jrnlColH" style="width:96px;height:220px;overflow-y:scroll;scroll-snap-type:y mandatory;scrollbar-width:none;text-align:right;padding-right:16px;"></div>
-          <div id="jrnlColM" style="width:96px;height:220px;overflow-y:scroll;scroll-snap-type:y mandatory;scrollbar-width:none;text-align:left;padding-left:16px;"></div>
-        </div>
-        <button onclick="jrnlConfirmPicker()" style="margin-top:14px;width:100%;background:#14110f;color:#e8e6e3;font-size:16px;font-weight:500;border:none;border-radius:16px;padding:15px 0;cursor:pointer;font-family:-apple-system, system-ui, sans-serif;">Enregistrer</button>
-      </div>
-    </div>
-  </section>
-
-  <!-- ===================== SCREEN 4 · TABLEAU DE BORD (overlay) ===================== -->
-  <section id="screen-tableau" style="position:fixed;inset:0;z-index:60;display:none;flex-direction:column;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:max(20px, calc(env(safe-area-inset-top,0px) + 12px)) 22px calc(40px + env(safe-area-inset-bottom,0px));background:radial-gradient(115% 70% at -12% 32%, rgba(255,94,46,0.05) 0%, rgba(255,94,46,0.025) 30%, rgba(255,94,46,0.01) 55%, rgba(255,94,46,0) 82%), radial-gradient(90% 60% at 6% 78%, rgba(255,94,46,0.03) 0%, rgba(255,94,46,0.01) 45%, rgba(255,94,46,0) 78%), #fbf7f1;">
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
-      <button onclick="tabBoardBack()" aria-label="Retour" style="width:40px;height:40px;border-radius:50%;border:none;background:#ffffff;box-shadow:0 2px 12px rgba(0,0,0,.07);display:flex;align-items:center;justify-content:center;cursor:pointer;color:#14110f;flex-shrink:0;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>
-      <button onclick="openDashEdit()" style="flex-shrink:0;display:inline-flex;align-items:center;gap:8px;border:1.4px solid #ff8556;background:#fff;color:#ff4a1c;border-radius:999px;padding:9px 16px;font-family:-apple-system,system-ui,sans-serif;font-size:14px;font-weight:500;cursor:pointer;"><i class="ti ti-adjustments-horizontal" style="font-size:18px;"></i>Personnaliser</button>
-    </div>
-    <span style="display:block;margin-top:22px;font-family:'Archivo',-apple-system,system-ui,sans-serif;font-weight:800;font-size:41px;letter-spacing:-0.03em;color:#14110f;line-height:1;">Tableau de bord<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ff4a1c;margin-left:5px;vertical-align:baseline;"></span></span>
-    <!-- Cards -->
-    <div style="display: flex; flex-direction: column; gap: 16px; margin-top: 22px;">
-
-      <!-- RÉCUPÉRATION -->
-      <div style="background: #ffffff; border-style: solid; border-width: 0; border-color: transparent; border-radius: 26px; box-shadow: 0 0 0 1px rgba(255,74,28,0.16), 0 12px 34px rgba(255,74,28,0.07); transition: box-shadow .3s ease, background .3s ease;">
-        <button onclick="tabToggle2('recup')" id="tabhead_recup" style="display: flex; align-items: center; width: 100%; cursor: pointer; padding: 24px 22px;">
-          <span style="width: 26px; height: 26px; display: flex; flex-shrink: 0;">
-            <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#14110f" stroke-width="1.8" stroke-linejoin="round"><path d="M12 20.5C12 20.5 3.5 15 3.5 8.8C3.5 6 5.7 4 8.2 4C9.9 4 11.3 4.9 12 6.2C12.7 4.9 14.1 4 15.8 4C18.3 4 20.5 6 20.5 8.8C20.5 15 12 20.5 12 20.5Z"></path></svg>
-          </span>
-          <span style="margin-left: 16px; font-size: 15px; font-weight: 500; letter-spacing: 1px;">RÉCUPÉRATION</span>
-          <span style="margin-left: 12px; min-width: 24px; height: 24px; padding: 0 7px; border-radius: 12px; background: #f3f2f1; color: #9f9e9b; font-family: -apple-system, system-ui, sans-serif; font-size: 12px; font-weight: 500; display: flex; align-items: center; justify-content: center;">3</span>
-          <span style="margin-left: auto; display: flex; transition: transform .3s ease; transform: rotate(180deg);" data-tabchev="recup">
-            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#14110f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9L12 15L18 9"></path></svg>
-          </span>
-        </button>
-        <div id="tabbody_recup" data-tabkey="recup" style="display:block;">
-          <div style="padding: 0 22px 10px; animation: flintUnfold .42s cubic-bezier(.32,.72,0,1) both;">
-            <div  role="button" tabindex="0" style="display: flex; align-items: center; padding: 22px 0; border-top: 1px solid #efeae2; cursor: pointer;">
-              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#14110f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12H6L8.5 6L12 18L14.5 12H22"></path></svg>
-              <span style="margin-left: 16px; font-family: -apple-system, system-ui, sans-serif; font-size: 15px; font-weight: 300; color: #14110f;">VFC</span>
-              <span style="margin-left: auto; display: flex; align-items: baseline;"><span data-tv style="min-width: 40px; text-align: right; font-size: 24px; font-weight: 500; letter-spacing: -0.02em;">42</span><span data-tu style="width: 44px; margin-left: 8px; white-space: nowrap; font-size: 14px; color: #b3ab9f;">ms</span></span>
-              <span style="margin-left: 16px; display: flex; color: #c9c2b6;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6L15 12L9 18"></path></svg></span>
-            </div>
-            <div style="display: flex; align-items: center; padding: 22px 0; border-top: 1px solid #efeae2;">
-              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#14110f" stroke-width="1.8" stroke-linejoin="round"><path d="M12 20.5C12 20.5 3.5 15 3.5 8.8C3.5 6 5.7 4 8.2 4C9.9 4 11.3 4.9 12 6.2C12.7 4.9 14.1 4 15.8 4C18.3 4 20.5 6 20.5 8.8C20.5 15 12 20.5 12 20.5Z"></path></svg>
-              <span style="margin-left: 16px; font-family: -apple-system, system-ui, sans-serif; font-size: 15px; font-weight: 300; color: #14110f;">FC au repos</span>
-              <span style="margin-left: auto; display: flex; align-items: baseline;"><span data-tv style="min-width: 40px; text-align: right; font-size: 24px; font-weight: 500; letter-spacing: -0.02em;">48</span><span data-tu style="width: 44px; margin-left: 8px; white-space: nowrap; font-size: 14px; color: #b3ab9f;">bpm</span></span>
-              <span style="margin-left: 16px; display: flex; color: #c9c2b6;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6L15 12L9 18"></path></svg></span>
-            </div>
-            <div style="display: flex; align-items: center; padding: 22px 0; border-top: 1px solid #efeae2;">
-              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#14110f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 8A8 8 0 0 0 6.3 5.4L4 7.6"></path><path d="M4 3.5V7.8H8.3"></path><path d="M4 16A8 8 0 0 0 17.7 18.6L20 16.4"></path><path d="M20 20.5V16.2H15.7"></path></svg>
-              <span style="margin-left: 16px; font-family: -apple-system, system-ui, sans-serif; font-size: 15px; font-weight: 300; color: #14110f;">Récupération</span>
-              <span style="margin-left: auto; display: flex; align-items: baseline;"><span data-tv style="min-width: 40px; text-align: right; font-size: 24px; font-weight: 500; letter-spacing: -0.02em;">82</span><span data-tu style="width: 44px; margin-left: 8px; white-space: nowrap; font-size: 14px; color: #b3ab9f;">%</span></span>
-              <span style="margin-left: 16px; display: flex; color: #c9c2b6;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6L15 12L9 18"></path></svg></span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- SOMMEIL -->
-      <div style="background: #fdf3ee; border-style: solid; border-width: 0; border-color: transparent; border-radius: 26px; box-shadow: none; transition: box-shadow .3s ease, background .3s ease;">
-        <button onclick="tabToggle2('sommeil')" id="tabhead_sommeil" style="display: flex; align-items: center; width: 100%; cursor: pointer; padding: 24px 22px;">
-          <span style="width: 26px; height: 26px; display: flex; flex-shrink: 0;">
-            <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#14110f" stroke-width="1.8" stroke-linejoin="round"><path d="M20.5 14A8.4 8.4 0 1 1 10 3.5A6.5 6.5 0 0 0 20.5 14Z"></path></svg>
-          </span>
-          <span style="margin-left: 16px; font-size: 15px; font-weight: 500; letter-spacing: 1px;">SOMMEIL</span>
-          <span style="margin-left: 12px; min-width: 24px; height: 24px; padding: 0 7px; border-radius: 12px; background: #f3f2f1; color: #9f9e9b; font-family: -apple-system, system-ui, sans-serif; font-size: 12px; font-weight: 500; display: flex; align-items: center; justify-content: center;">5</span>
-          <span style="margin-left: auto; display: flex; transition: transform .3s ease; transform: rotate(0deg);" data-tabchev="sommeil">
-            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#14110f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9L12 15L18 9"></path></svg>
-          </span>
-        </button>
-        <div id="tabbody_sommeil" data-tabkey="sommeil" style="display:none;">
-          <div style="padding: 0 22px 10px; animation: flintUnfold .42s cubic-bezier(.32,.72,0,1) both;">
-            <div style="display: flex; align-items: center; padding: 20px 0; border-top: 1px solid #efeae2;"><span style="font-family: -apple-system, system-ui, sans-serif; font-size: 15px; font-weight: 300; color: #14110f;">Sommeil réparateur</span><span style="margin-left: auto; display: flex; align-items: baseline;"><span data-tv style="min-width: 40px; text-align: right; font-size: 24px; font-weight: 500; letter-spacing: -0.02em;">68</span><span data-tu style="width: 44px; margin-left: 8px; white-space: nowrap; font-size: 14px; color: #b3ab9f;">%</span></span></div>
-            <div style="display: flex; align-items: center; padding: 20px 0; border-top: 1px solid #efeae2;"><span style="font-family: -apple-system, system-ui, sans-serif; font-size: 15px; font-weight: 300; color: #14110f;">Dette de sommeil</span><span style="margin-left: auto; display: flex; align-items: baseline;"><span data-tv style="min-width: 40px; text-align: right; font-size: 24px; font-weight: 500; letter-spacing: -0.02em;">-1,2</span><span data-tu style="width: 44px; margin-left: 8px; white-space: nowrap; font-size: 14px; color: #b3ab9f;">h</span></span></div>
-            <div style="display: flex; align-items: center; padding: 20px 0; border-top: 1px solid #efeae2;"><span style="font-family: -apple-system, system-ui, sans-serif; font-size: 15px; font-weight: 300; color: #14110f;">Efficacité du sommeil</span><span style="margin-left: auto; display: flex; align-items: baseline;"><span data-tv style="min-width: 40px; text-align: right; font-size: 24px; font-weight: 500; letter-spacing: -0.02em;">91</span><span data-tu style="width: 44px; margin-left: 8px; white-space: nowrap; font-size: 14px; color: #b3ab9f;">%</span></span></div>
-            <div style="display: flex; align-items: center; padding: 20px 0; border-top: 1px solid #efeae2;"><span style="font-family: -apple-system, system-ui, sans-serif; font-size: 15px; font-weight: 300; color: #14110f;">Temps passé au lit</span><span style="margin-left: auto; display: flex; align-items: baseline;"><span data-tv style="min-width: 40px; text-align: right; font-size: 24px; font-weight: 500; letter-spacing: -0.02em;">8h10</span><span style="width: 44px; margin-left: 8px;"></span></span></div>
-            <div style="display: flex; align-items: center; padding: 20px 0; border-top: 1px solid #efeae2;"><span style="font-family: -apple-system, system-ui, sans-serif; font-size: 15px; font-weight: 300; color: #14110f;">Durée de sommeil</span><span style="margin-left: auto; display: flex; align-items: baseline;"><span data-tv style="min-width: 40px; text-align: right; font-size: 24px; font-weight: 500; letter-spacing: -0.02em;">7h42</span><span style="width: 44px; margin-left: 8px;"></span></span></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ACTIVITÉ -->
-      <div style="background: #fdf3ee; border-style: solid; border-width: 0; border-color: transparent; border-radius: 26px; box-shadow: none; transition: box-shadow .3s ease, background .3s ease;">
-        <button onclick="tabToggle2('activite')" id="tabhead_activite" style="display: flex; align-items: center; width: 100%; cursor: pointer; padding: 24px 22px;">
-          <span style="width: 26px; height: 26px; display: flex; flex-shrink: 0;">
-            <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#14110f" stroke-width="1.8" stroke-linecap="round"><path d="M5 20V16"></path><path d="M10 20V11"></path><path d="M15 20V14"></path><path d="M20 20V7"></path></svg>
-          </span>
-          <span style="margin-left: 16px; font-size: 15px; font-weight: 500; letter-spacing: 1px;">ACTIVITÉ</span>
-          <span style="margin-left: 12px; min-width: 24px; height: 24px; padding: 0 7px; border-radius: 12px; background: #f3f2f1; color: #9f9e9b; font-family: -apple-system, system-ui, sans-serif; font-size: 12px; font-weight: 500; display: flex; align-items: center; justify-content: center;">3</span>
-          <span style="margin-left: auto; display: flex; transition: transform .3s ease; transform: rotate(0deg);" data-tabchev="activite">
-            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#14110f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9L12 15L18 9"></path></svg>
-          </span>
-        </button>
-        <div id="tabbody_activite" data-tabkey="activite" style="display:none;">
-          <div style="padding: 0 22px 10px; animation: flintUnfold .42s cubic-bezier(.32,.72,0,1) both;">
-            <div style="display: flex; align-items: center; padding: 20px 0; border-top: 1px solid #efeae2;"><span style="font-family: -apple-system, system-ui, sans-serif; font-size: 15px; font-weight: 300; color: #14110f;">Pas</span><span style="margin-left: auto; display: flex; align-items: baseline;"><span data-tv style="min-width: 40px; text-align: right; font-size: 24px; font-weight: 500; letter-spacing: -0.02em;">11 182</span><span style="margin-left: 6px; font-size: 16px; font-weight: 500; color: #14110f;">pas</span><span style="width: 44px; margin-left: 8px;"></span></span></div>
-            <div style="display: flex; align-items: center; padding: 20px 0; border-top: 1px solid #efeae2;"><span style="font-family: -apple-system, system-ui, sans-serif; font-size: 15px; font-weight: 300; color: #14110f;">Calories</span><span style="margin-left: auto; display: flex; align-items: baseline;"><span data-tv style="min-width: 40px; text-align: right; font-size: 24px; font-weight: 500; letter-spacing: -0.02em;">2 480</span><span data-tu style="width: 44px; margin-left: 8px; white-space: nowrap; font-size: 14px; color: #b3ab9f;">kcal</span></span></div>
-            <div style="display: flex; align-items: center; padding: 20px 0; border-top: 1px solid #efeae2;"><span style="font-family: -apple-system, system-ui, sans-serif; font-size: 15px; font-weight: 300; color: #14110f;">Effort et récupération</span><span style="margin-left: auto; display: flex; align-items: baseline;"><span data-tv style="min-width: 40px; text-align: right; font-size: 24px; font-weight: 500; letter-spacing: -0.02em;">15,7</span><span data-tu style="width: 44px; margin-left: 8px; white-space: nowrap; font-size: 14px; color: #b3ab9f;">/21</span></span></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- CARDIO -->
-      <div style="background: #fdf3ee; border-style: solid; border-width: 0; border-color: transparent; border-radius: 26px; box-shadow: none; transition: box-shadow .3s ease, background .3s ease;">
-        <button onclick="tabToggle2('cardio')" id="tabhead_cardio" style="display: flex; align-items: center; width: 100%; cursor: pointer; padding: 24px 22px;">
-          <span style="width: 26px; height: 26px; display: flex; flex-shrink: 0;">
-            <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#14110f" stroke-width="1.8" stroke-linejoin="round"><path d="M12 20.5C12 20.5 3.5 15 3.5 8.8C3.5 6 5.7 4 8.2 4C9.9 4 11.3 4.9 12 6.2C12.7 4.9 14.1 4 15.8 4C18.3 4 20.5 6 20.5 8.8C20.5 15 12 20.5 12 20.5Z"></path></svg>
-          </span>
-          <span style="margin-left: 16px; font-size: 15px; font-weight: 500; letter-spacing: 1px;">CARDIO</span>
-          <span style="margin-left: 12px; min-width: 24px; height: 24px; padding: 0 7px; border-radius: 12px; background: #f3f2f1; color: #9f9e9b; font-family: -apple-system, system-ui, sans-serif; font-size: 12px; font-weight: 500; display: flex; align-items: center; justify-content: center;">4</span>
-          <span style="margin-left: auto; display: flex; transition: transform .3s ease; transform: rotate(0deg);" data-tabchev="cardio">
-            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#14110f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9L12 15L18 9"></path></svg>
-          </span>
-        </button>
-        <div id="tabbody_cardio" data-tabkey="cardio" style="display:none;">
-          <div style="padding: 0 22px 10px; animation: flintUnfold .42s cubic-bezier(.32,.72,0,1) both;">
-            <div style="display: flex; align-items: center; padding: 20px 0; border-top: 1px solid #efeae2;"><span style="font-family: -apple-system, system-ui, sans-serif; font-size: 15px; font-weight: 300; color: #14110f;">VO₂ max</span><span style="margin-left: auto; display: flex; align-items: baseline;"><span data-tv style="min-width: 40px; text-align: right; font-size: 24px; font-weight: 500; letter-spacing: -0.02em;">52</span><span style="width: 44px; margin-left: 8px;"></span></span></div>
-            <div style="display: flex; align-items: center; padding: 20px 0; border-top: 1px solid #efeae2;"><span style="font-family: -apple-system, system-ui, sans-serif; font-size: 15px; font-weight: 300; color: #14110f;">FC moyenne</span><span style="margin-left: auto; display: flex; align-items: baseline;"><span data-tv style="min-width: 40px; text-align: right; font-size: 24px; font-weight: 500; letter-spacing: -0.02em;">61</span><span data-tu style="width: 44px; margin-left: 8px; white-space: nowrap; font-size: 14px; color: #b3ab9f;">bpm</span></span></div>
-            <div style="display: flex; align-items: center; padding: 20px 0; border-top: 1px solid #efeae2;"><span style="font-family: -apple-system, system-ui, sans-serif; font-size: 15px; font-weight: 300; color: #14110f;">Fréquence respiratoire</span><span style="margin-left: auto; display: flex; align-items: baseline;"><span data-tv style="min-width: 40px; text-align: right; font-size: 24px; font-weight: 500; letter-spacing: -0.02em;">14,2</span><span data-tu style="width: 44px; margin-left: 8px; white-space: nowrap; font-size: 14px; color: #b3ab9f;">r/m</span></span></div>
-            <div style="display: flex; align-items: center; padding: 20px 0; border-top: 1px solid #efeae2;"><span style="font-family: -apple-system, system-ui, sans-serif; font-size: 15px; font-weight: 300; color: #14110f;">Zones de FC (hebdo)</span><span style="margin-left: auto; font-size: 17px; font-weight: 600; color: #ff4a1c;">voir</span></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- CORPS -->
-      <div style="background: #fdf3ee; border-style: solid; border-width: 0; border-color: transparent; border-radius: 26px; box-shadow: none; transition: box-shadow .3s ease, background .3s ease;">
-        <button onclick="tabToggle2('corps')" id="tabhead_corps" style="display: flex; align-items: center; width: 100%; cursor: pointer; padding: 24px 22px;">
-          <span style="width: 26px; height: 26px; display: flex; flex-shrink: 0;">
-            <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#14110f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.4"></circle><path d="M5.5 20C5.5 16.4 8.4 14 12 14C15.6 14 18.5 16.4 18.5 20"></path></svg>
-          </span>
-          <span style="margin-left: 16px; font-size: 15px; font-weight: 500; letter-spacing: 1px;">CORPS</span>
-          <span style="margin-left: 12px; min-width: 24px; height: 24px; padding: 0 7px; border-radius: 12px; background: #f3f2f1; color: #9f9e9b; font-family: -apple-system, system-ui, sans-serif; font-size: 12px; font-weight: 500; display: flex; align-items: center; justify-content: center;">2</span>
-          <span style="margin-left: auto; display: flex; transition: transform .3s ease; transform: rotate(0deg);" data-tabchev="corps">
-            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#14110f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9L12 15L18 9"></path></svg>
-          </span>
-        </button>
-        <div id="tabbody_corps" data-tabkey="corps" style="display:none;">
-          <div style="padding: 0 22px 10px; animation: flintUnfold .42s cubic-bezier(.32,.72,0,1) both;">
-            <div style="display: flex; align-items: center; padding: 20px 0; border-top: 1px solid #efeae2;"><span style="font-family: -apple-system, system-ui, sans-serif; font-size: 15px; font-weight: 300; color: #14110f;">Poids</span><span style="margin-left: auto; display: flex; align-items: baseline;"><span data-tv style="min-width: 40px; text-align: right; font-size: 24px; font-weight: 500; letter-spacing: -0.02em;">74</span><span data-tu style="width: 44px; margin-left: 8px; white-space: nowrap; font-size: 14px; color: #b3ab9f;">kg</span></span></div>
-            <div style="display: flex; align-items: center; padding: 20px 0; border-top: 1px solid #efeae2;"><span style="font-family: -apple-system, system-ui, sans-serif; font-size: 15px; font-weight: 300; color: #14110f;">Masse corporelle maigre</span><span style="margin-left: auto; display: flex; align-items: baseline;"><span data-tv style="min-width: 40px; text-align: right; font-size: 24px; font-weight: 500; letter-spacing: -0.02em;">62</span><span data-tu style="width: 44px; margin-left: 8px; white-space: nowrap; font-size: 14px; color: #b3ab9f;">kg</span></span></div>
-          </div>
-        </div>
-      </div>
-
-    </div>
-  </section>
-
-
-  </div>
+  <iframe id="frToday" src="flint-today.html?v=1" title="Aujourd'hui" onload="injectTodayLoop()"></iframe>
 </section>
 
 
@@ -6566,6 +6190,24 @@ function tabBoardBack(){var el=document.getElementById('screen-tableau');if(el)e
 function tabToggle2(key){var body=document.getElementById('tabbody_'+key),head=document.getElementById('tabhead_'+key);if(!body||!head)return;var open=getComputedStyle(body).display==='none';body.style.display=open?'block':'none';var card=head.parentElement;card.style.background=open?'#ffffff':'#fdf3ee';card.style.boxShadow=open?'0 0 0 1px rgba(255,74,28,0.16), 0 12px 34px rgba(255,74,28,0.07)':'none';var chev=head.querySelector('[data-tabchev]');if(chev)chev.style.transform=open?'rotate(180deg)':'rotate(0deg)';if(typeof haptic==='function')haptic(6);if(open)tabRenderBody(key);}
 function tabRenderBody(key){var body=document.getElementById('tabbody_'+key);if(!body)return;var vs=body.querySelectorAll('[data-tv]');(TAB_KEYS[key]||[]).forEach(function(k,i){var v=vs[i];if(!v)return;var m=DASH[k];if(!m)return;var p=tabValParts(m.v());v.textContent=p[0];var u=v.parentElement.querySelector('[data-tu]');if(u)u.textContent=p[1];var row=v.closest('div');if(row){row.style.cursor='pointer';row.onclick=function(){tabBoardBack();dashOpen(k);};}});}
 function tabRenderVals(){Object.keys(TAB_KEYS).forEach(function(key){tabRenderBody(key);});}
+/* ===== Iframe maquette intacte : on injecte seulement les vraies valeurs ===== */
+function injectTodayLoop(){var n=0;injectToday();var iv=setInterval(function(){injectToday();if(++n>18)clearInterval(iv);},350);}
+function injectToday(){
+ var f=document.getElementById('frToday');if(!f)return;var doc;try{doc=f.contentDocument;}catch(e){return;}if(!doc||!doc.body)return;
+ function setText(oldT,val){var e=doc.querySelectorAll('span,div,p,h1,button');for(var i=0;i<e.length;i++){var x=e[i];if(x.children.length===0&&(x.textContent||'').trim()===oldT){x.textContent=val;return true;}}return false;}
+ try{
+  var K=tk(0),rv=(typeof recovery==='function'?recovery():null),sc=rv&&rv.s!=null?Math.round(rv.s):null;
+  if(sc!=null){var sp=doc.querySelectorAll('span');for(var i=0;i<sp.length;i++){var e=sp[i];if(e.children.length===0&&/^\d{1,3}$/.test((e.textContent||'').trim())&&parseFloat(getComputedStyle(e).fontSize)>120){e.textContent=sc;break;}}}
+  setText('PRÊT',sc==null?'—':sc>=80?'PRÊT':sc>=20?'MODÉRÉ':'REPOS');
+  var nm=((getProfile().name||'').trim().split(' ')[0])||'Dino';
+  if(!setText('Bonjour Dino','Bonjour '+nm))setText('Dino',nm);
+  var t=sensorOf(K),slMin=(t&&t.sleepMin)||0;
+  if(slMin)setText('7h42',Math.floor(slMin/60)+'h'+String(slMin%60).padStart(2,'0'));
+  var str=loadStrain(K);setText('15,7',(Math.round(str*10)/10+'').replace('.',','));
+  var kc=(typeof caloriesBurned==='function'?caloriesBurned(K):0);setText('3 078',(''+Math.round(kc)).replace(/\B(?=(\d{3})+(?!\d))/g,' '));
+ }catch(e){}
+ if(!doc._navWired){doc._navWired=true;try{[].forEach.call(doc.querySelectorAll('button,a'),function(b){var t=(b.textContent||'').trim().toLowerCase();if(t==='balance')b.addEventListener('click',function(e){e.preventDefault();go('balance');});else if(t==='coach')b.addEventListener('click',function(e){e.preventDefault();go('coach');});else if(t==='nutrition')b.addEventListener('click',function(e){e.preventDefault();go('nutrition');});});}catch(e){}}
+}
 function renderHome2(){var K=tk(gDay),today=gDay===0;
  var rv=today?recovery():{s:DB.get('recov_'+K,null)};var sc=rv&&rv.s!=null?Math.round(rv.s):null;
  var col=sc==null?'#9A988F':sc>=67?'#2FA86A':sc>=34?'#F2922B':'#E14434';
@@ -8806,7 +8448,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v435';
+const APP_VERSION='flint-v437';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
@@ -8969,7 +8611,7 @@ document.addEventListener('visibilitychange',function(){if(document.hidden)retur
     if(typeof toast==='function')toast('Bracelet retiré — remets-le');
   };
   window.setWatchWorn=function(worn){worn=!!worn;var was=window._watchWorn!==false;window._watchWorn=worn;try{DB.set('watchWorn',worn?1:0)}catch(e){}var bn=document.getElementById('flintWatchBanner');if(bn)bn.classList.toggle('on',!worn);var pl=document.getElementById('pfWatchLbl');if(pl)pl.textContent=worn?'Simuler : retirer le bracelet':'Simuler : remettre le bracelet';if(!worn&&was)window.notifyWatchOff();};
-  function _flBoot(){addFab();addWatchBanner();}
+  function _flBoot(){addFab();addWatchBanner();if(typeof injectTodayLoop==="function")injectTodayLoop();}
   if(document.readyState!=='loading')_flBoot();else document.addEventListener('DOMContentLoaded',_flBoot);
 })();
 /* ===== Swipe-to-back : la page suit le doigt (gauche→droite) puis revient en arrière ===== */
