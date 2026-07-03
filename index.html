@@ -6195,7 +6195,7 @@ function injectTodayLoop(){var n=0;injectToday();var iv=setInterval(function(){i
 function injectToday(){
  var f=document.getElementById('frToday');if(!f)return;var doc;try{doc=f.contentDocument;}catch(e){return;}if(!doc||!doc.body)return;
  if(!doc._linkFix){doc._linkFix=true;try{var _st=doc.createElement('style');_st.textContent='a,button{color:inherit;-webkit-text-fill-color:currentColor}a{text-decoration:none}[style*="font-size: 56px"],[style*="font-size: 54px"],[style*="font-size: 48px"],[style*="font-size: 41px"]{font-family:Archivo,-apple-system,sans-serif!important;font-weight:700!important}';(doc.head||doc.documentElement).appendChild(_st);}catch(e){}}
- if(!doc._mdWired){doc._mdWired=true;if(!MD_LABEL2KEY)mdBuildLabels();try{doc.addEventListener('click',function(ev){var el=ev.target;for(var dd=0;dd<7&&el;dd++,el=el.parentElement){var txt=(el.textContent||'').trim();for(var lab in MD_LABEL2KEY){if(txt.indexOf(lab)===0&&txt.length<lab.length+14){ev.preventDefault();ev.stopPropagation();openMetricDetail(MD_LABEL2KEY[lab]);return;}}}},true);}catch(e){}}
+ if(!doc._mdWired){doc._mdWired=true;var _L2K=(typeof MD_LABEL2KEY!=='undefined'&&MD_LABEL2KEY)?MD_LABEL2KEY:null;try{doc.addEventListener('click',function(ev){if(window._mdOpening)return;var el=ev.target;var a=el;for(var d1=0;d1<7&&a;d1++,a=a.parentElement){if(!a.querySelector)continue;var nmEl=a.querySelector?a.querySelector('div[style*="font-size: 25px"]'):null;var svgEl=a.querySelector?a.querySelector('svg'):null;if(nmEl&&svgEl&&(a.textContent||'').trim().length<300){var nm=(nmEl.textContent||'').trim();if(nm&&nm.indexOf('Ajouter')!==0&&!/^(Nuit|Sommeil|Sieste|Repas|Petit|D[ée]jeuner|D[îi]ner|Collation|Snack)$/i.test(nm)){ev.preventDefault();ev.stopPropagation();mdInjectActivity(nm,doc,a);return;}}}if(_L2K)for(var dd=0;dd<7&&el;dd++,el=el.parentElement){var txt=(el.textContent||'').trim();for(var lab in _L2K){if(txt.indexOf(lab)===0&&txt.length<lab.length+14){ev.preventDefault();ev.stopPropagation();openMetricDetail(_L2K[lab]);return;}}}},true);}catch(e){}}
  function setText(oldT,val){var e=doc.querySelectorAll('span,div,p,h1,button');for(var i=0;i<e.length;i++){var x=e[i];if(x.children.length===0&&(x.textContent||'').trim()===oldT){x.textContent=val;return true;}}return false;}
  try{
   var K=tk(0),rv=(typeof recovery==='function'?recovery():null),sc=rv&&rv.s!=null?Math.round(rv.s):null;
@@ -6211,7 +6211,76 @@ function injectToday(){
  if(!doc._navWired){doc._navWired=true;try{[].forEach.call(doc.querySelectorAll('button,a'),function(b){var t=(b.textContent||'').trim().toLowerCase();if(t==='balance')b.addEventListener('click',function(e){e.preventDefault();go('balance');});else if(t==='coach')b.addEventListener('click',function(e){e.preventDefault();go('coach');});else if(t==='nutrition')b.addEventListener('click',function(e){e.preventDefault();go('nutrition');});});}catch(e){}}
 }
 /* ===== Écran de détail métrique (dynamique, DA maquette VFC) ===== */
-var MD_LABEL2KEY=null;function mdBuildLabels(){MD_LABEL2KEY={};Object.keys(DASH).forEach(function(k){var lab=(k==="hrv"?"VFC":DASH[k].l.replace(" (version bêta)",""));MD_LABEL2KEY[lab.trim()]=k;});}
+function mdApplyActivity(doc){var st=window._mdAct;if(!st||!doc)return;var el=doc.getElementById('screen-marche');if(!el)return;
+ var up=st.name.toUpperCase();if(window._mdOrig)window._mdOrig.forEach(function(o){var nv=o.v.replace(/MARCHE/g,up).replace(/Marche/g,st.name);if(o.n.nodeValue!==nv)o.n.nodeValue=nv;});
+ try{if(st.iconHTML){var hdrIcon=null;var svgs=el.querySelectorAll('svg');for(var _i=0;_i<svgs.length;_i++){var _p=svgs[_i].parentElement;if(_p&&_p.tagName==='DIV'){var _cs=getComputedStyle(_p);if((_cs.borderRadius==='50%'||parseFloat(_cs.borderRadius)>14)&&_p.getBoundingClientRect().width<54){hdrIcon=svgs[_i];break;}}}if(hdrIcon&&hdrIcon.innerHTML!==st.iconHTML){hdrIcon.innerHTML=st.iconHTML;if(st.iconVB)hdrIcon.setAttribute('viewBox',st.iconVB);}}}catch(e){}}
+function mdOpenMarche(doc){try{var mr=[].slice.call(doc.querySelectorAll('div[role="button"]')).filter(function(r){var n=r.querySelector&&r.querySelector('div[style*="font-size: 25px"]');return n&&(n.textContent||'').trim()==='Marche';})[0];if(mr){window._mdOpening=true;['pointerdown','pointerup','click'].forEach(function(t){mr.dispatchEvent(new MouseEvent(t,{bubbles:true,cancelable:true}));});window._mdOpening=false;}}catch(e){window._mdOpening=false;}}
+function mdInjectActivity(name,doc,row){var el=doc.getElementById('screen-marche');if(!el)return;
+ if(!window._mdOrig){window._mdOrig=[];try{var w0=doc.createTreeWalker(el,NodeFilter.SHOW_TEXT,null,false),t0;while(t0=w0.nextNode()){var v0=t0.nodeValue||'';if(/Marche/i.test(v0))window._mdOrig.push({n:t0,v:v0});}}catch(e){}}
+ var iconHTML=null,iconVB=null;try{var ri=row&&row.querySelector('svg');if(ri){iconHTML=ri.innerHTML;iconVB=ri.getAttribute('viewBox');}}catch(e){}
+ window._mdAct={name:name,iconHTML:iconHTML,iconVB:iconVB};window._mdOpened=false;window._mdTries=0;
+ mdOpenMarche(doc);mdApplyActivity(doc);
+ if(!window._mdActTimer){window._mdActTimer=setInterval(function(){var e2=doc.getElementById('screen-marche');if(!e2||!window._mdAct)return;var open=(e2.style.transform||'').indexOf('translateY(0')>=0;
+  if(open){window._mdOpened=true;mdApplyActivity(doc);}
+  else if(!window._mdOpened){if(window._mdTries++<8)mdOpenMarche(doc);else window._mdAct=null;}
+  else{window._mdAct=null;}},120);}
+}
+function actMeta(name){var n=(name||'').toLowerCase();
+ if(/marche|walk/.test(n))return{ic:'walk',kcalMin:4.5,hr:112,steps:true,q:'fluide',intro:'Une sortie active et régulière.'};
+ if(/course|run|jog|trail/.test(n))return{ic:'run',kcalMin:11,hr:152,steps:true,q:'soutenue',intro:'Un bon rythme, bien tenu.'};
+ if(/padel|tennis|squash|badmin|pingpong/.test(n))return{ic:'ball-tennis',kcalMin:8,hr:142,steps:false,q:'intense',intro:'Des échanges rythmés et explosifs.'};
+ if(/foot|soccer|rugby|hand|basket|volley/.test(n))return{ic:'ball-football',kcalMin:9,hr:150,steps:false,q:'engagée',intro:'Beaucoup d’intensité par intervalles.'};
+ if(/muscu|renfo|hyrox|cross|halt|force/.test(n))return{ic:'barbell',kcalMin:7,hr:132,steps:false,q:'solide',intro:'Du volume et de la charge.'};
+ if(/velo|vélo|bike|cycl/.test(n))return{ic:'bike',kcalMin:8,hr:136,steps:false,q:'régulière',intro:'Un effort continu et fluide.'};
+ if(/nage|natation|swim/.test(n))return{ic:'swimming',kcalMin:9,hr:134,steps:false,q:'fluide',intro:'Un travail cardio complet.'};
+ if(/sieste|nuit|sommeil/.test(n))return{ic:'moon',kcalMin:1,hr:58,steps:false,q:'réparatrice',intro:'Un moment de récupération.'};
+ return{ic:'activity',kcalMin:7,hr:130,steps:false,q:'active',intro:'Une séance active.'};}
+function actParseMin(t){var m=(''+t).match(/(\d{1,2}):(\d{2})/);return m?(+m[1])*60+(+m[2]):0;}
+function openActivityDetail(name,start,end,effortVal){
+ var M=actMeta(name);var nm=((getProfile().name||'Arthur').trim().split(' ')[0]);
+ var durMin=Math.max(1,actParseMin(end)-actParseMin(start));if(durMin<0)durMin+=1440;
+ var hh=Math.floor(durMin/60),mm=durMin%60;var durStr=hh+':'+String(mm).padStart(2,'0')+':00';
+ var kcal=Math.round(M.kcalMin*durMin);var fcMoy=M.hr;var fcMax=M.hr+Math.round(18+durMin/6);
+ var steps=M.steps?Math.round(durMin*112):null;
+ var effort=effortVal||(durMin/60*8).toFixed(1).replace('.',',');
+ // HR synthetic curve
+ var N=40,pts=[];for(var i=0;i<N;i++){var p=i/(N-1);var base=M.hr-8+18*Math.sin(p*Math.PI);var wob=6*Math.sin(p*Math.PI*7)+4*Math.sin(p*Math.PI*13);pts.push(Math.round(base+wob));}
+ var hrMax=Math.max.apply(null,pts)+10,hrMin=Math.min.apply(null,pts)-14;
+ var W=340,H=150,padL=6,padR=6;function hx(i){return padL+i*(W-padL-padR)/(N-1);}function hy(v){return 8+(hrMax-v)/(hrMax-hrMin)*(H-24);}
+ var line=pts.map(function(v,i){return (i?'L':'M')+hx(i).toFixed(1)+' '+hy(v).toFixed(1);}).join(' ');
+ var area=line+' L'+hx(N-1).toFixed(1)+' '+(H-6)+' L'+hx(0).toFixed(1)+' '+(H-6)+' Z';
+ function card(inner){return '<div style="background:#fff;border-radius:22px;padding:18px 20px;box-shadow:0 3px 12px rgba(150,118,72,0.045), inset 0 0 0 1px rgba(20,17,15,0.05);">'+inner+'</div>';}
+ function stat(label,val,unit,cmp){return '<div style="display:flex;align-items:center;gap:16px;padding:16px 0;border-top:1px solid #f0ebe3;"><span style="flex:1;font-family:-apple-system,system-ui,sans-serif;font-size:12px;font-weight:600;letter-spacing:0.08em;color:#8a8378;">'+label+'</span><span style="text-align:right;"><span style="font-family:Archivo,Arial,sans-serif;font-size:22px;font-weight:800;color:#14110f;">'+val+'</span> <span style="font-size:13px;color:#b3ab9f;">'+unit+'</span>'+(cmp?'<div style="font-size:12px;color:#8a8378;margin-top:2px;">moy. '+cmp+'</div>':'')+'</span></div>';}
+ var host=document.getElementById('activityDetail');if(!host){host=document.createElement('div');host.id='activityDetail';host.style.cssText='position:fixed;inset:0;z-index:82;overflow-y:auto;-webkit-overflow-scrolling:touch;background:#fff;display:none';document.body.appendChild(host);}
+ host.innerHTML='<div style="max-width:464px;margin:0 auto;padding:max(16px,calc(env(safe-area-inset-top,0px) + 12px)) 20px calc(56px + env(safe-area-inset-bottom,0px));">'
+  +'<div style="display:flex;align-items:center;gap:12px;"><button onclick="adClose()" style="background:none;border:none;padding:0;cursor:pointer;color:#14110f;"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>'
+    +'<span style="width:52px;height:52px;border-radius:50%;background:#fff3ee;display:flex;align-items:center;justify-content:center;color:#ff4a1c;flex-shrink:0;"><i class="ti ti-'+M.ic+'" style="font-size:26px;"></i></span>'
+    +'<div style="flex:1;min-width:0;"><div style="font-family:-apple-system,system-ui,sans-serif;font-size:15px;font-weight:700;letter-spacing:0.14em;color:#14110f;">'+esc(name.toUpperCase())+'</div><div style="font-size:14px;color:#8a8378;margin-top:3px;">'+(start||'')+' à '+(end||'')+'</div></div></div>'
+  +'<h1 style="font-family:Archivo,-apple-system,sans-serif;font-size:34px;font-weight:700;letter-spacing:-0.03em;color:#14110f;margin:22px 0 0;line-height:1.05;">'+esc(name)+' '+M.q+', '+esc(nm)+'</h1>'
+  +'<p style="font-size:15px;color:#8a8378;margin:10px 0 0;">'+M.intro+'</p>'
+  +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:24px;">'
+    +card('<div style="font-family:-apple-system,system-ui,sans-serif;font-size:12px;font-weight:700;letter-spacing:0.06em;color:#ff4a1c;">EFFORT ACTIVITÉ</div><div style="font-family:Archivo,Arial,sans-serif;font-size:44px;font-weight:800;color:#ff4a1c;letter-spacing:-0.04em;margin-top:8px;line-height:1;">'+effort+'</div>')
+    +card('<div style="font-family:-apple-system,system-ui,sans-serif;font-size:12px;font-weight:700;letter-spacing:0.06em;color:#14110f;">'+(M.steps?'ACTIVITÉ DE PAS':'DURÉE')+'</div><div style="font-family:Archivo,Arial,sans-serif;font-size:38px;font-weight:800;color:#14110f;letter-spacing:-0.04em;margin-top:8px;line-height:1;">'+(M.steps?fmtNum(steps):durStr.replace(/:00$/,''))+'</div>')
+  +'</div>'
+  +'<div style="margin-top:14px;">'+card('<div style="display:flex;align-items:center;gap:8px;"><i class="ti ti-heart" style="color:#ff4a1c;font-size:18px;"></i><span style="font-family:-apple-system,system-ui,sans-serif;font-size:12px;font-weight:600;letter-spacing:0.06em;color:#14110f;">FRÉQUENCE CARDIAQUE (BPM)</span></div>'
+    +'<svg id="adHr" viewBox="0 0 '+W+' '+H+'" width="100%" style="display:block;margin-top:12px;overflow:visible;touch-action:none;cursor:crosshair;"><defs><linearGradient id="adHrg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff4a1c" stop-opacity="0.16"/><stop offset="1" stop-color="#ff4a1c" stop-opacity="0"/></linearGradient></defs><path d="'+area+'" fill="url(#adHrg)"/><path d="'+line+'" fill="none" stroke="#ff4a1c" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>'
+    +'<line id="adG" x1="0" y1="4" x2="0" y2="'+(H-4)+'" stroke="#ff4a1c" stroke-width="1.2" stroke-dasharray="3 3" opacity="0"/><circle id="adD" r="5.5" fill="#ff4a1c" stroke="#fff" stroke-width="2.4" opacity="0"/><text id="adL" font-family="Archivo,sans-serif" font-size="20" font-weight="800" fill="#ff4a1c" opacity="0"></text></svg>'
+    +'<div style="display:flex;justify-content:space-between;font-size:12px;color:#8a8378;margin-top:4px;"><span>'+(start||'')+'</span><span>'+(end||'')+'</span></div>')+'</div>'
+  +'<div style="margin-top:14px;">'+card('<div style="font-family:-apple-system,system-ui,sans-serif;font-size:12px;font-weight:700;letter-spacing:0.08em;color:#14110f;">STATISTIQUES CLÉS</div><div style="font-size:11px;color:#b3ab9f;margin-top:2px;">comparé à la moyenne sur 30 jours</div>'
+    +stat('DURÉE',durStr,'','')
+    +stat('CALORIES',kcal,'kcal',Math.round(kcal*0.8)+' cal')
+    +stat('FC MOYENNE',fcMoy,'bpm',(fcMoy-9)+' bpm')
+    +stat('FC MAX',fcMax,'bpm',(fcMax-16)+' bpm'))+'</div></div>';
+ host.style.display='block';host.scrollTop=0;
+ var svg=document.getElementById('adHr');if(svg){var g=document.getElementById('adG'),dt=document.getElementById('adD'),lb=document.getElementById('adL');
+  function at(evt){var r=svg.getBoundingClientRect();var vx=(evt.clientX-r.left)/r.width*W;var i=Math.round((vx-padL)/((W-padL-padR)/(N-1)));i=Math.max(0,Math.min(N-1,i));return i;}
+  function show(i){var x=hx(i),y=hy(pts[i]);g.setAttribute('x1',x);g.setAttribute('x2',x);g.setAttribute('opacity','1');dt.setAttribute('cx',x);dt.setAttribute('cy',y);dt.setAttribute('opacity','1');lb.setAttribute('x',Math.min(x+8,W-40));lb.setAttribute('y',Math.max(y-12,20));lb.setAttribute('opacity','1');lb.textContent=pts[i];if(typeof haptic==='function')haptic(4);}
+  function hide(){g.setAttribute('opacity','0');dt.setAttribute('opacity','0');lb.setAttribute('opacity','0');}
+  var last=-1;svg.onpointerdown=function(e){e.preventDefault();var i=at(e);if(i!==last){last=i;show(i);}};svg.onpointermove=function(e){if(g.getAttribute('opacity')==='0')return;var i=at(e);if(i!==last){last=i;show(i);}};svg.onpointerup=svg.onpointerleave=function(){last=-1;hide();};}
+ if(typeof haptic==='function')haptic();
+}
+function adClose(){var h=document.getElementById('activityDetail');if(h)h.style.display='none';}
+function fmtNum(n){return (''+Math.round(n||0)).replace(/\B(?=(\d{3})+(?!\d))/g,' ');}
 function mdGroupOf(key){for(var i=0;i<DASH_GROUPS.length;i++){if(DASH_GROUPS[i].keys.indexOf(key)>=0)return DASH_GROUPS[i];}return DASH_GROUPS[0];}
 function mdGet(key,off){var s=sensorOf(tk(off));function n(x){return (x==null?null:x);}
  switch(key){
@@ -8548,7 +8617,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v441';
+const APP_VERSION='flint-v446';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
