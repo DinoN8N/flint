@@ -6195,6 +6195,7 @@ function injectTodayLoop(){var n=0;injectToday();var iv=setInterval(function(){i
 function injectToday(){
  var f=document.getElementById('frToday');if(!f)return;var doc;try{doc=f.contentDocument;}catch(e){return;}if(!doc||!doc.body)return;
  if(!doc._linkFix){doc._linkFix=true;try{var _st=doc.createElement('style');_st.textContent='a,button{color:inherit;-webkit-text-fill-color:currentColor}a{text-decoration:none}';(doc.head||doc.documentElement).appendChild(_st);}catch(e){}}
+ if(!doc._mdWired){doc._mdWired=true;if(!MD_LABEL2KEY)mdBuildLabels();try{doc.addEventListener('click',function(ev){var el=ev.target;for(var dd=0;dd<7&&el;dd++,el=el.parentElement){var txt=(el.textContent||'').trim();for(var lab in MD_LABEL2KEY){if(txt.indexOf(lab)===0&&txt.length<lab.length+14){ev.preventDefault();ev.stopPropagation();openMetricDetail(MD_LABEL2KEY[lab]);return;}}}},true);}catch(e){}}
  function setText(oldT,val){var e=doc.querySelectorAll('span,div,p,h1,button');for(var i=0;i<e.length;i++){var x=e[i];if(x.children.length===0&&(x.textContent||'').trim()===oldT){x.textContent=val;return true;}}return false;}
  try{
   var K=tk(0),rv=(typeof recovery==='function'?recovery():null),sc=rv&&rv.s!=null?Math.round(rv.s):null;
@@ -6209,6 +6210,104 @@ function injectToday(){
  }catch(e){}
  if(!doc._navWired){doc._navWired=true;try{[].forEach.call(doc.querySelectorAll('button,a'),function(b){var t=(b.textContent||'').trim().toLowerCase();if(t==='balance')b.addEventListener('click',function(e){e.preventDefault();go('balance');});else if(t==='coach')b.addEventListener('click',function(e){e.preventDefault();go('coach');});else if(t==='nutrition')b.addEventListener('click',function(e){e.preventDefault();go('nutrition');});});}catch(e){}}
 }
+/* ===== Écran de détail métrique (dynamique, DA maquette VFC) ===== */
+var MD_LABEL2KEY=null;function mdBuildLabels(){MD_LABEL2KEY={};Object.keys(DASH).forEach(function(k){var lab=(k==="hrv"?"VFC":DASH[k].l.replace(" (version bêta)",""));MD_LABEL2KEY[lab.trim()]=k;});}
+function mdGroupOf(key){for(var i=0;i<DASH_GROUPS.length;i++){if(DASH_GROUPS[i].keys.indexOf(key)>=0)return DASH_GROUPS[i];}return DASH_GROUPS[0];}
+function mdGet(key,off){var s=sensorOf(tk(off));function n(x){return (x==null?null:x);}
+ switch(key){
+  case 'hrv':return s&&s.hrv!=null?s.hrv:null;
+  case 'rhr':return s&&s.rhr!=null?s.rhr:null;
+  case 'recovery':return off===0?(recovery()&&recovery().s!=null?Math.round(recovery().s):null):n(DB.get('recov_'+tk(off),null));
+  case 'resp':return s&&s.resp!=null?+(s.resp).toFixed(1):null;
+  case 'fcavg':return s&&s.rhr!=null?Math.round(s.rhr+18+loadStrain(tk(off))*1.1):null;
+  case 'sleep':return s&&s.sleepMin?+(s.sleepMin/60).toFixed(1):null;
+  case 'steps':return flStepsOf(tk(off));
+  case 'calories':return caloriesBurned(tk(off));
+  case 'effortrecup':return +loadStrain(tk(off)).toFixed(1);
+  case 'sleepeff':var n1=sleepNight(tk(off));return n1&&n1.efficiency!=null?n1.efficiency:null;
+  case 'sleepresto':var n2=sleepNight(tk(off));return n2&&n2.asleep?Math.round(n2.restorative/n2.asleep*100):null;
+  case 'timeinbed':var n3=sleepNight(tk(off));return n3?+(n3.inBed/60).toFixed(1):null;
+  case 'sleepdebt':var n4=sleepNight(tk(off));return n4?+(((getProfile().need||8)*60-n4.asleep)/60).toFixed(1):null;
+  default:return null;
+ }}
+function mdNice(mx){if(mx<=0)return 10;var p=Math.pow(10,Math.floor(Math.log10(mx)));var n=mx/p;var m=n<=1?1:n<=2?2:n<=5?5:10;return m*p;}
+function mdFmt(v,unit){if(v==null)return '—';if(unit==='ms'||unit==='bpm'||unit==='%'||unit==='')return Math.round(v);return (''+v).replace('.',',');}
+function openMetricDetail(key){
+ var G=mdGroupOf(key),m=DASH[key];if(!m)return;
+ var unit=(function(){var mm=(''+m.v()).match(/([a-zA-Z%\/]+)$/);return mm?mm[1]:'';})();
+ var vals=[];for(var i=6;i>=0;i--)vals.push(mdGet(key,-i));
+ var real=vals.filter(function(x){return x!=null;});
+ var cur=real.length?real[real.length-1]:null;
+ // 30d avg + delta vs previous week
+ var m30=[];for(var j=0;j<30;j++){var x=mdGet(key,-j);if(x!=null)m30.push(x);}
+ var avg30=m30.length?m30.reduce(function(a,b){return a+b;},0)/m30.length:null;
+ var prevWk=[];for(var k2=7;k2<14;k2++){var y=mdGet(key,-k2);if(y!=null)prevWk.push(y);}
+ var pAvg=prevWk.length?prevWk.reduce(function(a,b){return a+b;},0)/prevWk.length:null;
+ var curWkAvg=real.length?real.reduce(function(a,b){return a+b;},0)/real.length:null;
+ var delta=(pAvg!=null&&curWkAvg!=null)?(curWkAvg-pAvg):null;
+ var variation=(avg30!=null&&cur!=null&&avg30!=0)?Math.round((cur-avg30)/avg30*100):null;
+ var trend=variation==null?'—':Math.abs(variation)<5?'Stable':variation>0?'En hausse':'En baisse';
+ var DOW=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
+ var mx=Math.max.apply(null,real.concat([1]));var yMax=mdNice(mx*1.15);
+ // ---- bar chart (card1) : viewBox 264x180, baseline y145, top area y12..145 ----
+ var bx0=13.6,bw=17,gap=28.1,baseY=145,topY=12,plotH=baseY-topY;
+ var bars='';real.length&&vals.forEach(function(v,i){var x=bx0+i*gap;var isLast=i===vals.length-1&&v!=null;var h=v==null?0:Math.max(2,(v/yMax)*plotH);var y=baseY-h;
+   bars+='<rect x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+bw+'" height="'+h.toFixed(1)+'" rx="3.5" fill="'+(isLast?'#ff4a1c':'rgba(255,74,28,0.10)')+'"/>';});
+ var avgBar=curWkAvg!=null?(baseY-(curWkAvg/yMax)*plotH):baseY;
+ var barsSVG='<svg viewBox="0 0 264 180" width="100%" style="display:block;overflow:visible;"><line x1="8" x2="238" y1="'+avgBar.toFixed(1)+'" y2="'+avgBar.toFixed(1)+'" stroke="#ff4a1c" stroke-width="1.4" stroke-dasharray="4 4"/>'+bars
+   +'<g font-family="-apple-system,system-ui,sans-serif" font-size="12" fill="#b3ab9f" text-anchor="start">'+[0,0.33,0.66,1].map(function(fr){var yy=baseY-fr*plotH;return '<text x="244" y="'+(yy+4).toFixed(1)+'">'+Math.round(fr*yMax)+'</text>';}).join('')+'</g>'
+   +'<g font-family="-apple-system,system-ui,sans-serif" font-size="12" fill="#8a8378" text-anchor="middle">'+DOW.map(function(d,i){return '<text x="'+(bx0+i*gap+bw/2).toFixed(1)+'" y="168">'+d+'</text>';}).join('')+'</g></svg>';
+ // ---- line chart (card2): viewBox 380x300, x 55..345, y map 250..50 for 0..yMax ----
+ var X=[55,103,152,200,248,297,345];function ly(v){return 250-(v/yMax)*200;}
+ var pts=[],hollow='';vals.forEach(function(v,i){if(v==null)return;var x=X[i],y=ly(v);pts.push(x+','+y.toFixed(1));hollow+='<circle cx="'+x+'" cy="'+y.toFixed(1)+'" r="5" fill="#fff" stroke="#ff4a1c" stroke-width="2.2"/>';});
+ var grid='';[1,0.8,0.6,0.4,0.2,0].forEach(function(fr){var yy=250-fr*200;grid+='<line x1="40" x2="360" y1="'+yy+'" y2="'+yy+'" stroke="#ece7df" stroke-width="1"'+(fr>0?' stroke-dasharray="2 3"':'')+'/><text x="30" y="'+(yy+4)+'">'+Math.round(fr*yMax)+'</text>';});
+ var lineSVG='<svg id="mdLineSvg" viewBox="0 0 380 300" width="100%" style="display:block;margin-top:8px;overflow:visible;touch-action:none;cursor:crosshair;user-select:none;">'
+   +'<g font-family="-apple-system,system-ui,sans-serif" font-size="13" fill="#b3ab9f" text-anchor="end">'+grid+'</g>'
+   +(vals.some(function(v){return v!=null;})?'<polyline points="'+pts.join(' ')+'" fill="none" stroke="#ff4a1c" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>':'')
+   +hollow
+   +'<line id="mdGuide" x1="0" y1="50" x2="0" y2="250" stroke="#ff4a1c" stroke-width="1.2" stroke-dasharray="3 3" opacity="0"/>'
+   +'<circle id="mdDot" cx="0" cy="0" r="6.5" fill="#ff4a1c" stroke="#fff" stroke-width="2.5" opacity="0"/>'
+   +'<text id="mdLbl" x="0" y="0" text-anchor="start" font-family="Archivo,-apple-system,system-ui,sans-serif" font-size="26" font-weight="800" fill="#ff4a1c" opacity="0"></text>'
+   +'<g font-family="-apple-system,system-ui,sans-serif" font-size="14" fill="#8a8378" text-anchor="middle">'+DOW.map(function(d,i){return '<text x="'+X[i]+'" y="278">'+d+'</text>';}).join('')+'</g></svg>';
+ function statRow(ic,label,val,col){return '<div style="display:flex;align-items:center;gap:16px;padding:18px 0;border-top:1px solid #f0ebe3;"><span style="width:34px;height:34px;border-radius:12px;background:#faf5ee;display:flex;align-items:center;justify-content:center;color:#14110f;flex-shrink:0;"><i class="ti '+ic+'" style="font-size:19px;"></i></span><span style="flex:1;font-family:-apple-system,system-ui,sans-serif;font-size:15px;font-weight:400;color:#14110f;">'+label+'</span><span style="font-family:-apple-system,system-ui,sans-serif;font-size:16px;font-weight:600;color:'+(col||'#14110f')+';">'+val+'</span></div>';}
+ var host=document.getElementById('metricDetail');if(!host){host=document.createElement('div');host.id='metricDetail';host.style.cssText='position:fixed;inset:0;z-index:80;overflow-y:auto;-webkit-overflow-scrolling:touch;background:#fbf7f1;display:none';document.body.appendChild(host);}
+ host.innerHTML='<div style="max-width:464px;margin:0 auto;padding:max(16px,calc(env(safe-area-inset-top,0px) + 10px)) 22px calc(24px + env(safe-area-inset-bottom,0px));">'
+  +'<div style="display:flex;align-items:center;justify-content:space-between;">'
+    +'<button onclick="mdClose()" style="width:40px;height:40px;border-radius:50%;border:none;background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.07);display:flex;align-items:center;justify-content:center;cursor:pointer;color:#14110f;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>'
+    +'<div style="width:44px;height:44px;border-radius:50%;background:#fff;border:1px solid #ececea;box-shadow:0 2px 10px rgba(0,0,0,.05);display:flex;align-items:center;justify-content:center;"><i class="ti ti-user" style="font-size:22px;color:#14110f;"></i></div>'
+  +'</div>'
+  +'<div style="display:flex;align-items:center;gap:8px;margin-top:30px;"><i class="ti '+G.ic+'" style="font-size:16px;color:#14110f;"></i><span style="font-family:-apple-system,system-ui,sans-serif;font-size:11.5px;font-weight:600;letter-spacing:0.16em;color:#6b6b70;">'+G.label.toUpperCase()+'</span></div>'
+  +'<h1 style="font-family:Archivo,-apple-system,system-ui,sans-serif;font-size:40px;font-weight:600;letter-spacing:-0.03em;color:#14110f;margin:12px 0 0;line-height:1.02;display:flex;align-items:flex-end;gap:4px;">Analyse détaillée<span style="width:8px;height:8px;border-radius:50%;background:#ff4a1c;margin-bottom:8px;"></span></h1>'
+  +'<p style="font-family:-apple-system,system-ui,sans-serif;font-size:15px;font-weight:300;color:#6b6b70;margin:14px 0 0;line-height:1.4;">Comprends l’évolution de ta métrique '+esc(m.l.toLowerCase())+'.</p>'
+  +'<div style="background:#fff;border-radius:22px;padding:18px 20px;margin-top:28px;box-shadow:0 3px 12px rgba(150,118,72,0.045), inset 0 0 0 1px rgba(20,17,15,0.05);">'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;"><span style="font-family:-apple-system,system-ui,sans-serif;font-size:12.5px;font-weight:400;letter-spacing:0.08em;color:#14110f;">'+esc((key==='hrv'?'VARIABILITÉ CARDIAQUE':m.l).toUpperCase())+'</span></div>'
+    +'<div style="display:flex;align-items:center;gap:14px;margin-top:12px;"><div style="flex-shrink:0;"><div style="display:flex;align-items:baseline;"><span style="font-family:Archivo,Arial,sans-serif;font-size:52px;font-weight:800;letter-spacing:-0.04em;color:#14110f;line-height:0.85;">'+mdFmt(cur,unit)+'</span><span style="margin-left:4px;font-size:21px;font-weight:600;color:#14110f;">'+esc(unit)+'</span></div>'
+      +'<div style="font-family:-apple-system,system-ui,sans-serif;font-size:13px;font-weight:300;color:#4d473e;margin-top:12px;white-space:nowrap;">vs semaine précédente</div>'
+      +'<div style="font-family:-apple-system,system-ui,sans-serif;font-size:16px;font-weight:400;color:#ff4a1c;margin-top:6px;">'+(delta==null?'—':(delta>=0?'+':'')+mdFmt(delta,unit)+' '+esc(unit))+'</div></div>'
+      +'<div style="flex:1;min-width:0;">'+barsSVG+'</div></div></div>'
+  +'<div style="background:#fff;border-radius:24px;padding:24px 22px 20px;margin-top:20px;box-shadow:0 3px 12px rgba(150,118,72,0.045), inset 0 0 0 1px rgba(20,17,15,0.05);">'
+    +'<div style="font-family:-apple-system,system-ui,sans-serif;font-size:12.5px;font-weight:400;letter-spacing:0.08em;color:#14110f;">ÉVOLUTION</div>'+lineSVG+'</div>'
+  +'<div style="background:#fff;border-radius:24px;padding:0 22px;margin-top:20px;box-shadow:0 3px 12px rgba(150,118,72,0.045), inset 0 0 0 1px rgba(20,17,15,0.05);">'
+    +statRow('ti-activity','Moyenne 30 jours',avg30==null?'—':mdFmt(Math.round(avg30*10)/10,unit)+' '+esc(unit))
+    +statRow('ti-trending-up','Variation vs 30 jours',variation==null?'—':(variation>0?'+':'')+variation+' %','#ff4a1c')
+    +statRow('ti-wave-sine','Tendance','<span style="display:inline-flex;align-items:center;gap:7px;"><span style="width:8px;height:8px;border-radius:50%;background:#ff4a1c;"></span>'+trend+'</span>')
+  +'</div></div>';
+ host.style.display='block';host.scrollTop=0;
+ // scrub
+ var svg=document.getElementById('mdLineSvg');if(svg){mdWireScrub(svg,X,vals,unit,yMax);}
+}
+function mdWireScrub(svg,X,vals,unit,yMax){
+ function ly(v){return 250-(v/yMax)*200;}
+ var guide=document.getElementById('mdGuide'),dot=document.getElementById('mdDot'),lbl=document.getElementById('mdLbl');
+ function pt(evt){var r=svg.getBoundingClientRect();var vx=(evt.clientX-r.left)/r.width*380;var best=0,bd=1e9;for(var i=0;i<X.length;i++){if(vals[i]==null)continue;var d=Math.abs(X[i]-vx);if(d<bd){bd=d;best=i;}}return best;}
+ function show(i){if(vals[i]==null)return;var x=X[i],y=ly(vals[i]);guide.setAttribute('x1',x);guide.setAttribute('x2',x);guide.setAttribute('opacity','1');dot.setAttribute('cx',x);dot.setAttribute('cy',y);dot.setAttribute('opacity','1');lbl.setAttribute('x',Math.min(x+10,300));lbl.setAttribute('y',Math.max(y-14,26));lbl.setAttribute('opacity','1');lbl.textContent=mdFmt(vals[i],unit);if(typeof haptic==='function')haptic(5);}
+ function hide(){guide.setAttribute('opacity','0');dot.setAttribute('opacity','0');lbl.setAttribute('opacity','0');}
+ var last=-1;
+ svg.onpointerdown=function(e){e.preventDefault();var i=pt(e);if(i!==last){last=i;show(i);}};
+ svg.onpointermove=function(e){if(guide.getAttribute('opacity')==='0')return;var i=pt(e);if(i!==last){last=i;show(i);}};
+ svg.onpointerup=svg.onpointerleave=function(){last=-1;hide();};
+}
+function mdClose(){var h=document.getElementById('metricDetail');if(h)h.style.display='none';}
 function renderHome2(){var K=tk(gDay),today=gDay===0;
  var rv=today?recovery():{s:DB.get('recov_'+K,null)};var sc=rv&&rv.s!=null?Math.round(rv.s):null;
  var col=sc==null?'#9A988F':sc>=67?'#2FA86A':sc>=34?'#F2922B':'#E14434';
@@ -8449,7 +8548,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v439';
+const APP_VERSION='flint-v440';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
