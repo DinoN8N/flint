@@ -6212,7 +6212,8 @@ function injectToday(){
 }
 /* ===== Écran de détail métrique (dynamique, DA maquette VFC) ===== */
 function mdApplyActivity(doc){var st=window._mdAct;if(!st||!doc)return;var el=doc.getElementById('screen-marche');if(!el)return;
- var up=st.name.toUpperCase();if(window._mdOrig)window._mdOrig.forEach(function(o){var nv=o.v.replace(/MARCHE/g,up).replace(/Marche/g,st.name);if(o.n.nodeValue!==nv)o.n.nodeValue=nv;});
+ var up=st.name.toUpperCase();var phrase='Effort validé, Dino';
+ if(window._mdOrig)window._mdOrig.forEach(function(o){var v=o.v,nv;if(v.indexOf('MARCHE')>=0)nv=v.replace(/MARCHE/g,up);else if(/fluide|,/.test(v))nv=phrase;else nv=v.replace(/Marche/g,st.name);if(o.n.nodeValue!==nv)o.n.nodeValue=nv;});
  try{if(st.iconHTML){var hdrIcon=null;var svgs=el.querySelectorAll('svg');for(var _i=0;_i<svgs.length;_i++){var _p=svgs[_i].parentElement;if(_p&&_p.tagName==='DIV'){var _cs=getComputedStyle(_p);if((_cs.borderRadius==='50%'||parseFloat(_cs.borderRadius)>14)&&_p.getBoundingClientRect().width<54){hdrIcon=svgs[_i];break;}}}if(hdrIcon&&hdrIcon.innerHTML!==st.iconHTML){hdrIcon.innerHTML=st.iconHTML;if(st.iconVB)hdrIcon.setAttribute('viewBox',st.iconVB);}}}catch(e){}}
 function mdOpenMarche(doc){try{var mr=[].slice.call(doc.querySelectorAll('div[role="button"]')).filter(function(r){var n=r.querySelector&&r.querySelector('div[style*="font-size: 25px"]');return n&&(n.textContent||'').trim()==='Marche';})[0];if(mr){window._mdOpening=true;['pointerdown','pointerup','click'].forEach(function(t){mr.dispatchEvent(new MouseEvent(t,{bubbles:true,cancelable:true}));});window._mdOpening=false;}}catch(e){window._mdOpening=false;}}
 function mdInjectActivity(name,doc,row){var el=doc.getElementById('screen-marche');if(!el)return;
@@ -8617,7 +8618,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v446';
+const APP_VERSION='flint-v448';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
