@@ -6207,14 +6207,38 @@ function injectToday(){
   if(slMin)setText('7h42',Math.floor(slMin/60)+'h'+String(slMin%60).padStart(2,'0'));
   var str=loadStrain(K);setText('15,7',(Math.round(str*10)/10+'').replace('.',','));
   var kc=(typeof caloriesBurned==='function'?caloriesBurned(K):0);setText('3 078',(''+Math.round(kc)).replace(/\B(?=(\d{3})+(?!\d))/g,' '));
+  mdBalance(doc);
  }catch(e){}
- if(!doc._navWired){doc._navWired=true;try{doc.addEventListener('click',function(ev){var el=ev.target;for(var i=0;i<6&&el;i++,el=el.parentElement){if(el.getAttribute&&el.getAttribute('role')==='button'){var t=(el.textContent||'').trim().toLowerCase();if(t==='coach'){ev.preventDefault();ev.stopPropagation();go('coach');return;}if(t==='profil'){ev.preventDefault();ev.stopPropagation();go('profile');return;}if(t==="aujourd'hui"||t==='aujourd’hui'){setTimeout(function(){try{var sn=doc.getElementById('screen-nutrition');if(sn){var r=sn.getBoundingClientRect();var w=doc.defaultView.innerWidth;if(Math.abs(r.left-(w-r.width)/2)<40){var bk=[].slice.call(sn.querySelectorAll('*')).filter(function(x){return x.children.length<3&&/Aujourd/.test((x.textContent||'').trim())&&x.getBoundingClientRect().top<80;})[0];if(bk){var rb2=bk;while(rb2&&rb2.getAttribute&&rb2.getAttribute('role')!=='button'&&rb2.tagName!=='BUTTON')rb2=rb2.parentElement;var tt=rb2||bk;['pointerdown','pointerup','click'].forEach(function(e2){tt.dispatchEvent(new MouseEvent(e2,{bubbles:true,cancelable:true}));});}}}}catch(e){}},0);return;}return;}}},true);}catch(e){}}
+ if(!doc._navWired){doc._navWired=true;try{doc.addEventListener('click',function(ev){var el=ev.target;for(var i=0;i<6&&el;i++,el=el.parentElement){if(el.getAttribute&&el.getAttribute('role')==='button'){var t=(el.textContent||'').trim().toLowerCase();if(t==='coach'){ev.preventDefault();ev.stopPropagation();go('coach');return;}if(t==='profil'){ev.preventDefault();ev.stopPropagation();go('profile');return;}if(t==='nutrition'){setTimeout(function(){try{mdBalance(doc);}catch(e){}},350);setTimeout(function(){try{mdBalance(doc);}catch(e){}},900);return;}if(t==="aujourd'hui"||t==='aujourd’hui'){setTimeout(function(){try{var sn=doc.getElementById('screen-nutrition');if(sn){var r=sn.getBoundingClientRect();var w=doc.defaultView.innerWidth;if(Math.abs(r.left-(w-r.width)/2)<40){var bk=[].slice.call(sn.querySelectorAll('*')).filter(function(x){return x.children.length<3&&/Aujourd/.test((x.textContent||'').trim())&&x.getBoundingClientRect().top<80;})[0];if(bk){var rb2=bk;while(rb2&&rb2.getAttribute&&rb2.getAttribute('role')!=='button'&&rb2.tagName!=='BUTTON')rb2=rb2.parentElement;var tt=rb2||bk;['pointerdown','pointerup','click'].forEach(function(e2){tt.dispatchEvent(new MouseEvent(e2,{bubbles:true,cancelable:true}));});}}}}catch(e){}},0);return;}return;}}},true);}catch(e){}}
 }
 /* ===== Écran de détail métrique (dynamique, DA maquette VFC) ===== */
 function mdApplyActivity(doc){var st=window._mdAct;if(!st||!doc)return;var el=doc.getElementById('screen-marche');if(!el)return;
  var up=st.name.toUpperCase();var phrase='Effort validé, Dino';
  if(window._mdOrig)window._mdOrig.forEach(function(o){var v=o.v,nv;if(v.indexOf('MARCHE')>=0)nv=v.replace(/MARCHE/g,up);else if(/fluide|,/.test(v))nv=phrase;else nv=v.replace(/Marche/g,st.name);if(o.n.nodeValue!==nv)o.n.nodeValue=nv;});
  try{if(st.iconHTML){var hdrIcon=null;var svgs=el.querySelectorAll('svg');for(var _i=0;_i<svgs.length;_i++){var _p=svgs[_i].parentElement;if(_p&&_p.tagName==='DIV'){var _cs=getComputedStyle(_p);if((_cs.borderRadius==='50%'||parseFloat(_cs.borderRadius)>14)&&_p.getBoundingClientRect().width<54){hdrIcon=svgs[_i];break;}}}if(hdrIcon&&hdrIcon.innerHTML!==st.iconHTML){hdrIcon.innerHTML=st.iconHTML;if(st.iconVB)hdrIcon.setAttribute('viewBox',st.iconVB);}}}catch(e){}}
+function mdBalance(doc){try{
+ var K=tk(0),nt=nutTotals(K),outk=Math.round(caloriesBurned(K));var inn=Math.round(nt.kcal);
+ if(!(inn>0))return; /* aucun repas scanné → on ne fabrique pas un faux solde */
+ var s=inn-outk;
+ function fmt(n){var a=Math.abs(Math.round(n));var str=(''+a).replace(/\B(?=(\d{3})+(?!\d))/g,' ');return (n>0?'+':n<0?'−':'')+str;}
+ function fmtU(n){return (''+Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g,' ');}
+ var lab=s<=-400?'Déficit':s<-150?'Léger déficit':s<=150?'Maintien':s<400?'Léger surplus':'Surplus';
+ ['screen-nutrition','screen-balance'].forEach(function(id){var sc=doc.getElementById(id);if(!sc)return;
+  var svg=[].slice.call(sc.querySelectorAll('svg')).filter(function(g){return g.getAttribute('viewBox')==='0 0 670 472';})[0];if(!svg)return;
+  var needle=[].slice.call(svg.querySelectorAll('line')).filter(function(l){return (l.getAttribute('stroke')||'').toUpperCase()==='#F4512A';})[0];
+  if(needle){var frac=Math.max(0,Math.min(1,(s+600)/1200));var th=(180-180*frac)*Math.PI/180;
+   var cx=335,cy=345,r1=211,r2=253;
+   needle.setAttribute('x1',(cx+r1*Math.cos(th)).toFixed(1));needle.setAttribute('y1',(cy-r1*Math.sin(th)).toFixed(1));
+   needle.setAttribute('x2',(cx+r2*Math.cos(th)).toFixed(1));needle.setAttribute('y2',(cy-r2*Math.sin(th)).toFixed(1));
+   var f=svg.querySelector('filter');if(f){f.setAttribute('x','40');f.setAttribute('y','50');f.setAttribute('width','590');f.setAttribute('height','345');}}
+  var txts=svg.querySelectorAll('text');if(txts.length&&txts[0].getAttribute('font-size')==='44')txts[0].textContent=fmt(s);
+  [].slice.call(sc.querySelectorAll('span')).forEach(function(e){var st=e.getAttribute('style')||'';var t=(e.textContent||'').trim();
+   if(/font-size: 34px/.test(st)&&/^[+−-]?[\d ]+$/.test(t))e.textContent=fmt(s);
+   else if(/font-size: 14px/.test(st)&&/^(Léger surplus|Léger déficit|Maintien|Surplus|Déficit)$/.test(t))e.textContent=lab;});
+  var pair=[].slice.call(sc.querySelectorAll('span')).filter(function(e){var st=e.getAttribute('style')||'';return /Arial/.test(st)&&/font-size: 22px/.test(st)&&/^[\d ]+$/.test((e.textContent||'').trim());});
+  if(pair.length>=2){pair[0].textContent=fmtU(inn);pair[1].textContent=fmtU(outk);}
+ });
+}catch(e){}}
 function mdOpenMarche(doc){try{var mr=[].slice.call(doc.querySelectorAll('div[role="button"]')).filter(function(r){var n=r.querySelector&&r.querySelector('div[style*="font-size: 25px"]');return n&&(n.textContent||'').trim()==='Marche';})[0];if(mr){window._mdOpening=true;['pointerdown','pointerup','click'].forEach(function(t){mr.dispatchEvent(new MouseEvent(t,{bubbles:true,cancelable:true}));});window._mdOpening=false;}}catch(e){window._mdOpening=false;}}
 function mdInjectActivity(name,doc,row){var el=doc.getElementById('screen-marche');if(!el)return;
  if(!window._mdOrig){window._mdOrig=[];try{var w0=doc.createTreeWalker(el,NodeFilter.SHOW_TEXT,null,false),t0;while(t0=w0.nextNode()){var v0=t0.nodeValue||'';if(/Marche/i.test(v0))window._mdOrig.push({n:t0,v:v0});}}catch(e){}}
@@ -8618,7 +8642,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v450';
+const APP_VERSION='flint-v451';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
