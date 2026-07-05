@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>FLINT — Sommeil (maquette réorganisée)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F6F2EB;--card:#fff;--ink:#15140F;--ink2:#6E6A61;--faint:#9A948A;
+  --accent:#F0492E;--peach:#FCE9E4;--line:#ECE7DE;--track:#EFEAE1;
+  --green:#3FB57A;--w:#F0492E;--leger:#D5B3F2;--prof:#6E4FD8;--sp:#F4A9B8;
+  --r:22px;--shadow:0 6px 22px rgba(20,18,12,.06);
+}
+*{box-sizing:border-box;margin:0}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;max-width:465px;margin:0 auto;padding:16px 16px 104px}
+.disp{font-family:'Anton';font-style:oblique 8deg;font-weight:400}
+
+/* header */
+.hd{display:flex;align-items:center;justify-content:space-between;margin:2px 2px 20px}
+.hd .logo{font-family:'Anton';font-style:oblique 10deg;font-size:22px;letter-spacing:.02em}
+.hd .logo i{color:var(--accent);font-style:normal}
+.hd .avatar{width:34px;height:34px;border-radius:50%;background:var(--peach);display:grid;place-items:center;font-size:16px}
+
+/* kicker + sections */
+.kick{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--ink2);margin:0 2px 8px}
+.kick .dot{width:6px;height:6px;border-radius:50%;background:var(--accent)}
+.sec{margin-top:30px}
+.sec>.kick{margin-bottom:12px}
+h1{font-family:'Anton';font-style:oblique 8deg;font-weight:400;font-size:36px;line-height:1.04;margin:0 2px 6px}
+h1 em,.h2 em{font-style:oblique 8deg;color:var(--accent)}
+.sub{font-size:14px;color:var(--ink2);margin:0 2px}
+.h2{font-family:'Anton';font-style:oblique 8deg;font-weight:400;font-size:23px;margin:0 2px 4px}
+.secsub{font-size:12.5px;color:var(--faint);margin:0 2px 12px}
+
+/* hero */
+.hero{display:flex;flex-direction:column;align-items:center;margin-top:22px}
+.ringwrap{position:relative;width:216px;height:216px;margin:6px 0 4px}
+.ringwrap svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ringwrap .in{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.ringwrap .lab{font-size:11px;font-weight:800;letter-spacing:.18em;color:var(--ink2)}
+.ringwrap .val{font-family:'Anton';font-style:oblique 8deg;font-size:64px;line-height:1}
+.ringwrap .val small{font-size:26px}
+.hero .dur{font-family:'Anton';font-style:oblique 8deg;font-size:30px;margin-top:10px}
+.hero .times{font-size:13px;color:var(--ink2);margin-top:3px}
+.hero .delta{display:inline-flex;align-items:center;gap:6px;background:#EAF4EE;color:#2E7D4F;font-size:12px;font-weight:800;border-radius:30px;padding:6px 12px;margin-top:12px}
+
+/* cards */
+.card{background:var(--card);border-radius:var(--r);box-shadow:var(--shadow);padding:18px 18px 16px;margin-bottom:12px}
+.crow{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:2px}
+.ctit{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink)}
+.cbig{font-family:'Anton';font-style:oblique 8deg;font-size:34px;line-height:1}
+.cbig small{font-size:16px}
+.cdelta{font-size:11.5px;font-weight:700;color:var(--faint)}
+.cdelta.up{color:#2E7D4F}.cdelta.down{color:#C25B2E}
+.cnote{font-size:12.5px;color:var(--ink2);margin-top:10px;line-height:1.45}
+
+/* bars (besoin) */
+.blab{display:flex;justify-content:space-between;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ink2);margin:13px 0 5px}
+.blab b{color:var(--ink);font-weight:800}
+.bar{height:12px;border-radius:8px;background:var(--track);overflow:hidden;position:relative}
+.bar i{position:absolute;inset:0 auto 0 0;border-radius:8px;background:var(--accent)}
+.bar .mk{position:absolute;top:-3px;bottom:-3px;width:4px;border-radius:2px;background:var(--ink)}
+.legend{margin-top:13px;border-top:1px solid var(--line);padding-top:11px;display:flex;flex-direction:column;gap:8px}
+.leg{display:flex;align-items:center;gap:9px;font-size:13px}
+.leg .sq{width:11px;height:11px;border-radius:3.5px;flex:none}
+.leg .n{color:var(--ink2);flex:1}
+.leg .v{font-weight:800;font-variant-numeric:tabular-nums}
+
+/* efficacité */
+.segbar{display:flex;gap:3px;height:14px;margin:6px 0 10px}
+.segbar i{border-radius:5px;background:#F6A98F}
+.wkbar{height:12px;border-radius:6px;background:repeating-linear-gradient(-55deg,#F1ECE3 0 5px,#E6E0D4 5px 8px);position:relative;margin:4px 0 2px}
+.wkbar b{position:absolute;top:-2px;bottom:-2px;width:4px;border-radius:2px;background:var(--accent)}
+.minilab{display:flex;justify-content:space-between;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ink2)}
+.minilab .v{color:var(--ink);font-size:12px}
+
+/* hypnogramme */
+.hyp{width:100%;height:auto;display:block;margin:8px 0 2px}
+.axis{display:flex;justify-content:space-between;font-size:10.5px;color:var(--faint);margin:2px 2px 0}
+.phases{margin-top:13px;display:flex;flex-direction:column;gap:9px}
+.ph{display:flex;align-items:center;gap:9px;font-size:13px}
+.ph .dot{width:10px;height:10px;border-radius:50%;flex:none}
+.ph .n{color:var(--ink2);flex:1}
+.ph .t{font-weight:800;width:44px;text-align:right;font-variant-numeric:tabular-nums}
+.ph .p{color:var(--faint);width:38px;text-align:right;font-variant-numeric:tabular-nums}
+.repair{margin-top:12px;border-top:1px solid var(--line);padding-top:12px;display:flex;align-items:center;gap:10px}
+.repair .ic{width:36px;height:36px;border-radius:12px;background:var(--peach);color:var(--accent);display:grid;place-items:center;font-size:18px;flex:none}
+.repair .n{flex:1}
+.repair .n b{display:block;font-size:13.5px}
+.repair .n span{font-size:11.5px;color:var(--faint)}
+.repair .v{font-family:'Anton';font-style:oblique 8deg;font-size:26px}
+.repair .v small{font-size:13px;color:var(--ink2);font-family:'Inter';font-style:normal;font-weight:700}
+
+/* stress rows */
+.strows{margin-top:10px;display:flex;flex-direction:column;gap:8px}
+
+/* historique */
+.hist{display:flex;gap:8px;overflow-x:auto;padding:2px;scrollbar-width:none}
+.hist::-webkit-scrollbar{display:none}
+.day{flex:0 0 86px;background:var(--card);border-radius:18px;box-shadow:var(--shadow);padding:13px 10px;text-align:center}
+.day.on{outline:2px solid var(--accent)}
+.day .d{font-size:11px;font-weight:700;color:var(--ink2);margin-bottom:4px}
+.day.on .d{color:var(--ink);font-weight:800}
+.day .s{font-family:'Anton';font-style:oblique 8deg;font-size:24px}
+.day .s small{font-size:12px}
+.day .q{font-size:10.5px;color:var(--faint);margin-top:3px}
+
+/* coach */
+.coach{background:var(--peach);border-radius:var(--r);padding:16px 17px;display:flex;gap:13px;align-items:flex-start;margin-top:12px}
+.coach .ic{width:42px;height:42px;border-radius:50%;background:#fff;color:var(--accent);display:grid;place-items:center;font-size:20px;flex:none}
+.coach .k{font-size:10.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin-bottom:4px}
+.coach p{font-size:13.5px;line-height:1.5}
+.coach p b{font-weight:800}
+
+/* nav */
+.nav{position:fixed;bottom:12px;left:50%;transform:translateX(-50%);width:min(433px,calc(100% - 32px));background:rgba(255,255,255,.94);backdrop-filter:blur(10px);border-radius:26px;box-shadow:0 10px 30px rgba(20,18,12,.14);display:flex;justify-content:space-around;padding:10px 6px 8px}
+.nav a{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;font-weight:700;color:var(--ink2);text-decoration:none}
+.nav a.on{color:var(--accent)}
+.nav svg{width:21px;height:21px}
+</style>
+</head>
+<body>
+
+<header class="hd">
+  <span class="logo"><i>=</i> FLINT</span>
+  <span class="avatar">👤</span>
+</header>
+
+<!-- ══ 1. LE VERDICT — une seule réponse, en un regard ══ -->
+<div class="kick"><span class="dot"></span> Sommeil · Jeu. 24 juin</div>
+<h1>Nuit réparatrice<em>.</em></h1>
+<p class="sub">Ta nuit t'a bien régénéré.</p>
+
+<div class="hero">
+  <div class="ringwrap">
+    <svg viewBox="0 0 120 120">
+      <circle cx="60" cy="60" r="52" fill="none" stroke="#EFEAE1" stroke-width="9"/>
+      <circle cx="60" cy="60" r="52" fill="none" stroke="#F0492E" stroke-width="9" stroke-linecap="round"
+              stroke-dasharray="326.7" stroke-dashoffset="42.5"/>
+    </svg>
+    <div class="in"><span class="lab">SOMMEIL</span><span class="val">87<small>%</small></span></div>
+  </div>
+  <div class="dur">6 h 58 <span style="font-size:15px;color:var(--ink2);font-family:'Inter';font-style:normal;font-weight:700">de sommeil</span></div>
+  <div class="times">Coucher 23:12 &nbsp;·&nbsp; Réveil 07:47 &nbsp;·&nbsp; au lit 7 h 35</div>
+  <span class="delta">▲ +5 pts vs hier (82 %)</span>
+</div>
+
+<!-- ══ 2. LE SCORE, DÉCOMPOSÉ — chaque pilier UNE fois, avec son détail intégré ══ -->
+<section class="sec">
+  <div class="kick"><span class="dot"></span> Pourquoi 87 % ?</div>
+  <p class="secsub">Ton score repose sur 4 piliers. Chacun est détaillé ici — pas besoin d'aller ailleurs.</p>
+
+  <!-- Pilier 1 : besoin couvert (fusion écrans 1+2) -->
+  <div class="card">
+    <div class="crow"><span class="ctit">🌙 Besoin couvert</span><span class="cbig">72<small>%</small></span></div>
+    <div class="crow"><span class="cdelta up">▲ 69 % hier</span></div>
+    <div class="blab"><span>Dormi</span><b>6:58</b></div>
+    <div class="bar"><i style="width:72%"></i></div>
+    <div class="blab"><span>Besoin ce soir-là</span><b>9:41</b></div>
+    <div class="bar"><span class="mk" style="left:calc(100% - 6px)"></span><i style="width:100%;background:var(--track)"></i></div>
+    <div class="legend">
+      <div class="leg"><span class="sq" style="background:#3A362E"></span><span class="n">Minimum sain</span><span class="v">7:54</span></div>
+      <div class="leg"><span class="sq" style="background:var(--accent)"></span><span class="n">Effort récent</span><span class="v">+ 0:06</span></div>
+      <div class="leg"><span class="sq" style="background:#CFC9BE"></span><span class="n">Dette de sommeil</span><span class="v">+ 1:41</span></div>
+    </div>
+    <p class="cnote">Ton besoin gonfle avec la dette accumulée : rembourse-la et il redescendra vers 7 h 54.</p>
+  </div>
+
+  <!-- Pilier 2 : efficacité (fusion écrans 1+4) -->
+  <div class="card">
+    <div class="crow"><span class="ctit">🛏️ Efficacité au lit</span><span class="cbig">92<small>%</small></span></div>
+    <div class="crow"><span class="cdelta down">▼ 95 % hier</span></div>
+    <div class="minilab" style="margin-top:12px"><span>Endormi</span><span class="v">6:58</span></div>
+    <div class="segbar">
+      <i style="flex:14"></i><i style="flex:20"></i><i style="flex:11"></i><i style="flex:22"></i><i style="flex:15"></i><i style="flex:18"></i>
+    </div>
+    <div class="minilab"><span>Éveillé</span><span class="v">0:37</span></div>
+    <div class="wkbar">
+      <b style="left:6%"></b><b style="left:19%"></b><b style="left:27%"></b><b style="left:38%"></b><b style="left:52%"></b><b style="left:63%"></b><b style="left:74%"></b><b style="left:86%"></b><b style="left:95%"></b>
+    </div>
+    <p class="cnote"><b>9 réveils nocturnes</b>, tous brefs — c'est ce qui te coûte tes 8 %. Normal au-delà de 90 %.</p>
+  </div>
+
+  <!-- Pilier 3 : régularité (écran 4) -->
+  <div class="card">
+    <div class="crow"><span class="ctit">⏰ Régularité</span><span class="cbig">80<small>%</small></span></div>
+    <div class="crow"><span class="cdelta">= stable vs hier</span></div>
+    <svg class="hyp" viewBox="0 0 420 150" style="margin-top:10px">
+      <!-- axe horaire -->
+      <g font-family="Inter" font-size="10" fill="#9A948A">
+        <text x="0" y="14">22:00</text><text x="0" y="47">01:00</text><text x="0" y="80">04:00</text><text x="0" y="113">07:00</text><text x="0" y="146">10:00</text>
+      </g>
+      <g stroke="#EFEAE1" stroke-width="1">
+        <line x1="42" y1="10" x2="420" y2="10"/><line x1="42" y1="43" x2="420" y2="43"/><line x1="42" y1="76" x2="420" y2="76"/><line x1="42" y1="109" x2="420" y2="109"/><line x1="42" y1="142" x2="420" y2="142"/>
+      </g>
+      <!-- fenêtre optimale (pointillés) -->
+      <line x1="42" y1="22" x2="420" y2="22" stroke="#D9D2C6" stroke-width="1.5" stroke-dasharray="5 4"/>
+      <line x1="42" y1="118" x2="420" y2="118" stroke="#D9D2C6" stroke-width="1.5" stroke-dasharray="5 4"/>
+      <!-- barres dim → jeu (coucher→réveil) -->
+      <rect x="64"  y="23" width="26" height="92"  rx="13" fill="#E2DCD1"/>
+      <rect x="136" y="20" width="26" height="97"  rx="13" fill="#E2DCD1"/>
+      <rect x="208" y="26" width="26" height="86"  rx="13" fill="#E2DCD1"/>
+      <rect x="280" y="22" width="26" height="93"  rx="13" fill="#E2DCD1"/>
+      <rect x="352" y="23" width="26" height="97"  rx="13" fill="#F0492E" opacity=".9"/>
+      <g font-family="Inter" font-size="10.5" font-weight="700" fill="#F0492E">
+        <text x="349" y="16">23:12</text><text x="349" y="134">07:47</text>
+      </g>
+      <g font-family="Inter" font-size="10.5" fill="#9A948A" text-anchor="middle">
+        <text x="77" y="149">dim.</text><text x="149" y="149">lun.</text><text x="221" y="149">mar.</text><text x="293" y="149">mer.</text>
+        <text x="365" y="149" fill="#F0492E" font-weight="800">jeu.</text>
+      </g>
+    </svg>
+    <p class="cnote">Tes horaires bougent de <b>± 25 min</b> sur la semaine (pointillés = ta fenêtre optimale). Sous 30 min d'écart, ton horloge interne te récompense.</p>
+  </div>
+
+  <!-- Pilier 4 : stress nocturne (écran 5 bas) -->
+  <div class="card">
+    <div class="crow"><span class="ctit">💤 Stress pendant la nuit</span><span class="cbig" style="color:#2E7D4F">Bas</span></div>
+    <svg class="hyp" viewBox="0 0 420 74" style="margin-top:8px">
+      <g stroke="#EFEAE1" stroke-width="1" stroke-dasharray="4 4">
+        <line x1="0" y1="12" x2="420" y2="12"/><line x1="0" y1="36" x2="420" y2="36"/><line x1="0" y1="60" x2="420" y2="60"/>
+      </g>
+      <g font-family="Inter" font-size="9.5" fill="#B9B2A5" text-anchor="end">
+        <text x="418" y="9">Élevé</text><text x="418" y="33">Moyen</text><text x="418" y="57">Faible</text>
+      </g>
+      <polyline fill="none" stroke="#6E7B8C" stroke-width="2" stroke-linecap="round"
+        points="4,60 30,58 55,61 80,57 105,60 130,59 150,52 165,58 195,60 225,57 255,61 285,58 310,60 330,56 355,59 385,58 408,57"/>
+      <circle cx="408" cy="57" r="3.5" fill="#6E7B8C"/>
+    </svg>
+    <div class="axis"><span>23:12</span><span>03:00</span><span>07:47</span></div>
+    <div class="strows">
+      <div class="leg"><span class="sq" style="background:var(--accent)"></span><span class="n">Élevé</span><span class="v">0:00</span><span class="p" style="width:38px;text-align:right;color:var(--faint);font-size:12px">0 %</span></div>
+      <div class="leg"><span class="sq" style="background:#F2A93B"></span><span class="n">Moyen</span><span class="v">0:24</span><span class="p" style="width:38px;text-align:right;color:var(--faint);font-size:12px">5 %</span></div>
+      <div class="leg"><span class="sq" style="background:#6E7B8C"></span><span class="n">Faible</span><span class="v">7:09</span><span class="p" style="width:38px;text-align:right;color:var(--faint);font-size:12px">95 %</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 3. LA NUIT MINUTE PAR MINUTE — phases UNE seule fois, réparateur en synthèse ══ -->
+<section class="sec">
+  <div class="kick"><span class="dot"></span> Ta nuit, minute par minute</div>
+
+  <div class="card">
+    <span class="ctit">Hypnogramme</span>
+    <svg class="hyp" viewBox="0 0 420 118" style="margin-top:12px">
+      <g font-family="Inter" font-size="9.5" fill="#B9B2A5">
+        <text x="0" y="15">Éveil</text><text x="0" y="43">Parad.</text><text x="0" y="71">Léger</text><text x="0" y="99">Profond</text>
+      </g>
+      <g stroke="#F1ECE3" stroke-width="1">
+        <line x1="46" y1="12" x2="420" y2="12"/><line x1="46" y1="40" x2="420" y2="40"/><line x1="46" y1="68" x2="420" y2="68"/><line x1="46" y1="96" x2="420" y2="96"/>
+      </g>
+      <!-- connecteurs -->
+      <g stroke="#E5DFD5" stroke-width="1.4">
+        <line x1="52.6" y1="12" x2="52.6" y2="68"/><line x1="77.2" y1="68" x2="77.2" y2="96"/><line x1="114.1" y1="96" x2="114.1" y2="68"/>
+        <line x1="130.5" y1="68" x2="130.5" y2="12"/><line x1="133"   y1="12" x2="133"   y2="96"/><line x1="165.8" y1="96" x2="165.8" y2="68"/>
+        <line x1="186.3" y1="68" x2="186.3" y2="40"/><line x1="219.1" y1="40" x2="219.1" y2="12"/><line x1="222.4" y1="12" x2="222.4" y2="68"/>
+        <line x1="247"   y1="68" x2="247"   y2="96"/><line x1="283.1" y1="96" x2="283.1" y2="12"/><line x1="285.6" y1="12" x2="285.6" y2="68"/>
+        <line x1="306.1" y1="68" x2="306.1" y2="40"/><line x1="343"   y1="40" x2="343"   y2="12"/><line x1="346.3" y1="12" x2="346.3" y2="68"/>
+        <line x1="373.4" y1="68" x2="373.4" y2="40"/><line x1="407"   y1="40" x2="407"   y2="12"/>
+      </g>
+      <!-- segments (W=éveil y8, R=parad y36, L=léger y64, D=profond y92) -->
+      <rect x="46"    y="8"  width="6.6"  height="8" rx="4" fill="#F0492E"/>
+      <rect x="52.6"  y="64" width="24.6" height="8" rx="4" fill="#D5B3F2"/>
+      <rect x="77.2"  y="92" width="36.9" height="8" rx="4" fill="#6E4FD8"/>
+      <rect x="114.1" y="64" width="16.4" height="8" rx="4" fill="#D5B3F2"/>
+      <rect x="130.5" y="8"  width="2.5"  height="8" rx="1.2" fill="#F0492E"/>
+      <rect x="133"   y="92" width="32.8" height="8" rx="4" fill="#6E4FD8"/>
+      <rect x="165.8" y="64" width="20.5" height="8" rx="4" fill="#D5B3F2"/>
+      <rect x="186.3" y="36" width="32.8" height="8" rx="4" fill="#F4A9B8"/>
+      <rect x="219.1" y="8"  width="3.3"  height="8" rx="1.6" fill="#F0492E"/>
+      <rect x="222.4" y="64" width="24.6" height="8" rx="4" fill="#D5B3F2"/>
+      <rect x="247"   y="92" width="36.1" height="8" rx="4" fill="#6E4FD8"/>
+      <rect x="283.1" y="8"  width="2.5"  height="8" rx="1.2" fill="#F0492E"/>
+      <rect x="285.6" y="64" width="20.5" height="8" rx="4" fill="#D5B3F2"/>
+      <rect x="306.1" y="36" width="36.9" height="8" rx="4" fill="#F4A9B8"/>
+      <rect x="343"   y="8"  width="3.3"  height="8" rx="1.6" fill="#F0492E"/>
+      <rect x="346.3" y="64" width="27.1" height="8" rx="4" fill="#D5B3F2"/>
+      <rect x="373.4" y="36" width="33.6" height="8" rx="4" fill="#F4A9B8"/>
+      <rect x="407"   y="8"  width="12.3" height="8" rx="4" fill="#F0492E"/>
+    </svg>
+    <div class="axis" style="padding-left:46px"><span>23:12</span><span>03:00</span><span>07:47</span></div>
+
+    <div class="phases">
+      <div class="ph"><span class="dot" style="background:#F0492E"></span><span class="n">Réveil</span><span class="t">0:37</span><span class="p">8 %</span></div>
+      <div class="ph"><span class="dot" style="background:#D5B3F2"></span><span class="n">Léger</span><span class="t">2:43</span><span class="p">36 %</span></div>
+      <div class="ph"><span class="dot" style="background:#6E4FD8"></span><span class="n">Profond</span><span class="t">2:09</span><span class="p">28 %</span></div>
+      <div class="ph"><span class="dot" style="background:#F4A9B8"></span><span class="n">Paradoxal</span><span class="t">2:06</span><span class="p">28 %</span></div>
+    </div>
+
+    <div class="repair">
+      <span class="ic">✦</span>
+      <span class="n"><b>Sommeil réparateur</b><span>profond + paradoxal — recharge physique &amp; mentale</span></span>
+      <span class="v">4:15 <small>· 56 %</small></span>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 4. LA TENDANCE — le contexte ══ -->
+<section class="sec">
+  <div class="kick"><span class="dot"></span> Tes 5 dernières nuits</div>
+  <div class="hist">
+    <div class="day on"><div class="d">Aujourd'hui</div><div class="s">87<small>%</small></div><div class="q">Très bonne</div></div>
+    <div class="day"><div class="d">Sam. 17</div><div class="s">79<small>%</small></div><div class="q">Bonne</div></div>
+    <div class="day"><div class="d">Ven. 16</div><div class="s">72<small>%</small></div><div class="q">Correcte</div></div>
+    <div class="day"><div class="d">Jeu. 15</div><div class="s">88<small>%</small></div><div class="q">Excellente</div></div>
+    <div class="day"><div class="d">Mer. 14</div><div class="s">65<small>%</small></div><div class="q">Moyenne</div></div>
+  </div>
+</section>
+
+<!-- ══ 5. L'ACTION — une seule reco, branchée sur la donnée ══ -->
+<section class="sec">
+  <div class="coach">
+    <span class="ic">✦</span>
+    <div>
+      <div class="k">Recommandation coach</div>
+      <p>Ta dette de sommeil est de <b>1 h 41</b>. Couche-toi <b>15 min plus tôt</b> cette semaine : dette effacée d'ici dimanche, et ta récupération suivra.</p>
+    </div>
+  </div>
+</section>
+
+<nav class="nav">
+  <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-8 9 8v9a1 1 0 01-1 1h-5v-6h-6v6H4a1 1 0 01-1-1z"/></svg>Accueil</a>
+  <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg>Activité</a>
+  <a href="#" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg>Sommeil</a>
+  <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 00-7.8 7.8l8.8 8.9 8.8-8.9a5.5 5.5 0 000-7.8z"/></svg>Récupération</a>
+  <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M16 8l-2.5 5.5L8 16l2.5-5.5z"/></svg>Conseils</a>
+</nav>
+
+</body>
+</html>
