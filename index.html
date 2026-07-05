@@ -6202,7 +6202,12 @@ function injectToday(){
  if(doc._navShown){try{var _nv3=doc.querySelector('nav');if(_nv3&&_nv3.style.transform.indexOf('150%')>=0)_nv3.style.transform='translateX(-50%) translateY(0px)';}catch(e){}}
  try{[].slice.call(doc.querySelectorAll('div,span,h1,b,strong')).forEach(function(e){if(e.children.length===0&&(e.textContent||'').trim()==='FLINT'){var im=doc.createElement('img');im.src='logo-wordmark.png';im.alt='FLINT';im.style.cssText='height:22px;width:auto;display:block';e.textContent='';e.appendChild(im);}});}catch(e){}
 
- if(!doc._mdWired){doc._mdWired=true;var _L2K=(typeof MD_LABEL2KEY!=='undefined'&&MD_LABEL2KEY)?MD_LABEL2KEY:null;try{doc.addEventListener('click',function(ev){if(window._mdOpening)return;var _p=ev.target;while(_p&&_p.id!=='screen-nutrition'&&_p.id!=='screen-balance')_p=_p.parentElement;if(_p)return;var el=ev.target;var a=el;for(var d1=0;d1<7&&a;d1++,a=a.parentElement){if(!a.querySelector)continue;var nmEl=a.querySelector?a.querySelector('div[style*="font-size: 25px"]'):null;var svgEl=a.querySelector?a.querySelector('svg'):null;if(nmEl&&svgEl&&(a.textContent||'').trim().length<300){var nm=(nmEl.textContent||'').trim();if(nm&&nm.indexOf('Ajouter')!==0&&!/^(Nuit|Sommeil|Sieste|Repas|Petit|D[ée]jeuner|D[îi]ner|Collation|Snack)$/i.test(nm)){ev.preventDefault();ev.stopPropagation();mdInjectActivity(nm,doc,a);return;}}}if(_L2K)for(var dd=0;dd<7&&el;dd++,el=el.parentElement){var txt=(el.textContent||'').trim();for(var lab in _L2K){if(txt.indexOf(lab)===0&&txt.length<lab.length+14){ev.preventDefault();ev.stopPropagation();openMetricDetail(_L2K[lab]);return;}}}},true);}catch(e){}}
+ if(!doc._mdWired){doc._mdWired=true;var _L2K=(typeof MD_LABEL2KEY!=='undefined'&&MD_LABEL2KEY)?MD_LABEL2KEY:null;try{doc.addEventListener('click',function(ev){if(window._mdOpening)return;
+var _pt=ev.target;while(_pt&&_pt.id!=='screen-tableau')_pt=_pt.parentElement;
+if(_pt){var TABL2K={'VFC':'hrv','FC au repos':'rhr','Récupération':'recovery','Sommeil réparateur':'sleepresto','Dette de sommeil':'sleepdebt','Efficacité du sommeil':'sleepeff','Temps passé au lit':'timeinbed','Durée de sommeil':'sleep','Pas':'steps','Calories':'calories','Effort et récupération':'effortrecup','VO₂ max':'vo2','FC moyenne':'fcavg','Fréquence respiratoire':'resp','Zones de FC (hebdo)':'hrzall','Poids':'weight','Masse corporelle maigre':'leanmass'};
+ var aa=ev.target;for(var dd2=0;dd2<7&&aa&&aa!==_pt;dd2++,aa=aa.parentElement){var tt=(aa.textContent||'').trim();if(tt.length>70)break;for(var lab in TABL2K){if(tt.indexOf(lab)===0){ev.preventDefault();ev.stopPropagation();openMetricDetail(TABL2K[lab]);return;}}}
+ return;}
+var _p=ev.target;while(_p&&_p.id!=='screen-nutrition'&&_p.id!=='screen-balance')_p=_p.parentElement;if(_p)return;var el=ev.target;var a=el;for(var d1=0;d1<7&&a;d1++,a=a.parentElement){if(!a.querySelector)continue;var nmEl=a.querySelector?a.querySelector('div[style*="font-size: 25px"]'):null;var svgEl=a.querySelector?a.querySelector('svg'):null;if(nmEl&&svgEl&&(a.textContent||'').trim().length<300){var nm=(nmEl.textContent||'').trim();if(nm&&nm.indexOf('Ajouter')!==0&&!/^(Nuit|Sommeil|Sieste|Repas|Petit|D[ée]jeuner|D[îi]ner|Collation|Snack)$/i.test(nm)){ev.preventDefault();ev.stopPropagation();mdInjectActivity(nm,doc,a);return;}}}if(_L2K)for(var dd=0;dd<7&&el;dd++,el=el.parentElement){var txt=(el.textContent||'').trim();for(var lab in _L2K){if(txt.indexOf(lab)===0&&txt.length<lab.length+14){ev.preventDefault();ev.stopPropagation();openMetricDetail(_L2K[lab]);return;}}}},true);}catch(e){}}
  function setText(oldT,val){var e=doc.querySelectorAll('span,div,p,h1,button');for(var i=0;i<e.length;i++){var x=e[i];if(x.children.length===0&&(x.textContent||'').trim()===oldT){x.textContent=val;return true;}}return false;}
  try{
   var K=tk(0),rv=(typeof recovery==='function'?recovery():null),sc=rv&&rv.s!=null?Math.round(rv.s):null;
@@ -6330,13 +6335,18 @@ function mdGet(key,off){var s=sensorOf(tk(off));function n(x){return (x==null?nu
   case 'sleepresto':var n2=sleepNight(tk(off));return n2&&n2.asleep?Math.round(n2.restorative/n2.asleep*100):null;
   case 'timeinbed':var n3=sleepNight(tk(off));return n3?+(n3.inBed/60).toFixed(1):null;
   case 'sleepdebt':var n4=sleepNight(tk(off));return n4?+(((getProfile().need||8)*60-n4.asleep)/60).toFixed(1):null;
+  case 'vo2':{var sv=sensorOf(tk(off));if(!sv||sv.rhr==null)return null;var hm=208-0.7*(getProfile().age||28);return Math.round(15.3*hm/sv.rhr);}
+  case 'weight':{var bw=DB.get('bodylog',{})[tk(off)];return bw&&bw.weight!=null?bw.weight:null;}
+  case 'leanmass':{var bl=DB.get('bodylog',{})[tk(off)];return bl&&bl.lean!=null?bl.lean:null;}
+  case 'hrzall':{var zm=0;(DB.get('sessions_'+tk(off),[])||[]).forEach(function(ss){if(ss.type==='nap')return;var z=hrZonesOf(ss);zm+=(z[2]||0)+(z[3]||0)+(z[4]||0);});return zm||null;}
   default:return null;
  }}
 function mdNice(mx){if(mx<=0)return 10;var p=Math.pow(10,Math.floor(Math.log10(mx)));var n=mx/p;var m=n<=1?1:n<=2?2:n<=5?5:10;return m*p;}
-function mdFmt(v,unit){if(v==null)return '—';if(unit==='ms'||unit==='bpm'||unit==='%'||unit==='')return Math.round(v);return (''+v).replace('.',',');}
+function mdFmt(v,unit){if(v==null)return '—';var r=(unit==='ms'||unit==='bpm'||unit==='%'||unit==='')?Math.round(v):v;var s2=(''+r).replace('.',',');if(s2.indexOf(',')<0&&Math.abs(+r)>=1000)s2=s2.replace(/\B(?=(\d{3})+(?!\d))/g,' ');return s2;}
 function openMetricDetail(key){
  var G=mdGroupOf(key),m=DASH[key];if(!m)return;
  var unit=(function(){var mm=(''+m.v()).match(/([a-zA-Z%\/]+)$/);return mm?mm[1]:'';})();
+ if(!unit)unit={vo2:'',weight:'kg',leanmass:'kg',hrzall:'min'}[key]||'';
  var vals=[];for(var i=6;i>=0;i--)vals.push(mdGet(key,-i));
  var real=vals.filter(function(x){return x!=null;});
  var cur=real.length?real[real.length-1]:null;
@@ -8650,7 +8660,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v461';
+const APP_VERSION='flint-v462';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
