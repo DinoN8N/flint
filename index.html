@@ -6221,7 +6221,7 @@ var el=ev.target;var a=el;for(var d1=0;d1<7&&a;d1++,a=a.parentElement){if(!a.que
   if(slMin)setText('7h42',Math.floor(slMin/60)+'h'+String(slMin%60).padStart(2,'0'));
   var str=loadStrain(K);setText('15,7',(Math.round(str*10)/10+'').replace('.',','));
   var kc=(typeof caloriesBurned==='function'?caloriesBurned(K):0);setText('3 078',(''+Math.round(kc)).replace(/\B(?=(\d{3})+(?!\d))/g,' '));
-  mdBalance(doc);
+  mdBalance(doc);mdSleep(doc);
  }catch(e){}
  if(!doc._navWired){doc._navWired=true;try{doc.addEventListener('click',function(ev){var el=ev.target;for(var i=0;i<6&&el;i++,el=el.parentElement){if(el.getAttribute&&el.getAttribute('role')==='button'){var t=(el.textContent||'').trim().toLowerCase();if(t==='coach'){ev.preventDefault();ev.stopPropagation();go('coach');return;}if(t==='profil'){ev.preventDefault();ev.stopPropagation();go('profile');return;}if(t==='nutrition'){setTimeout(function(){try{mdBalance(doc);}catch(e){}},350);setTimeout(function(){try{mdBalance(doc);}catch(e){}},900);return;}if(t==="aujourd'hui"||t==='aujourd’hui'){setTimeout(function(){try{var sn=doc.getElementById('screen-nutrition');if(sn){var r=sn.getBoundingClientRect();var w=doc.defaultView.innerWidth;if(Math.abs(r.left-(w-r.width)/2)<40){var bk=[].slice.call(sn.querySelectorAll('*')).filter(function(x){return x.children.length<3&&/Aujourd/.test((x.textContent||'').trim())&&x.getBoundingClientRect().top<80;})[0];if(bk){var rb2=bk;while(rb2&&rb2.getAttribute&&rb2.getAttribute('role')!=='button'&&rb2.tagName!=='BUTTON')rb2=rb2.parentElement;var tt=rb2||bk;['pointerdown','pointerup','click'].forEach(function(e2){tt.dispatchEvent(new MouseEvent(e2,{bubbles:true,cancelable:true}));});}}}}catch(e){}},0);return;}return;}}},true);}catch(e){}}
 }
@@ -6254,6 +6254,41 @@ function flScanChoice(){var ex=document.getElementById('flScanSheet');if(ex){ex.
  if(typeof haptic==='function')haptic();}
 function flScanClose(){var d=document.getElementById('flScanSheet');if(!d)return;var bk=document.getElementById('flScanBk'),cd=document.getElementById('flScanCard');if(bk)bk.style.opacity='0';if(cd)cd.style.transform='translateX(-50%) translateY(105%)';setTimeout(function(){if(d)d.remove();},320);}
 function flScanGo(k){flScanClose();setTimeout(function(){if(k==='cam'&&window.nutCamera)nutCamera();else if(k==='bar'&&window.nutBarcode)nutBarcode();else if(k==='gal'&&window.nutGallery)nutGallery();else if(k==='txt'&&window.nutDescribe)nutDescribe();},330);}
+function mdSleep(doc){try{var sc=doc.getElementById('screen-sommeil');if(!sc)return;var n=sleepNight(tk(0));if(!n)return;
+ function hmm(min){min=Math.round(min);return Math.floor(min/60)+':'+String(min%60).padStart(2,'0');}
+ function hh(min){min=Math.round(min);return Math.floor(min/60)+'h'+String(min%60).padStart(2,'0');}
+ function clock(min){min=((Math.round(min)%1440)+1440)%1440;return String(Math.floor(min/60)).padStart(2,'0')+':'+String(min%60).padStart(2,'0');}
+ var need=(getProfile().need||8)*60;var score=Math.min(100,Math.round(n.asleep/need*100));
+ var m30=[];for(var j=0;j<30;j++){var x=mdGet('sleep',-j);if(x!=null)m30.push(x);}
+ var avg=m30.length?m30.reduce(function(a,b){return a+b;},0)/m30.length:null;
+ var leaves=[].slice.call(sc.querySelectorAll('div,span,h1,p')).filter(function(e){return e.children.length===0;});
+ leaves.forEach(function(e){var t=(e.textContent||'').trim();var fs=parseFloat(getComputedStyle(e).fontSize)||0;
+  if(/^\d{2,3}$/.test(t)&&fs>50){if(t!==''+score)e.textContent=score;return;}
+  if(/^\d+h\d{2}$/.test(t)&&fs>24){var v=hh(n.asleep);if(t!==v)e.textContent=v;return;}
+  if(/^\d+:\d{2}$/.test(t)&&fs>28){var v2=hmm(n.asleep);if(t!==v2)e.textContent=v2;return;}
+  if(/^moy\./.test(t)&&avg!=null){var v3='moy. '+hmm(avg*60);if(t!==v3)e.textContent=v3;return;}
+ });
+ var cw=[].slice.call(sc.querySelectorAll('*')).filter(function(e){return /Coucher/.test(e.textContent)&&/Réveil/.test(e.textContent)&&(e.textContent||'').trim().length<50;}).pop();
+ if(cw){var times=[].slice.call(cw.querySelectorAll('div,span')).filter(function(e){return e.children.length===0&&/^\d{2}:\d{2}$/.test((e.textContent||'').trim());});
+  if(times.length>=2){var bt=clock(n.bedMin),wt=clock(n.wakeMin);if(times[0].textContent!==bt)times[0].textContent=bt;if(times[1].textContent!==wt)times[1].textContent=wt;}}
+ var STG={'PROFOND':n.deep,'LÉGER':n.light,'PARADOXAL':n.rem,'REM':n.rem,'RÉVEIL':n.awake,'ÉVEIL':n.awake,'ÉVEILLÉ':n.awake};
+ for(var lab in STG){var mins=STG[lab]||0;
+  var labEl=leaves.filter(function(e){return (e.textContent||'').trim()===lab;})[0];if(!labEl)continue;
+  var row=null,cand=labEl;for(var u=0;u<6&&cand;u++,cand=cand.parentElement){var rl=(cand.textContent||'').replace(/\s+/g,'').length;if(rl>8&&rl<45&&/%/.test(cand.textContent)){row=cand;break;}}
+  if(!row)continue;
+  var pct=n.inBed>0?Math.round(mins/n.inBed*100):0;
+  [].slice.call(row.querySelectorAll('div,span')).filter(function(e){return e.children.length===0;}).forEach(function(e){var t=(e.textContent||'').trim();
+   if(/^\d+\s?%$/.test(t)){var vp=pct+' %';if(t!==vp)e.textContent=vp;}
+   else if(/^\d+:\d{2}$/.test(t)){var vd=hmm(mins);if(t!==vd)e.textContent=vd;}});}
+ (function(){var debt=typeof sleepDebt==='function'?Math.max(0,sleepDebt()):0;var debtMin=Math.round(debt*60);var needDyn=need+debtMin;var pctB=Math.min(100,Math.round(n.asleep/needDyn*100));
+  var AN={'69%':pctB+'%','6:42':hmm(n.asleep),'9:39':hmm(needDyn),'7:55':hmm(need),'+ 1:44':'+ '+hmm(debtMin),'92%':(n.efficiency!=null?n.efficiency+'%':null)};
+  leaves.forEach(function(e){var t=(e.textContent||'').trim();if(AN.hasOwnProperty(t)&&AN[t]!=null&&AN[t]!==t)e.textContent=AN[t];});})();
+ if(n.wakeEvents!=null){var rn=[].slice.call(sc.querySelectorAll('*')).filter(function(e){return /RÉVEILS/.test(e.textContent)&&/NOCTURNES/.test(e.textContent)&&(e.textContent||'').replace(/\s+/g,'').length<40;}).pop();
+  if(rn){[].slice.call(rn.querySelectorAll('div,span')).filter(function(e){return e.children.length===0&&/^\d{1,2}$/.test((e.textContent||'').trim());}).forEach(function(e){var v=''+n.wakeEvents;if(e.textContent!==v)e.textContent=v;});}}
+ var dEl=leaves.filter(function(e){return /^DURÉE$/.test((e.textContent||'').trim());})[0];
+ if(dEl){var dp=dEl.parentElement;var dv=[].slice.call((dp&&dp.parentElement||dp).querySelectorAll('div,span')).filter(function(e){return e.children.length===0&&/^\d+:\d{2}$/.test((e.textContent||'').trim());})[0];
+  if(dv){var vv=hmm(n.inBed);if(dv.textContent!==vv)dv.textContent=vv;}}
+}catch(e){}}
 function mdBalance(doc){try{
  var K=tk(0),nt=nutTotals(K),outk=Math.round(caloriesBurned(K));var inn=Math.round(nt.kcal);
  if(!(inn>0))return; /* aucun repas scanné → on ne fabrique pas un faux solde */
@@ -8686,7 +8721,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v464';
+const APP_VERSION='flint-v465';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
