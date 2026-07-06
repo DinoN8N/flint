@@ -6622,6 +6622,11 @@ function flOpenCalHebdo(){try{var fr=document.getElementById('frToday');var doc=
  if(!cl){var src=doc.getElementById('screen-cal-hebdo');if(!src)return;
   cl=src.cloneNode(true);cl.id='flCalClone';
   src.style.setProperty('display','none','important');
+  try{cl.innerHTML=cl.innerHTML
+   .replace(/id="([^"]+)"/g,'id="$1-flc"')
+   .replace(/url\(#([^)]+)\)/g,'url(#$1-flc)')
+   .replace(/url\("#([^"]+)"\)/g,'url(#$1-flc)')
+   .replace(/(xlink:href|href)="#([^"]+)"/g,'$1="#$2-flc"');}catch(e){}
   cl.style.setProperty('display','block','important');
   cl.style.setProperty('position','fixed','important');
   cl.style.setProperty('top','0','important');cl.style.setProperty('bottom','0','important');
@@ -9129,7 +9134,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v483';
+const APP_VERSION='flint-v484';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
