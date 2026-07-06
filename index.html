@@ -6221,7 +6221,7 @@ var el=ev.target;var a=el;for(var d1=0;d1<7&&a;d1++,a=a.parentElement){if(!a.que
   if(slMin)setText('7h42',Math.floor(slMin/60)+'h'+String(slMin%60).padStart(2,'0'));
   var str=loadStrain(K);setText('15,7',(Math.round(str*10)/10+'').replace('.',','));
   var kc=(typeof caloriesBurned==='function'?caloriesBurned(K):0);setText('3 078',(''+Math.round(kc)).replace(/\B(?=(\d{3})+(?!\d))/g,' '));
-  mdBalance(doc);mdSleep(doc);
+  mdBalance(doc);mdSleep(doc);mdFonts(doc);
  }catch(e){}
  if(!doc._navWired){doc._navWired=true;try{doc.addEventListener('click',function(ev){var el=ev.target;for(var i=0;i<6&&el;i++,el=el.parentElement){if(el.getAttribute&&el.getAttribute('role')==='button'){var t=(el.textContent||'').trim().toLowerCase();if(t==='coach'){ev.preventDefault();ev.stopPropagation();go('coach');return;}if(t==='profil'){ev.preventDefault();ev.stopPropagation();go('profile');return;}if(t==='nutrition'){setTimeout(function(){try{mdBalance(doc);}catch(e){}},350);setTimeout(function(){try{mdBalance(doc);}catch(e){}},900);return;}if(t==="aujourd'hui"||t==='aujourd’hui'){setTimeout(function(){try{var sn=doc.getElementById('screen-nutrition');if(sn){var r=sn.getBoundingClientRect();var w=doc.defaultView.innerWidth;if(Math.abs(r.left-(w-r.width)/2)<40){var bk=[].slice.call(sn.querySelectorAll('*')).filter(function(x){return x.children.length<3&&/Aujourd/.test((x.textContent||'').trim())&&x.getBoundingClientRect().top<80;})[0];if(bk){var rb2=bk;while(rb2&&rb2.getAttribute&&rb2.getAttribute('role')!=='button'&&rb2.tagName!=='BUTTON')rb2=rb2.parentElement;var tt=rb2||bk;['pointerdown','pointerup','click'].forEach(function(e2){tt.dispatchEvent(new MouseEvent(e2,{bubbles:true,cancelable:true}));});}}}}catch(e){}},0);return;}return;}}},true);}catch(e){}}
 }
@@ -6263,6 +6263,7 @@ function mdSleep(doc){try{var sc=doc.getElementById('screen-sommeil');if(!sc)ret
  var avg=m30.length?m30.reduce(function(a,b){return a+b;},0)/m30.length:null;
  var leaves=[].slice.call(sc.querySelectorAll('div,span,h1,p')).filter(function(e){return e.children.length===0;});
  leaves.forEach(function(e){var t=(e.textContent||'').trim();var fs=parseFloat(getComputedStyle(e).fontSize)||0;
+  if(/Arthur/.test(t)){e.textContent=t.replace(/Arthur/g,'Dino');return;}
   if(/^\d{2,3}$/.test(t)&&fs>50){if(t!==''+score)e.textContent=score;return;}
   if(/^\d+h\d{2}$/.test(t)&&fs>24){var v=hh(n.asleep);if(t!==v)e.textContent=v;return;}
   if(/^\d+:\d{2}$/.test(t)&&fs>28){var v2=hmm(n.asleep);if(t!==v2)e.textContent=v2;return;}
@@ -6289,6 +6290,17 @@ function mdSleep(doc){try{var sc=doc.getElementById('screen-sommeil');if(!sc)ret
  if(dEl){var dp=dEl.parentElement;var dv=[].slice.call((dp&&dp.parentElement||dp).querySelectorAll('div,span')).filter(function(e){return e.children.length===0&&/^\d+:\d{2}$/.test((e.textContent||'').trim());})[0];
   if(dv){var vv=hmm(n.inBed);if(dv.textContent!==vv)dv.textContent=vv;}}
 }catch(e){}}
+function mdFonts(doc){try{
+ ['screen-sommeil','screen-journal','screen-marche','screen-nutrition'].forEach(function(id){var sc=doc.getElementById(id);if(!sc)return;
+  [].slice.call(sc.querySelectorAll('div,span,h1,p')).forEach(function(e){if(e.children.length)return;var t=(e.textContent||'').trim();if(!t)return;
+   var cs=getComputedStyle(e);var fam=cs.fontFamily;var fs=parseFloat(cs.fontSize)||0;
+   if(/Helvetica|Big Shoulders|Oswald/i.test(fam)){
+    if(fs>=80){e.style.setProperty('font-family',"'Arial Black','Archivo Black',Arial,sans-serif",'important');e.style.setProperty('font-weight','900','important');}
+    else{e.style.setProperty('font-family','Archivo,-apple-system,system-ui,sans-serif','important');if(fs>=34&&parseInt(cs.fontWeight)<700)e.style.setProperty('font-weight','700','important');}
+   }else if(id==='screen-marche'&&/-apple-system/.test(fam)&&fs>=28){e.style.setProperty('font-family','Archivo,-apple-system,sans-serif','important');e.style.setProperty('font-weight','700','important');}
+   else if(id==='screen-nutrition'&&/(^|['" ])Arial(,|['" ]|$)/.test(fam)&&!/Arial Black/i.test(fam)&&fs>=20){e.style.setProperty('font-family','Archivo,-apple-system,sans-serif','important');}
+  });});
+}catch(e){}}
 function mdBalance(doc){try{
  var K=tk(0),nt=nutTotals(K),outk=Math.round(caloriesBurned(K));var inn=Math.round(nt.kcal);
  if(!(inn>0))return; /* aucun repas scanné → on ne fabrique pas un faux solde */
@@ -6309,7 +6321,8 @@ function mdBalance(doc){try{
   [].slice.call(sc.querySelectorAll('span')).forEach(function(e){var st=e.getAttribute('style')||'';var t=(e.textContent||'').trim();
    if(/font-size: 34px/.test(st)&&/^[+−-]?[\d ]+$/.test(t))e.textContent=fmt(s);
    else if(/font-size: 14px/.test(st)&&/^(Léger surplus|Léger déficit|Maintien|Surplus|Déficit)$/.test(t))e.textContent=lab;});
-  var pair=[].slice.call(sc.querySelectorAll('span')).filter(function(e){var st=e.getAttribute('style')||'';return /Arial/.test(st)&&/font-size: 22px/.test(st)&&/^[\d ]+$/.test((e.textContent||'').trim());});
+  var vsCard=[].slice.call(sc.querySelectorAll('*')).filter(function(e){return /CONSOMMÉES/.test(e.textContent)&&/DÉPENSÉES/.test(e.textContent)&&(e.textContent||'').replace(/\s+/g,'').length<60;}).pop();
+  var pair=vsCard?[].slice.call(vsCard.querySelectorAll('span')).filter(function(e){return e.children.length===0&&/^[\d ]+$/.test((e.textContent||'').trim());}):[];
   if(pair.length>=2){pair[0].textContent=fmtU(inn);pair[1].textContent=fmtU(outk);}
  });
 }catch(e){}}
@@ -8721,7 +8734,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v465';
+const APP_VERSION='flint-v467';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
