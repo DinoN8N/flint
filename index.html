@@ -6429,6 +6429,8 @@ function mdSleepScrub(doc){try{var sc=doc.getElementById('screen-sommeil');if(!s
 function mdWeekBarsScrub(doc){try{
  [].slice.call(doc.querySelectorAll('svg')).filter(function(g){return (g.getAttribute('viewBox')||'')==='0 0 600 372'&&!g._flWk;}).forEach(function(svg){
   function paint(el,prop){var at=el.getAttribute(prop);if(at)return (''+at).toLowerCase();try{return (getComputedStyle(el)[prop]||'').toLowerCase();}catch(e){return '';}}
+  var host=svg;while(host&&!(host.id&&/^screen-/.test(host.id)))host=host.parentElement;
+  if(host&&host.id==='screen-sommeil'){svg._flWk=true;return;} /* page sommeil = aperçu, pas de scrub */
   var bars=[].slice.call(svg.querySelectorAll('path')).filter(function(p){return /url\(/.test(paint(p,'fill'));});
   if(bars.length<3)return;svg._flWk=true;
   var texts=[].slice.call(svg.querySelectorAll('text'));
@@ -6440,17 +6442,16 @@ function mdWeekBarsScrub(doc){try{
   }).filter(Boolean).sort(function(a1,b2){return a1.x-b2.x;});
   if(pts.length<3)return;
   var fixed=pts.map(function(p){return p.lab;}).filter(Boolean);
-  /* header de l'écran hôte (mode « carte du haut » : MOYENNE/76 → JEU. 28 MAI/81) */
-  var host=svg;while(host&&!(host.id&&/^screen-/.test(host.id)))host=host.parentElement;
+  /* header de l'écran hôte (mode « carte du haut » : MOYENNE/76 → JEU. 28 MAI/81 ; DETTE MOYENNE/1:41 → JEU. 28 MAI/1:31) */
   var hdr=null;
   if(host){var hl=[].slice.call(host.querySelectorAll('div,span')).filter(function(e){return e.children.length===0;});
-   var hLab=hl.filter(function(e){return (e.textContent||'').trim()==='MOYENNE';})[0];
-   var hVal=hl.filter(function(e){return /^\d{1,3}$/.test((e.textContent||'').trim())&&parseFloat(getComputedStyle(e).fontSize)>=40;})[0];
+   var hLab=hl.filter(function(e){var t2=(e.textContent||'').trim();return /MOYENNE$/.test(t2)&&t2.length<22;})[0];
+   var hVal=hl.filter(function(e){return /^(\d{1,3}|\d+:\d{2})$/.test((e.textContent||'').trim())&&parseFloat(getComputedStyle(e).fontSize)>=40;})[0];
    if(hLab&&hVal){var hArr=null;var vp=hVal.parentElement;for(var u2=0;u2<2&&vp&&!hArr;u2++,vp=vp.parentElement){hArr=[].slice.call(vp.querySelectorAll('svg')).filter(function(g2){var r2=g2.getBoundingClientRect();return r2.width>0&&r2.width<22;})[0];}
     var mois=['',''];var per=hl.filter(function(e){return /\d+\s+\S+\s*[–-]\s*\d+\s+\S+/.test((e.textContent||'').trim());})[0];
     var pm=per?(per.textContent||'').match(/(\d+)\s+(\S+)\s*[–-]\s*(\d+)\s+(\S+)/):null;
     if(pm)mois=[pm[2].replace(/[^a-zûéà]/gi,''),pm[4].replace(/[^a-zûéà]/gi,'')];
-    hdr={lab:hLab,val:hVal,arr:hArr,d1:pm?+pm[1]:99,m1:mois[0],m2:mois[1]};
+    hdr={lab:hLab,val:hVal,arr:hArr,d1:pm?+pm[1]:99,m1:mois[0],m2:mois[1],valIsPct:/^\d{1,3}$/.test((hVal.textContent||'').trim())};
     if(hArr)hArr.style.transition='opacity .18s ease';}}
   bars.forEach(function(b3){b3.style.transition='opacity .12s ease';});
   fixed.forEach(function(t){t.style.transition='opacity .18s ease';});
@@ -6467,7 +6468,7 @@ function mdWeekBarsScrub(doc){try{
    guide.setAttribute('x1',p.x);guide.setAttribute('x2',p.x);guide.setAttribute('opacity',ssb?'0.55':'0');
    pts.forEach(function(q,i){q.el.style.opacity=(ssb&&i!==idx)?'0.24':'1';});
    fixed.forEach(function(t){t.style.opacity=ssb?'0':'1';});
-   if(hdr){if(ssb){hdr.lab.textContent=dayLabel(p);hdr.val.textContent=(p.v||'').replace(/%$/,'');}
+   if(hdr){if(ssb){hdr.lab.textContent=dayLabel(p);hdr.val.textContent=hdr.valIsPct?(p.v||'').replace(/%$/,''):(p.v||'');}
     else{if(rest.lab!=null)hdr.lab.textContent=rest.lab;if(rest.val!=null)hdr.val.textContent=rest.val;}
     if(hdr.arr)hdr.arr.style.opacity=ssb?'0':'1';}
    else{var lx=Math.max(40,Math.min(560,p.x));
@@ -6493,7 +6494,10 @@ function mdDualScrub(doc){try{
   var circles=[].slice.call(svg.querySelectorAll('circle')).filter(function(c){var fv=paint(c,'fill');return isCol(fv,'#fff','rgb(255, 255, 255)')||fv==='#ffffff';});
   var grey=circles.filter(function(c){return isCol(paint(c,'stroke'),'#8a93a3','rgb(138, 147, 163)');});
   var oran=circles.filter(function(c){return isCol(paint(c,'stroke'),'#fb6015','rgb(251, 96, 21)');});
-  if(!grey.length||!oran.length)return;svg._flDual=true;
+  if(!grey.length||!oran.length)return;
+  var host=svg;while(host&&!(host.id&&/^screen-/.test(host.id)))host=host.parentElement;
+  if(host&&host.id==='screen-sommeil'){svg._flDual=true;return;} /* page sommeil = aperçu */
+  svg._flDual=true;
   var texts=[].slice.call(svg.querySelectorAll('text'));
   function nearTxt(x,filter){var best=null,bd=1e9;texts.forEach(function(t){if(!filter(t))return;var tx=+t.getAttribute('x')||0;var dd=Math.abs(tx-x);if(dd<bd&&dd<30){bd=dd;best=t;}});return best;}
   var pts=grey.map(function(gc){var g0=cxy(gc);if(!g0)return null;var oc=null,od=1e9;oran.forEach(function(c){var c0=cxy(c);if(!c0)return;var dd=Math.abs(c0.x-g0.x);if(dd<od){od=dd;oc=c0;}});
@@ -6504,7 +6508,6 @@ function mdDualScrub(doc){try{
    return {x:g0.x,gy:g0.y,oy:oc?oc.y:null,need:needT?needT.textContent.trim():'',eff:effT?effT.textContent.trim():'',day:(((dowT?dowT.textContent:'')||'').trim().toUpperCase()+' '+((numT?numT.textContent:'')||'').trim()).trim()};
   }).filter(Boolean).sort(function(a1,b2){return a1.x-b2.x;});
   /* header de l'écran hôte (9:59/BESOINS MOY. + 6:37/HEURES MOY. → valeurs du jour + VEN 29) */
-  var host=svg;while(host&&!(host.id&&/^screen-/.test(host.id)))host=host.parentElement;
   var hdr=null;
   if(host){var hl=[].slice.call(host.querySelectorAll('div,span')).filter(function(e){return e.children.length===0;});
    var needLab=hl.filter(function(e){return (e.textContent||'').trim()==='BESOINS MOY.';})[0];
@@ -8991,7 +8994,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v476';
+const APP_VERSION='flint-v477';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
