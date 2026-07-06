@@ -6401,19 +6401,15 @@ function mdSleepScrub(doc){try{var sc=doc.getElementById('screen-sommeil');if(!s
  var guide=mk('line',{stroke:'#fb6015','stroke-width':'1.1',y1:'14',y2:'128'});
  var halo=mk('circle',{r:'9',fill:'rgba(251,96,21,0.20)'});
  var dot=mk('circle',{r:'3.6',fill:'#fb6015',stroke:'#fff','stroke-width':'1.6'});
- var lblV=mk('text',{'text-anchor':'middle','font-family':"'Helvetica Neue', Arial, sans-serif",'font-size':'15','font-weight':'600',fill:'#14110f'});
- var lblT=mk('text',{'text-anchor':'middle','font-family':"'Helvetica Neue', Arial, sans-serif",'font-size':'10','font-weight':'300',fill:'#a2a09c'});
+
  [pel,areaEl].forEach(function(e){if(e)e.style.transition='opacity .18s ease';});
  svg.style.touchAction='none';
  var idx=N-1,ssb=false,rest={};
  function render(){var p=pts[idx];
   guide.setAttribute('x1',p.x);guide.setAttribute('x2',p.x);
   halo.setAttribute('cx',p.x);halo.setAttribute('cy',p.y);dot.setAttribute('cx',p.x);dot.setAttribute('cy',p.y);
-  var lx=Math.max(30,Math.min(310,p.x));var above=p.y>46;
-  lblV.setAttribute('x',lx);lblV.setAttribute('y',above?p.y-24:p.y+30);lblV.textContent=''+p.v;
-  lblT.setAttribute('x',lx);lblT.setAttribute('y',above?p.y-12:p.y+42);lblT.textContent=p.t;
   guide.setAttribute('opacity',ssb?'0.55':'0');
-  [halo,dot,lblV,lblT].forEach(function(e){e.setAttribute('opacity',ssb?'1':'0');});
+  [halo,dot].forEach(function(e){e.setAttribute('opacity',ssb?'1':'0');});
   [pel,areaEl].forEach(function(e){if(e)e.style.opacity=ssb?'0.4':'1';});
   if(big){if(ssb){big.textContent=''+p.v;}else if(rest.big!=null){big.textContent=rest.big;}}
   if(sub){if(ssb){sub.textContent=p.t;}else if(rest.sub!=null){sub.textContent=rest.sub;}}
@@ -8957,7 +8953,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v474';
+const APP_VERSION='flint-v475';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
