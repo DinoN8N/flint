@@ -145,7 +145,7 @@ hr{border:0;border-top:1.5px dashed #bbb;margin:12px 0}
   <span class="note">→ Fini le trio P/G/L de diététicien. <b>Protéines</b> (la seule macro-objectif du sportif) +
   <b>Carburant séance</b> : les glucides traduits en préparation de TA séance (agenda + bracelet — personne d'autre ne peut).
   Après la séance, la carte bascule : « Fenêtre de récup : 30 g de protéines avant 20h30 ».
-  Pas de séance prévue ? « Jour de repos — mange à ta faim, budget 2 400 kcal ».
+  Pas de séance prévue ? « Jour de repos — mange à ta faim, besoin 2 400 kcal ».
   Glucides/lipides complets restent à 1 tap dans <b>Progrès</b> pour ceux qui sèchent.</span>
 
   <hr>
@@ -382,9 +382,9 @@ hr{border:0;border-top:1.5px dashed #bbb;margin:12px 0}
   <div class="box"><div class="k">Corrélation FLINT</div><div style="font-size:12px">Jours ≥ objectif protéines → récup moyenne <b>+9 pts</b></div></div>
 </section>
 
-<!-- ════════ 10. BUDGET DU JOUR (tap sur Calories restantes) ════════ -->
+<!-- ════════ 10. BESOIN DU JOUR (tap sur Calories restantes) ════════ -->
 <section class="scr" id="caldetail">
-  <div class="bar"><span class="btn" onclick="go('home')">‹</span><span class="t">Ton budget du jour</span><span></span></div>
+  <div class="bar"><span class="btn" onclick="go('home')">‹</span><span class="t">Ton besoin du jour</span><span></span></div>
 
   <div class="box solid">
     <div class="row" style="font-size:13px;padding:6px 0"><span>Base — objectif Maintien</span><span class="sp"></span><b>2 400</b></div>
@@ -393,17 +393,17 @@ hr{border:0;border-top:1.5px dashed #bbb;margin:12px 0}
       <div class="row" style="padding:2px 0"><span>Pas &amp; quotidien (en cours)</span><span class="sp"></span><span>+ 350</span></div>
       <div class="row" style="padding:2px 0"><span>WOD 18:00 (prévu)</span><span class="sp"></span><span>+ 450</span></div>
     </div>
-    <div class="row" style="font-size:13px;padding:6px 0;border-top:1.5px solid #111"><span><b>= Budget du jour</b></span><span class="sp"></span><b>3 200</b></div>
+    <div class="row" style="font-size:13px;padding:6px 0;border-top:1.5px solid #111"><span><b>= Besoin du jour</b></span><span class="sp"></span><b>3 200</b></div>
     <div class="row" style="font-size:13px;padding:6px 0;cursor:pointer" onclick="go('home')"><span>− Mangé (3 repas)</span><span class="sp"></span><b>− 617</b></div>
     <div class="row" style="padding:8px 0;border-top:2px solid #111"><span style="font-weight:800">= Restant</span><span class="sp"></span><span class="big" style="font-size:24px">2 583</span></div>
   </div>
   <span class="note">→ La réponse à la question que pose le tap : <b>« d'où vient ce chiffre ? »</b>. Chaque ligne est vivante :
-  l'activité monte en temps réel ; si le WOD prévu saute, le budget redescend à 20 h (et on le dit, pas de chiffre magique).
+  l'activité monte en temps réel ; si le WOD prévu saute, le besoin redescend à 20 h (et on le dit, pas de chiffre magique).
   « Mangé » est cliquable → retour au journal. « Activité » → détail effort FLINT.</span>
 
   <div class="box">
     <div class="k">Projection</div>
-    <div style="font-size:12.5px">Avec ton dîner habituel (~900 kcal), tu finirais <b>~1 700 kcal sous ton budget</b> —
+    <div style="font-size:12.5px">Avec ton dîner habituel (~900 kcal), tu finirais <b>~1 700 kcal sous ton besoin</b> —
     trop bas pour un jour de WOD. Ajoute une collation post-séance et un vrai dîner.</div>
     <span class="note">→ La projection transforme le décompte en conseil : « tu peux manger normalement ce soir » —
     c'est ÇA que l'utilisateur venait chercher en tapant.</span>
@@ -421,7 +421,7 @@ hr{border:0;border-top:1.5px dashed #bbb;margin:12px 0}
     <div class="k">Plan actuel</div>
     <div class="row" style="font-size:13px;padding:5px 0"><span>But</span><span class="sp"></span><b id="gh1">Maintien</b></div>
     <div class="row" style="font-size:13px;padding:5px 0;border-top:1.5px dashed #ddd"><span>Poids</span><span class="sp"></span><b id="gh2">76 kg</b></div>
-    <div class="row" style="font-size:13px;padding:5px 0;border-top:1.5px dashed #ddd"><span>Budget</span><span class="sp"></span><b id="gh3">2 400 + activité</b></div>
+    <div class="row" style="font-size:13px;padding:5px 0;border-top:1.5px dashed #ddd"><span>Besoin du jour</span><span class="sp"></span><b id="gh3">2 400 + activité</b></div>
     <div class="row" style="font-size:13px;padding:5px 0;border-top:1.5px dashed #ddd"><span>Protéines</span><span class="sp"></span><b id="gh4">180 g / j</b></div>
   </div>
   <span class="note">→ Le plan en cours, lisible en 3 secondes. Chaque ligne est tappable pour un ajustement direct
@@ -489,13 +489,13 @@ hr{border:0;border-top:1.5px dashed #bbb;margin:12px 0}
     <div class="row" style="font-size:13px;padding:5px 0"><span>But</span><span class="sp"></span><b id="gpGoal">Sèche</b></div>
     <div class="row" style="font-size:13px;padding:5px 0;border-top:1.5px dashed #ddd"><span>Trajet</span><span class="sp"></span><b id="gpDelta">−6 kg en ~12 sem</b></div>
     <div class="row" style="font-size:13px;padding:5px 0;border-top:1.5px dashed #ddd"><span>Arrivée estimée</span><span class="sp"></span><b id="gpDate">—</b></div>
-    <div class="row" style="font-size:13px;padding:5px 0;border-top:1.5px solid #111"><span>Budget quotidien</span><span class="sp"></span><b id="gpBudget">1 850 + activité</b></div>
+    <div class="row" style="font-size:13px;padding:5px 0;border-top:1.5px solid #111"><span>Besoin quotidien</span><span class="sp"></span><b id="gpBudget">1 850 + activité</b></div>
     <div class="row" style="font-size:13px;padding:5px 0;border-top:1.5px dashed #ddd"><span>Protéines</span><span class="sp"></span><b id="gpProt">167 g / j</b></div>
   </div>
   <span class="note">→ Le plan est <b>calculé, montré, expliqué</b> — pas une boîte noire. Le « + activité » reste :
-  le budget continue de suivre le bracelet chaque jour. Les jours de grosse séance, tu manges plus, même en sèche.</span>
+  ton besoin continue de suivre le bracelet chaque jour. Les jours de grosse séance, tu manges plus, même en sèche.</span>
   <span class="btn pri" style="width:100%;justify-content:center" onclick="gwApply()">Valider mon plan</span>
-  <span class="note" style="text-align:center">→ Valider met à jour le hub Objectifs, le budget du jour ET la carte Protéines.
+  <span class="note" style="text-align:center">→ Valider met à jour le hub Objectifs, le besoin du jour ET la carte Protéines.
   Un seul plan, une seule vérité partout.</span>
 </section>
 
@@ -506,7 +506,7 @@ hr{border:0;border-top:1.5px dashed #bbb;margin:12px 0}
   <b style="align-self:center">PLAN&nbsp;:</b>
   <a onclick="go('home')">1 Nutrition</a><a onclick="openSheet()">2 Feuille +</a><a onclick="go('when')">2b Quand ?</a>
   <a onclick="go('camera')">3 Caméra</a><a onclick="go('search')">4 Décrire</a><a onclick="go('fooddetail')">5 Portion</a>
-  <a onclick="go('mealdetail')">6 Détail</a><a onclick="go('manual')">7 Manuel</a><a onclick="go('trends')">8 Progrès</a><a onclick="go('goals')">9 Objectifs</a><a onclick="go('caldetail')">10 Budget</a>
+  <a onclick="go('mealdetail')">6 Détail</a><a onclick="go('manual')">7 Manuel</a><a onclick="go('trends')">8 Progrès</a><a onclick="go('goals')">9 Objectifs</a><a onclick="go('caldetail')">10 Besoin</a>
 </div>
 
 <script>
@@ -640,7 +640,7 @@ function gwApply(){
  document.getElementById('gh2').textContent=G.w+' kg';
  document.getElementById('gh3').textContent=nfmt(G.base)+' + activité';
  document.getElementById('gh4').textContent=G.prot+' g / j';
- go('goals');toast('Plan enregistré ✓ — budget du jour et carte Protéines mis à jour')}
+ go('goals');toast('Plan enregistré ✓ — besoin du jour et carte Protéines mis à jour')}
 buildWheels();
 </script>
 </body>
