@@ -6290,7 +6290,7 @@ var el=ev.target;var a=el;for(var d1=0;d1<7&&a;d1++,a=a.parentElement){if(!a.que
   setText('7h42',slMin?(Math.floor(slMin/60)+'h'+String(slMin%60).padStart(2,'0')):'—');
   var str=loadStrain(K);setText('15,7',(Math.round(str*10)/10+'').replace('.',','));
   var kc=(typeof caloriesBurned==='function'?caloriesBurned(K):0);setText('3 078',(''+Math.round(kc)).replace(/\B(?=(\d{3})+(?!\d))/g,' '));
-  mdBalance(doc);mdSleep(doc);mdFonts(doc);mdStickyBacks(doc);mdSleepScrub(doc);mdWeekBarsScrub(doc);mdDualScrub(doc);mdCalDualScrub(doc);mdRings(doc);
+  mdBalance(doc);mdSleep(doc);mdFonts(doc);mdStickyBacks(doc);mdSleepScrub(doc);mdWeekBarsScrub(doc);mdDualScrub(doc);mdCalDualScrub(doc);mdRings(doc);mdHebTrend(doc);
  }catch(e){}
  if(!doc._navWired){doc._navWired=true;try{doc.addEventListener('click',function(ev){var el=ev.target;for(var i=0;i<6&&el;i++,el=el.parentElement){if(el.getAttribute&&el.getAttribute('role')==='button'){var t=(el.textContent||'').trim().toLowerCase();if(t==='coach'){ev.preventDefault();ev.stopPropagation();go('coach');return;}if(t==='profil'){ev.preventDefault();ev.stopPropagation();go('profile');return;}if(t==='nutrition'){setTimeout(function(){try{mdBalance(doc);}catch(e){}},350);setTimeout(function(){try{mdBalance(doc);}catch(e){}},900);return;}if(t==="aujourd'hui"||t==='aujourd’hui'){setTimeout(function(){try{var sn=doc.getElementById('screen-nutrition');if(sn){var r=sn.getBoundingClientRect();var w=doc.defaultView.innerWidth;if(Math.abs(r.left-(w-r.width)/2)<40){var bk=[].slice.call(sn.querySelectorAll('*')).filter(function(x){return x.children.length<3&&/Aujourd/.test((x.textContent||'').trim())&&x.getBoundingClientRect().top<80;})[0];if(bk){var rb2=bk;while(rb2&&rb2.getAttribute&&rb2.getAttribute('role')!=='button'&&rb2.tagName!=='BUTTON')rb2=rb2.parentElement;var tt=rb2||bk;['pointerdown','pointerup','click'].forEach(function(e2){tt.dispatchEvent(new MouseEvent(e2,{bubbles:true,cancelable:true}));});}}}}catch(e){}},0);return;}return;}}},true);}catch(e){}}
 }
@@ -6671,6 +6671,15 @@ function flhHM(v){v=Math.max(0,v);var h=Math.floor(v),m=Math.round((v-h)*60);if(
 var FLH_MOIS=['janv','févr','mars','avr','mai','juin','juil','août','sept','oct','nov','déc'];
 var FLH_JOURS=['dim','lun','mar','mer','jeu','ven','sam'];
 function flhDate(off){var d=new Date();d.setDate(d.getDate()+off);return d;}
+/* tendance = pente de la série AFFICHÉE (1re moitié vs 2e moitié), jamais autre chose */
+function flhTrendDir(vs){if(!vs||vs.length<3)return 0;var h=Math.floor(vs.length/2);
+ function av(a){return a.reduce(function(x,y){return x+y;},0)/a.length;}
+ var a1=av(vs.slice(0,h)),a2=av(vs.slice(vs.length-h));
+ var rel=(a2-a1)/(Math.abs(a1)||1);return rel>0.03?1:(rel<-0.03?-1:0);}
+function flhSparkD(vs,hgt){var H=hgt||34,mn=Math.min.apply(null,vs),mx=Math.max.apply(null,vs);if(mn===mx){mn-=1;mx+=1;}
+ return vs.map(function(v,i){return (i?'L':'M')+(2+136*i/(vs.length-1)).toFixed(1)+' '+((H-6)-((v-mn)/(mx-mn))*(H-12)).toFixed(1);}).join(' ');}
+function flhParseVal(t){t=(t||'').trim();var m=t.match(/^(-?\d+):(\d{2})$/);if(m)return (+m[1])+(m[1].charAt(0)==='-'?-1:1)*(+m[2])/60;
+ var x=parseFloat(t.replace(/\s/g,'').replace(',','.'));return isNaN(x)?null:x;}
 var FL_HEBDO={
  hrv:{title:'VFC',lab:'VOTRE VFC',unit:'ms',kind:'line',fmt:flhInt},
  rhr:{title:'FC au repos',lab:'VOTRE FC AU REPOS',unit:'bpm',kind:'line',fmt:flhInt},
@@ -6779,16 +6788,13 @@ function flhRender(cl,st){try{
  st.n=n;st.pts=flhSeries(st.key,st.end,n);
  var vals=st.pts.filter(function(p){return p.v!=null;}).map(function(p){return p.v;});
  var avg=vals.length?vals.reduce(function(a,b){return a+b;},0)/vals.length:null;
- var prev=flhSeries(st.key,st.end-n,n).filter(function(p){return p.v!=null;}).map(function(p){return p.v;});
- var pavg=prev.length?prev.reduce(function(a,b){return a+b;},0)/prev.length:null;
  function q(t){return cl.querySelector('[data-dc-tpl="'+t+'"]');}
  var h1=q('1237');if(h1&&h1.childNodes[0])h1.childNodes[0].nodeValue=cfg.title;
  var lb=q('1241');if(lb)lb.textContent=cfg.heroLab||'MOYENNE';
  var vv=q('1243');if(vv)vv.textContent=avg==null?'—':cfg.fmt(avg);
  var un=q('1244');if(un)un.textContent=cfg.unit;
  st.labEl=lb;st.valEl=vv;
- var tri=q('1245'),tnd=q('1266'),dir=0;
- if(avg!=null&&pavg!=null&&pavg!==0){var rel=(avg-pavg)/Math.abs(pavg);if(rel>0.03)dir=1;else if(rel<-0.03)dir=-1;}
+ var tri=q('1245'),tnd=q('1266'),dir=flhTrendDir(vals);
  if(tri){tri.style.borderTop=dir<0?'9px solid rgb(251, 96, 21)':'none';tri.style.borderBottom=dir>0?'9px solid rgb(251, 96, 21)':'none';tri.style.opacity=dir===0?'0':'1';}
  if(tnd)tnd.textContent=dir>0?'Tendance en hausse':(dir<0?'Tendance en baisse':'Tendance stable');
  var sp=q('1252');
@@ -6858,6 +6864,42 @@ function flOpenHebdo(key){try{
 }catch(e){}}
 function flCloseHebdo(cid){try{var fr=document.getElementById('frToday');var doc=fr&&fr.contentDocument;if(!doc)return;var cl=doc.getElementById(cid);if(!cl)return;
  cl.style.setProperty('transform','translateX(-50%) translateY(100%)','important');cl.style.pointerEvents='none';}catch(e){}}
+/* ===== Tendances des écrans hebdo NATIFS : mini-courbe + phrase + triangle recalculés
+   depuis les valeurs AFFICHÉES sur le grand graphe (cohérence garantie, jamais au hasard) ===== */
+function mdHebTrend(doc){try{
+ [].slice.call(doc.querySelectorAll('[id^="screen-"],#flCalClone')).forEach(function(sc){
+  if(!sc.id||sc.id.indexOf('screen-flh-')===0)return;
+  if(sc.id==='screen-sommeil')return;
+  var svgs=[].slice.call(sc.querySelectorAll('svg'));
+  var main=svgs.filter(function(g){var vb=g.getAttribute('viewBox')||'';return vb==='0 0 600 372'||vb==='14 0 582 372';})[0];
+  var spark=svgs.filter(function(g){return /^0 0 140 (34|40)$/.test(g.getAttribute('viewBox')||'');})[0];
+  var phr=[].slice.call(sc.querySelectorAll('div,span')).filter(function(e){return e.children.length===0&&/^(Tendance|Écart)/.test((e.textContent||'').trim());})[0];
+  if(!main||!spark||!phr)return;
+  var dual=(main.getAttribute('viewBox')==='14 0 582 372');
+  function serie(sel){return [].slice.call(main.querySelectorAll(sel)).map(function(t){return {x:+t.getAttribute('x'),v:flhParseVal(t.textContent)};})
+   .filter(function(p){return p.v!=null&&+((p.x||0))>50;}).sort(function(a,b){return a.x-b.x;}).map(function(p){return p.v;});}
+  if(dual){
+   var need=serie('g[fill="#5c6470"] text'),eff=serie('g[fill="#fb6015"] text');
+   if(need.length<3||eff.length<3||need.length!==eff.length)return;
+   var pls=spark.querySelectorAll('polyline');if(pls.length<2)return;
+   function pl(vs,el){var mn=Math.min.apply(null,need.concat(eff)),mx=Math.max.apply(null,need.concat(eff));if(mn===mx){mn-=1;mx+=1;}
+    el.setAttribute('points',vs.map(function(v,i){return (2+136*i/(vs.length-1)).toFixed(1)+','+(34-((v-mn)/(mx-mn))*28).toFixed(1);}).join(' '));}
+   pl(need,pls[0]);pl(eff,pls[1]);
+   var ec=need.map(function(v,i){return v-eff[i];}),dir=flhTrendDir(ec);
+   phr.textContent=dir>0?'Écart qui se creuse':(dir<0?'Écart qui se réduit':'Écart stable');
+  }else{
+   var vs=serie('g[fill="#fb6015"] text');
+   if(vs.length<3)return;
+   var d=flhSparkD(vs,34),dir2=flhTrendDir(vs);
+   var paths=[].slice.call(spark.querySelectorAll('path'));
+   paths.forEach(function(p){var fl=p.getAttribute('fill')||'';
+    if(/url\(/.test(fl))p.setAttribute('d',d+' L138 34 L2 34 Z');
+    else p.setAttribute('d',d);});
+   phr.textContent=dir2>0?'Tendance en hausse':(dir2<0?'Tendance en baisse':'Tendance stable');
+   var tri=[].slice.call(sc.querySelectorAll('span')).filter(function(e){var st=e.getAttribute('style')||'';return /border-left:\s*6px solid transparent/.test(st);})[0];
+   if(tri){tri.style.borderTop=dir2<0?'9px solid rgb(251, 96, 21)':'none';tri.style.borderBottom=dir2>0?'9px solid rgb(251, 96, 21)':'none';tri.style.opacity=dir2===0?'0':'1';}
+  }
+ });}catch(e){}}
 function mdRings(doc){try{
  var TH_A=133.5*Math.PI/180, SWEEP=273*Math.PI/180, GAP=5.3*Math.PI/180, THB=TH_A+SWEEP;
  function P(th,rad){return {x:160+(rad||140)*Math.cos(th),y:160+(rad||140)*Math.sin(th)};}
@@ -9337,7 +9379,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v487';
+const APP_VERSION='flint-v488';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
