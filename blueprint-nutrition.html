@@ -122,11 +122,24 @@ hr{border:0;border-top:1.5px dashed #bbb;margin:12px 0}
     </div>
   </div>
 
-  <div class="grid3">
-    <div class="box" style="margin:0" onclick="go('trends')"><div class="k">Protéines</div><div style="font-weight:800">184/180 g</div><div class="mini"><i style="width:100%"></i></div></div>
-    <div class="box" style="margin:0" onclick="go('trends')"><div class="k">Glucides</div><div style="font-weight:800">300/360 g</div><div class="mini"><i style="width:83%"></i></div></div>
-    <div class="box" style="margin:0" onclick="go('trends')"><div class="k">Lipides</div><div style="font-weight:800">71/80 g</div><div class="mini"><i style="width:89%"></i></div></div>
+  <div class="grid2">
+    <div class="box solid" style="margin:0" onclick="go('trends')">
+      <div class="k">Protéines</div>
+      <div style="font-weight:800;font-size:18px">184<span style="font-size:12px;color:#666">/180 g</span></div>
+      <div class="mini"><i style="width:100%"></i></div>
+      <div style="font-size:10.5px;font-weight:700;margin-top:5px">✓ Objectif atteint</div>
+    </div>
+    <div class="box solid" style="margin:0" onclick="toast('Détail : ta séance, ce qu\'il te manque, quoi manger avant/après')">
+      <div class="k">Carburant séance</div>
+      <div style="font-size:11.5px;font-weight:700">WOD à 18:00</div>
+      <div style="font-size:11px;color:#666;margin-top:3px">Il te manque <b style="color:#111">~40 g</b> de glucides pour être plein.</div>
+    </div>
   </div>
+  <span class="note">→ Fini le trio P/G/L de diététicien. <b>Protéines</b> (la seule macro-objectif du sportif) +
+  <b>Carburant séance</b> : les glucides traduits en préparation de TA séance (agenda + bracelet — personne d'autre ne peut).
+  Après la séance, la carte bascule : « Fenêtre de récup : 30 g de protéines avant 20h30 ».
+  Pas de séance prévue ? « Jour de repos — mange à ta faim, budget 2 400 kcal ».
+  Glucides/lipides complets restent à 1 tap dans <b>Progrès</b> pour ceux qui sèchent.</span>
 
   <hr>
   <div class="row" style="margin-bottom:8px"><span class="k" style="margin:0">Journal — samedi 1 juin</span><span class="sp"></span><span class="chip ghost" onclick="openSheet()">+ Ajouter</span></div>
@@ -356,7 +369,9 @@ hr{border:0;border-top:1.5px dashed #bbb;margin:12px 0}
 <section class="scr" id="trends">
   <div class="bar"><span class="btn" onclick="go('home')">‹</span><span class="t">Progrès</span><span class="chip">7 j / 30 j</span></div>
   <div class="box solid"><div class="k">Calories vs objectif — 7 jours</div><div style="height:70px;display:grid;place-items:center;color:#888;font-size:11px">barres quotidiennes + ligne objectif</div></div>
-  <div class="box"><div class="k">Moyennes macros</div><div style="font-size:12px">P 168 g · G 310 g · L 74 g / jour</div><div class="k" style="margin-top:6px">Adhérence protéines : 6 j / 7 ✓</div></div>
+  <div class="box"><div class="k">Moyennes macros</div><div style="font-size:12px">P 168 g · G 310 g · L 74 g / jour</div><div class="k" style="margin-top:6px">Adhérence protéines : 6 j / 7 ✓</div>
+  <span class="note">→ C'est ICI que vivent les glucides/lipides complets (et dans le détail de chaque repas) —
+  plus sur l'écran principal. Ceux qui sèchent les trouvent en 1 tap, les autres ne les subissent plus.</span></div>
   <div class="box"><div class="k">Corrélation FLINT</div><div style="font-size:12px">Jours ≥ objectif protéines → récup moyenne <b>+9 pts</b></div></div>
 </section>
 
