@@ -71,6 +71,14 @@ hr{border:0;border-top:1.5px dashed #bbb;margin:12px 0}
 .whenchip{background:#111;color:#fff;border-radius:20px;font-size:11px;padding:5px 11px;cursor:pointer;display:inline-flex;gap:6px}
 .qw{border:1.5px solid #111;border-radius:12px;padding:12px;text-align:center;font-size:12.5px;font-weight:700;cursor:pointer}
 .qw small{display:block;font-weight:400;font-size:10px;color:#666;margin-top:2px}
+/* roues déroulantes iOS */
+.pick{position:relative;display:flex;gap:6px;border:1.5px solid #111;border-radius:14px;padding:0 8px;background:#fff}
+.wheel{flex:1;height:160px;overflow-y:auto;scroll-snap-type:y mandatory;text-align:center;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.wheel::-webkit-scrollbar{display:none}
+.wheel::before,.wheel::after{content:'';display:block;height:64px}
+.wheel .it{height:32px;line-height:32px;scroll-snap-align:center;font-size:14px;font-weight:700;color:#aaa;cursor:pointer}
+.wheel .it.on{color:#111}
+.sel{position:absolute;left:8px;right:8px;top:50%;height:32px;transform:translateY(-50%);border-top:2px solid #111;border-bottom:2px solid #111;pointer-events:none}
 /* menu contextuel carte */
 .ctxbg{position:absolute;inset:0;background:rgba(0,0,0,.3);z-index:30;display:none}
 .ctxbg.on{display:block}
@@ -215,14 +223,19 @@ hr{border:0;border-top:1.5px dashed #bbb;margin:12px 0}
     <div class="qw" onclick="setWhen('Cet aprèm (16:30)',990)">Cet aprèm<small>~16:30</small></div>
   </div>
   <hr>
-  <div class="k">Heure précise</div>
-  <div class="row" style="justify-content:center;gap:14px">
-    <span class="stp"><b onclick="bumpH(-1)">−</b><span id="wh">19</span> h <b onclick="bumpH(1)">+</b></span>
-    <span class="stp"><b onclick="bumpM(-5)">−</b><span id="wm">30</span> min <b onclick="bumpM(5)">+</b></span>
+  <div class="k">Jour &amp; heure précise</div>
+  <div class="pick">
+    <div class="wheel" id="wd"></div>
+    <div class="wheel" id="wwh"></div>
+    <div class="wheel" id="wwm"></div>
+    <div class="sel"></div>
   </div>
-  <div style="text-align:center;margin-top:14px"><span class="btn pri" onclick="setWhenCustom()">Valider cette heure</span></div>
+  <span class="note">→ <b>Roues déroulantes iOS</b> (elles scrollent vraiment, essaie) : jour jusqu'à 7 j en arrière
+  + heure + minute <b>à la minute près</b> — 14:12 se règle en 2 coups de pouce. Les 4 raccourcis au-dessus
+  couvrent le courant, les roues couvrent TOUT. Aucune heure impossible.</span>
+  <div style="text-align:center;margin-top:12px"><span class="btn pri" onclick="setWhenCustom()">Valider</span></div>
   <span class="note" style="text-align:center">→ Ce même écran sert à l'ajout ET au « Changer l'heure » d'un repas existant
-  (le journal se re-trie tout seul après).</span>
+  (re-tri auto). Choisir « Hier » déplace le repas dans le journal d'hier.</span>
 </section>
 
 <!-- ════════ 3. CAMÉRA ════════ -->
@@ -262,9 +275,11 @@ hr{border:0;border-top:1.5px dashed #bbb;margin:12px 0}
   <div class="bar"><span class="btn" onclick="go('search')">‹</span><span class="t">Avocat</span><span class="chip">☆ Enregistrer</span></div>
   <div class="box solid">
     <div class="k">Portion</div>
-    <div class="stp"><b>−</b> 100 g <b>+</b></div>
+    <div class="stp"><b>−</b> <span style="text-decoration:underline dotted;cursor:pointer" onclick="toast('Saisie clavier directe : tape « 137 » — les ± ne servent qu\'à l\'appoint')">100</span> g <b>+</b></div>
     <div class="tabs" style="margin-top:8px"><span class="chip on">g</span><span class="chip">½ pièce</span><span class="chip">pièce</span></div>
     <div class="row" style="margin-top:10px;font-size:12px"><span><b>130</b> kcal</span><span class="sp"></span><span>1,3 P · 8,5 G · 11,7 L</span></div>
+    <span class="note">→ Règle globale : <b>tout nombre est tappable</b> → clavier numérique direct.
+    Les ± ajustent, ils n'obligent jamais à 40 taps pour aller de 100 à 385 g.</span>
   </div>
   <div class="row" style="margin-bottom:12px">
     <span class="k" style="margin:0">Mangé :</span>
@@ -314,7 +329,8 @@ hr{border:0;border-top:1.5px dashed #bbb;margin:12px 0}
   </div>
   <div class="chip ghost" onclick="go('search')">+ Ajouter un ingrédient oublié par l'IA</div>
   <span class="note">→ Tap sur un ingrédient = mini-menu <b>Remplacer / Supprimer / Grammes</b>. « Remplacer » ouvre la recherche
-  et garde le grammage (poulet 150 g → tofu 150 g). C'est la réparation de l'erreur d'IA la plus courante.</span>
+  et garde le grammage (poulet 150 g → tofu 150 g). C'est la réparation de l'erreur d'IA la plus courante.
+  Et comme partout : <b>tap sur le nombre de grammes = saisie clavier directe</b>, les ± ne sont que l'appoint.</span>
   <hr>
   <div class="grid2">
     <span class="btn" onclick="toast('Dupliqué à Maintenant — modifiable ensuite')">🔁 Dupliquer</span>
@@ -375,26 +391,46 @@ function toastAct(){if(UNDO){UNDO();UNDO=null;document.getElementById('toastmsg'
  else document.getElementById('toast').classList.remove('on')}
 
 /* ── état « quand » ── */
-var W={label:'Maintenant (19:32)',min:1172}, whenBack='sheet', RETIME=null;
+var W={label:'Maintenant (19:32)',min:1172,day:0}, whenBack='sheet', RETIME=null;
+var DAYS=["Aujourd'hui",'Hier','Ven. 30','Jeu. 29','Mer. 28','Mar. 27','Lun. 26'];
 function fmt(min){var h=Math.floor(min/60),m=min%60;return (h<10?'0':'')+h+':'+(m<10?'0':'')+m}
 function syncWhen(){document.querySelectorAll('.wlab').forEach(function(e){e.textContent=W.label})}
-function openWhen(back){whenBack=back;document.getElementById('wh').textContent=Math.floor(W.min/60);document.getElementById('wm').textContent=W.min%60;go('when')}
+
+/* roues déroulantes */
+function buildWheels(){
+ function range(n){var a=[];for(var i=0;i<n;i++)a.push((i<10?'0':'')+i);return a}
+ function mk(id,arr){var el=document.getElementById(id);
+  el.innerHTML=arr.map(function(v,i){return '<div class="it" data-i="'+i+'">'+v+'</div>'}).join('');
+  el.addEventListener('scroll',function(){clearTimeout(el._s);el._s=setTimeout(function(){hlWheel(el)},80)});
+  el.addEventListener('click',function(e){var it=e.target.closest('.it');if(it)el.scrollTo({top:+it.dataset.i*32,behavior:'smooth'})});}
+ mk('wd',DAYS);mk('wwh',range(24));mk('wwm',range(60));}
+function hlWheel(el){var i=Math.round(el.scrollTop/32);el.querySelectorAll('.it').forEach(function(it,j){it.classList.toggle('on',j===i)})}
+function setWheel(id,i){var el=document.getElementById(id);el.scrollTop=i*32;hlWheel(el)}
+function wheelVal(id){return Math.round(document.getElementById(id).scrollTop/32)}
+
+function openWhen(back){whenBack=back;go('when');setWheel('wd',0);setWheel('wwh',Math.floor(W.min/60));setWheel('wwm',W.min%60)}
 function backFromWhen(){RETIME=null;go(whenBack)}
-function setWhen(label,min){
- if(RETIME){var el=RETIME;RETIME=null;var prev=+el.dataset.min;
+function setWhen(label,min,day){
+ day=day||0;
+ if(RETIME){var el=RETIME;RETIME=null;
+   if(day>0){var parent=el.parentNode,next=el.nextSibling;el.remove();go('home');
+     toast('Déplacé au journal de '+DAYS[day]+' ('+fmt(min)+') — bascule le calendrier pour le voir',function(){parent.insertBefore(el,next)});return}
+   var prev=+el.dataset.min;
    el.dataset.min=min;el.querySelector('.hr').textContent=fmt(min);resort(el);go('home');el.scrollIntoView({block:'center'});
    toast('Heure changée → '+fmt(min)+' — journal re-trié',function(){el.dataset.min=prev;el.querySelector('.hr').textContent=fmt(prev);resort(el)});
    return}
- W={label:label,min:min};syncWhen();go(whenBack);toast('Heure réglée : '+label)}
-function setWhenCustom(){var h=+document.getElementById('wh').textContent,m=+document.getElementById('wm').textContent;setWhen(fmt(h*60+m),h*60+m)}
-function bumpH(d){var e=document.getElementById('wh');e.textContent=Math.min(23,Math.max(0,+e.textContent+d))}
-function bumpM(d){var e=document.getElementById('wm');e.textContent=(+e.textContent+d+60)%60}
-function openSheet(){W={label:'Maintenant (19:32)',min:1172};syncWhen();go('sheet')}
+ W={label:label,min:min,day:day};syncWhen();go(whenBack);toast('Réglé : '+label)}
+function setWhenCustom(){var d=wheelVal('wd'),h=wheelVal('wwh'),m=wheelVal('wwm');
+ setWhen((d>0?DAYS[d]+' ':'')+fmt(h*60+m),h*60+m,d)}
+function openSheet(){W={label:'Maintenant (19:32)',min:1172,day:0};syncWhen();go('sheet')}
 
 /* ── journal : insertion + tri ── */
 function resort(el){var tl=document.getElementById('tl');el.remove();var rows=[].slice.call(tl.children),ins=null;
  for(var i=0;i<rows.length;i++){if(+rows[i].dataset.min>+el.dataset.min){ins=rows[i];break}}tl.insertBefore(el,ins)}
 function addMeal(name,kcal,state){
+ if(W.day>0){var lbl=W.label;go('home');
+  toast('Ajouté au journal de '+lbl+' ✓ — bascule le calendrier pour le voir');
+  W={label:'Maintenant (19:32)',min:1172,day:0};syncWhen();return}
  var tl=document.getElementById('tl');
  var d=document.createElement('div');d.className='meal hl';d.dataset.min=W.min;d.dataset.kcal=kcal==='—'?0:+kcal;
  d.onclick=function(){go('mealdetail')};
@@ -430,7 +466,8 @@ function delCtx(){if(!CTX)return;var el=CTX,parent=el.parentNode,next=el.nextSib
 function dupCtx(){if(!CTX)return;var name=CTX.querySelector('.nm').textContent,k=CTX.dataset.kcal;
  closeCtx();W={label:'Maintenant (19:32)',min:1172};addMeal(name,String(k),'✓')}
 function retimeCtx(){if(!CTX)return;RETIME=CTX;closeCtx();whenBack='home';
- document.getElementById('wh').textContent=Math.floor(+CTX.dataset.min/60);document.getElementById('wm').textContent=+CTX.dataset.min%60;go('when')}
+ go('when');setWheel('wd',0);setWheel('wwh',Math.floor(+CTX.dataset.min/60));setWheel('wwm',+CTX.dataset.min%60)}
+buildWheels();
 </script>
 </body>
 </html>
