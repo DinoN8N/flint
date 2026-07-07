@@ -439,7 +439,8 @@ hr{border:0;border-top:1.5px dashed #bbb;margin:12px 0}
   <div class="qw" style="margin-bottom:8px;padding:18px" onclick="gwGoal('Maintien')">⚖️ Maintien<small>performer à poids stable</small></div>
   <div class="qw" style="padding:18px" onclick="gwGoal('Prise de masse')">💪 Prise de masse<small>construire du muscle</small></div>
   <span class="note">→ Une question par écran, de grandes cartes, on avance au tap — pas de bouton « Suivant » quand le choix
-  EST la réponse. Maintien saute directement les étapes poids cible / rythme.</span>
+  EST la réponse. Le parcours complet : but → poids actuel → <b>poids cible</b> → <b>délai</b> → plan.
+  Maintien saute poids cible + délai (rien à trajeter).</span>
 </section>
 
 <!-- ════════ 9b. étape 2 : poids actuel ════════ -->
@@ -452,7 +453,9 @@ hr{border:0;border-top:1.5px dashed #bbb;margin:12px 0}
   </div>
   <div style="text-align:center;font-size:12px;color:#666;margin-top:6px">kg</div>
   <span class="note" style="text-align:center">→ La même roue que pour l'heure — un seul geste à apprendre dans toute l'app.
-  Pré-remplie avec la dernière pesée connue.</span>
+  Pré-remplie avec la dernière pesée connue. Et note ce qu'on ne demande PAS : sexe, âge, taille, niveau d'activité —
+  les autres apps en ont besoin pour <b>estimer</b> ta dépense par formule ; FLINT la <b>mesure</b> avec le bracelet.
+  Deux questions de moins, un chiffre plus juste.</span>
   <div style="text-align:center;margin-top:14px"><span class="btn pri" onclick="gwW()">Continuer</span></div>
 </section>
 
@@ -468,17 +471,18 @@ hr{border:0;border-top:1.5px dashed #bbb;margin:12px 0}
   <div style="text-align:center;margin-top:14px"><span class="btn pri" onclick="gwT()">Continuer</span></div>
 </section>
 
-<!-- ════════ 9d. étape 4 : le rythme ════════ -->
+<!-- ════════ 9d. étape 4 : le délai ════════ -->
 <section class="scr" id="gw4">
-  <div class="bar"><span class="btn" onclick="go('gw3')">‹</span><span class="t">Le rythme</span><span style="font-size:11px;color:#888">● ● ● ●</span></div>
-  <div style="font-size:20px;font-weight:800;margin:16px 2px 4px">On y va comment ?</div>
+  <div class="bar"><span class="btn" onclick="go('gw3')">‹</span><span class="t">Le délai</span><span style="font-size:11px;color:#888">● ● ● ●</span></div>
+  <div style="font-size:20px;font-weight:800;margin:16px 2px 4px">Tu te donnes<br>combien de temps ?</div>
   <div style="font-size:13px;color:#666;margin:0 2px 14px" id="gwd">−6 kg à faire</div>
-  <div class="qw" style="margin-bottom:8px;padding:16px" onclick="gwRate(0.25)">🌱 Doux — 0,25 kg / sem<small id="r1">~24 semaines</small></div>
-  <div class="qw" style="margin-bottom:8px;padding:16px" onclick="gwRate(0.5)">🎯 Standard — 0,5 kg / sem<small id="r2">~12 semaines</small></div>
-  <div class="qw" style="padding:16px" onclick="gwRate(0.75)">⚡ Agressif — 0,75 kg / sem<small id="r3">~8 semaines</small></div>
-  <span class="note">→ Le rythme est traduit en <b>durée réelle</b> calculée depuis TON delta — pas des % abstraits.
-  Garde-fou sur Agressif : « dur à tenir, et ta récup va le sentir — FLINT le verra dans ton HRV ».
-  C'est le croisement bracelet × nutrition, encore.</span>
+  <div class="qw" style="margin-bottom:8px;padding:16px" onclick="gwRate(0.25)"><span id="d1">🌱 ~24 semaines</span><small>tranquille — 0,25 kg / sem, zéro impact sur tes perfs</small></div>
+  <div class="qw" style="margin-bottom:8px;padding:16px" onclick="gwRate(0.5)"><span id="d2">🎯 ~12 semaines</span><small>recommandé — 0,5 kg / sem, le meilleur équilibre</small></div>
+  <div class="qw" style="margin-bottom:8px;padding:16px" onclick="gwRate(0.75)"><span id="d3">⚡ ~8 semaines</span><small>intense — 0,75 kg / sem, exigeant : ta récup va le sentir (FLINT le verra dans ton HRV)</small></div>
+  <div class="chip ghost" style="width:100%;justify-content:center" onclick="toast('Roue de durée précise : 4 → 52 semaines — le déficit se recalcule')">📅 Ou choisis ta durée exacte</div>
+  <span class="note">→ La question est posée <b>côté temps</b> (« je me donne 3 mois »), parce que personne ne pense
+  en kg/semaine — le rythme devient l'info secondaire de chaque carte. Les durées sont <b>calculées depuis TON delta</b>.
+  La roue « durée exacte » couvre ceux qui ont une date en tête (mariage, compétition).</span>
 </section>
 
 <!-- ════════ 9e. étape 5 : le plan ════════ -->
@@ -614,8 +618,8 @@ function gwT(){G.t=50+wheelVal('gwt');
  gw4fill();go('gw4')}
 function gw4fill(){var d=Math.abs(G.t-G.w);
  document.getElementById('gwd').textContent=(G.t<G.w?'−':'+')+d+' kg à faire';
- [['r1',0.25],['r2',0.5],['r3',0.75]].forEach(function(x){
-  document.getElementById(x[0]).textContent='~'+Math.ceil(d/x[1])+' semaines'})}
+ [['d1',0.25,'🌱'],['d2',0.5,'🎯'],['d3',0.75,'⚡']].forEach(function(x){
+  document.getElementById(x[0]).textContent=x[2]+' ~'+Math.ceil(d/x[1])+' semaines'})}
 function gwRate(r){G.rate=r;gw5fill();go('gw5')}
 function gw5fill(){
  var base=2400,prot=Math.round(2*G.w),delta='—',date='—';
