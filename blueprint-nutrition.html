@@ -110,17 +110,24 @@ hr{border:0;border-top:1.5px dashed #bbb;margin:12px 0}
     on corrige/ajoute/supprime pareil qu'aujourd'hui.</span>
   </div>
 
-  <div class="box solid" onclick="go('goals')">
+  <div class="box solid" onclick="go('caldetail')">
     <div class="row">
       <div>
-        <div class="k">Calories restantes ⚙︎</div>
+        <div class="k">Calories restantes</div>
         <div class="big">2 583</div>
         <div style="font-size:11px;color:#666">sur 3 200 kcal</div>
       </div>
       <span class="sp"></span>
       <div class="ring">anneau</div>
     </div>
+    <div class="row" style="margin-top:8px">
+      <span style="font-size:10.5px;color:#666">Tap = d'où vient ce chiffre</span><span class="sp"></span>
+      <span class="chip" style="font-size:10px;padding:3px 8px" onclick="event.stopPropagation();go('goals')">⚙︎ Objectif</span>
+    </div>
   </div>
+  <span class="note" style="margin:-4px 0 10px">→ Tap sur la carte = <b>le décompte du jour</b> (d'où vient le 3 200, où sont
+  passées les 617), PAS les réglages. Un chiffre qui bouge tout seul doit pouvoir s'expliquer, sinon il a l'air buggé.
+  Les Objectifs (réglés une fois, jamais retouchés) = le petit ⚙︎, et un lien en bas du décompte.</span>
 
   <div class="grid2">
     <div class="box solid" style="margin:0" onclick="go('trends')">
@@ -375,6 +382,38 @@ hr{border:0;border-top:1.5px dashed #bbb;margin:12px 0}
   <div class="box"><div class="k">Corrélation FLINT</div><div style="font-size:12px">Jours ≥ objectif protéines → récup moyenne <b>+9 pts</b></div></div>
 </section>
 
+<!-- ════════ 10. BUDGET DU JOUR (tap sur Calories restantes) ════════ -->
+<section class="scr" id="caldetail">
+  <div class="bar"><span class="btn" onclick="go('home')">‹</span><span class="t">Ton budget du jour</span><span></span></div>
+
+  <div class="box solid">
+    <div class="row" style="font-size:13px;padding:6px 0"><span>Base — objectif Maintien</span><span class="sp"></span><b>2 400</b></div>
+    <div class="row" style="font-size:13px;padding:6px 0;border-top:1.5px dashed #ccc"><span>+ Activité mesurée (bracelet)</span><span class="sp"></span><b>+ 800</b></div>
+    <div style="padding:0 0 6px 14px;font-size:11px;color:#666">
+      <div class="row" style="padding:2px 0"><span>Pas &amp; quotidien (en cours)</span><span class="sp"></span><span>+ 350</span></div>
+      <div class="row" style="padding:2px 0"><span>WOD 18:00 (prévu)</span><span class="sp"></span><span>+ 450</span></div>
+    </div>
+    <div class="row" style="font-size:13px;padding:6px 0;border-top:1.5px solid #111"><span><b>= Budget du jour</b></span><span class="sp"></span><b>3 200</b></div>
+    <div class="row" style="font-size:13px;padding:6px 0;cursor:pointer" onclick="go('home')"><span>− Mangé (3 repas)</span><span class="sp"></span><b>− 617</b></div>
+    <div class="row" style="padding:8px 0;border-top:2px solid #111"><span style="font-weight:800">= Restant</span><span class="sp"></span><span class="big" style="font-size:24px">2 583</span></div>
+  </div>
+  <span class="note">→ La réponse à la question que pose le tap : <b>« d'où vient ce chiffre ? »</b>. Chaque ligne est vivante :
+  l'activité monte en temps réel ; si le WOD prévu saute, le budget redescend à 20 h (et on le dit, pas de chiffre magique).
+  « Mangé » est cliquable → retour au journal. « Activité » → détail effort FLINT.</span>
+
+  <div class="box">
+    <div class="k">Projection</div>
+    <div style="font-size:12.5px">Avec ton dîner habituel (~900 kcal), tu finirais <b>~1 700 kcal sous ton budget</b> —
+    trop bas pour un jour de WOD. Ajoute une collation post-séance et un vrai dîner.</div>
+    <span class="note">→ La projection transforme le décompte en conseil : « tu peux manger normalement ce soir » —
+    c'est ÇA que l'utilisateur venait chercher en tapant.</span>
+  </div>
+
+  <span class="btn" style="width:100%;justify-content:center" onclick="go('goals')">⚙︎ Modifier mon objectif (Sèche / Maintien / Masse)</span>
+  <span class="note" style="text-align:center">→ Les réglages sont ICI, en sortie du décompte — au moment où on a compris
+  le calcul et où on a une raison de le changer. Pas en réponse au tap principal.</span>
+</section>
+
 <!-- ════════ 9. OBJECTIFS ════════ -->
 <section class="scr" id="goals">
   <div class="bar"><span class="btn" onclick="go('home')">‹</span><span class="t">Objectifs</span><span></span></div>
@@ -390,7 +429,7 @@ hr{border:0;border-top:1.5px dashed #bbb;margin:12px 0}
   <b style="align-self:center">PLAN&nbsp;:</b>
   <a onclick="go('home')">1 Nutrition</a><a onclick="openSheet()">2 Feuille +</a><a onclick="go('when')">2b Quand ?</a>
   <a onclick="go('camera')">3 Caméra</a><a onclick="go('search')">4 Décrire</a><a onclick="go('fooddetail')">5 Portion</a>
-  <a onclick="go('mealdetail')">6 Détail</a><a onclick="go('manual')">7 Manuel</a><a onclick="go('trends')">8 Progrès</a><a onclick="go('goals')">9 Objectifs</a>
+  <a onclick="go('mealdetail')">6 Détail</a><a onclick="go('manual')">7 Manuel</a><a onclick="go('trends')">8 Progrès</a><a onclick="go('goals')">9 Objectifs</a><a onclick="go('caldetail')">10 Budget</a>
 </div>
 
 <script>
