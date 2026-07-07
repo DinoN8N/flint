@@ -3,16 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>FLINT — Blueprint Nutrition (architecture, zéro design)</title>
+<title>FLINT — Blueprint Nutrition v2 (architecture, zéro design)</title>
 <style>
 *{box-sizing:border-box;margin:0;font-family:-apple-system,'Helvetica Neue',Arial,sans-serif}
 body{background:#E9E9E9;color:#111;display:flex;justify-content:center;padding:14px 0 40px}
 .phone{width:400px;max-width:100vw;background:#fff;min-height:820px;position:relative;border:2px solid #111;border-radius:18px;overflow:hidden}
-/* barre d'outils du blueprint (pas dans l'app) */
 .tools{position:fixed;left:50%;transform:translateX(-50%);bottom:6px;z-index:99;background:#111;color:#fff;font-size:10.5px;padding:7px 10px;border-radius:20px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;max-width:96vw}
 .tools a{color:#fff;text-decoration:none;border:1px solid #555;border-radius:10px;padding:3px 7px;cursor:pointer;white-space:nowrap}
 .tools a:hover{background:#333}
-/* écrans */
 .scr{display:none;padding:14px 14px 90px}
 .scr.on{display:block}
 .bar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
@@ -31,15 +29,14 @@ body{background:#E9E9E9;color:#111;display:flex;justify-content:center;padding:1
 .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
 .note{display:block;font-size:10.5px;color:#E8500F;margin-top:6px;line-height:1.45}
 .note b{font-weight:800}
-.thumb{width:44px;height:44px;border:1.5px dashed #999;border-radius:10px;display:grid;place-items:center;font-size:9px;color:#888;flex:none}
-.meal{border:1.5px solid #111;border-radius:12px;padding:10px;margin-bottom:8px;cursor:pointer;background:#fff}
+.thumb{width:40px;height:40px;border:1.5px dashed #999;border-radius:10px;display:grid;place-items:center;font-size:9px;color:#888;flex:none}
+.meal{border:1.5px solid #111;border-radius:12px;padding:9px 10px;margin-bottom:7px;cursor:pointer;background:#fff;display:flex;align-items:center;gap:10px}
+.meal.hl{outline:3px solid #E8500F}
+.meal .hr{font-size:13px;font-weight:800;width:44px;flex:none;font-variant-numeric:tabular-nums}
 .meal .nm{font-size:13px;font-weight:700}
 .meal .st{font-size:10.5px;color:#666}
-.state{font-size:9.5px;border:1px solid #111;border-radius:10px;padding:2px 7px;white-space:nowrap}
+.state{font-size:9.5px;border:1px solid #111;border-radius:10px;padding:2px 7px;white-space:nowrap;margin-left:auto;flex:none}
 .state.pend{border-style:dashed;color:#777;border-color:#999}
-.slot{margin:14px 0 6px;display:flex;align-items:baseline;justify-content:space-between}
-.slot .n{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
-.slot .kc{font-size:11px;color:#666}
 .fab{position:absolute;right:16px;bottom:76px;width:56px;height:56px;border-radius:50%;background:#111;color:#fff;font-size:26px;display:grid;place-items:center;cursor:pointer;z-index:5}
 .nav{position:absolute;left:0;right:0;bottom:0;border-top:1.5px solid #111;background:#fff;display:flex;justify-content:space-around;padding:10px 0;font-size:10.5px}
 .nav span{cursor:pointer;color:#888}.nav .on{color:#111;font-weight:800}
@@ -54,14 +51,12 @@ body{background:#E9E9E9;color:#111;display:flex;justify-content:center;padding:1
 .li .d{font-size:10.5px;color:#666}
 .plus{margin-left:auto;width:32px;height:32px;border:1.5px solid #111;border-radius:50%;display:grid;place-items:center;font-weight:800;cursor:pointer;flex:none}
 .stp{display:flex;align-items:center;gap:12px;border:1.5px solid #111;border-radius:12px;padding:9px 12px;justify-content:center;font-weight:800}
-.stp b{font-size:18px;cursor:pointer;padding:0 8px}
-.sheetbg{position:absolute;inset:0;background:rgba(0,0,0,.25);z-index:8;display:none}
-.sheetbg.on{display:block}
+.stp b{font-size:18px;cursor:pointer;padding:0 8px;user-select:none}
 .sheet{position:absolute;left:8px;right:8px;bottom:70px;background:#fff;border:2px solid #111;border-radius:16px;padding:14px;z-index:9}
 .opt{border:1.5px solid #111;border-radius:12px;padding:14px 10px;text-align:center;font-size:12.5px;font-weight:700;cursor:pointer}
 .opt small{display:block;font-weight:400;font-size:10px;color:#666;margin-top:3px}
 .opt.pri{border-width:2.5px}
-.cam{border:2px solid #111;border-radius:14px;background:#ddd;height:340px;position:relative;margin-bottom:10px}
+.cam{border:2px solid #111;border-radius:14px;background:#ddd;height:300px;position:relative;margin-bottom:10px}
 .cam .corner{position:absolute;width:26px;height:26px;border:3px solid #111}
 .cam .c1{top:12px;left:12px;border-right:0;border-bottom:0}.cam .c2{top:12px;right:12px;border-left:0;border-bottom:0}
 .cam .c3{bottom:12px;left:12px;border-right:0;border-top:0}.cam .c4{bottom:12px;right:12px;border-left:0;border-top:0}
@@ -71,33 +66,34 @@ body{background:#E9E9E9;color:#111;display:flex;justify-content:center;padding:1
 .toast.on{display:flex;gap:10px;align-items:center}
 .toast u{cursor:pointer;margin-left:auto}
 hr{border:0;border-top:1.5px dashed #bbb;margin:12px 0}
-.banner{border:1.5px dashed #E8500F;border-radius:12px;padding:9px 11px;font-size:11.5px;color:#B33C0A;margin-bottom:10px;display:flex;gap:8px;align-items:center}
+.whenchip{background:#111;color:#fff;border-radius:20px;font-size:11px;padding:5px 11px;cursor:pointer;display:inline-flex;gap:6px}
+.qw{border:1.5px solid #111;border-radius:12px;padding:12px;text-align:center;font-size:12.5px;font-weight:700;cursor:pointer}
+.qw small{display:block;font-weight:400;font-size:10px;color:#666;margin-top:2px}
 </style>
 </head>
 <body>
 <div class="phone">
 
-<!-- ════════════════ 1. AUJOURD'HUI (home Nutrition) ════════════════ -->
+<!-- ════════ 1. NUTRITION (onglet de la nav FLINT) ════════ -->
 <section class="scr on" id="home">
   <div class="bar">
-    <span class="btn" onclick="go('exit')">‹ FLINT</span>
     <span class="t">Nutrition</span>
     <span class="row" style="gap:6px">
-      <span class="chip" onclick="go('trends')">📊</span>
+      <span class="chip" onclick="go('trends')">📊 Progrès</span>
       <span class="chip">🔥 3 j</span>
     </span>
   </div>
-  <span class="note" style="margin:-6px 0 10px">→ <b>« ‹ FLINT »</b> : la Nutrition est une app-dans-l'app, mais on ressort en 1 tap.
-  L'icône 📊 = Progrès (interne). Le streak est là, discret, pas moralisateur.</span>
+  <span class="note" style="margin:-6px 0 10px">→ Nutrition = <b>un onglet de la nav FLINT</b> (en bas), rien de plus.
+  Pas de nav interne : tout ce qui n'est pas le jour (Progrès, Objectifs) est accessible par les icônes du haut.</span>
 
   <div class="box" style="padding:8px">
     <div class="grid3" style="grid-template-columns:repeat(7,1fr);gap:4px;text-align:center;font-size:11px">
-      <span>L<br>27</span><span>M<br>28</span><span>M<br>29</span><span>J<br>30</span><span>V<br>31</span>
+      <span style="cursor:pointer">L<br>27</span><span style="cursor:pointer">M<br>28</span><span style="cursor:pointer">M<br>29</span>
+      <span style="cursor:pointer">J<br>30</span><span style="cursor:pointer" onclick="toast('Journal + anneau basculent sur vendredi 31')">V<br>31</span>
       <span style="border:1.5px solid #111;border-radius:8px;padding:2px 0;font-weight:800">S<br>1</span><span style="color:#bbb">D<br>2</span>
     </div>
-    <span class="note">→ Bande semaine : tap un jour passé = le journal + le hero basculent sur ce jour
-    (bandeau « Tu regardes vendredi — <u>revenir à aujourd'hui</u> »). Swipe ← = semaine précédente.
-    Les jours futurs sont inactifs. <b>Ajouter en regardant un jour passé loggue sur CE jour</b> (c'est le cas « j'ai oublié hier soir »).</span>
+    <span class="note">→ Calendrier gardé. Tap un jour passé = tout l'écran bascule sur ce jour ;
+    ajouter pendant qu'on regarde vendredi loggue sur vendredi. Jours futurs inactifs.</span>
   </div>
 
   <div class="box solid" onclick="go('goals')">
@@ -110,9 +106,7 @@ hr{border:0;border-top:1.5px dashed #bbb;margin:12px 0}
       <span class="sp"></span>
       <div class="ring">anneau</div>
     </div>
-    <span class="note">→ Budget <b>dynamique</b> : 3 200 = base + dépense réelle mesurée par le bracelet
-    (mise à jour en journée). C'est LE différenciateur vs Cal AI — personne d'autre n'a la dépense réelle.
-    Tap sur la carte = ⚙︎ Objectifs. Tap sur le chiffre = bascule restantes ↔ consommées.</span>
+    <span class="note">→ Budget dynamique : base + dépense réelle du bracelet. Tap = Objectifs.</span>
   </div>
 
   <div class="grid3">
@@ -120,237 +114,238 @@ hr{border:0;border-top:1.5px dashed #bbb;margin:12px 0}
     <div class="box" style="margin:0" onclick="go('trends')"><div class="k">Glucides</div><div style="font-weight:800">300/360 g</div><div class="mini"><i style="width:83%"></i></div></div>
     <div class="box" style="margin:0" onclick="go('trends')"><div class="k">Lipides</div><div style="font-weight:800">71/80 g</div><div class="mini"><i style="width:89%"></i></div></div>
   </div>
-  <span class="note" style="margin-bottom:4px">→ Tap une macro = Progrès ancré sur cette macro. Pour un sportif sérieux,
-  <b>les protéines sont l'info n°2 après les kcal</b> — jamais cachées.</span>
 
   <hr>
+  <div class="row" style="margin-bottom:8px"><span class="k" style="margin:0">Journal — samedi 1 juin</span><span class="sp"></span><span class="chip ghost" onclick="openSheet()">+ Ajouter</span></div>
+  <span class="note" style="margin:0 0 8px">→ <b>Plus de créneaux petit-déj/déjeuner/dîner</b> : un fil chronologique simple,
+  l'heure à gauche. C'est l'heure qui raconte la journée, pas des cases à deviner. Tri automatique.</span>
 
-  <div class="slot"><span class="n">Petit-déj</span><span class="kc">497 kcal</span></div>
-  <div class="meal" onclick="go('mealdetail')">
-    <div class="row"><span class="thumb">photo</span>
-      <div><div class="nm">Yaourt grec, myrtilles &amp; amandes</div><div class="st">08:15 · 280 kcal · 24 P</div></div>
-      <span class="sp"></span><span class="state">✓ analysé</span></div>
+  <div id="tl">
+    <div class="meal" data-min="465" onclick="go('mealdetail')">
+      <span class="hr">07:45</span><span class="thumb">photo</span>
+      <div><div class="nm">Pancakes banane</div><div class="st">~217 kcal (provisoire)</div></div>
+      <span class="state pend">⏳ 27 %</span>
+    </div>
+    <div class="meal" data-min="495" onclick="go('mealdetail')">
+      <span class="hr">08:15</span><span class="thumb">photo</span>
+      <div><div class="nm">Yaourt grec, myrtilles &amp; amandes</div><div class="st">280 kcal · 24 P</div></div>
+      <span class="state">✓ analysé</span>
+    </div>
+    <div class="meal" data-min="760" onclick="go('mealdetail')">
+      <span class="hr">12:40</span><span class="thumb">—</span>
+      <div><div class="nm">Pomme</div><div class="st">120 kcal</div></div>
+      <span class="state">✍️ manuel</span>
+    </div>
   </div>
-  <div class="meal">
-    <div class="row"><span class="thumb">photo</span>
-      <div><div class="nm">Pancakes banane</div><div class="st">08:15 · ~217 kcal (provisoire)</div></div>
-      <span class="sp"></span><span class="state pend">⏳ analyse 27 %</span></div>
-    <span class="note">→ Carte <b>en cours</b> : cliquable (voir progression), montre une estimation provisoire
-    comptée en gris dans l'anneau, corrigée à la fin. Notification quand c'est prêt. <b>Jamais bloquant</b> :
-    tu peux quitter l'app, le scan vit sa vie.</span>
-  </div>
+  <span class="note">→ Carte ⏳ = analyse en fond, estimation provisoire comptée en gris, notification quand prêt.
+  Jamais bloquant. Tap n'importe quelle carte = détail éditable.</span>
 
-  <div class="slot"><span class="n">Déjeuner</span><span class="kc">120 kcal</span></div>
-  <div class="meal">
-    <div class="row"><span class="thumb">—</span>
-      <div><div class="nm">Pomme</div><div class="st">12:40 · 120 kcal</div></div>
-      <span class="sp"></span><span class="state">✍️ manuel</span></div>
-  </div>
-  <div class="chip ghost" onclick="go('search')">+ Ajouter au déjeuner</div>
-  <span class="note">→ Chaque créneau a son « + » contextuel : ajout <b>sans passer par le FAB</b>,
-  créneau déjà pré-rempli. Deux portes d'entrée, zéro friction.</span>
-
-  <div class="slot"><span class="n">Dîner</span><span class="kc">—</span></div>
-  <div class="chip ghost" onclick="go('search')">+ Ajouter au dîner</div>
-
-  <hr>
-  <div class="box">
-    <div class="k">Conseil du jour ✕</div>
-    <div style="font-size:12px">Il te manque ~40 g de glucides pour tenir ta séance de 18 h.</div>
-    <span class="note">→ Un seul conseil, fermable, <b>branché sur les données du jour</b> (pas générique)
-    et sur l'agenda sportif FLINT.</span>
-  </div>
-
-  <div class="fab" onclick="go('sheet')">+</div>
-  <div class="nav"><span class="on">Aujourd'hui</span><span onclick="go('trends')">Progrès</span><span onclick="go('search')">Aliments</span><span onclick="go('goals')">Réglages</span></div>
+  <div class="fab" onclick="openSheet()">+</div>
+  <div class="nav"><span>Aujourd'hui</span><span>Balance</span><span>Coach</span><span class="on">Nutrition</span></div>
 </section>
 
-<!-- ════════════════ 2. FEUILLE D'AJOUT (FAB) ════════════════ -->
+<!-- ════════ 2. FEUILLE D'AJOUT (FAB) ════════ -->
 <section class="scr" id="sheet">
   <div style="opacity:.25;pointer-events:none">
-    <div class="bar"><span class="btn">‹ FLINT</span><span class="t">Nutrition</span><span class="chip">🔥 3 j</span></div>
+    <div class="bar"><span class="t">Nutrition</span><span class="chip">🔥 3 j</span></div>
     <div class="box solid"><div class="k">Calories restantes</div><div class="big">2 583</div></div>
     <div class="box">journal…</div>
   </div>
   <div class="sheet">
-    <div class="k">Ajouter</div>
+    <div class="row" style="margin-bottom:10px">
+      <span class="k" style="margin:0">Ajouter un repas</span><span class="sp"></span>
+      <span class="whenchip" onclick="openWhen('sheet')">🕐 <span class="wlab">Maintenant (19:32)</span> ▾</span>
+    </div>
+    <span class="note" style="margin:-4px 0 10px">→ <b>L'heure est choisie ICI, en tête de l'ajout</b>, quel que soit le chemin.
+    Par défaut « Maintenant » = zéro friction en direct. « Ah merde, j'ai oublié ce midi » → tap le chip → 12:30 → tout ce qu'on ajoute ensuite part à 12:30.</span>
     <div class="grid2">
-      <div class="opt pri" onclick="go('camera')">📷 Scanner un repas<small>photo → IA</small></div>
+      <div class="opt pri" onclick="go('camera')">📷 Scanner<small>photo → IA</small></div>
       <div class="opt" onclick="go('camera')">▮▮ Code-barres<small>produit emballé</small></div>
-      <div class="opt" onclick="go('search')">🔎 Rechercher / décrire<small>texte ou dictée</small></div>
-      <div class="opt" onclick="go('search')">⭐ Mes aliments &amp; repas<small>favoris, récents</small></div>
+      <div class="opt" onclick="go('search')">🔎 Décrire / chercher<small>texte ou dictée</small></div>
+      <div class="opt" onclick="go('search')">⭐ Mes aliments<small>favoris, récents</small></div>
     </div>
     <hr>
     <div class="k">Rejouer</div>
-    <div class="li" onclick="toast('Salade poulet quinoa ajoutée au déjeuner')"><div><div class="n">Salade poulet quinoa</div><div class="d">hier midi · 584 kcal</div></div><span class="plus">+</span></div>
-    <div class="li" onclick="toast('Omelette 3 œufs ajoutée au petit-déj')"><div><div class="n">Omelette 3 œufs</div><div class="d">mangé 4× cette semaine · 310 kcal</div></div><span class="plus">+</span></div>
-    <span class="note">→ <b>« Rejouer » = l'arme anti-friction n°1.</b> Un sportif mange les mêmes plats en boucle :
-    re-logguer hier midi en 1 tap depuis la feuille, sans caméra ni recherche.
-    Le FAB en <b>appui long</b> ouvre directement la caméra (raccourci power-user).</span>
-    <div style="text-align:center;margin-top:8px"><span class="chip" onclick="go('home')">✕ Fermer (ou tap en dehors)</span></div>
+    <div class="li"><div><div class="n">Salade poulet quinoa</div><div class="d">hier midi · 584 kcal</div></div><span class="plus" onclick="addMeal('Salade poulet quinoa','584 kcal','✓')">+</span></div>
+    <div class="li"><div><div class="n">Omelette 3 œufs</div><div class="d">4× cette semaine · 310 kcal</div></div><span class="plus" onclick="addMeal('Omelette 3 œufs','310 kcal','✓')">+</span></div>
+    <span class="note">→ Rejouer = re-log 1 tap à l'heure choisie. FAB en appui long = caméra directe.</span>
+    <div style="text-align:center;margin-top:8px"><span class="chip" onclick="go('home')">✕ Fermer</span></div>
   </div>
 </section>
 
-<!-- ════════════════ 3. CAMÉRA (4 modes) ════════════════ -->
+<!-- ════════ 2b. QUAND ? (sélecteur d'heure) ════════ -->
+<section class="scr" id="when">
+  <div class="bar"><span class="btn" onclick="backFromWhen()">‹</span><span class="t">Quand l'as-tu mangé ?</span><span></span></div>
+  <div class="grid2">
+    <div class="qw" onclick="setWhen('Maintenant (19:32)',1172)">Maintenant<small>19:32</small></div>
+    <div class="qw" onclick="setWhen('Ce matin (08:00)',480)">Ce matin<small>~08:00</small></div>
+    <div class="qw" onclick="setWhen('Ce midi (12:30)',750)">Ce midi<small>~12:30</small></div>
+    <div class="qw" onclick="setWhen('Cet aprèm (16:30)',990)">Cet aprèm<small>~16:30</small></div>
+  </div>
+  <span class="note">→ 4 réponses rapides couvrent 95 % des cas d'oubli — 1 tap, pas de roue.
+  L'heure précise reste possible dessous. Si on regarde un jour passé dans le calendrier, ces choix s'appliquent à CE jour.</span>
+  <hr>
+  <div class="k">Heure précise</div>
+  <div class="row" style="justify-content:center;gap:14px">
+    <span class="stp"><b onclick="bumpH(-1)">−</b><span id="wh">19</span> h <b onclick="bumpH(1)">+</b></span>
+    <span class="stp"><b onclick="bumpM(-5)">−</b><span id="wm">30</span> min <b onclick="bumpM(5)">+</b></span>
+  </div>
+  <div style="text-align:center;margin-top:14px"><span class="btn pri" onclick="setWhenCustom()">Valider cette heure</span></div>
+</section>
+
+<!-- ════════ 3. CAMÉRA ════════ -->
 <section class="scr" id="camera">
-  <div class="bar"><span class="btn" onclick="go('home')">✕</span><span class="t">Scanner</span><span class="chip">?</span></div>
+  <div class="bar"><span class="btn" onclick="go('home')">✕</span><span class="t">Scanner</span><span class="whenchip" onclick="openWhen('camera')">🕐 <span class="wlab">Maintenant (19:32)</span></span></div>
   <div style="text-align:center;font-size:12px;color:#666;margin-bottom:8px">Cadre ton repas pour commencer</div>
   <div class="cam"><span class="corner c1"></span><span class="corner c2"></span><span class="corner c3"></span><span class="corner c4"></span><span class="lab">viseur caméra</span></div>
   <div class="tabs" style="justify-content:center">
-    <span class="chip on">Scan repas</span><span class="chip">Code-barres</span><span class="chip">Étiquette</span><span class="chip" onclick="toast('Galerie ouverte — même pipeline que la photo')">Galerie</span>
+    <span class="chip on">Scan repas</span><span class="chip">Code-barres</span><span class="chip">Étiquette</span><span class="chip" onclick="toast('Galerie : photo prise plus tôt → pense à régler l\'heure 🕐')">Galerie</span>
   </div>
-  <span class="note" style="text-align:center;margin-bottom:10px">→ <b>Un seul écran caméra, 4 modes</b> (pills).
-  Code-barres : détection automatique, pas de déclencheur → fiche produit directe.
-  Étiquette : photo du tableau nutritionnel (OCR). Galerie : « j'ai pris la photo au resto, je loggue plus tard ».</span>
+  <span class="note" style="text-align:center;margin-bottom:10px">→ Un seul écran caméra, 4 modes. L'heure est là aussi (chip en haut) :
+  je scanne à 19h32 un plat mangé à midi ? 2 taps avant le déclencheur. Mode Galerie = rappel automatique de l'heure.</span>
   <div class="row" style="justify-content:center;gap:26px">
     <span class="chip">⚡</span>
-    <span class="shutter" onclick="go('postshot')">déclench.</span>
+    <span class="shutter" onclick="addMeal('Repas scanné','analyse…','⏳');toast('Envoyé ✓ — analyse en fond, carte insérée au journal')">déclench.</span>
     <span class="chip" style="visibility:hidden">.</span>
   </div>
+  <span class="note" style="text-align:center">→ Après le déclencheur : <b>pas d'écran d'attente</b> — retour direct au journal,
+  la carte ⏳ s'insère à l'heure choisie (essaie !).</span>
 </section>
 
-<!-- ════════════════ 3b. APRÈS LE DÉCLENCHEUR ════════════════ -->
-<section class="scr" id="postshot">
-  <div class="bar"><span class="t">Envoyé ✓</span></div>
-  <div class="box solid" style="text-align:center;padding:26px 14px">
-    <div class="big" style="font-size:18px">Analyse lancée</div>
-    <div style="font-size:12px;color:#666;margin-top:6px">Retour automatique au journal (~1 s).<br>La carte « ⏳ analyse » vient de s'y insérer.</div>
-  </div>
-  <span class="note">→ Après le shutter : <b>pas d'écran d'attente</b>. Confirmation 1 s → retour au journal,
-  carte provisoire insérée dans le bon créneau (deviné par l'heure : 10h30- = petit-déj, 15h- = déjeuner,
-  18h30- = collation, sinon dîner — modifiable après). L'utilisateur n'attend JAMAIS l'IA.
-  Photo ratée/floue ? L'analyse le dit sur la carte et propose « Reprendre » ou « Décrire à la place ».</span>
-  <div style="text-align:center"><span class="btn pri" onclick="go('home')">→ retour journal (auto)</span></div>
-</section>
-
-<!-- ════════════════ 4. RECHERCHE / AJOUTER ════════════════ -->
+<!-- ════════ 4. DÉCRIRE / CHERCHER ════════ -->
 <section class="scr" id="search">
-  <div class="bar"><span class="btn" onclick="go('home')">‹</span><span class="t">Ajouter un aliment</span><span class="chip">→ Déjeuner ▾</span></div>
-  <span class="note" style="margin:-6px 0 8px">→ Le créneau cible est <b>affiché et modifiable dès l'entrée</b> (chip),
-  pré-rempli selon l'origine (« + Ajouter au dîner » → Dîner) ou l'heure.</span>
+  <div class="bar"><span class="btn" onclick="go('home')">‹</span><span class="t">Ajouter un aliment</span><span class="whenchip" onclick="openWhen('search')">🕐 <span class="wlab">Maintenant (19:32)</span></span></div>
   <div class="tabs"><span class="chip on">Tous</span><span class="chip">Mes aliments</span><span class="chip">Mes repas</span><span class="chip">Enregistrés</span></div>
-  <div class="input">🔎 Décris ce que tu as mangé…</div>
-  <span class="note" style="margin:-4px 0 8px">→ Recherche <b>en langage naturel</b> : « 2 œufs et une tranche de pain beurré »
-  → l'IA découpe en 3 items quantifiés d'un coup. C'est le chemin « j'ai oublié de scanner » : 10 secondes, de mémoire.</span>
-  <div class="k">Suggestions (selon l'heure + habitudes)</div>
-  <div class="li"><div><div class="n">Beurre de cacahuète</div><div class="d">94 kcal · 1 c. à soupe (16 g)</div></div><span class="plus" onclick="toast('Ajouté ✓ — portion par défaut')">+</span></div>
-  <div class="li" onclick="go('fooddetail')"><div><div class="n">Avocat</div><div class="d">130 kcal · ½ moyen (100 g)</div></div><span class="plus" onclick="event.stopPropagation();toast('Ajouté ✓')">+</span></div>
-  <div class="li"><div><div class="n">Œuf</div><div class="d">74 kcal · 1 gros</div></div><span class="plus" onclick="toast('Ajouté ✓')">+</span></div>
-  <span class="note">→ <b>Deux gestes distincts</b> : tap sur [+] = ajout 1 tap avec la portion par défaut
-  (toast « Ajouté ✓ — Modifier / Annuler », on RESTE ici pour enchaîner les items).
-  Tap sur la ligne = fiche portion (quantité précise). Après fermeture : retour journal, item surligné 2 s.</span>
+  <div class="input" onclick="toast('« 2 œufs et du pain beurré » → 3 items quantifiés d\'un coup')">🔎 Décris ce que tu as mangé…</div>
+  <span class="note" style="margin:-4px 0 8px">→ Langage naturel : « 2 œufs et une tranche de pain beurré » → l'IA découpe
+  en items quantifiés. LE chemin « j'ai oublié de scanner » : on décrit de mémoire + on règle l'heure (chip en haut). 10 secondes.</span>
+  <div class="k">Suggestions (heure + habitudes)</div>
+  <div class="li"><div><div class="n">Beurre de cacahuète</div><div class="d">94 kcal · 1 c. à soupe (16 g)</div></div><span class="plus" onclick="addMeal('Beurre de cacahuète','94 kcal','✓')">+</span></div>
+  <div class="li" onclick="go('fooddetail')"><div><div class="n">Avocat</div><div class="d">130 kcal · ½ moyen (100 g)</div></div><span class="plus" onclick="event.stopPropagation();addMeal('Avocat','130 kcal','✓')">+</span></div>
+  <div class="li"><div><div class="n">Œuf</div><div class="d">74 kcal · 1 gros</div></div><span class="plus" onclick="addMeal('Œuf','74 kcal','✓')">+</span></div>
+  <span class="note">→ [+] = ajout direct portion par défaut, à l'heure du chip (essaie : ça s'insère au journal).
+  Tap sur la ligne = fiche portion précise. On reste ici pour enchaîner plusieurs items d'un même repas.</span>
   <hr>
   <div class="grid2">
     <span class="btn" onclick="go('manual')">📝 Ajout manuel</span>
-    <span class="btn" onclick="toast('Dictée : « riz poulet brocoli 600 grammes »')">🎙️ Dictée vocale</span>
+    <span class="btn" onclick="toast('Dictée : « riz poulet brocoli 600 g » → même pipeline que le texte')">🎙️ Dictée vocale</span>
   </div>
-  <span class="note">→ L'ajout manuel (kcal connues, ex. plat préparé maison) n'est jamais à plus de 2 taps.
-  La dictée = même pipeline que le texte naturel.</span>
 </section>
 
-<!-- ════════════════ 5. FICHE ALIMENT / PORTION ════════════════ -->
+<!-- ════════ 5. FICHE PORTION ════════ -->
 <section class="scr" id="fooddetail">
   <div class="bar"><span class="btn" onclick="go('search')">‹</span><span class="t">Avocat</span><span class="chip">☆ Enregistrer</span></div>
   <div class="box solid">
     <div class="k">Portion</div>
     <div class="stp"><b>−</b> 100 g <b>+</b></div>
     <div class="tabs" style="margin-top:8px"><span class="chip on">g</span><span class="chip">½ pièce</span><span class="chip">pièce</span></div>
-    <div class="row" style="margin-top:10px;font-size:12px"><span><b>130</b> kcal</span><span class="sp"></span><span>1,3 P · 8,5 G* · 11,7 L</span></div>
+    <div class="row" style="margin-top:10px;font-size:12px"><span><b>130</b> kcal</span><span class="sp"></span><span>1,3 P · 8,5 G · 11,7 L</span></div>
   </div>
-  <span class="note">→ Kcal + macros recalculés <b>en live</b> au stepper. Unités intelligentes par aliment
-  (g / pièce / cuillère). « ☆ Enregistrer » = il rejoint « Mes aliments » pour la prochaine fois.
-  Vient d'un code-barres ? Même fiche, avec marque + par-100 g pré-remplis.</span>
-  <div class="row"><span class="chip">→ Déjeuner ▾</span><span class="chip">Aujourd'hui ▾</span></div>
-  <div style="margin-top:12px"><span class="btn pri" style="width:100%;justify-content:center" onclick="toast('Avocat 100 g ajouté au déjeuner ✓');go('home')">Ajouter</span></div>
+  <div class="row" style="margin-bottom:12px">
+    <span class="k" style="margin:0">Mangé :</span>
+    <span class="whenchip" onclick="openWhen('fooddetail')">🕐 <span class="wlab">Maintenant (19:32)</span> ▾</span>
+  </div>
+  <span class="note" style="margin-bottom:10px">→ L'heure est rappelée juste avant la validation — dernier point de contrôle,
+  encore modifiable ici.</span>
+  <span class="btn pri" style="width:100%;justify-content:center" onclick="addMeal('Avocat 100 g','130 kcal','✓')">Ajouter</span>
 </section>
 
-<!-- ════════════════ 6. DÉTAIL REPAS ════════════════ -->
+<!-- ════════ 6. DÉTAIL REPAS ════════ -->
 <section class="scr" id="mealdetail">
   <div class="bar"><span class="btn" onclick="go('home')">‹</span><span class="t">Yaourt grec, myrtilles &amp; amandes</span><span class="chip">⋯</span></div>
-  <div class="box" style="height:110px;display:grid;place-items:center;color:#888">photo du plat + pastilles de détection</div>
-  <div class="row" style="margin-bottom:8px"><span class="chip">✨ IA · estimé</span><span class="chip">Petit-déj ▾</span><span class="chip">08:15 ▾</span></div>
-  <span class="note" style="margin-bottom:8px">→ Créneau et heure <b>modifiables ici</b> (le cas « l'IA a mis mon
-  goûter dans le déjeuner » se répare en 2 taps).</span>
+  <div class="box" style="height:100px;display:grid;place-items:center;color:#888">photo + pastilles de détection</div>
+  <div class="row" style="margin-bottom:8px"><span class="chip">✨ IA · estimé</span><span class="whenchip" onclick="openWhen('mealdetail')">🕐 08:15 ▾</span></div>
+  <span class="note" style="margin-bottom:8px">→ L'heure se corrige aussi APRÈS coup, ici (« l'IA/moi s'est trompé »).
+  Le journal se re-trie tout seul.</span>
   <div class="grid2" style="margin-bottom:8px">
     <div class="box solid" style="margin:0"><div class="k">Calories</div><div class="big" style="font-size:20px">280</div></div>
     <div class="box solid" style="margin:0"><div class="k">Macros</div><div style="font-size:12px;font-weight:700">24 P · 21 G · 11 L</div><div class="k" style="margin-top:4px">Score santé 8/10</div></div>
   </div>
-  <div class="k">Aliments détectés — ajuste les grammes</div>
+  <div class="k">Aliments — ajuste les grammes</div>
   <div class="li"><div><div class="n">Yaourt grec 0 %</div><div class="d">150 g · 89 kcal</div></div><span class="stp" style="padding:3px 8px;font-size:11px"><b>−</b>150<b>+</b></span><span class="plus">✕</span></div>
   <div class="li"><div><div class="n">Myrtilles</div><div class="d">80 g · 46 kcal</div></div><span class="stp" style="padding:3px 8px;font-size:11px"><b>−</b>80<b>+</b></span><span class="plus">✕</span></div>
   <div class="li"><div><div class="n">Amandes</div><div class="d">20 g · 116 kcal</div></div><span class="stp" style="padding:3px 8px;font-size:11px"><b>−</b>20<b>+</b></span><span class="plus">✕</span></div>
   <div class="chip ghost" onclick="go('search')">+ Ajouter un ingrédient oublié par l'IA</div>
-  <span class="note">→ Toute édition recalcule le total du repas ET le hero du jour, immédiatement.
-  <b>L'IA propose, l'utilisateur dispose</b> — c'est ce qui fait confiance aux chiffres.</span>
+  <span class="note">→ Toute édition recalcule le repas ET l'anneau du jour. L'IA propose, l'utilisateur dispose.</span>
   <hr>
   <div class="grid2">
-    <span class="btn">🔁 Dupliquer</span><span class="btn">📷 Re-analyser</span>
-    <span class="btn">📅 Déplacer</span><span class="btn" style="color:#B00">🗑 Supprimer</span>
+    <span class="btn" onclick="toast('Dupliqué — choisis l\'heure')">🔁 Dupliquer</span><span class="btn">📷 Re-analyser</span>
+    <span class="btn" onclick="openWhen('mealdetail')">🕐 Changer l'heure</span><span class="btn" style="color:#B00">🗑 Supprimer</span>
   </div>
-  <span class="note">→ « Dupliquer » = je remange pareil demain. « Re-analyser » = j'ai repris une photo plus nette.</span>
 </section>
 
-<!-- ════════════════ 7. AJOUT MANUEL ════════════════ -->
+<!-- ════════ 7. AJOUT MANUEL ════════ -->
 <section class="scr" id="manual">
-  <div class="bar"><span class="btn" onclick="go('search')">‹</span><span class="t">Ajout manuel</span><span></span></div>
+  <div class="bar"><span class="btn" onclick="go('search')">‹</span><span class="t">Ajout manuel</span><span class="whenchip" onclick="openWhen('manual')">🕐 <span class="wlab">Maintenant (19:32)</span></span></div>
   <div class="input">Nom du plat</div>
   <div class="input">Calories (kcal) — requis</div>
   <div class="grid3">
     <div class="input" style="margin:0">P (g)</div><div class="input" style="margin:0">G (g)</div><div class="input" style="margin:0">L (g)</div>
   </div>
-  <span class="note" style="margin:8px 0">→ Seules les kcal sont requises, <b>les macros sont optionnelles</b> :
-  le chemin de secours ne doit jamais bloquer. On peut compléter plus tard depuis le détail.</span>
-  <div class="row" style="margin-bottom:12px"><span class="chip">→ Dîner ▾</span><span class="chip">Aujourd'hui ▾</span></div>
-  <span class="btn pri" style="width:100%;justify-content:center" onclick="toast('Repas ajouté ✓');go('home')">Ajouter</span>
+  <span class="note" style="margin:8px 0">→ Seules les kcal sont requises, macros optionnelles : le chemin de secours ne bloque jamais.</span>
+  <span class="btn pri" style="width:100%;justify-content:center" onclick="addMeal('Plat maison','~450 kcal','✍️')">Ajouter</span>
 </section>
 
-<!-- ════════════════ 8. PROGRÈS ════════════════ -->
+<!-- ════════ 8. PROGRÈS ════════ -->
 <section class="scr" id="trends">
   <div class="bar"><span class="btn" onclick="go('home')">‹</span><span class="t">Progrès</span><span class="chip">7 j / 30 j</span></div>
-  <div class="box solid">
-    <div class="k">Calories vs objectif — 7 jours</div>
-    <div style="height:70px;display:grid;place-items:center;color:#888;font-size:11px">barres quotidiennes + ligne objectif</div>
-  </div>
+  <div class="box solid"><div class="k">Calories vs objectif — 7 jours</div><div style="height:70px;display:grid;place-items:center;color:#888;font-size:11px">barres quotidiennes + ligne objectif</div></div>
   <div class="box"><div class="k">Moyennes macros</div><div style="font-size:12px">P 168 g · G 310 g · L 74 g / jour</div><div class="k" style="margin-top:6px">Adhérence protéines : 6 j / 7 ✓</div></div>
-  <div class="box"><div class="k">Corrélation FLINT</div><div style="font-size:12px">Jours ≥ objectif protéines → récupération moyenne <b>+9 pts</b></div>
-  <span class="note">→ La killer-card : croiser la nutrition avec la récup du bracelet.
-  Aucun concurrent nutrition ne peut faire ça. C'est ici que la feature devient indispensable.</span></div>
+  <div class="box"><div class="k">Corrélation FLINT</div><div style="font-size:12px">Jours ≥ objectif protéines → récup moyenne <b>+9 pts</b></div>
+  <span class="note">→ Croiser nutrition × récup du bracelet : la carte qu'aucune app nutrition ne peut faire.</span></div>
 </section>
 
-<!-- ════════════════ 9. OBJECTIFS ════════════════ -->
+<!-- ════════ 9. OBJECTIFS ════════ -->
 <section class="scr" id="goals">
   <div class="bar"><span class="btn" onclick="go('home')">‹</span><span class="t">Objectifs</span><span></span></div>
   <div class="tabs"><span class="chip">Sèche</span><span class="chip on">Maintien</span><span class="chip">Prise de masse</span></div>
-  <span class="note" style="margin-bottom:8px">→ 3 presets sportifs qui règlent kcal + répartition macros d'un tap.
-  Mode avancé dessous pour les maniaques.</span>
   <div class="box solid"><div class="k">Budget calorique</div><div class="big" style="font-size:20px">2 400 + activité</div>
-  <span class="note">→ « + activité » (interrupteur) : le budget suit la dépense réelle du bracelet.
-  Jour de repos = budget honnête, grosse séance = budget qui monte. Réglé une fois, plus jamais touché.</span></div>
+  <span class="note">→ « + activité » : le budget suit la dépense réelle du bracelet. Réglé une fois, plus jamais touché.</span></div>
   <div class="box"><div class="k">Répartition macros</div><div style="font-size:12px">P 2 g/kg · G 45 % · L 25 % (curseurs)</div></div>
 </section>
 
-<!-- ════════════════ SORTIE ════════════════ -->
-<section class="scr" id="exit">
-  <div style="text-align:center;padding-top:120px">
-    <div class="big" style="font-size:18px">← Retour à l'app FLINT</div>
-    <div style="font-size:12px;color:#666;margin:10px 0 20px">(onglet Nutrition de la nav globale FLINT)</div>
-    <span class="btn pri" onclick="go('home')">Revenir au blueprint</span>
-  </div>
-</section>
-
-<div class="toast" id="toast"><span id="toastmsg">Ajouté ✓</span><u onclick="this.parentNode.classList.remove('on')">Annuler</u></div>
+<div class="toast" id="toast"><span id="toastmsg">Ajouté ✓</span><u onclick="this.parentNode.classList.remove('on')">OK</u></div>
 </div>
 
 <div class="tools">
   <b style="align-self:center">PLAN&nbsp;:</b>
-  <a onclick="go('home')">1 Aujourd'hui</a><a onclick="go('sheet')">2 Feuille +</a><a onclick="go('camera')">3 Caméra</a>
-  <a onclick="go('search')">4 Recherche</a><a onclick="go('fooddetail')">5 Portion</a><a onclick="go('mealdetail')">6 Détail repas</a>
-  <a onclick="go('manual')">7 Manuel</a><a onclick="go('trends')">8 Progrès</a><a onclick="go('goals')">9 Objectifs</a>
+  <a onclick="go('home')">1 Nutrition</a><a onclick="openSheet()">2 Feuille +</a><a onclick="go('when')">2b Quand ?</a>
+  <a onclick="go('camera')">3 Caméra</a><a onclick="go('search')">4 Décrire</a><a onclick="go('fooddetail')">5 Portion</a>
+  <a onclick="go('mealdetail')">6 Détail</a><a onclick="go('manual')">7 Manuel</a><a onclick="go('trends')">8 Progrès</a><a onclick="go('goals')">9 Objectifs</a>
 </div>
 
 <script>
 function go(id){document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on'));document.getElementById(id).classList.add('on');window.scrollTo(0,0)}
-var _t;function toast(m){var t=document.getElementById('toast');document.getElementById('toastmsg').textContent=m+' — Modifier';t.classList.add('on');clearTimeout(_t);_t=setTimeout(function(){t.classList.remove('on')},2600)}
+var _t;function toast(m){var t=document.getElementById('toast');document.getElementById('toastmsg').textContent=m;t.classList.add('on');clearTimeout(_t);_t=setTimeout(function(){t.classList.remove('on')},2800)}
+
+/* ── état « quand » ── */
+var W={label:'Maintenant (19:32)',min:1172}, whenBack='sheet';
+function fmt(min){var h=Math.floor(min/60),m=min%60;return (h<10?'0':'')+h+':'+(m<10?'0':'')+m}
+function syncWhen(){document.querySelectorAll('.wlab').forEach(function(e){e.textContent=W.label})}
+function openWhen(back){whenBack=back;document.getElementById('wh').textContent=Math.floor(W.min/60);document.getElementById('wm').textContent=W.min%60;go('when')}
+function backFromWhen(){go(whenBack)}
+function setWhen(label,min){W={label:label,min:min};syncWhen();go(whenBack);toast('Heure réglée : '+label)}
+function setWhenCustom(){var h=+document.getElementById('wh').textContent,m=+document.getElementById('wm').textContent;setWhen(fmt(h*60+m),h*60+m)}
+function bumpH(d){var e=document.getElementById('wh');e.textContent=Math.min(23,Math.max(0,+e.textContent+d))}
+function bumpM(d){var e=document.getElementById('wm');e.textContent=(+e.textContent+d+60)%60}
+function openSheet(){W={label:'Maintenant (19:32)',min:1172};syncWhen();go('sheet')}
+
+/* ── insertion réelle dans le journal (pour SENTIR le flux) ── */
+function addMeal(name,kcal,state){
+  var tl=document.getElementById('tl');
+  var d=document.createElement('div');d.className='meal hl';d.dataset.min=W.min;
+  d.onclick=function(){go('mealdetail')};
+  d.innerHTML='<span class="hr">'+fmt(W.min)+'</span><span class="thumb">'+(state==='⏳'?'photo':'—')+'</span>'
+    +'<div><div class="nm">'+name+'</div><div class="st">'+kcal+'</div></div>'
+    +'<span class="state'+(state==='⏳'?' pend':'')+'">'+(state==='⏳'?'⏳ analyse':state+(state==='✓'?' ajouté':''))+'</span>';
+  var rows=[].slice.call(tl.children),ins=null;
+  for(var i=0;i<rows.length;i++){if(+rows[i].dataset.min>W.min){ins=rows[i];break}}
+  tl.insertBefore(d,ins);
+  go('home');d.scrollIntoView({block:'center'});
+  setTimeout(function(){d.classList.remove('hl')},2200);
+  toast('Inséré à '+fmt(W.min)+' ✓ — le journal se trie tout seul');
+  W={label:'Maintenant (19:32)',min:1172};syncWhen();
+}
 </script>
 </body>
 </html>
