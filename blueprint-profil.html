@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FLINT — Blueprint Profil v1 (architecture, zéro design)</title>
+<style>
+*{box-sizing:border-box;margin:0;font-family:-apple-system,'Helvetica Neue',Arial,sans-serif}
+body{background:#E9E9E9;color:#111;display:flex;justify-content:center;padding:14px 0 40px}
+.phone{width:400px;max-width:100vw;background:#fff;min-height:820px;position:relative;border:2px solid #111;border-radius:18px;overflow:hidden}
+.tools{position:fixed;left:50%;transform:translateX(-50%);bottom:6px;z-index:99;background:#111;color:#fff;font-size:10.5px;padding:7px 10px;border-radius:20px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;max-width:96vw}
+.tools a{color:#fff;text-decoration:none;border:1px solid #555;border-radius:10px;padding:3px 7px;cursor:pointer;white-space:nowrap}
+.tools a:hover{background:#333}
+.scr{display:none;padding:14px 14px 40px}
+.scr.on{display:block}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
+.bar .t{font-weight:800;font-size:15px}
+.btn,.chip{border:1.5px solid #111;border-radius:10px;padding:7px 10px;font-size:12px;background:#fff;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.btn.pri{background:#111;color:#fff}
+.btn.danger{color:#B00;border-color:#B00}
+.chip{border-radius:20px;font-size:11px;padding:5px 10px}
+.box{border:1.5px dashed #999;border-radius:12px;padding:12px;margin-bottom:10px}
+.box.solid{border-style:solid;border-color:#111}
+.k{font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#666;margin-bottom:6px}
+.sechead{font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#666;margin:16px 2px 6px}
+.big{font-size:26px;font-weight:800}
+.row{display:flex;align-items:center;gap:10px}
+.row .sp{flex:1}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.note{display:block;font-size:10.5px;color:#E8500F;margin-top:6px;line-height:1.45}
+.note b{font-weight:800}
+.prow{display:flex;align-items:center;gap:10px;padding:11px 2px;border-top:1.5px dashed #ddd;font-size:13px;cursor:pointer}
+.prow:first-of-type{border-top:0}
+.prow .lab{font-weight:600}
+.prow .val{margin-left:auto;color:#666;font-weight:700;font-size:12.5px;text-align:right}
+.prow .val small{display:block;font-weight:400;font-size:10px;color:#999}
+.prow .ch{color:#999;flex:none}
+.avatar{width:64px;height:64px;border:1.5px dashed #999;border-radius:50%;display:grid;place-items:center;font-size:10px;color:#888;flex:none;cursor:pointer}
+.badge{display:inline-flex;align-items:center;gap:5px;border:1.5px solid #111;border-radius:20px;padding:3px 10px;font-size:10.5px;font-weight:800}
+.stat{border:1.5px dashed #999;border-radius:12px;padding:10px 6px;text-align:center}
+.stat b{display:block;font-size:16px}
+.stat span{font-size:9.5px;color:#666}
+.sw{width:42px;height:24px;border-radius:14px;border:1.5px solid #111;position:relative;cursor:pointer;flex:none;margin-left:auto}
+.sw i{position:absolute;top:2.5px;left:3px;width:15px;height:15px;border-radius:50%;background:#111;transition:left .15s}
+.sw.on{background:#111}
+.sw.on i{left:21px;background:#fff}
+.batt{height:12px;border:1.5px solid #111;border-radius:6px;overflow:hidden;flex:1}
+.batt i{display:block;height:100%;width:68%;background:#111}
+.toast{position:absolute;left:14px;right:14px;bottom:60px;background:#111;color:#fff;border-radius:12px;padding:11px 12px;font-size:12px;display:none;z-index:40}
+.toast.on{display:flex;gap:10px;align-items:center}
+.toast u{cursor:pointer;margin-left:auto;font-weight:800}
+hr{border:0;border-top:1.5px dashed #bbb;margin:12px 0}
+.input{border:1.5px solid #111;border-radius:12px;padding:11px;font-size:13px;margin-bottom:10px}
+.input.ph{color:#888;cursor:text}
+/* roues */
+.pick{position:relative;display:flex;gap:6px;border:1.5px solid #111;border-radius:14px;padding:0 8px;background:#fff;max-width:180px;margin:0 auto}
+.wheel{flex:1;height:160px;overflow-y:auto;scroll-snap-type:y mandatory;text-align:center;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.wheel::-webkit-scrollbar{display:none}
+.wheel::before,.wheel::after{content:'';display:block;height:64px}
+.wheel .it{height:32px;line-height:32px;scroll-snap-align:center;font-size:14px;font-weight:700;color:#aaa;cursor:pointer}
+.wheel .it.on{color:#111}
+.sel{position:absolute;left:8px;right:8px;top:50%;height:32px;transform:translateY(-50%);border-top:2px solid #111;border-bottom:2px solid #111;pointer-events:none}
+</style>
+</head>
+<body>
+<div class="phone">
+
+<!-- ════════ 1. PROFIL (écran principal) ════════ -->
+<section class="scr on" id="profil">
+  <div class="bar"><span class="btn" onclick="toast('Retour à l\'app (le Profil est hors nav : avatar en haut à droite de chaque écran)')">‹</span><span class="t">Profil</span><span></span></div>
+
+  <!-- carte d'identité -->
+  <div class="box solid">
+    <div class="row">
+      <span class="avatar" onclick="toast('Changer la photo : caméra ou galerie')">photo</span>
+      <div style="min-width:0">
+        <div style="font-weight:800;font-size:16px;cursor:pointer" onclick="go('account')">Dino Astori</div>
+        <div style="font-size:11.5px;color:#666;cursor:pointer" onclick="go('account')" id="remail2">dino.astori25@gmail.com</div>
+        <div style="margin-top:6px"><span class="badge">🔒 FLINT À VIE</span> <span style="font-size:10px;color:#999">membre depuis mars 2026</span></div>
+      </div>
+    </div>
+  </div>
+  <span class="note" style="margin:-4px 0 8px">→ La carte d'identité : photo, nom, email <b>visibles et tappables</b> dès l'arrivée.
+  (Whoop enterre l'email à 3 niveaux de réglages — ici, 1 tap → Compte.) Le badge <b>À VIE</b> vit SUR la carte :
+  c'est l'identité FLINT, pas un détail de facturation.</span>
+
+  <!-- stats identité sportive -->
+  <div class="grid3">
+    <div class="stat"><b>132</b><span>jours de port</span></div>
+    <div class="stat"><b>87</b><span>séances</span></div>
+    <div class="stat"><b>🔥 12</b><span>série (jours)</span></div>
+  </div>
+  <span class="note">→ Une carte d'identité <b>sportive</b>, pas administrative : 3 chiffres qui disent « voilà qui je suis
+  chez FLINT ». Whoop le fait (totaux d'activité), MyFitnessPal le cache — c'est un levier d'attachement.</span>
+
+  <!-- mon corps -->
+  <div class="sechead">Mon corps</div>
+  <div class="box solid" style="padding:4px 12px">
+    <div class="prow" onclick="openW()"><span class="lab">Poids</span><span class="val" id="rw">76 kg<small>pesée il y a 2 j</small></span><span class="ch">›</span></div>
+    <div class="prow" onclick="openH()"><span class="lab">Taille</span><span class="val" id="rh">183 cm</span><span class="ch">›</span></div>
+    <div class="prow" onclick="toast('Roue de date (jour/mois/année)')"><span class="lab">Date de naissance</span><span class="val">12 mars 1994<small>31 ans</small></span><span class="ch">›</span></div>
+    <div class="prow" onclick="toast('Homme / Femme / Préfère ne pas dire — influence les modèles physiologiques')"><span class="lab">Sexe</span><span class="val">Homme</span><span class="ch">›</span></div>
+  </div>
+  <span class="note">→ Section dédiée (pas noyée dans « réglages ») parce que ces 4 valeurs <b>pilotent tous les calculs</b> :
+  besoin du jour, protéines, zones FC, VO₂max. <b>Source de vérité unique</b> : le poids modifié ici se propage à la
+  Nutrition, aux Objectifs, partout. Le sous-texte « pesée il y a 2 j » rappelle la fraîcheur de la donnée.
+  Poids/taille s'éditent à la <b>roue</b> (le même geste que partout dans l'app) — essaie.</span>
+
+  <!-- objectifs (placeholder volontaire) -->
+  <div class="sechead">Mes objectifs</div>
+  <div class="box solid" style="padding:4px 12px">
+    <div class="prow" onclick="toast('Réservé — le parcours Objectifs (déjà spécifié côté Nutrition) se branchera ici')"><span class="lab">Objectif actuel</span><span class="val">Maintien<small>2 400 + activité · 180 g protéines</small></span><span class="ch">›</span></div>
+  </div>
+  <span class="note">→ <b>Volontairement pas codé ici</b> (consigne) : la ligne affiche le plan actuel et pointera vers
+  le hub « Mes objectifs » + wizard déjà architecturés dans le blueprint Nutrition. Une seule logique d'objectifs
+  dans l'app, deux portes d'entrée (Nutrition et Profil).</span>
+
+  <!-- bracelet -->
+  <div class="sechead">Mon bracelet</div>
+  <div class="box solid" style="padding:4px 12px">
+    <div class="prow" onclick="go('device')"><span class="lab">FLINT One</span><span class="val">Connecté ✓<small>batterie 68 % · à jour</small></span><span class="ch">›</span></div>
+  </div>
+
+  <!-- préférences -->
+  <div class="sechead">Préférences</div>
+  <div class="box solid" style="padding:4px 12px">
+    <div class="prow" onclick="go('notifs')"><span class="lab">Notifications</span><span class="val">4 actives</span><span class="ch">›</span></div>
+    <div class="prow" onclick="event.stopPropagation()"><span class="lab">Unités</span><span class="val" id="runit">kg · cm</span><span class="sw on" style="margin-left:10px" onclick="toggleUnits(this)"><i></i></span></div>
+    <div class="prow" onclick="toast('Français / English — toute l\'app bascule')"><span class="lab">Langue</span><span class="val">Français</span><span class="ch">›</span></div>
+    <div class="prow" onclick="event.stopPropagation()"><span class="lab">Thème sombre</span><span class="sw" onclick="sw(this);toast('Thème appliqué immédiatement, pas de redémarrage')"><i></i></span></div>
+  </div>
+  <span class="note">→ Les préférences qui changent l'expérience quotidienne, directement actionnables
+  (interrupteurs qui marchent, essaie). Unités = un interrupteur kg·cm ↔ lb·ft, pas un sous-menu.</span>
+
+  <!-- données -->
+  <div class="sechead">Données &amp; confidentialité</div>
+  <div class="box solid" style="padding:4px 12px">
+    <div class="prow" onclick="go('data')"><span class="lab">Intégrations</span><span class="val">Apple Santé ✓<small>Strava, Garmin…</small></span><span class="ch">›</span></div>
+    <div class="prow" onclick="toast('Export JSON/CSV envoyé par email sous 24 h — tes données t\'appartiennent')"><span class="lab">Exporter mes données</span><span class="ch">›</span></div>
+  </div>
+
+  <!-- accès -->
+  <div class="sechead">Mon accès</div>
+  <div class="box solid" style="padding:4px 12px">
+    <div class="prow" onclick="go('access')"><span class="lab">FLINT À VIE</span><span class="val">Payé une fois ✓<small>aucun abonnement</small></span><span class="ch">›</span></div>
+  </div>
+  <span class="note">→ La section « abonnements »… qui dit qu'il n'y en a <b>aucun</b>. Elle existe pour rassurer
+  (facture, restauration d'achat) ET pour enfoncer le positionnement anti-Whoop : « rien à résilier, jamais ».</span>
+
+  <!-- compte -->
+  <div class="sechead">Compte &amp; sécurité</div>
+  <div class="box solid" style="padding:4px 12px">
+    <div class="prow" onclick="go('account')"><span class="lab">Email, mot de passe, connexions</span><span class="ch">›</span></div>
+    <div class="prow" onclick="toast('Déconnecté — les données restent sur le compte')"><span class="lab">Se déconnecter</span><span class="ch">›</span></div>
+  </div>
+
+  <!-- support -->
+  <div class="sechead">Support</div>
+  <div class="box solid" style="padding:4px 12px">
+    <div class="prow" onclick="toast('FAQ + chat support')"><span class="lab">Aide &amp; contact</span><span class="ch">›</span></div>
+    <div class="prow" onclick="toast('Ouvre l\'App Store')"><span class="lab">Noter FLINT</span><span class="ch">›</span></div>
+    <div class="prow" style="cursor:default"><span class="lab" style="color:#999;font-weight:400">Version</span><span class="val">1.0 (build 274)</span></div>
+  </div>
+
+  <div style="margin-top:14px"><span class="btn danger" style="width:100%;justify-content:center" onclick="go('delete')">Supprimer mon compte</span></div>
+  <span class="note" style="text-align:center">→ En bas, isolé, rouge — jamais à côté d'une action courante.</span>
+</section>
+
+<!-- ════════ 2. ÉDITER LE POIDS (roue) ════════ -->
+<section class="scr" id="edW">
+  <div class="bar"><span class="btn" onclick="go('profil')">‹</span><span class="t">Ton poids</span><span></span></div>
+  <div style="font-size:20px;font-weight:800;margin:16px 2px 14px;text-align:center">Nouvelle pesée ?</div>
+  <div class="pick"><div class="wheel" id="pw"></div><div class="sel"></div></div>
+  <div style="text-align:center;font-size:12px;color:#666;margin-top:6px">kg</div>
+  <span class="note" style="text-align:center">→ La même roue que partout (heure, objectifs). Modifier le poids ici
+  <b>propage partout</b> : besoin du jour, protéines g/kg, trajectoire d'objectif — et on te le dit à la validation.
+  En vrai : la balance connectée remplira ça toute seule.</span>
+  <div style="text-align:center;margin-top:14px"><span class="btn pri" onclick="saveW()">Enregistrer</span></div>
+</section>
+
+<!-- ════════ 3. ÉDITER LA TAILLE (roue) ════════ -->
+<section class="scr" id="edH">
+  <div class="bar"><span class="btn" onclick="go('profil')">‹</span><span class="t">Ta taille</span><span></span></div>
+  <div style="font-size:20px;font-weight:800;margin:16px 2px 14px;text-align:center">Tu mesures combien ?</div>
+  <div class="pick"><div class="wheel" id="ph2"></div><div class="sel"></div></div>
+  <div style="text-align:center;font-size:12px;color:#666;margin-top:6px">cm</div>
+  <div style="text-align:center;margin-top:14px"><span class="btn pri" onclick="saveH()">Enregistrer</span></div>
+</section>
+
+<!-- ════════ 4. MON BRACELET ════════ -->
+<section class="scr" id="device">
+  <div class="bar"><span class="btn" onclick="go('profil')">‹</span><span class="t">FLINT One</span><span class="chip">Connecté ✓</span></div>
+  <div class="box solid">
+    <div class="k">Batterie</div>
+    <div class="row"><div class="batt"><i></i></div><b style="font-size:14px">68 %</b></div>
+    <div style="font-size:11px;color:#666;margin-top:6px">~2 jours restants · dernière synchro il y a 4 min</div>
+  </div>
+  <div class="box solid" style="padding:4px 12px">
+    <div class="prow" style="cursor:default"><span class="lab">Firmware</span><span class="val">1.4.2 · à jour ✓</span></div>
+    <div class="prow" onclick="toast('Le bracelet vibre pendant 10 s 📳')"><span class="lab">Faire vibrer (le retrouver)</span><span class="ch">›</span></div>
+    <div class="prow" onclick="toast('Réétalonnage capteurs — 2 min, bracelet au poignet')"><span class="lab">Réétalonner les capteurs</span><span class="ch">›</span></div>
+    <div class="prow" onclick="toast('Guide : bien porter son bracelet (serrage, position)')"><span class="lab">Bien le porter</span><span class="ch">›</span></div>
+    <div class="prow" onclick="toast('Dissocier ce bracelet — les données restent sur ton compte')"><span class="lab" style="color:#B00">Dissocier</span><span class="ch">›</span></div>
+  </div>
+  <span class="note">→ Le standard Whoop (batterie, firmware, étalonnage) + <b>« faire vibrer »</b> (le cas « où est mon
+  bracelet ? » arrive chaque semaine). « Dissocier » précise que <b>les données restent</b> — la peur n°1 au moment
+  de changer de bracelet.</span>
+</section>
+
+<!-- ════════ 5. NOTIFICATIONS ════════ -->
+<section class="scr" id="notifs">
+  <div class="bar"><span class="btn" onclick="go('profil')">‹</span><span class="t">Notifications</span><span></span></div>
+  <div class="box solid" style="padding:4px 12px">
+    <div class="prow" style="cursor:default"><span class="lab">Récap matinal<small style="display:block;font-weight:400;color:#999;font-size:10px">sommeil + récup au réveil</small></span><span class="sw on" onclick="sw(this)"><i></i></span></div>
+    <div class="prow" style="cursor:default"><span class="lab">Fenêtre de récup<small style="display:block;font-weight:400;color:#999;font-size:10px">protéines après la séance</small></span><span class="sw on" onclick="sw(this)"><i></i></span></div>
+    <div class="prow" style="cursor:default"><span class="lab">Analyse repas prête<small style="display:block;font-weight:400;color:#999;font-size:10px">quand le scan IA est terminé</small></span><span class="sw on" onclick="sw(this)"><i></i></span></div>
+    <div class="prow" style="cursor:default"><span class="lab">Dérive du besoin<small style="display:block;font-weight:400;color:#999;font-size:10px">si tu finis trop bas un jour de séance</small></span><span class="sw on" onclick="sw(this)"><i></i></span></div>
+    <div class="prow" style="cursor:default"><span class="lab">Batterie faible bracelet</span><span class="sw" onclick="sw(this)"><i></i></span></div>
+    <div class="prow" style="cursor:default"><span class="lab">Nouveautés produit</span><span class="sw" onclick="sw(this)"><i></i></span></div>
+  </div>
+  <span class="note">→ Granulaire et <b>nommé par la valeur</b> (« Fenêtre de récup », pas « notifications push 2 »).
+  Chaque interrupteur marche (essaie). Défauts : l'utile ON, le marketing OFF — la confiance avant la rétention.</span>
+</section>
+
+<!-- ════════ 6. INTÉGRATIONS & DONNÉES ════════ -->
+<section class="scr" id="data">
+  <div class="bar"><span class="btn" onclick="go('profil')">‹</span><span class="t">Données &amp; intégrations</span><span></span></div>
+  <div class="box solid" style="padding:4px 12px">
+    <div class="prow" style="cursor:default"><span class="lab">Apple Santé</span><span class="val">Connecté ✓</span><span class="sw on" onclick="sw(this)"><i></i></span></div>
+    <div class="prow" style="cursor:default"><span class="lab">Strava</span><span class="val">—</span><span class="sw" onclick="sw(this);toast('Connexion Strava (OAuth)')"><i></i></span></div>
+    <div class="prow" style="cursor:default"><span class="lab">Garmin</span><span class="val">—</span><span class="sw" onclick="sw(this);toast('Connexion Garmin (OAuth)')"><i></i></span></div>
+  </div>
+  <hr>
+  <div class="box solid" style="padding:4px 12px">
+    <div class="prow" onclick="toast('Export JSON/CSV par email sous 24 h')"><span class="lab">Exporter toutes mes données</span><span class="ch">›</span></div>
+    <div class="prow" onclick="toast('Politique de confidentialité')"><span class="lab">Confidentialité</span><span class="ch">›</span></div>
+  </div>
+  <span class="note">→ Tes données t'appartiennent : export en 1 tap, intégrations en interrupteurs.
+  Strava = le levier social des sportifs (partage auto des séances), à connecter sans friction.</span>
+</section>
+
+<!-- ════════ 7. MON ACCÈS ════════ -->
+<section class="scr" id="access">
+  <div class="bar"><span class="btn" onclick="go('profil')">‹</span><span class="t">Mon accès</span><span></span></div>
+  <div class="box solid" style="text-align:center;padding:22px 14px">
+    <span class="badge" style="font-size:13px;padding:6px 14px">🔒 FLINT À VIE</span>
+    <div style="font-size:12.5px;color:#666;margin-top:10px">Acheté le 14 mars 2026 · 199 €<br><b style="color:#111">Aucun abonnement. Jamais.</b></div>
+  </div>
+  <div class="box solid" style="padding:4px 12px">
+    <div class="prow" onclick="toast('Facture PDF envoyée par email')"><span class="lab">Télécharger ma facture</span><span class="ch">›</span></div>
+    <div class="prow" onclick="toast('Achat restauré depuis l\'App Store ✓')"><span class="lab">Restaurer mon achat</span><span class="ch">›</span></div>
+    <div class="prow" onclick="toast('Offrir FLINT — page cadeau')"><span class="lab">Offrir FLINT à quelqu'un</span><span class="ch">›</span></div>
+  </div>
+  <span class="note">→ Là où Whoop affiche « prochain prélèvement », FLINT affiche <b>« Aucun abonnement. Jamais. »</b> —
+  l'écran de facturation devient un écran de fierté. « Offrir » : le meilleur vendeur d'un produit à vie, c'est son
+  propriétaire.</span>
+</section>
+
+<!-- ════════ 8. COMPTE & SÉCURITÉ ════════ -->
+<section class="scr" id="account">
+  <div class="bar"><span class="btn" onclick="go('profil')">‹</span><span class="t">Compte &amp; sécurité</span><span></span></div>
+  <div class="k">Email</div>
+  <div class="input" id="remail" contenteditable="true">dino.astori25@gmail.com</div>
+  <div style="text-align:right;margin:-4px 0 10px"><span class="chip" onclick="saveMail()">Enregistrer</span></div>
+  <span class="note" style="margin:-4px 0 10px">→ L'email s'édite SUR PLACE (le champ est éditable, essaie) —
+  pas d'écran dédié pour 1 champ. Changement → email de vérification aux deux adresses.</span>
+  <div class="box solid" style="padding:4px 12px">
+    <div class="prow" onclick="toast('Ancien mot de passe → nouveau ×2')"><span class="lab">Changer le mot de passe</span><span class="ch">›</span></div>
+    <div class="prow" style="cursor:default"><span class="lab">Connexion Apple</span><span class="val">Liée ✓</span></div>
+    <div class="prow" onclick="toast('Code par email pour vérifier les nouveaux appareils')"><span class="lab">Vérification en 2 étapes</span><span class="sw" onclick="event.stopPropagation();sw(this)"><i></i></span></div>
+    <div class="prow" style="cursor:default"><span class="lab">Prénom / Nom</span><span class="val" contenteditable="true">Dino Astori</span></div>
+  </div>
+</section>
+
+<!-- ════════ 9. SUPPRESSION (la seule vraie confirmation) ════════ -->
+<section class="scr" id="delete">
+  <div class="bar"><span class="btn" onclick="go('profil')">‹</span><span class="t">Supprimer mon compte</span><span></span></div>
+  <div class="box solid">
+    <div style="font-size:13px;line-height:1.5">Ça supprimera <b>définitivement</b> : 132 jours de données bracelet,
+    87 séances, ton historique nutrition et ton accès À VIE.<br><br>
+    <b>Alternative :</b> tu peux juste te déconnecter, ou exporter tes données d'abord.</div>
+  </div>
+  <div class="grid2" style="margin-bottom:10px">
+    <span class="btn" onclick="toast('Export lancé — reviens supprimer ensuite')">📦 Exporter d'abord</span>
+    <span class="btn" onclick="go('profil')">Annuler</span>
+  </div>
+  <div class="k">Tape « SUPPRIMER » pour confirmer</div>
+  <div class="input ph" onclick="toast('Saisie clavier — le bouton rouge ne s\'active qu\'avec le mot exact')">SUPPRIMER</div>
+  <span class="btn danger" style="width:100%;justify-content:center" onclick="toast('Compte programmé pour suppression — 30 jours pour changer d\'avis (email de rappel à J-7)')">Supprimer définitivement</span>
+  <span class="note">→ <b>La SEULE confirmation forte de toute l'app</b> — partout ailleurs c'est action immédiate + Annuler,
+  parce que tout est réversible. Ici c'est irréversible, donc : friction assumée (mot à taper), alternative proposée
+  (export, déconnexion), et <b>30 jours de grâce</b> après validation. La cohérence, c'est d'être dur UNIQUEMENT ici.</span>
+</section>
+
+<div class="toast" id="toast"><span id="toastmsg">OK</span><u id="toastact" onclick="toastAct()">OK</u></div>
+</div>
+
+<div class="tools">
+  <b style="align-self:center">PLAN&nbsp;:</b>
+  <a onclick="go('profil')">1 Profil</a><a onclick="openW()">2 Poids</a><a onclick="openH()">3 Taille</a>
+  <a onclick="go('device')">4 Bracelet</a><a onclick="go('notifs')">5 Notifs</a><a onclick="go('data')">6 Données</a>
+  <a onclick="go('access')">7 Accès</a><a onclick="go('account')">8 Compte</a><a onclick="go('delete')">9 Suppression</a>
+</div>
+
+<script>
+function go(id){document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on'));document.getElementById(id).classList.add('on');window.scrollTo(0,0)}
+
+/* toast + undo */
+var _t,UNDO=null;
+function toast(m,undoFn){var t=document.getElementById('toast');document.getElementById('toastmsg').textContent=m;
+ UNDO=undoFn||null;document.getElementById('toastact').textContent=UNDO?'Annuler':'OK';
+ t.classList.add('on');clearTimeout(_t);_t=setTimeout(function(){t.classList.remove('on');UNDO=null},4500)}
+function toastAct(){if(UNDO){UNDO();UNDO=null;document.getElementById('toastmsg').textContent='Annulé ✓';document.getElementById('toastact').textContent='OK';
+ clearTimeout(_t);_t=setTimeout(function(){document.getElementById('toast').classList.remove('on')},1200)}
+ else document.getElementById('toast').classList.remove('on')}
+
+/* interrupteurs */
+function sw(el){el.classList.toggle('on')}
+function toggleUnits(el){sw(el);var u=document.getElementById('runit');
+ var prev=u.textContent;u.textContent=el.classList.contains('on')?'kg · cm':'lb · ft';
+ toast('Unités : '+u.textContent+' — toute l\'app bascule',function(){u.textContent=prev;el.classList.toggle('on')})}
+
+/* roues poids / taille */
+var CUR={w:76,h:183};
+function buildWheels(){
+ function mk(id,arr){var el=document.getElementById(id);
+  el.innerHTML=arr.map(function(v,i){return '<div class="it" data-i="'+i+'">'+v+'</div>'}).join('');
+  el.addEventListener('scroll',function(){clearTimeout(el._s);el._s=setTimeout(function(){hl(el)},80)});
+  el.addEventListener('click',function(e){var it=e.target.closest('.it');if(it)el.scrollTo({top:+it.dataset.i*32,behavior:'smooth'})});}
+ function hl(el){var i=Math.round(el.scrollTop/32);el.querySelectorAll('.it').forEach(function(it,j){it.classList.toggle('on',j===i)})}
+ var kg=[];for(var i=40;i<=150;i++)kg.push(i);mk('pw',kg);
+ var cm=[];for(var j=140;j<=210;j++)cm.push(j);mk('ph2',cm);}
+function setWheel(id,i){var el=document.getElementById(id);el.scrollTop=i*32;
+ el.querySelectorAll('.it').forEach(function(it,j){it.classList.toggle('on',j===i)})}
+function wheelVal(id){return Math.round(document.getElementById(id).scrollTop/32)}
+function openW(){go('edW');setWheel('pw',CUR.w-40)}
+function openH(){go('edH');setWheel('ph2',CUR.h-140)}
+function saveW(){var prev=CUR.w;CUR.w=40+wheelVal('pw');
+ document.getElementById('rw').innerHTML=CUR.w+' kg<small>à l\'instant</small>';go('profil');
+ toast('Poids '+CUR.w+' kg ✓ — besoin du jour, protéines et objectif mis à jour',
+  function(){CUR.w=prev;document.getElementById('rw').innerHTML=prev+' kg<small>pesée il y a 2 j</small>'})}
+function saveH(){var prev=CUR.h;CUR.h=140+wheelVal('ph2');
+ document.getElementById('rh').textContent=CUR.h+' cm';go('profil');
+ toast('Taille '+CUR.h+' cm ✓',function(){CUR.h=prev;document.getElementById('rh').textContent=prev+' cm'})}
+
+/* email inline */
+function saveMail(){var m=document.getElementById('remail').textContent.trim();
+ document.getElementById('remail2').textContent=m;
+ toast('Email de vérification envoyé à '+m)}
+buildWheels();
+</script>
+</body>
+</html>
