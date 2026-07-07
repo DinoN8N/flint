@@ -9362,6 +9362,41 @@ function seedTodayShowcase(){const sleepMin=462,deep=104,rem=118,awake=12,light=
  DB.set('sessions_'+tk(),[{name:'Marche',icon:'🚶',start:'09:15',dur:45,int:1,auto:true},{name:'Padel',icon:'🎾',start:'12:30',dur:75,int:2,auto:true},{type:'nap',name:'Sieste',icon:'😴',start:'15:00',dur:25},{name:'Football',icon:'⚽',start:'18:00',dur:75,int:3,auto:true}]);
  DB.set('meals_'+tk(),[{name:'Petit-déj — flocons & œufs',kcal:520,prot:32,carb:60,fat:16},{name:'Déjeuner — poulet riz',kcal:760,prot:55,carb:80,fat:18},{name:'Collation — skyr & banane',kcal:280,prot:22,carb:38,fat:4},{name:'Snack — amandes',kcal:290,prot:10,carb:10,fat:24}]);
  persistRecov()}
+/* ---- Seed de TEST (demande founder 2026-07-07) : données variées sur 5 semaines pour tester tous les graphiques ---- */
+function flSeedTest(){try{
+ simulateData(true);          /* capteur + séances + journal variés (185 j) + recov 28 j */
+ seedTodayShowcase();         /* aujourd'hui = vitrine stable (PRÊT, padel/foot, 4 repas) */
+ /* séance supplémentaire certains jours (variété Ma journée / zones FC) */
+ var XN=['Natation','Boxe','Yoga','Vélo','Escalade','Rameur'];
+ for(var i=1;i<=34;i++){var k=tk(-i);
+  if((i*7)%10<3){var a=DB.get('sessions_'+k,[])||[];a.push({name:XN[i%XN.length],icon:sportIcon(XN[i%XN.length]),start:(17+(i%3))+':'+(i%2?'00':'30'),dur:35+((i*13)%50),int:1+((i*5)%4),auto:true});DB.set('sessions_'+k,a);}}
+ /* repas multi-plats variés 34 jours (aujourd'hui = vitrine) */
+ var PD=[['Flocons, œufs & fruits',520,32,60,16],['Pain complet & fromage blanc',430,26,55,10],['Pancakes protéinés',480,34,52,14],['Skyr, granola & miel',390,28,50,8]];
+ var DJ=[['Poulet riz légumes',760,55,80,18],['Saumon patate douce',690,42,58,28],['Pâtes bolognaise',820,38,105,22],['Bowl quinoa thon',640,40,66,20],['Steak haricots verts',580,46,32,26]];
+ var DN=[['Omelette & salade',450,30,12,30],['Soupe & pain, jambon',520,28,58,16],['Riz sauté crevettes',610,34,72,18],['Poisson blanc purée',540,38,52,16]];
+ var SN=[['Amandes',290,10,10,24],['Skyr & banane',280,22,38,4],['Barre céréales',210,6,32,7],['Fruit & carré chocolat',190,2,34,6]];
+ function jit(m,p){return Math.max(1,Math.round(m*(0.86+((p*37)%29)/100)));}
+ for(var i2=1;i2<=34;i2++){var k2=tk(-i2),ms=[];
+  function pick(P,sh){var r=P[(i2*3+sh)%P.length];return {name:r[0],kcal:jit(r[1],i2+sh),prot:jit(r[2],i2+sh+1),carb:jit(r[3],i2+sh+2),fat:jit(r[4],i2+sh+3)};}
+  ms.push(pick(PD,0));
+  if((i2*11)%10!==4)ms.push(pick(DJ,1));   /* certains jours sans déjeuner scanné */
+  ms.push(pick(DN,2));
+  if((i2*13)%10<6)ms.push(pick(SN,3));
+  DB.set('meals_'+k2,ms);}
+ /* poids / masse maigre : une mesure tous les 2-3 jours (série à trous = test lignes) */
+ var bl=DB.get('bodylog',{})||{};
+ for(var i3=0;i3<=34;i3++){if((i3*2)%5===3)continue;if(i3%2===1&&(i3*7)%3===0)continue;
+  var w=+(74.2+Math.sin(i3/6.5)*1.1+(((i3*17)%13)-6)*0.06).toFixed(1);
+  var bf=+(15+Math.sin(i3/9)*0.9+(((i3*23)%7)-3)*0.08).toFixed(1);
+  bl[tk(-i3)]={weight:w,bf:bf,lean:+(w*(1-bf/100)).toFixed(1)};}
+ DB.set('bodylog',bl);
+ /* jours SANS bracelet (test des trous partout) */
+ [4,9,16,23,30].forEach(function(o){var kk=tk(-o);DB.set('sensor_'+kk,null);DB.set('recov_'+kk,null);DB.set('sessions_'+kk,[]);});
+ /* récup recalculée sur 35 j */
+ for(var i4=34;i4>=1;i4--){DB.set('recov_'+tk(-i4),null);persistRecovFor(tk(-i4));}
+ [4,9,16,23,30].forEach(function(o){DB.set('recov_'+tk(-o),null);});
+ persistRecov();DB.set('demo',1);
+}catch(e){}}
 function ensureDemo(){if(DB.get('seeded')===11)return;simulateData(true);seedTodayShowcase();
  for(let i=1;i<=13;i++){const k=tk(-i);DB.set('meals_'+k,[{name:'Journée',kcal:Math.round(1950+Math.random()*650),prot:Math.round(120+Math.random()*70),carb:Math.round(180+Math.random()*120),fat:Math.round(55+Math.random()*45)}])}
  DB.set('seeded',11)}
@@ -9412,10 +9447,11 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v489';
+const APP_VERSION='flint-v490';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
+if(DB.get('flseedtest')!==490){flSeedTest();DB.set('flseedtest',490);}
 if(DB.get('demo')&&!sensorOf(tk()))seedTodayShowcase();
 persistRecov();
 renderToday();
