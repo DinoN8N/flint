@@ -6317,7 +6317,7 @@ var el=ev.target;var a=el;for(var d1=0;d1<7&&a;d1++,a=a.parentElement){if(!a.que
   setTile('SOMMEIL',slMin?(Math.floor(slMin/60)+'h'+String(slMin%60).padStart(2,'0')):'—');
   var str=loadStrain(K);setTile('EFFORT',(Math.round(str*10)/10+'').replace('.',','));
   var kc=(typeof caloriesBurned==='function'?caloriesBurned(K):0);setTile('CALORIES',(''+Math.round(kc)).replace(/\B(?=(\d{3})+(?!\d))/g,' '));
-  mdBalance(doc);mdSleep(doc);mdFonts(doc);mdStickyBacks(doc);mdSleepScrub(doc);mdWeekBarsScrub(doc);mdDualScrub(doc);mdCalDualScrub(doc);mdRings(doc);mdHebTrend(doc);
+  mdBalance(doc);mdSleep(doc);mdFonts(doc);mdStickyBacks(doc);mdSleepScrub(doc);mdWeekBarsScrub(doc);mdDualScrub(doc);mdCalDualScrub(doc);mdRings(doc);mdTrioRings(doc);mdHebTrend(doc);
  }catch(e){}
  if(!doc._navWired){doc._navWired=true;try{doc.addEventListener('click',function(ev){var el=ev.target;for(var i=0;i<6&&el;i++,el=el.parentElement){if(el.getAttribute&&el.getAttribute('role')==='button'){var t=(el.textContent||'').trim().toLowerCase();if(t==='coach'){ev.preventDefault();ev.stopPropagation();go('coach');return;}if(t==='profil'){ev.preventDefault();ev.stopPropagation();go('profile');return;}if(t==='nutrition'){setTimeout(function(){try{mdBalance(doc);}catch(e){}},350);setTimeout(function(){try{mdBalance(doc);}catch(e){}},900);return;}if(t==="aujourd'hui"||t==='aujourd’hui'){setTimeout(function(){try{var sn=doc.getElementById('screen-nutrition');if(sn){var r=sn.getBoundingClientRect();var w=doc.defaultView.innerWidth;if(Math.abs(r.left-(w-r.width)/2)<40){var bk=[].slice.call(sn.querySelectorAll('*')).filter(function(x){return x.children.length<3&&/Aujourd/.test((x.textContent||'').trim())&&x.getBoundingClientRect().top<80;})[0];if(bk){var rb2=bk;while(rb2&&rb2.getAttribute&&rb2.getAttribute('role')!=='button'&&rb2.tagName!=='BUTTON')rb2=rb2.parentElement;var tt=rb2||bk;['pointerdown','pointerup','click'].forEach(function(e2){tt.dispatchEvent(new MouseEvent(e2,{bubbles:true,cancelable:true}));});}}}}catch(e){}},0);return;}return;}}},true);}catch(e){}}
 }
@@ -6992,6 +6992,43 @@ function mdRings(doc){try{
    renderAt(score*e2);
    if(p2<1)svg._flRingAnim=requestAnimationFrame(step);else svg._flRingAnim=null;})();
   setTimeout(function(){if(svg._flRingTok===score)renderAt(score);},DUR+140); /* filet : état final garanti même si rAF est gelé */
+ });
+}catch(e){}}
+/* ===== Petits anneaux du trio (SOMMEIL/EFFORT/CALORIES) : proportionnels aux vraies valeurs + remplissage animé =====
+   Cadran maquette : viewBox 132, centre (66,66), r 53, départ 110°, balayage 320° (ouverture en bas), linecap round */
+function mdTrioRings(doc){try{
+ var acc=doc.getElementById('screen-accueil');if(!acc)return;
+ var K=tk(flDayOff),sx=sensorOf(K);
+ var need=((getProfile().need||8)*60);
+ var FR={
+  'SOMMEIL':(sx&&sx.sleepMin)?Math.min(1,sx.sleepMin/need):0,
+  'EFFORT':Math.min(1,(loadStrain(K)||0)/21),
+  'CALORIES':Math.min(1,((typeof caloriesBurned==='function'?caloriesBurned(K):0)||0)/2600)
+ };
+ Object.keys(FR).forEach(function(lab){
+  var L=acc.querySelectorAll('span,div'),lf=null;
+  for(var i=0;i<L.length;i++){if(L[i].children.length===0&&(L[i].textContent||'').trim()===lab){lf=L[i];break;}}
+  if(!lf)return;
+  var OTH=['SOMMEIL','EFFORT','CALORIES'].filter(function(o){return o!==lab;});
+  var tile=null,anc=lf.parentElement;
+  for(var j=0;j<6&&anc;j++,anc=anc.parentElement){var txt=anc.textContent||'';
+   if(OTH.some(function(o){return txt.indexOf(o)>=0;}))break;tile=anc;}
+  var svg=tile&&tile.querySelector('svg[viewBox="0 0 132 132"]');if(!svg)return;
+  var val=[].slice.call(svg.querySelectorAll('path')).filter(function(p){return /url\(/.test(p.getAttribute('stroke')||'');})[0];
+  if(!val)return;
+  var f=Math.max(0.02,FR[lab]);
+  var key=lab+':'+Math.round(f*1000)+':'+K;
+  if(svg.getAttribute('data-fl-tri')===key)return;svg.setAttribute('data-fl-tri',key);
+  function renderAt(f2){f2=Math.max(0.02,f2);
+   var A=110*Math.PI/180,SW=(320*Math.PI/180)*f2,th=A+SW;
+   var x=66+53*Math.cos(th),y=66+53*Math.sin(th),large=SW>Math.PI?1:0;
+   val.setAttribute('d','M 47.9 115.8 A 53 53 0 '+large+' 1 '+x.toFixed(1)+' '+y.toFixed(1));}
+  if(svg._flTriAnim)cancelAnimationFrame(svg._flTriAnim);
+  var t0=performance.now(),DUR=700;svg._flTriTok=key;
+  (function step(){var p2=Math.min(1,(performance.now()-t0)/DUR),e2=1-Math.pow(1-p2,3);
+   renderAt(f*e2);
+   if(p2<1)svg._flTriAnim=requestAnimationFrame(step);else svg._flTriAnim=null;})();
+  setTimeout(function(){if(svg._flTriTok===key)renderAt(f);},DUR+140);
  });
 }catch(e){}}
 function mdStickyBacks(doc){try{
@@ -9481,7 +9518,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v492';
+const APP_VERSION='flint-v493';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
