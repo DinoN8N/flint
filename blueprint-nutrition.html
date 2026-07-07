@@ -414,12 +414,89 @@ hr{border:0;border-top:1.5px dashed #bbb;margin:12px 0}
   le calcul et où on a une raison de le changer. Pas en réponse au tap principal.</span>
 </section>
 
-<!-- ════════ 9. OBJECTIFS ════════ -->
+<!-- ════════ 9. MES OBJECTIFS (hub) ════════ -->
 <section class="scr" id="goals">
-  <div class="bar"><span class="btn" onclick="go('home')">‹</span><span class="t">Objectifs</span><span></span></div>
-  <div class="tabs"><span class="chip">Sèche</span><span class="chip on">Maintien</span><span class="chip">Prise de masse</span></div>
-  <div class="box solid"><div class="k">Budget calorique</div><div class="big" style="font-size:20px">2 400 + activité</div></div>
-  <div class="box"><div class="k">Répartition macros</div><div style="font-size:12px">P 2 g/kg · G 45 % · L 25 % (curseurs)</div></div>
+  <div class="bar"><span class="btn" onclick="go('home')">‹</span><span class="t">Mes objectifs</span><span></span></div>
+  <div class="box solid">
+    <div class="k">Plan actuel</div>
+    <div class="row" style="font-size:13px;padding:5px 0"><span>But</span><span class="sp"></span><b id="gh1">Maintien</b></div>
+    <div class="row" style="font-size:13px;padding:5px 0;border-top:1.5px dashed #ddd"><span>Poids</span><span class="sp"></span><b id="gh2">76 kg</b></div>
+    <div class="row" style="font-size:13px;padding:5px 0;border-top:1.5px dashed #ddd"><span>Budget</span><span class="sp"></span><b id="gh3">2 400 + activité</b></div>
+    <div class="row" style="font-size:13px;padding:5px 0;border-top:1.5px dashed #ddd"><span>Protéines</span><span class="sp"></span><b id="gh4">180 g / j</b></div>
+  </div>
+  <span class="note">→ Le plan en cours, lisible en 3 secondes. Chaque ligne est tappable pour un ajustement direct
+  (mettre à jour juste le poids après une pesée, sans refaire le parcours).</span>
+  <span class="btn pri" style="width:100%;justify-content:center" onclick="go('gw1')">Revoir mes objectifs →</span>
+  <span class="note" style="text-align:center">→ Lance le parcours immersif : une question par écran, plein écran,
+  zéro formulaire. <b>Essaie-le, tout est câblé</b> (les calculs se font vraiment).</span>
+</section>
+
+<!-- ════════ 9a. WIZARD — étape 1 : le but ════════ -->
+<section class="scr" id="gw1">
+  <div class="bar"><span class="btn" onclick="go('goals')">‹</span><span class="t">Ton objectif</span><span style="font-size:11px;color:#888">● ○ ○ ○</span></div>
+  <div style="font-size:20px;font-weight:800;margin:16px 2px 14px">Qu'est-ce qu'on<br>construit ?</div>
+  <div class="qw" style="margin-bottom:8px;padding:18px" onclick="gwGoal('Sèche')">🔥 Sèche<small>perdre du gras, garder le muscle</small></div>
+  <div class="qw" style="margin-bottom:8px;padding:18px" onclick="gwGoal('Maintien')">⚖️ Maintien<small>performer à poids stable</small></div>
+  <div class="qw" style="padding:18px" onclick="gwGoal('Prise de masse')">💪 Prise de masse<small>construire du muscle</small></div>
+  <span class="note">→ Une question par écran, de grandes cartes, on avance au tap — pas de bouton « Suivant » quand le choix
+  EST la réponse. Maintien saute directement les étapes poids cible / rythme.</span>
+</section>
+
+<!-- ════════ 9b. étape 2 : poids actuel ════════ -->
+<section class="scr" id="gw2">
+  <div class="bar"><span class="btn" onclick="go('gw1')">‹</span><span class="t">Ton poids actuel</span><span style="font-size:11px;color:#888">● ● ○ ○</span></div>
+  <div style="font-size:20px;font-weight:800;margin:16px 2px 14px">Tu pèses combien<br>aujourd'hui ?</div>
+  <div class="pick" style="max-width:180px;margin:0 auto">
+    <div class="wheel" id="gww"></div>
+    <div class="sel"></div>
+  </div>
+  <div style="text-align:center;font-size:12px;color:#666;margin-top:6px">kg</div>
+  <span class="note" style="text-align:center">→ La même roue que pour l'heure — un seul geste à apprendre dans toute l'app.
+  Pré-remplie avec la dernière pesée connue.</span>
+  <div style="text-align:center;margin-top:14px"><span class="btn pri" onclick="gwW()">Continuer</span></div>
+</section>
+
+<!-- ════════ 9c. étape 3 : poids cible ════════ -->
+<section class="scr" id="gw3">
+  <div class="bar"><span class="btn" onclick="go('gw2')">‹</span><span class="t">Ton poids cible</span><span style="font-size:11px;color:#888">● ● ● ○</span></div>
+  <div style="font-size:20px;font-weight:800;margin:16px 2px 14px">Et tu veux arriver<br>à combien ?</div>
+  <div class="pick" style="max-width:180px;margin:0 auto">
+    <div class="wheel" id="gwt"></div>
+    <div class="sel"></div>
+  </div>
+  <div style="text-align:center;font-size:12px;color:#666;margin-top:6px">kg</div>
+  <div style="text-align:center;margin-top:14px"><span class="btn pri" onclick="gwT()">Continuer</span></div>
+</section>
+
+<!-- ════════ 9d. étape 4 : le rythme ════════ -->
+<section class="scr" id="gw4">
+  <div class="bar"><span class="btn" onclick="go('gw3')">‹</span><span class="t">Le rythme</span><span style="font-size:11px;color:#888">● ● ● ●</span></div>
+  <div style="font-size:20px;font-weight:800;margin:16px 2px 4px">On y va comment ?</div>
+  <div style="font-size:13px;color:#666;margin:0 2px 14px" id="gwd">−6 kg à faire</div>
+  <div class="qw" style="margin-bottom:8px;padding:16px" onclick="gwRate(0.25)">🌱 Doux — 0,25 kg / sem<small id="r1">~24 semaines</small></div>
+  <div class="qw" style="margin-bottom:8px;padding:16px" onclick="gwRate(0.5)">🎯 Standard — 0,5 kg / sem<small id="r2">~12 semaines</small></div>
+  <div class="qw" style="padding:16px" onclick="gwRate(0.75)">⚡ Agressif — 0,75 kg / sem<small id="r3">~8 semaines</small></div>
+  <span class="note">→ Le rythme est traduit en <b>durée réelle</b> calculée depuis TON delta — pas des % abstraits.
+  Garde-fou sur Agressif : « dur à tenir, et ta récup va le sentir — FLINT le verra dans ton HRV ».
+  C'est le croisement bracelet × nutrition, encore.</span>
+</section>
+
+<!-- ════════ 9e. étape 5 : le plan ════════ -->
+<section class="scr" id="gw5">
+  <div class="bar"><span class="btn" onclick="go('gw1')">‹</span><span class="t">Ton plan</span><span style="font-size:11px;color:#888">✓</span></div>
+  <div style="font-size:20px;font-weight:800;margin:16px 2px 14px">Voilà ton plan.</div>
+  <div class="box solid">
+    <div class="row" style="font-size:13px;padding:5px 0"><span>But</span><span class="sp"></span><b id="gpGoal">Sèche</b></div>
+    <div class="row" style="font-size:13px;padding:5px 0;border-top:1.5px dashed #ddd"><span>Trajet</span><span class="sp"></span><b id="gpDelta">−6 kg en ~12 sem</b></div>
+    <div class="row" style="font-size:13px;padding:5px 0;border-top:1.5px dashed #ddd"><span>Arrivée estimée</span><span class="sp"></span><b id="gpDate">—</b></div>
+    <div class="row" style="font-size:13px;padding:5px 0;border-top:1.5px solid #111"><span>Budget quotidien</span><span class="sp"></span><b id="gpBudget">1 850 + activité</b></div>
+    <div class="row" style="font-size:13px;padding:5px 0;border-top:1.5px dashed #ddd"><span>Protéines</span><span class="sp"></span><b id="gpProt">167 g / j</b></div>
+  </div>
+  <span class="note">→ Le plan est <b>calculé, montré, expliqué</b> — pas une boîte noire. Le « + activité » reste :
+  le budget continue de suivre le bracelet chaque jour. Les jours de grosse séance, tu manges plus, même en sèche.</span>
+  <span class="btn pri" style="width:100%;justify-content:center" onclick="gwApply()">Valider mon plan</span>
+  <span class="note" style="text-align:center">→ Valider met à jour le hub Objectifs, le budget du jour ET la carte Protéines.
+  Un seul plan, une seule vérité partout.</span>
 </section>
 
 <div class="toast" id="toast"><span id="toastmsg">Ajouté ✓</span><u id="toastact" onclick="toastAct()">OK</u></div>
@@ -457,7 +534,9 @@ function buildWheels(){
   el.innerHTML=arr.map(function(v,i){return '<div class="it" data-i="'+i+'">'+v+'</div>'}).join('');
   el.addEventListener('scroll',function(){clearTimeout(el._s);el._s=setTimeout(function(){hlWheel(el)},80)});
   el.addEventListener('click',function(e){var it=e.target.closest('.it');if(it)el.scrollTo({top:+it.dataset.i*32,behavior:'smooth'})});}
- mk('wd',DAYS);mk('wwh',range(24));mk('wwm',range(60));}
+ mk('wd',DAYS);mk('wwh',range(24));mk('wwm',range(60));
+ var kg=[];for(var i=50;i<=120;i++)kg.push(i);
+ mk('gww',kg);mk('gwt',kg);}
 function hlWheel(el){var i=Math.round(el.scrollTop/32);el.querySelectorAll('.it').forEach(function(it,j){it.classList.toggle('on',j===i)})}
 function setWheel(id,i){var el=document.getElementById(id);el.scrollTop=i*32;hlWheel(el)}
 function wheelVal(id){return Math.round(document.getElementById(id).scrollTop/32)}
@@ -521,6 +600,47 @@ function dupCtx(){if(!CTX)return;var name=CTX.querySelector('.nm').textContent,k
  closeCtx();W={label:'Maintenant (19:32)',min:1172};addMeal(name,String(k),'✓')}
 function retimeCtx(){if(!CTX)return;RETIME=CTX;closeCtx();whenBack='home';
  go('when');setWheel('wd',0);setWheel('wwh',Math.floor(+CTX.dataset.min/60));setWheel('wwm',+CTX.dataset.min%60)}
+
+/* ── wizard objectifs ── */
+var G={goal:'Maintien',w:76,t:70,rate:0.5};
+function nfmt(n){return String(n).replace(/\B(?=(\d{3})+(?!\d))/g,' ')}
+function gwGoal(g){G.goal=g;go('gw2');setWheel('gww',G.w-50)}
+function gwW(){G.w=50+wheelVal('gww');
+ if(G.goal==='Maintien'){gw5fill();go('gw5');return}
+ var def=G.goal==='Sèche'?Math.max(50,G.w-6):Math.min(120,G.w+4);
+ go('gw3');setWheel('gwt',def-50)}
+function gwT(){G.t=50+wheelVal('gwt');
+ if(G.t===G.w){toast('Même poids = maintien — choisis Maintien à l\'étape 1, ou change la cible');return}
+ gw4fill();go('gw4')}
+function gw4fill(){var d=Math.abs(G.t-G.w);
+ document.getElementById('gwd').textContent=(G.t<G.w?'−':'+')+d+' kg à faire';
+ [['r1',0.25],['r2',0.5],['r3',0.75]].forEach(function(x){
+  document.getElementById(x[0]).textContent='~'+Math.ceil(d/x[1])+' semaines'})}
+function gwRate(r){G.rate=r;gw5fill();go('gw5')}
+function gw5fill(){
+ var base=2400,prot=Math.round(2*G.w),delta='—',date='—';
+ if(G.goal!=='Maintien'){
+  var d=Math.abs(G.t-G.w),wk=Math.ceil(d/G.rate);
+  var daily=Math.round(G.rate*7700/7/10)*10;
+  base=G.goal==='Sèche'?2400-daily:2400+daily;
+  prot=Math.round((G.goal==='Sèche'?2.2:2)*G.w);
+  delta=(G.t<G.w?'−':'+')+d+' kg en ~'+wk+' sem';
+  var end=new Date(Date.now()+wk*7*864e5);
+  var mois=['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
+  date='vers le '+end.getDate()+' '+mois[end.getMonth()];
+ }
+ G.base=base;G.prot=prot;
+ document.getElementById('gpGoal').textContent=G.goal;
+ document.getElementById('gpDelta').textContent=delta;
+ document.getElementById('gpDate').textContent=date;
+ document.getElementById('gpBudget').textContent=nfmt(base)+' + activité';
+ document.getElementById('gpProt').textContent=prot+' g / j'}
+function gwApply(){
+ document.getElementById('gh1').textContent=G.goal;
+ document.getElementById('gh2').textContent=G.w+' kg';
+ document.getElementById('gh3').textContent=nfmt(G.base)+' + activité';
+ document.getElementById('gh4').textContent=G.prot+' g / j';
+ go('goals');toast('Plan enregistré ✓ — budget du jour et carte Protéines mis à jour')}
 buildWheels();
 </script>
 </body>
