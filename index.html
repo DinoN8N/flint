@@ -6788,32 +6788,30 @@ function flhRender(cl,st){try{
  st.n=n;st.pts=flhSeries(st.key,st.end,n);
  var vals=st.pts.filter(function(p){return p.v!=null;}).map(function(p){return p.v;});
  var avg=vals.length?vals.reduce(function(a,b){return a+b;},0)/vals.length:null;
- function q(t){return cl.querySelector('[data-dc-tpl="'+t+'"]');}
- var h1=q('1237');if(h1&&h1.childNodes[0])h1.childNodes[0].nodeValue=cfg.title;
- var lb=q('1241');if(lb)lb.textContent=cfg.heroLab||'MOYENNE';
- var vv=q('1243');if(vv)vv.textContent=avg==null?'—':cfg.fmt(avg);
- var un=q('1244');if(un)un.textContent=cfg.unit;
+ function q(c){return cl.querySelector('.'+c);}
+ var t=q('flh-t');if(t)t.textContent=cfg.title;
+ var lb=q('flh-herolab');if(lb)lb.textContent=cfg.heroLab||'MOYENNE';
+ var vv=q('flh-heroval');if(vv)vv.textContent=avg==null?'—':cfg.fmt(avg);
+ var un=q('flh-herounit');if(un)un.textContent=cfg.unit;
  st.labEl=lb;st.valEl=vv;
- var tri=q('1245'),tnd=q('1266'),dir=flhTrendDir(vals);
+ var tri=q('flh-tri'),tnd=q('flh-tend'),dir=flhTrendDir(vals);
  if(tri){tri.style.borderTop=dir<0?'9px solid rgb(251, 96, 21)':'none';tri.style.borderBottom=dir>0?'9px solid rgb(251, 96, 21)':'none';tri.style.opacity=dir===0?'0':'1';}
  if(tnd)tnd.textContent=dir>0?'Tendance en hausse':(dir<0?'Tendance en baisse':'Tendance stable');
- var sp=q('1252');
+ var sp=q('flh-spark');
  if(sp){var sv=st.pts.filter(function(p){return p.v!=null;});
-  if(sv.length>1){var smn=Math.min.apply(null,sv.map(function(p){return p.v;})),smx=Math.max.apply(null,sv.map(function(p){return p.v;}));if(smn===smx){smn-=1;smx+=1;}
-   var pth=sv.map(function(p,j){var px=2+136*j/(sv.length-1),py=28-((p.v-smn)/(smx-smn))*22;return (j?'L':'M')+px.toFixed(1)+' '+py.toFixed(1);}).join(' ');
+  if(sv.length>1){var pth=flhSparkD(sv.map(function(p){return p.v;}),34);
    sp.innerHTML='<path d="'+pth+'" stroke="#fb6015" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"></path>';}
   else sp.innerHTML='';}
  var d1=flhDate(st.end-n+1),d2=flhDate(st.end);
- var per=q('1272');if(per)per.textContent=d1.getDate()+' '+FLH_MOIS[d1.getMonth()]+' – '+d2.getDate()+' '+FLH_MOIS[d2.getMonth()]+' '+d2.getFullYear();
- var chl=q('1280');if(chl)chl.textContent=cfg.lab;
- var leg=q('1281');if(leg){var lgt=leg.childNodes[leg.childNodes.length-1];if(lgt&&lgt.nodeType===3)lgt.nodeValue='Moyenne '+(avg==null?'—':cfg.fmt(avg)+(cfg.pct?'%':''));else leg.appendChild(doc.createTextNode('Moyenne '+(avg==null?'—':cfg.fmt(avg)+(cfg.pct?'%':''))));}
- var sTab=q('1249'),mTab=q('1250');
+ var per=q('flh-per');if(per)per.textContent=d1.getDate()+' '+FLH_MOIS[d1.getMonth()]+' – '+d2.getDate()+' '+FLH_MOIS[d2.getMonth()]+' '+d2.getFullYear();
+ var chl=q('flh-chartlab');if(chl)chl.textContent=cfg.lab;
+ var leg=q('flh-legtxt');if(leg)leg.textContent='Moyenne '+(avg==null?'—':cfg.fmt(avg)+(cfg.pct?'%':''));
+ var sTab=q('flh-tabs'),mTab=q('flh-tabm');
  function tabStyle(el,on){if(!el)return;el.style.fontWeight=on?'600':'500';el.style.color=on?'rgb(20, 17, 15)':'rgb(162, 160, 156)';el.style.background=on?'rgb(255, 255, 255)':'none';el.style.borderRadius=on?'9px':'0';el.style.boxShadow=on?'rgba(20, 17, 15, 0.08) 0px 1px 3px':'none';}
  tabStyle(sTab,st.mode==='S');tabStyle(mTab,st.mode==='M');
- var nx=q('1275');if(nx)nx.style.opacity=st.end>=window.flDayOff?'.3':'1';
+ var nx=q('flh-next');if(nx)nx.style.opacity=st.end>=window.flDayOff?'.3':'1';
  var old=cl.querySelector('svg[viewBox="0 0 600 372"]');if(!old)return;
- var gid='flhg-'+st.key;
- var out=flhChart(cfg,st.pts,n,gid);
+ var out=flhChart(cfg,st.pts,n,'flhg-'+st.key);
  var wrap=doc.createElement('div');
  wrap.innerHTML='<svg viewBox="0 0 600 372" width="100%" style="display:block;overflow:visible;touch-action:none;cursor:crosshair;user-select:none;-webkit-user-select:none">'+out.html+'</svg>';
  var nsvg=wrap.firstChild;
@@ -6821,17 +6819,52 @@ function flhRender(cl,st){try{
  old.parentNode.replaceChild(nsvg,old);
  flhScrub(nsvg,st);
 }catch(e){}}
+/* markup auto-généré, copie pixel-exacte du template screen-sommeil-hebdo de la maquette —
+   AUCUNE dépendance au DOM maquette (les data-dc-tpl changent d'une version à l'autre : piège v488 device) */
+function flhMarkup(){
+ var card='background: rgb(255, 255, 255); border-radius: 24px; box-shadow: rgba(150, 118, 72, 0.06) 0px 3px 16px, rgba(20, 17, 15, 0.04) 0px 0px 0px 1px inset;';
+ var chev28='width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; color: rgb(20, 17, 15); flex-shrink: 0; background: none; border: none; cursor: pointer;';
+ return ''+
+ '<div style="min-height: 100%; padding: max(20px, calc(env(safe-area-inset-top, 0px) + 12px)) 22px calc(env(safe-area-inset-bottom, 0px) + 120px);">'+
+  '<button class="flh-back" data-fl-back="1" aria-label="Retour" style="width: 44px; height: 44px; border-radius: 50%; background: rgb(255, 255, 255); border: none; box-shadow: rgba(20, 17, 15, 0.06) 0px 1px 2px, rgba(20, 17, 15, 0.05) 0px 8px 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0px; margin-bottom: 16px;">'+
+   '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fb6015" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></button>'+
+  '<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin: 0px 4px 22px;">'+
+   '<h1 style="font-size: 34px; font-weight: 800; line-height: 1.02; letter-spacing: -0.03em; margin: 0px; color: rgb(20, 17, 15);"><span class="flh-t"></span><span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: rgb(251, 96, 21); margin-left: 4px; vertical-align: baseline;"></span></h1></div>'+
+  '<div style="'+card+' padding: 22px; display: flex; align-items: stretch; gap: 18px;">'+
+   '<div style="flex: 1 1 0%;">'+
+    '<div class="flh-herolab" style="font-family: -apple-system, system-ui, sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.13em; color: rgb(162, 160, 156); white-space: nowrap;">MOYENNE</div>'+
+    '<div style="display: flex; align-items: flex-start; gap: 4px; margin-top: 6px;">'+
+     '<span class="flh-heroval" style="font-family: Archivo, -apple-system, system-ui, sans-serif; font-size: 52px; font-weight: 800; letter-spacing: -0.04em; line-height: 0.9; color: rgb(20, 17, 15);"></span>'+
+     '<span class="flh-herounit" style="font-family: Archivo, -apple-system, system-ui, sans-serif; font-size: 22px; font-weight: 700; color: rgb(20, 17, 15); margin-top: 4px;"></span>'+
+     '<span class="flh-tri" style="display: inline-block; margin-top: 12px; margin-left: 2px; width: 0px; height: 0px; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 9px solid rgb(251, 96, 21); opacity: 1;"></span></div></div>'+
+   '<div style="width: 1px; background: rgb(236, 231, 223);"></div>'+
+   '<div style="flex: 1 1 0%; display: flex; flex-direction: column;">'+
+    '<div style="display: flex; background: rgb(241, 241, 242); border-radius: 11px; padding: 2px;">'+
+     '<span class="flh-tabs" style="flex: 1 1 0%; text-align: center; font-family: -apple-system, system-ui, sans-serif; font-size: 13px; font-weight: 600; color: rgb(20, 17, 15); background: rgb(255, 255, 255); border-radius: 9px; padding: 6px 0px; box-shadow: rgba(20, 17, 15, 0.08) 0px 1px 3px; cursor: pointer;">S</span>'+
+     '<span class="flh-tabm" style="flex: 1 1 0%; text-align: center; font-family: -apple-system, system-ui, sans-serif; font-size: 13px; font-weight: 500; color: rgb(162, 160, 156); padding: 6px 0px; cursor: pointer;">M</span></div>'+
+    '<div style="flex: 1 1 0%; display: flex; align-items: center; justify-content: center; padding: 10px 0px 4px;">'+
+     '<svg class="flh-spark" width="100%" height="34" viewBox="0 0 140 34" fill="none" preserveAspectRatio="none"></svg></div>'+
+    '<div class="flh-tend" style="text-align: center; font-family: -apple-system, system-ui, sans-serif; font-size: 13px; font-weight: 400; color: rgb(138, 131, 120);">Tendance stable</div></div></div>'+
+  '<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 0px 2px; margin-top: 12px;">'+
+   '<button class="flh-prev" style="'+chev28+'"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></button>'+
+   '<div style="display: flex; align-items: center; gap: 8px;">'+
+    '<span class="flh-per" style="font-family: Archivo, -apple-system, system-ui, sans-serif; font-size: 16px; font-weight: 500; letter-spacing: 0.02em; text-transform: uppercase; color: rgb(20, 17, 15);"></span>'+
+    '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fb6015" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg></div>'+
+   '<button class="flh-next" style="'+chev28+'"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg></button></div>'+
+  '<div style="'+card+' padding: 20px 18px 16px; margin-top: 14px;">'+
+   '<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">'+
+    '<span class="flh-chartlab" style="font-family: -apple-system, system-ui, sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.1em; color: rgb(138, 131, 120);"></span>'+
+    '<span style="display: flex; align-items: center; gap: 7px; font-family: -apple-system, system-ui, sans-serif; font-size: 12px; font-weight: 400; color: rgb(162, 160, 156);"><span style="width: 18px; border-top: 1.5px dashed rgb(185, 179, 168);"></span><span class="flh-legtxt"></span></span></div>'+
+   '<svg viewBox="0 0 600 372" width="100%" style="display:block;overflow:visible;touch-action:none;cursor:crosshair;user-select:none;-webkit-user-select:none"></svg></div>'+
+ '</div>';}
 function flOpenHebdo(key){try{
- var fr=document.getElementById('frToday');var doc=fr&&fr.contentDocument;if(!doc)return;
+ var fr=document.getElementById('frToday');var doc=fr&&fr.contentDocument;if(!doc||!doc.body)return;
  var cfg=FL_HEBDO[key];if(!cfg)return;
  var cid='screen-flh-'+key,cl=doc.getElementById(cid);
- if(!cl){var src=doc.getElementById('screen-sommeil-hebdo');if(!src)return;
-  cl=src.cloneNode(true);cl.id=cid;
-  try{cl.innerHTML=cl.innerHTML
-   .replace(/id="([^"]+)"/g,'id="$1-flh-'+key+'"')
-   .replace(/url\(#([^)]+)\)/g,'url(#$1-flh-'+key+')')
-   .replace(/url\("#([^"]+)"\)/g,'url(#$1-flh-'+key+')')
-   .replace(/(xlink:href|href)="#([^"]+)"/g,'$1="#$2-flh-'+key+'"');}catch(e){}
+ if(!cl){
+  cl=doc.createElement('section');cl.id=cid;
+  cl.setAttribute('data-screen-label',cfg.title);
+  cl.style.cssText='font-family: Archivo, -apple-system, system-ui, sans-serif; color: rgb(20, 17, 15); box-shadow: rgba(20, 17, 15, 0.06) 0px 0px 30px; pointer-events: none;';
   cl.style.setProperty('display','block','important');
   cl.style.setProperty('position','fixed','important');
   cl.style.setProperty('top','0','important');cl.style.setProperty('bottom','0','important');
@@ -6844,12 +6877,12 @@ function flOpenHebdo(key){try{
   cl.style.setProperty('transition','transform 0.42s cubic-bezier(0.32, 0.72, 0, 1)','important');
   cl.style.setProperty('transform','translateX(-50%) translateY(100%)','important');
   cl.style.touchAction='pan-y';
+  cl.innerHTML=flhMarkup();
   doc.body.appendChild(cl);void cl.offsetHeight;
   var st={key:key,mode:'S',end:window.flDayOff||0};cl._flhState=st;
-  var bk=cl.querySelector('[aria-label="Retour"]')||cl.querySelector('[data-fl-back]');
+  var bk=cl.querySelector('.flh-back');
   if(bk)bk.addEventListener('click',function(ev){ev.preventDefault();ev.stopPropagation();flCloseHebdo(cid);},true);
-  function q(t){return cl.querySelector('[data-dc-tpl="'+t+'"]');}
-  var pv=q('1268'),nx=q('1275'),sTab=q('1249'),mTab=q('1250');
+  var pv=cl.querySelector('.flh-prev'),nx=cl.querySelector('.flh-next'),sTab=cl.querySelector('.flh-tabs'),mTab=cl.querySelector('.flh-tabm');
   if(pv)pv.addEventListener('click',function(ev){ev.stopPropagation();st.end-=(st.mode==='S'?7:30);flhRender(cl,st);try{haptic&&haptic(4);}catch(e){}},true);
   if(nx)nx.addEventListener('click',function(ev){ev.stopPropagation();if(st.end>=window.flDayOff)return;st.end=Math.min(window.flDayOff,st.end+(st.mode==='S'?7:30));flhRender(cl,st);try{haptic&&haptic(4);}catch(e){}},true);
   if(sTab)sTab.addEventListener('click',function(ev){ev.stopPropagation();if(st.mode==='S')return;st.mode='S';flhRender(cl,st);},true);
@@ -9379,7 +9412,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v488';
+const APP_VERSION='flint-v489';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
