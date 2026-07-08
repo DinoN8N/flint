@@ -2630,7 +2630,7 @@ header.home-hdr .av:active,header.home-hdr .wbatt:active,header.home-hdr .hdmenu
   #v-today.on{height:100dvh;overflow:hidden;background:#fff}
   #frToday{width:100%;height:100%;border:0;display:block}
   </style>
-  <iframe id="frToday" src="flint-today.html?v=1" title="Aujourd'hui" onload="injectTodayLoop()"></iframe>
+  <iframe id="frToday" src="flint-today.html?v=1" title="Aujourd'hui" allow="camera;microphone" onload="injectTodayLoop()"></iframe>
 </section>
 
 
@@ -7339,7 +7339,7 @@ function flNScreen(id,titleHTML,bodyHTML){var doc=flNdoc();if(!doc)return null;f
  return el;}
 function flNOpen(id){var doc=flNdoc(),el=doc&&doc.getElementById(id);if(!el)return;el.classList.add('fln-on');el.scrollTop=0;try{haptic&&haptic(6);}catch(e){}setTimeout(function(){try{mdStickyBacks(doc);}catch(e){}},200);}
 function flNClose(id){var doc=flNdoc(),el=doc&&doc.getElementById(id);if(el)el.classList.remove('fln-on');}
-function flNCloseAll(){var doc=flNdoc();if(!doc)return;[].slice.call(doc.querySelectorAll('.fln-scr.fln-on')).forEach(function(e){e.classList.remove('fln-on');});var cam=doc.getElementById('screen-fln-cam');if(cam){cam.style.opacity='0';cam.style.pointerEvents='none';}}
+function flNCloseAll(){var doc=flNdoc();if(!doc)return;[].slice.call(doc.querySelectorAll('.fln-scr.fln-on')).forEach(function(e){e.classList.remove('fln-on');});var cam=doc.getElementById('screen-fln-cam');if(cam){cam.style.opacity='0';cam.style.pointerEvents='none';if(typeof flNCamStop==='function')flNCamStop(cam);}}
 
 /* ---- constructeur de sheet bas ---- */
 function flNSheet(id,html){var doc=flNdoc();if(!doc)return null;flNCss(doc);
@@ -7434,7 +7434,24 @@ function flNRecentMeals(){var seen={},out=[];for(var i=1;i<=10&&out.length<4;i++
 
 /* ═══════════ CAMÉRA ═══════════ */
 /* ═══════════ CAMÉRA (scan) — design founder ═══════════ */
-function flNCamClose(){var doc=flNdoc();var el=doc&&doc.getElementById('screen-fln-cam');if(el){el.style.opacity='0';el.style.pointerEvents='none';}}
+/* ═══════════ CAMÉRA (scan) — vrai flux caméra, design founder ═══════════ */
+function flNCamStop(el){try{if(el&&el._flStream){el._flStream.getTracks().forEach(function(t){t.stop();});el._flStream=null;var v=el.querySelector('.flnCamVid');if(v)v.srcObject=null;}}catch(e){}}
+function flNCamClose(){var doc=flNdoc();var el=doc&&doc.getElementById('screen-fln-cam');if(el){el.style.opacity='0';el.style.pointerEvents='none';flNCamStop(el);}}
+function flNCamStart(el){try{
+ var win=(flNdoc()||{}).defaultView||window;var md=(navigator.mediaDevices||(win&&win.navigator&&win.navigator.mediaDevices));
+ var v=el.querySelector('.flnCamVid'),hint=el.querySelector('.flnCamHint');
+ if(!md||!md.getUserMedia){if(hint)hint.textContent='Caméra indisponible ici — utilise Manuel';return;}
+ md.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false}).then(function(stream){
+  el._flStream=stream;if(v){v.srcObject=stream;v.play&&v.play().catch(function(){});}
+  if(hint)hint.textContent='Place ton repas au centre';
+ }).catch(function(err){if(hint)hint.textContent=(err&&err.name==='NotAllowedError')?'Autorise la caméra pour scanner':'Caméra indisponible — utilise Manuel';});
+}catch(e){}}
+function flNCamShot(el){try{var v=el.querySelector('.flnCamVid');
+ if(v&&v.videoWidth){var vw=v.videoWidth,vh=v.videoHeight,mx=420,sc=Math.min(1,mx/Math.max(vw,vh));
+  var doc=flNdoc();var cv=doc.createElement('canvas');cv.width=Math.round(vw*sc);cv.height=Math.round(vh*sc);
+  cv.getContext('2d').drawImage(v,0,0,cv.width,cv.height);
+  return cv.toDataURL('image/jpeg',0.62);}
+}catch(e){}return null;}
 function flNCamera(mode){var doc=flNdoc();if(!doc)return;flNCss(doc);mode=mode||'Photo';
  var el=doc.getElementById('screen-fln-cam');
  if(!el){el=doc.createElement('div');el.id='screen-fln-cam';doc.body.appendChild(el);}
@@ -7451,11 +7468,13 @@ function flNCamera(mode){var doc=flNdoc();if(!doc)return;flNCss(doc);mode=mode||
    +'<button class="flnCamHelp" aria-label="Aide" style="background:none;border:none;cursor:pointer;padding:4px;color:rgb(20,17,15)"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.2"></circle><path d="M9.6 9.4a2.4 2.4 0 1 1 3.4 2.2c-.7.4-1 .8-1 1.6"></path><circle cx="12" cy="16.6" r="0.7" fill="currentColor" stroke="none"></circle></svg></button>'
   +'</div>'
   +'<div style="text-align:center;font-family:-apple-system,system-ui,sans-serif;font-size:16px;color:rgb(60,58,54);padding:2px 0 12px">Cadre ton repas pour commencer</div>'
-  +'<div style="flex:1;position:relative;background:radial-gradient(120% 90% at 50% 40%,#413b34 0%,#221f1b 70%,#171512 100%);overflow:hidden;min-height:0">'+corners
-   +'<div style="position:absolute;left:50%;bottom:24px;transform:translateX(-50%);background:rgba(15,13,11,.62);color:#fff;border-radius:999px;padding:11px 20px;font-family:-apple-system,system-ui,sans-serif;font-size:14px;white-space:nowrap">Place ton repas au centre</div>'
+  +'<div style="flex:1;position:relative;background:radial-gradient(120% 90% at 50% 40%,#413b34 0%,#221f1b 70%,#171512 100%);overflow:hidden;min-height:0">'
+   +'<video class="flnCamVid" autoplay playsinline muted style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#171512"></video>'
+   +corners
+   +'<div class="flnCamHint" style="position:absolute;left:50%;bottom:24px;transform:translateX(-50%);background:rgba(15,13,11,.62);color:#fff;border-radius:999px;padding:11px 20px;font-family:-apple-system,system-ui,sans-serif;font-size:14px;white-space:nowrap">Activation de la caméra…</div>'
   +'</div>'
-  +'<div class="flnCamModes" style="display:flex;justify-content:center;gap:46px;padding:16px 0 6px">'+modeBtns+'</div>'
-  +'<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 40px calc(env(safe-area-inset-bottom,0px) + 20px)">'
+  +'<div class="flnCamModes" style="display:grid;grid-template-columns:1fr 1fr 1fr;justify-items:center;align-items:end;padding:16px 24px 6px">'+modeBtns+'</div>'
+  +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;justify-items:center;align-items:center;padding:4px 24px calc(env(safe-area-inset-bottom,0px) + 20px)">'
    +'<button class="flnCamFlash" aria-label="Flash" style="width:52px;height:52px;border-radius:50%;border:none;background:rgb(244,241,235);cursor:pointer;display:flex;align-items:center;justify-content:center;color:rgb(60,58,54)"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M13 2L4.5 13.5H11L10 22l8.5-11.5H12z"></path></svg></button>'
    +'<button class="flnShutter" aria-label="Prendre la photo" style="width:74px;height:74px;border-radius:50%;background:#fff;border:5px solid rgb(251,96,21);cursor:pointer;box-shadow:rgba(251,96,21,.28) 0 6px 22px;transition:transform .12s"></button>'
    +'<button class="flnCamGallery" aria-label="Galerie" style="width:52px;height:52px;border-radius:50%;border:none;background:rgb(244,241,235);cursor:pointer;display:flex;align-items:center;justify-content:center;color:rgb(60,58,54)"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="2.5"></rect><circle cx="8.5" cy="10" r="1.6"></circle><path d="M4 17l4.5-4 3.5 3 3-2.5 5 4.5"></path></svg></button>'
@@ -7473,12 +7492,10 @@ function flNCamera(mode){var doc=flNdoc();if(!doc)return;flNCss(doc);mode=mode||
  ['pointerup','pointerleave','pointercancel'].forEach(function(t){sh.addEventListener(t,function(){sh.style.transform='scale(1)';});});
  sh.addEventListener('click',function(){var mm=el._flMode;
    if(mm==='Code-barres'){flNToast('Scan code-barres — bientôt');return;}
-   flNCamClose();flNAddMeal('Repas scanné','—',0,{est:true});});
+   var photo=flNCamShot(el);flNCamClose();flNAddMeal('Repas scanné','—',0,{est:true,photo:photo});});
  el.scrollTop=0;setTimeout(function(){el.style.opacity='1';el.style.pointerEvents='auto';},20);
+ flNCamStart(el);
  try{haptic&&haptic(6);}catch(e){}}
-
-/* ═══════════ DÉCRIRE / CHERCHER ═══════════ */
-var FLN_FOODS=[['Beurre de cacahuète',94,4,'1 c. à soupe (16 g)',3,8],['Avocat',130,2,'½ moyen (100 g)',9,12],['Œuf',74,6,'1 gros',1,5],['Banane',105,1,'1 moyenne',27,0],['Poulet grillé',165,31,'100 g',0,4],['Riz blanc cuit',130,3,'100 g',28,0],['Skyr nature',63,11,'100 g',4,0],['Amandes',116,4,'20 g',4,10]];
 function flNSearch(tab){var doc=flNdoc();
  var tabs=[['all','Tous'],['mine','Mes aliments'],['meals','Mes repas'],['saved','Enregistrés']];
  var titleRow='<div class="fln-row" style="justify-content:flex-end;margin:-8px 0 6px"><button class="fln-when fln-whenbtn3">🕐 <span class="fln-wlab">'+flNWhenLabel()+'</span></button></div>';
@@ -10255,7 +10272,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v499';
+const APP_VERSION='flint-v500';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
