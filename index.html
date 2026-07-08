@@ -7089,7 +7089,7 @@ function mdNutrition(doc){try{
     }
    }
    var gear=card.querySelector('.scp3')||card.querySelector('button[aria-label*="objectif"]');
-   if(gear&&!gear._flW){gear._flW=1;gear.addEventListener('click',function(ev){ev.preventDefault();ev.stopPropagation();flNGoalsHub();},true);}
+   if(gear)gear.style.display='none'; /* engrenage retiré — objectifs configurés depuis le profil */
    /* carte héro (hors engrenage) → besoin du jour */
    if(!card._flW){card._flW=1;card.addEventListener('click',function(ev){if(ev.target.closest('.scp3')||ev.target.closest('[aria-label*="objectif"]'))return;flNBesoinScreen();},true);card.style.cursor='pointer';}
   }
@@ -10408,7 +10408,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v511';
+const APP_VERSION='flint-v512';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
