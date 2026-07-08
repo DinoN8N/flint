@@ -7312,6 +7312,8 @@ function flNCss(doc){if(doc.getElementById('flnut2css'))return;
  '.fln-act.del{color:rgb(224,49,32);border-color:rgb(245,205,200)}',
  '.fln-act.save{background:rgb(251,96,21);color:#fff;border:none;box-shadow:rgba(251,96,21,.28) 0 8px 22px}',
  '@keyframes flnScan{0%,100%{top:18%}50%{top:78%}}',
+ '.fln-spin{width:36px;height:36px;border-radius:50%;border:3.5px solid rgb(240,236,229);border-top-color:rgb(251,96,21);margin:0 auto 16px;animation:flnRot .9s linear infinite}',
+ '@keyframes flnRot{to{transform:rotate(360deg)}}',
  '.flnPortSlider{-webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:999px;background:rgb(240,236,229);outline:none;margin:2px 0;cursor:pointer}',
  '.flnPortSlider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:26px;height:26px;border-radius:50%;background:rgb(251,96,21);cursor:pointer;box-shadow:rgba(251,96,21,.35) 0 3px 10px;border:3px solid #fff}',
  '.flnPortSlider::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:rgb(251,96,21);cursor:pointer;border:3px solid #fff}'
@@ -7407,8 +7409,8 @@ function flNAddMeal(name,kcal,prot,opts){opts=opts||{};var doc=flNdoc();
  var day=flN.when.day||0,off=-day,K=tk(off);var mn=flN.when.min<0?flNnow():flN.when.min;
  var meal={name:name,kcal:(kcal==='—'||kcal==null)?0:+kcal,prot:+prot||0,carb:+opts.carb||0,fat:+opts.fat||0,time:flNfmt(mn),est:!!opts.est,portion:1};
  meal.k0=meal.kcal;meal.p0=meal.prot;meal.c0=meal.carb;meal.f0=meal.fat;
- if(opts.photo)meal.photo=opts.photo;if(opts.prod)meal.prod=1;
- var a=mealsOf(K);a.push(meal);flNmealsSave(K,a);
+ if(opts.photo)meal.photo=opts.photo;if(opts.prod)meal.prod=1;if(opts.ing&&opts.ing.length)meal.ing=opts.ing;
+ var a=mealsOf(K);a.push(meal);try{flNmealsSave(K,a);}catch(e1){flNPrunePhotos('meals_'+K);try{flNmealsSave(K,a);}catch(e2){delete meal.photo;flNmealsSave(K,a);}}
  flNCloseAll();flNSheetClose('flnAddSheet');
  window._nutOff=off;meal._hl=1;mdNutrition(doc);
  flNToast('Ajouté à '+flNfmt(mn)+(day>0?' ('+(flNDayLabels()[day]||'')+')':''),function(){var b=mealsOf(K);var ix=b.indexOf(meal);if(ix>=0)b.splice(ix,1);flNmealsSave(K,b);mdNutrition(doc);});
@@ -7476,39 +7478,62 @@ function flNBarcodeLookup(code){code=String(code||'').replace(/\D/g,'');if(!code
   if(!d||d.status!==1||!d.product){flNToast('Produit introuvable — saisis-le à la main');flNManual();return;}
   var p=d.product,n=p.nutriments||{};var nm=(p.product_name_fr||p.product_name||'Produit');if(p.brands)nm=nm+' · '+String(p.brands).split(',')[0];
   var img=p.image_front_url||p.image_url||null;
-  flNAddMeal(nm+' (100 g)',Math.round(n['energy-kcal_100g']||n['energy-kcal']||0),Math.round(n['proteins_100g']||0),{carb:Math.round(n['carbohydrates_100g']||0),fat:Math.round(n['fat_100g']||0),est:true,photo:img,prod:true});
+  flNScanReviewOpen({status:'done',name:nm+' (100 g)',kcal:Math.round(n['energy-kcal_100g']||n['energy-kcal']||0),prot:Math.round(n['proteins_100g']||0),carb:Math.round(n['carbohydrates_100g']||0),fat:Math.round(n['fat_100g']||0),photo:img,prod:true});
  }).catch(function(){flNToast('Erreur réseau');});}
 
 /* --- photo/galerie → vrai cerveau Gemini → journal, non bloquant --- */
 function flNPrunePhotos(keepFullKey){try{var keys=[];for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.indexOf('meals_')===0&&k!==keepFullKey)keys.push(k);}var pruned=false;keys.forEach(function(kk){var arr=DB.get(kk,[]);var ch=false;arr.forEach(function(m){if(m.photo){delete m.photo;ch=true;}});if(ch){DB.set(kk,arr);pruned=true;}});return pruned;}catch(e){return false;}}
-function flNScanInsert(K,id,meal){var doc=flNdoc();var a=mealsOf(K);a.push(meal);try{flNmealsSave(K,a);}catch(e1){flNPrunePhotos('meals_'+K);try{flNmealsSave(K,a);}catch(e2){delete meal.photo;try{flNmealsSave(K,a);}catch(e3){}}}meal._hl=1;window._nutOff=(K===tk(0)?0:window._nutOff);mdNutrition(doc);}
-function flNScanSetPhoto(K,id,thumb){if(!thumb)return;var doc=flNdoc();var a=mealsOf(K);for(var i=0;i<a.length;i++){if(a[i].id===id){a[i].photo=thumb;try{flNmealsSave(K,a);}catch(e){flNPrunePhotos('meals_'+K);try{flNmealsSave(K,a);}catch(e2){}}break;}}if(doc)mdNutrition(doc);}
+/* --- écran intermédiaire de résultat : scan → « Analyse en cours… » → résultats → Ajouter au journal --- */
+function flNScanReviewOpen(st){window._flnScanSt=st;flN.when={label:'Maintenant',min:-1,day:0};flNScanReviewRender();flNOpen('screen-fln-scanres');}
+function flNScanUpdate(r){var st=window._flnScanSt;if(!st)return;
+ if(!r||!r.kcal){st.status='fail';}
+ else{st.status='done';st.name=r.name||'Mon repas';st.kcal=Math.round(r.kcal||0);st.prot=Math.round(r.prot||0);st.carb=Math.round(r.carb||0);st.fat=Math.round(r.fat||0);
+  try{var items=window._flintScanItems;if(items&&items.length)st.ing=items.map(function(it){return {name:it.name,grams:Math.round(it.grams||0),kcal:Math.round(it.kcal||0)};});}catch(e){}}
+ flNScanReviewRender();try{haptic&&haptic(10);}catch(e){}}
+function flNScanReviewRender(){var st=window._flnScanSt;if(!st)return;var doc=flNdoc();if(!doc)return;
+ var photoBlock=st.photo?('<div style="height:210px;border-radius:22px;background-image:url('+st.photo+');background-position:center;background-repeat:no-repeat;'+(st.prod?'background-size:contain;background-color:#fff;border:1px solid rgb(240,236,229)':'background-size:cover')+';box-shadow:rgba(20,17,15,.05) 0 8px 26px;margin-bottom:16px"></div>'):'';
+ var body,title;
+ if(st.status==='pending'){title='Ton repas';
+  body=photoBlock
+   +'<div class="fln-card" style="text-align:center;padding:30px 18px"><div class="fln-spin"></div>'
+   +'<div style="font-family:Archivo,-apple-system,sans-serif;font-size:17px;font-weight:600;color:rgb(20,17,15)">Analyse en cours…</div>'
+   +'<div style="font-family:-apple-system,system-ui,sans-serif;font-size:13px;color:rgb(167,162,154);margin-top:6px">L\'IA identifie les aliments et estime les calories</div></div>'
+   +'<button class="fln-btn pri" disabled style="opacity:.4;pointer-events:none">Analyse en cours…</button>';
+ }else if(st.status==='fail'){title='Ton repas';
+  body=photoBlock
+   +'<div class="fln-card" style="text-align:center;padding:26px 18px"><div style="font-family:Archivo,-apple-system,sans-serif;font-size:17px;font-weight:600;color:rgb(20,17,15)">Analyse indisponible</div>'
+   +'<div style="font-family:-apple-system,system-ui,sans-serif;font-size:13px;color:rgb(167,162,154);margin-top:6px">Réseau ou service indisponible — tu peux saisir le repas à la main.</div></div>'
+   +'<button class="fln-btn pri" id="flnSrManual">Saisir à la main</button>';
+ }else{title=st.name||'Ton repas';
+  var score=flMealScore({kcal:st.kcal,prot:st.prot});
+  var ingRows=(st.ing&&st.ing.length)?st.ing.map(function(g2){return '<div class="fln-li"><div><div class="n">'+esc(g2.name)+'</div><div class="d">'+g2.grams+' g · '+flNInt(g2.kcal)+' kcal</div></div></div>';}).join(''):'';
+  body=photoBlock
+   +'<div class="fln-grid2" style="margin-bottom:14px"><div class="fln-card" style="margin:0;padding:16px 18px"><div class="fln-k">Calories</div><div style="font-family:Archivo,-apple-system,sans-serif;font-size:40px;font-weight:400;letter-spacing:-.02em;line-height:1;margin-top:4px">'+flNInt(st.kcal)+'</div></div>'
+   +'<div class="fln-card" style="margin:0;padding:16px 18px"><div class="fln-k">Macros</div><div style="font-family:-apple-system,system-ui,sans-serif;font-size:17px;font-weight:700;margin-top:2px;color:rgb(20,17,15)">'+st.prot+' P · '+st.carb+' G · '+st.fat+' L</div>'+(score!=null?'<div class="fln-k" style="margin:10px 0 0">Score santé '+score+'/10</div>':'')+'</div></div>'
+   +(ingRows?('<div class="fln-k">Aliments détectés</div>'+ingRows+'<div style="height:6px"></div>'):'')
+   +'<div class="fln-row" style="margin-bottom:14px"><span class="fln-k" style="margin:0">Mangé :</span><span style="flex:1"></span><button class="fln-when flnSrWhen">🕐 <span class="fln-wlab">'+flNWhenLabel()+'</span> ▾</button></div>'
+   +'<button class="fln-btn pri" id="flnSrAdd">Ajouter au journal</button>'
+   +'<div style="text-align:center;font-family:-apple-system,system-ui,sans-serif;font-size:12px;color:rgb(167,162,154);margin-top:10px">Retour = ne pas enregistrer</div>';
+ }
+ var el=flNScreen('screen-fln-scanres',esc(title),body);
+ var man=el.querySelector('#flnSrManual');if(man)man.addEventListener('click',function(){flNClose('screen-fln-scanres');flNManual();});
+ var wh=el.querySelector('.flnSrWhen');if(wh)wh.addEventListener('click',function(){flNOpenWhen('scanres');});
+ var add=el.querySelector('#flnSrAdd');if(add)add.addEventListener('click',function(){
+  flNAddMeal(st.name,st.kcal,st.prot,{carb:st.carb,fat:st.fat,est:true,photo:st.photo,prod:st.prod,ing:st.ing});
+  window._flnScanSt=null;});
+}
 function flNScanPhoto(el){var c=flNCamShotThumb(el,1100),tc=flNCamShotThumb(el,1200);
  var thumb=null;try{if(tc)thumb=tc.toDataURL('image/jpeg',0.9);}catch(e){}
  flNCamClose();
- var off=window._nutOff||0,K=tk(off),mn=flNnow(),id='sc'+Date.now()+Math.floor(Math.random()*1e4);
- var meal={name:'Analyse en cours…',kcal:0,prot:0,carb:0,fat:0,time:flNfmt(mn),est:true,analyzing:true,portion:1,k0:0,p0:0,c0:0,f0:0,id:id};
- if(thumb)meal.photo=thumb;
- flNScanInsert(K,id,meal);if(typeof haptic==='function')haptic();
- if(!c||typeof window.analyzeMealPhoto!=='function'){flNScanApply(K,id,null);return;}
- c.toBlob(function(blob){if(!blob){flNScanApply(K,id,null);return;}var file=new File([blob],'repas.jpg',{type:'image/jpeg'});window.analyzeMealPhoto(file).then(function(r){flNScanApply(K,id,r);}).catch(function(){flNScanApply(K,id,null);});},'image/jpeg',0.82);}
+ flNScanReviewOpen({status:'pending',photo:thumb,prod:false});
+ if(!c||typeof window.analyzeMealPhoto!=='function'){flNScanUpdate(null);return;}
+ c.toBlob(function(blob){if(!blob){flNScanUpdate(null);return;}var file=new File([blob],'repas.jpg',{type:'image/jpeg'});window.analyzeMealPhoto(file).then(function(r){flNScanUpdate(r);}).catch(function(){flNScanUpdate(null);});},'image/jpeg',0.82);}
 function flNScanFromFile(file){if(!file)return;
- var off=window._nutOff||0,K=tk(off),mn=flNnow(),id='sc'+Date.now()+Math.floor(Math.random()*1e4);
- var meal={name:'Analyse en cours…',kcal:0,prot:0,carb:0,fat:0,time:flNfmt(mn),est:true,analyzing:true,portion:1,k0:0,p0:0,c0:0,f0:0,id:id};
- flNScanInsert(K,id,meal);if(typeof haptic==='function')haptic();
- try{var fr=new FileReader();fr.onload=function(e){if(typeof _downscaleImg==='function')_downscaleImg(e.target.result,1200,function(thumb){flNScanSetPhoto(K,id,thumb);},0.9);else flNScanSetPhoto(K,id,e.target.result);};fr.readAsDataURL(file);}catch(e){}
- if(typeof window.analyzeMealPhoto==='function')window.analyzeMealPhoto(file).then(function(r){flNScanApply(K,id,r);}).catch(function(){flNScanApply(K,id,null);});
- else flNScanApply(K,id,null);}
-function flNScanApply(K,id,r){var doc=flNdoc();var a=mealsOf(K);var idx=-1;for(var i=0;i<a.length;i++){if(a[i].id===id){idx=i;break;}}if(idx<0)return;var m=a[idx];
- m.analyzing=false;
- if(!r||!r.kcal){m.name='Repas — à compléter';m.est=true;flNmealsSave(K,a);if(doc)mdNutrition(doc);flNToast('Analyse indisponible — ajuste à la main');return;}
- m.name=r.name||'Mon repas';m.kcal=Math.round(r.kcal||0);m.prot=Math.round(r.prot||0);m.carb=Math.round(r.carb||0);m.fat=Math.round(r.fat||0);
- m.k0=m.kcal;m.p0=m.prot;m.c0=m.carb;m.f0=m.fat;m.portion=1;m.est=true;
- try{var items=window._flintScanItems;if(items&&items.length)m.ing=items.map(function(it){return {name:it.name,grams:Math.round(it.grams||0),kcal:Math.round(it.kcal||0)};});}catch(e){}
- try{flNmealsSave(K,a);}catch(e){flNPrunePhotos('meals_'+K);try{flNmealsSave(K,a);}catch(e2){}}if(doc)mdNutrition(doc);
- if(typeof haptic==='function')haptic();flNToast('Repas analysé : '+m.name);}
-
-/* --- galerie : ouvre la photothèque --- */
+ flNScanReviewOpen({status:'pending',photo:null,prod:false});
+ try{var fr=new FileReader();fr.onload=function(e){var setP=function(thumb){var st=window._flnScanSt;if(st){st.photo=thumb;flNScanReviewRender();}};
+  if(typeof _downscaleImg==='function')_downscaleImg(e.target.result,1200,setP,0.9);else setP(e.target.result);};fr.readAsDataURL(file);}catch(e){}
+ if(typeof window.analyzeMealPhoto==='function')window.analyzeMealPhoto(file).then(function(r){flNScanUpdate(r);}).catch(function(){flNScanUpdate(null);});
+ else flNScanUpdate(null);}
 function flNGalleryPick(el){var doc=flNdoc();var inp=el.querySelector('.flnGalInput');
  if(!inp){inp=doc.createElement('input');inp.type='file';inp.accept='image/*';inp.className='flnGalInput';inp.style.display='none';el.appendChild(inp);
   inp.addEventListener('change',function(){var file=inp.files&&inp.files[0];inp.value='';if(file){flNCamClose();flNScanFromFile(file);}});}
@@ -10365,7 +10390,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v508';
+const APP_VERSION='flint-v509';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
