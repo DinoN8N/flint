@@ -7449,7 +7449,7 @@ function flNCamStart(el){try{
  var win=(flNdoc()||{}).defaultView||window;var md=(navigator.mediaDevices||(win&&win.navigator&&win.navigator.mediaDevices));
  var v=el.querySelector('.flnCamVid');
  if(!md||!md.getUserMedia){flNCamHint(el,'Caméra indisponible ici — utilise Manuel');return;}
- md.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false}).then(function(stream){
+ md.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}},audio:false}).then(function(stream){
   if(el._flMode==='Code-barres'){stream.getTracks().forEach(function(t){t.stop();});return;}
   el._flStream=stream;if(v){v.srcObject=stream;v.play&&v.play().catch(function(){});}
   flNCamHint(el);
@@ -7482,13 +7482,14 @@ function flNBarcodeLookup(code){code=String(code||'').replace(/\D/g,'');if(!code
  }).catch(function(){flNToast('Erreur réseau');});}
 
 /* --- photo → vrai cerveau Gemini (analyzeMealPhoto existant) → journal, non bloquant --- */
-function flNScanPhoto(el){var doc=flNdoc();var c=flNCamShotThumb(el,1000),tc=flNCamShotThumb(el,820);
- var thumb=null;try{if(tc)thumb=tc.toDataURL('image/jpeg',0.82);}catch(e){}
+function flNPrunePhotos(keepFullKey){try{var keys=[];for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.indexOf('meals_')===0&&k!==keepFullKey)keys.push(k);}var pruned=false;keys.forEach(function(kk){var arr=DB.get(kk,[]);var ch=false;arr.forEach(function(m){if(m.photo){delete m.photo;ch=true;}});if(ch){DB.set(kk,arr);pruned=true;}});return pruned;}catch(e){return false;}}
+function flNScanPhoto(el){var doc=flNdoc();var c=flNCamShotThumb(el,1100),tc=flNCamShotThumb(el,1200);
+ var thumb=null;try{if(tc)thumb=tc.toDataURL('image/jpeg',0.9);}catch(e){}
  flNCamClose();
  var off=window._nutOff||0,K=tk(off),mn=flNnow(),id='sc'+Date.now()+Math.floor(Math.random()*1e4);
  var meal={name:'Analyse en cours…',kcal:0,prot:0,carb:0,fat:0,time:flNfmt(mn),est:true,analyzing:true,portion:1,k0:0,p0:0,c0:0,f0:0,id:id};
  if(thumb)meal.photo=thumb;
- var a=mealsOf(K);a.push(meal);try{flNmealsSave(K,a);}catch(e1){delete meal.photo;try{flNmealsSave(K,a);}catch(e2){}}meal._hl=1;window._nutOff=off;mdNutrition(doc);
+ var a=mealsOf(K);a.push(meal);try{flNmealsSave(K,a);}catch(e1){flNPrunePhotos('meals_'+K);try{flNmealsSave(K,a);}catch(e2){delete meal.photo;try{flNmealsSave(K,a);}catch(e3){}}}meal._hl=1;window._nutOff=off;mdNutrition(doc);
  if(typeof haptic==='function')haptic();
  if(!c||typeof window.analyzeMealPhoto!=='function'){flNScanApply(K,id,null);return;}
  c.toBlob(function(blob){
@@ -10361,7 +10362,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v505';
+const APP_VERSION='flint-v506';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
