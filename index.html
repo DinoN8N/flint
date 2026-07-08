@@ -7310,7 +7310,8 @@ function flNCss(doc){if(doc.getElementById('flnut2css'))return;
  '.fln-act{display:flex;align-items:center;justify-content:center;gap:10px;height:52px;border:1px solid rgb(240,236,229);border-radius:14px;background:#fff;font-family:-apple-system,system-ui,sans-serif;font-size:15px;font-weight:600;color:rgb(20,17,15);cursor:pointer;box-shadow:rgba(20,17,15,.04) 0 4px 14px}',
  '.fln-act svg{flex:none}',
  '.fln-act.del{color:rgb(224,49,32);border-color:rgb(245,205,200)}',
- '.fln-act.save{background:rgb(251,96,21);color:#fff;border:none;box-shadow:rgba(251,96,21,.28) 0 8px 22px}'
+ '.fln-act.save{background:rgb(251,96,21);color:#fff;border:none;box-shadow:rgba(251,96,21,.28) 0 8px 22px}',
+ '@keyframes flnScan{0%,100%{top:18%}50%{top:78%}}'
  ].join('');
  (doc.head||doc.documentElement).appendChild(st);}
 
@@ -7435,66 +7436,99 @@ function flNRecentMeals(){var seen={},out=[];for(var i=1;i<=10&&out.length<4;i++
 /* ═══════════ CAMÉRA ═══════════ */
 /* ═══════════ CAMÉRA (scan) — design founder ═══════════ */
 /* ═══════════ CAMÉRA (scan) — vrai flux caméra, design founder ═══════════ */
+/* ═══════════ CAMÉRA (scan) — mode swipe façon Apple, viseur par mode ═══════════ */
 function flNCamStop(el){try{if(el&&el._flStream){el._flStream.getTracks().forEach(function(t){t.stop();});el._flStream=null;var v=el.querySelector('.flnCamVid');if(v)v.srcObject=null;}}catch(e){}}
 function flNCamClose(){var doc=flNdoc();var el=doc&&doc.getElementById('screen-fln-cam');if(el){el.style.opacity='0';el.style.pointerEvents='none';flNCamStop(el);}}
 function flNCamStart(el){try{
  var win=(flNdoc()||{}).defaultView||window;var md=(navigator.mediaDevices||(win&&win.navigator&&win.navigator.mediaDevices));
- var v=el.querySelector('.flnCamVid'),hint=el.querySelector('.flnCamHint');
- if(!md||!md.getUserMedia){if(hint)hint.textContent='Caméra indisponible ici — utilise Manuel';return;}
+ var v=el.querySelector('.flnCamVid');
+ if(!md||!md.getUserMedia){flNCamHint(el,'Caméra indisponible ici — utilise Manuel');return;}
  md.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false}).then(function(stream){
   el._flStream=stream;if(v){v.srcObject=stream;v.play&&v.play().catch(function(){});}
-  if(hint)hint.textContent='Place ton repas au centre';
- }).catch(function(err){if(hint)hint.textContent=(err&&err.name==='NotAllowedError')?'Autorise la caméra pour scanner':'Caméra indisponible — utilise Manuel';});
+  flNCamHint(el);
+ }).catch(function(err){flNCamHint(el,(err&&err.name==='NotAllowedError')?'Autorise la caméra pour scanner':'Caméra indisponible — utilise Manuel');});
 }catch(e){}}
+function flNCamHint(el,txt){var h=el.querySelector('.flnCamHint');if(!h)return;if(txt){h.textContent=txt;h.style.display='block';return;}
+ h.style.display=el._flStream?'block':'none';h.textContent=(el._flMode==='Code-barres')?'Aligne le code-barres dans le cadre':'Place ton repas au centre';}
 function flNCamShot(el){try{var v=el.querySelector('.flnCamVid');
  if(v&&v.videoWidth){var vw=v.videoWidth,vh=v.videoHeight,mx=420,sc=Math.min(1,mx/Math.max(vw,vh));
   var doc=flNdoc();var cv=doc.createElement('canvas');cv.width=Math.round(vw*sc);cv.height=Math.round(vh*sc);
   cv.getContext('2d').drawImage(v,0,0,cv.width,cv.height);
   return cv.toDataURL('image/jpeg',0.62);}
 }catch(e){}return null;}
+var FLN_CAMMODES=['Code-barres','Photo','Manuel'];
 function flNCamera(mode){var doc=flNdoc();if(!doc)return;flNCss(doc);mode=mode||'Photo';
  var el=doc.getElementById('screen-fln-cam');
  if(!el){el=doc.createElement('div');el.id='screen-fln-cam';doc.body.appendChild(el);}
- el.style.cssText='position:fixed;top:0;bottom:0;left:50%;width:100%;max-width:464px;transform:translateX(-50%);background:#fff;z-index:125;display:flex;flex-direction:column;opacity:0;pointer-events:none;transition:opacity .26s ease;font-family:Archivo,-apple-system,system-ui,sans-serif';
+ el.style.cssText='position:fixed;top:0;bottom:0;left:50%;width:100%;max-width:464px;transform:translateX(-50%);background:#fff;z-index:125;display:flex;flex-direction:column;opacity:0;pointer-events:none;transition:opacity .26s ease;font-family:Archivo,-apple-system,system-ui,sans-serif;user-select:none';
  var corners='';['top:16px;left:16px;border-right:0;border-bottom:0','top:16px;right:16px;border-left:0;border-bottom:0','bottom:16px;left:16px;border-right:0;border-top:0','bottom:16px;right:16px;border-left:0;border-top:0'].forEach(function(c){corners+='<span style="position:absolute;width:30px;height:30px;border:3px solid rgba(255,255,255,.92);border-radius:3px;'+c+'"></span>';});
- var MODES=[['Code-barres','<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 6v12M7 6v12M10 6v12M13 6v12M17 6v12M20 6v12"></path></svg>'],
-  ['Photo','<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A2 2 0 0 1 6 6.5h1.5l1.2-1.8h6.6L16.5 6.5H18a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"></path><circle cx="12" cy="12.5" r="3.4"></circle></svg>'],
-  ['Manuel','<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 5l4 4-9.5 9.5L4 20l1.5-4.5z"></path><path d="M13 6.5l4 4"></path></svg>']];
- var modeBtns=MODES.map(function(m){var on=m[0]===mode;return '<button class="flnMode" data-m="'+m[0]+'" style="background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;color:'+(on?'rgb(251,96,21)':'rgb(20,17,15)')+'"><span style="display:flex">'+m[1]+'</span><span style="font-family:-apple-system,system-ui,sans-serif;font-size:12px;font-weight:'+(on?'600':'400')+'">'+m[0]+'</span></button>';}).join('');
+ var IC={'Code-barres':'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M4 6v12M7 6v12M10 6v12M13 6v12M17 6v12M20 6v12"></path></svg>',
+  'Photo':'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A2 2 0 0 1 6 6.5h1.5l1.2-1.8h6.6L16.5 6.5H18a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"></path><circle cx="12" cy="12.5" r="3.4"></circle></svg>',
+  'Manuel':'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 5l4 4-9.5 9.5L4 20l1.5-4.5z"></path><path d="M13 6.5l4 4"></path></svg>'};
+ var modeBtns=FLN_CAMMODES.map(function(m){return '<button class="flnMode" data-m="'+m+'" style="background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;color:rgb(140,133,124);flex:none;padding:0 26px;transition:color .22s"><span style="display:flex">'+IC[m]+'</span><span style="font-family:-apple-system,system-ui,sans-serif;font-size:12px;white-space:nowrap">'+m+'</span></button>';}).join('');
  el.innerHTML=
   '<div style="display:flex;align-items:center;justify-content:space-between;padding:max(12px,calc(env(safe-area-inset-top,0px) + 8px)) 18px 8px">'
    +'<button class="flnCamX" aria-label="Fermer" style="background:none;border:none;cursor:pointer;padding:4px;color:rgb(20,17,15)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>'
    +'<img src="logo-wordmark.png" alt="FLINT" style="height:19px;width:auto">'
    +'<button class="flnCamHelp" aria-label="Aide" style="background:none;border:none;cursor:pointer;padding:4px;color:rgb(20,17,15)"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.2"></circle><path d="M9.6 9.4a2.4 2.4 0 1 1 3.4 2.2c-.7.4-1 .8-1 1.6"></path><circle cx="12" cy="16.6" r="0.7" fill="currentColor" stroke="none"></circle></svg></button>'
   +'</div>'
-  +'<div style="text-align:center;font-family:-apple-system,system-ui,sans-serif;font-size:16px;color:rgb(60,58,54);padding:2px 0 12px">Cadre ton repas pour commencer</div>'
-  +'<div style="flex:1;position:relative;background:radial-gradient(120% 90% at 50% 40%,#413b34 0%,#221f1b 70%,#171512 100%);overflow:hidden;min-height:0">'
+  +'<div class="flnCamTitle" style="text-align:center;font-family:-apple-system,system-ui,sans-serif;font-size:16px;color:rgb(60,58,54);padding:2px 0 12px">Cadre ton repas pour commencer</div>'
+  +'<div class="flnCamVF" style="flex:1;position:relative;background:#171512;overflow:hidden;min-height:0;touch-action:pan-y">'
    +'<video class="flnCamVid" autoplay playsinline muted style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#171512"></video>'
-   +corners
+   +'<div class="flnOvPhoto" style="position:absolute;inset:0;pointer-events:none">'+corners+'</div>'
+   +'<div class="flnOvCode" style="position:absolute;inset:0;display:none;align-items:center;justify-content:center;pointer-events:none">'
+     +'<div style="width:66%;height:38%;max-height:190px;border:2.5px solid rgba(255,255,255,.95);border-radius:16px;position:relative;box-shadow:0 0 0 2000px rgba(0,0,0,.30)">'
+       +'<div class="flnScanLine" style="position:absolute;left:8%;right:8%;top:20%;height:2px;background:rgb(251,96,21);box-shadow:0 0 8px rgba(251,96,21,.9);animation:flnScan 1.9s ease-in-out infinite"></div></div></div>'
    +'<div class="flnCamHint" style="position:absolute;left:50%;bottom:24px;transform:translateX(-50%);background:rgba(15,13,11,.62);color:#fff;border-radius:999px;padding:11px 20px;font-family:-apple-system,system-ui,sans-serif;font-size:14px;white-space:nowrap">Activation de la caméra…</div>'
   +'</div>'
-  +'<div class="flnCamModes" style="display:grid;grid-template-columns:1fr 1fr 1fr;justify-items:center;align-items:end;padding:16px 24px 6px">'+modeBtns+'</div>'
+  +'<div class="flnModeStrip" style="overflow:hidden;padding:16px 0 6px;position:relative">'
+   +'<div class="flnModeRow" style="display:flex;justify-content:flex-start;width:max-content;transition:transform .28s cubic-bezier(.22,1,.36,1);will-change:transform">'+modeBtns+'</div>'
+  +'</div>'
   +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;justify-items:center;align-items:center;padding:4px 24px calc(env(safe-area-inset-bottom,0px) + 20px)">'
    +'<button class="flnCamFlash" aria-label="Flash" style="width:52px;height:52px;border-radius:50%;border:none;background:rgb(244,241,235);cursor:pointer;display:flex;align-items:center;justify-content:center;color:rgb(60,58,54)"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M13 2L4.5 13.5H11L10 22l8.5-11.5H12z"></path></svg></button>'
-   +'<button class="flnShutter" aria-label="Prendre la photo" style="width:74px;height:74px;border-radius:50%;background:#fff;border:5px solid rgb(251,96,21);cursor:pointer;box-shadow:rgba(251,96,21,.28) 0 6px 22px;transition:transform .12s"></button>'
+   +'<button class="flnShutter" aria-label="Déclencheur" style="width:74px;height:74px;border-radius:50%;background:#fff;border:5px solid rgb(251,96,21);cursor:pointer;box-shadow:rgba(251,96,21,.28) 0 6px 22px;transition:transform .12s"></button>'
    +'<button class="flnCamGallery" aria-label="Galerie" style="width:52px;height:52px;border-radius:50%;border:none;background:rgb(244,241,235);cursor:pointer;display:flex;align-items:center;justify-content:center;color:rgb(60,58,54)"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="14" rx="2.5"></rect><circle cx="8.5" cy="10" r="1.6"></circle><path d="M4 17l4.5-4 3.5 3 3-2.5 5 4.5"></path></svg></button>'
   +'</div>';
  el._flMode=mode;
+ var strip=el.querySelector('.flnModeStrip'),row=el.querySelector('.flnModeRow');
+ function applyMode(m,anim){el._flMode=m;
+  /* centre le mode actif au-dessus du déclencheur */
+  var btns=[].slice.call(row.querySelectorAll('.flnMode'));
+  var active=btns.filter(function(b){return b.dataset.m===m;})[0];if(!active)return;
+  btns.forEach(function(b){var on=b.dataset.m===m;b.style.color=on?'rgb(251,96,21)':'rgb(140,133,124)';b.querySelector('span:last-child').style.fontWeight=on?'600':'400';});
+  if(!anim)row.style.transition='none';
+  var tx=strip.clientWidth/2-(active.offsetLeft+active.offsetWidth/2);
+  row.style.transform='translateX('+tx+'px)';
+  if(!anim){void row.offsetWidth;row.style.transition='transform .28s cubic-bezier(.22,1,.36,1)';}
+  /* viseur par mode */
+  var isCode=(m==='Code-barres');
+  el.querySelector('.flnOvPhoto').style.display=isCode?'none':'block';
+  el.querySelector('.flnOvCode').style.display=isCode?'flex':'none';
+  el.querySelector('.flnCamTitle').textContent=isCode?'Scanne un code-barres':'Cadre ton repas pour commencer';
+  flNCamHint(el);
+ }
+ function goMode(m){if(m==='Manuel'){flNCamClose();flNManual();return;}applyMode(m,true);try{haptic&&haptic(4);}catch(e){}}
  el.querySelector('.flnCamX').addEventListener('click',function(){flNCamClose();});
- el.querySelector('.flnCamHelp').addEventListener('click',function(){flNToast('Cadre ton assiette dans les repères, appuie sur le déclencheur.');});
+ el.querySelector('.flnCamHelp').addEventListener('click',function(){flNToast(el._flMode==='Code-barres'?'Aligne le code-barres dans le cadre.':'Cadre ton assiette dans les repères, appuie sur le déclencheur.');});
  el.querySelector('.flnCamFlash').addEventListener('click',function(){flNToast('Flash — bientôt');});
  el.querySelector('.flnCamGallery').addEventListener('click',function(){flNToast('Galerie — bientôt (pense à régler l\'heure 🕐)');});
- [].slice.call(el.querySelectorAll('.flnMode')).forEach(function(b){b.addEventListener('click',function(){var mm=b.dataset.m;
-   if(mm==='Manuel'){flNCamClose();flNManual();return;}
-   el._flMode=mm;[].slice.call(el.querySelectorAll('.flnMode')).forEach(function(x){var on=x.dataset.m===mm;x.style.color=on?'rgb(251,96,21)':'rgb(20,17,15)';x.querySelector('span:last-child').style.fontWeight=on?'600':'400';});});});
+ [].slice.call(el.querySelectorAll('.flnMode')).forEach(function(b){b.addEventListener('click',function(){goMode(b.dataset.m);});});
+ /* swipe façon Apple : gauche→mode de gauche, droite→mode de droite */
+ var vf=el.querySelector('.flnCamVF'),sx=0,sw=false;
+ vf.addEventListener('pointerdown',function(e){sx=e.clientX;sw=true;});
+ vf.addEventListener('pointerup',function(e){if(!sw)return;sw=false;var dx=e.clientX-sx;if(Math.abs(dx)<40)return;
+  var i=FLN_CAMMODES.indexOf(el._flMode);var ni=dx<0?i-1:i+1;ni=Math.max(0,Math.min(FLN_CAMMODES.length-1,ni));
+  if(FLN_CAMMODES[ni]!==el._flMode)goMode(FLN_CAMMODES[ni]);});
+ vf.addEventListener('pointercancel',function(){sw=false;});
  var sh=el.querySelector('.flnShutter');
  sh.addEventListener('pointerdown',function(){sh.style.transform='scale(.92)';});
  ['pointerup','pointerleave','pointercancel'].forEach(function(t){sh.addEventListener(t,function(){sh.style.transform='scale(1)';});});
- sh.addEventListener('click',function(){var mm=el._flMode;
-   if(mm==='Code-barres'){flNToast('Scan code-barres — bientôt');return;}
-   var photo=flNCamShot(el);flNCamClose();flNAddMeal('Repas scanné','—',0,{est:true,photo:photo});});
+ sh.addEventListener('click',function(){var mm=el._flMode,photo=flNCamShot(el);flNCamClose();
+   if(mm==='Code-barres')flNAddMeal('Produit scanné','—',0,{est:true,photo:photo});
+   else flNAddMeal('Repas scanné','—',0,{est:true,photo:photo});});
  el.scrollTop=0;setTimeout(function(){el.style.opacity='1';el.style.pointerEvents='auto';},20);
  flNCamStart(el);
+ applyMode(mode,false);setTimeout(function(){applyMode(el._flMode,false);},60);
  try{haptic&&haptic(6);}catch(e){}}
 function flNSearch(tab){var doc=flNdoc();
  var tabs=[['all','Tous'],['mine','Mes aliments'],['meals','Mes repas'],['saved','Enregistrés']];
@@ -10272,7 +10306,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v500';
+const APP_VERSION='flint-v501';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
