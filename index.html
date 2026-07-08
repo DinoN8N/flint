@@ -7156,8 +7156,8 @@ function flMealCard(doc,m,i,K){
  var card=doc.createElement('div');
  card.setAttribute('style','background:rgb(255,255,255);border:1px solid rgb(240,236,229);border-radius:20px;padding:12px 14px;box-shadow:rgba(20,17,15,0.05) 0px 8px 26px;margin-bottom:10px');
  var score=flMealScore(m);
- var kcalTxt=(m.est?'~':'')+flNutFmt(m.kcal||0)+' <span style="font-size:11px;color:rgb(20,17,15)">kcal'+((+m.prot)?' · '+Math.round(m.prot)+' P':'')+'</span>';
- var prov=m.est?'<div style="font-family:-apple-system,system-ui,sans-serif;font-size:10.5px;font-weight:300;color:rgb(183,177,167);margin-top:1px">(provisoire)</div>':'';
+ var kcalTxt=m.analyzing?'<span style="color:rgb(162,155,143);font-style:italic">Analyse en cours…</span>':(flNutFmt(m.kcal||0)+' <span style="font-size:11px;color:rgb(20,17,15)">kcal'+((+m.prot)?' · '+Math.round(m.prot)+' P':'')+'</span>');
+ var prov='';
  var thumb=m.photo?('<div style="width:56px;height:56px;flex-shrink:0;border-radius:14px;background-image:url('+m.photo+');background-size:cover;background-position:center"></div>')
   :('<div style="width:56px;height:56px;flex-shrink:0;border-radius:14px;background:rgb(244,241,235);display:flex;align-items:center;justify-content:center;color:rgb(183,177,167)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7c1.5-2.5 4-3 5.5-2.5C19 5 19.5 8 18 12s-3.5 6.5-5 6.5-1.5-1-3-1-1.5 1-3 1S3.5 16 2.5 12 3 5 4.5 4.5 10.5 4.5 12 7z"></path></svg></div>');
  var badge=score!=null?('<span style="flex-shrink:0;display:inline-flex;align-items:baseline;gap:1px;padding:5px 11px;border-radius:999px;background:rgb(255,241,233);font-family:Archivo,-apple-system,sans-serif"><span style="font-size:14px;font-weight:700;color:rgb(251,96,21)">'+score+'</span><span style="font-size:10px;font-weight:500;color:rgb(209,138,104)">/10</span></span>'):'';
@@ -7437,25 +7437,73 @@ function flNRecentMeals(){var seen={},out=[];for(var i=1;i<=10&&out.length<4;i++
 /* ═══════════ CAMÉRA (scan) — design founder ═══════════ */
 /* ═══════════ CAMÉRA (scan) — vrai flux caméra, design founder ═══════════ */
 /* ═══════════ CAMÉRA (scan) — mode swipe façon Apple, viseur par mode ═══════════ */
-function flNCamStop(el){try{if(el&&el._flStream){el._flStream.getTracks().forEach(function(t){t.stop();});el._flStream=null;var v=el.querySelector('.flnCamVid');if(v)v.srcObject=null;}}catch(e){}}
+/* ═══════════ CAMÉRA (scan) — vrai cerveau (Gemini) + code-barres/QR (ZXing) + flash ═══════════ */
+function flNCamStop(el){try{if(el){flNBarcodeStop(el);if(el._flStream){el._flStream.getTracks().forEach(function(t){t.stop();});el._flStream=null;}el._flTrack=null;el._flTorch=false;var v=el.querySelector('.flnCamVid');if(v)v.srcObject=null;}}catch(e){}}
 function flNCamClose(){var doc=flNdoc();var el=doc&&doc.getElementById('screen-fln-cam');if(el){el.style.opacity='0';el.style.pointerEvents='none';flNCamStop(el);}}
+function flNCamHint(el,txt){var h=el.querySelector('.flnCamHint');if(!h)return;if(txt){h.textContent=txt;h.style.display='block';return;}
+ h.style.display='block';h.textContent=(el._flMode==='Code-barres')?'Aligne le code-barres dans le cadre':'Place ton repas au centre';}
 function flNCamStart(el){try{
  var win=(flNdoc()||{}).defaultView||window;var md=(navigator.mediaDevices||(win&&win.navigator&&win.navigator.mediaDevices));
  var v=el.querySelector('.flnCamVid');
  if(!md||!md.getUserMedia){flNCamHint(el,'Caméra indisponible ici — utilise Manuel');return;}
  md.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false}).then(function(stream){
+  if(el._flMode==='Code-barres'){stream.getTracks().forEach(function(t){t.stop();});return;}
   el._flStream=stream;if(v){v.srcObject=stream;v.play&&v.play().catch(function(){});}
   flNCamHint(el);
+  try{var tr=stream.getVideoTracks()[0];el._flTrack=tr;var caps=tr.getCapabilities?tr.getCapabilities():{};var fb=el.querySelector('.flnCamFlash');
+   if(fb){if(!caps||!caps.torch){fb.setAttribute('data-notorch','1');fb.style.opacity='.45';}else{fb.removeAttribute('data-notorch');fb.style.opacity='1';}}}catch(e){}
  }).catch(function(err){flNCamHint(el,(err&&err.name==='NotAllowedError')?'Autorise la caméra pour scanner':'Caméra indisponible — utilise Manuel');});
 }catch(e){}}
-function flNCamHint(el,txt){var h=el.querySelector('.flnCamHint');if(!h)return;if(txt){h.textContent=txt;h.style.display='block';return;}
- h.style.display=el._flStream?'block':'none';h.textContent=(el._flMode==='Code-barres')?'Aligne le code-barres dans le cadre':'Place ton repas au centre';}
-function flNCamShot(el){try{var v=el.querySelector('.flnCamVid');
- if(v&&v.videoWidth){var vw=v.videoWidth,vh=v.videoHeight,mx=420,sc=Math.min(1,mx/Math.max(vw,vh));
-  var doc=flNdoc();var cv=doc.createElement('canvas');cv.width=Math.round(vw*sc);cv.height=Math.round(vh*sc);
-  cv.getContext('2d').drawImage(v,0,0,cv.width,cv.height);
-  return cv.toDataURL('image/jpeg',0.62);}
-}catch(e){}return null;}
+function flNCamShotThumb(el,max){try{var v=el.querySelector('.flnCamVid');if(!v||!v.videoWidth)return null;var vw=v.videoWidth,vh=v.videoHeight,sc=Math.min(1,(max||300)/Math.max(vw,vh));
+ var doc=flNdoc();var c=doc.createElement('canvas');c.width=Math.round(vw*sc);c.height=Math.round(vh*sc);c.getContext('2d').drawImage(v,0,0,c.width,c.height);return c;}catch(e){return null;}}
+
+/* --- code-barres / QR : ZXing + Open Food Facts --- */
+function flNLoadZX(cb){var w=window;if(w.ZXing){cb(w.ZXing);return;}var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js';s.onload=function(){cb(w.ZXing);};s.onerror=function(){cb(null);};document.head.appendChild(s);}
+function flNBarcodeStart(el){var v=el.querySelector('.flnCamVid');flNCamHint(el);
+ flNLoadZX(function(ZX){if(!ZX||el._flMode!=='Code-barres'){return;}
+  try{var reader=new ZX.BrowserMultiFormatReader();el._flZX=reader;
+   var cb=function(res){if(res&&res.getText&&el._flMode==='Code-barres'){try{haptic&&haptic(12);}catch(e){}flNBarcodeHit(el,res.getText());}};
+   if(reader.decodeFromConstraints)reader.decodeFromConstraints({video:{facingMode:{ideal:'environment'}}},v,cb);
+   else reader.decodeFromVideoDevice(undefined,v,cb);
+   try{var st=v.srcObject;if(st){el._flTrack=st.getVideoTracks()[0];var caps=el._flTrack&&el._flTrack.getCapabilities?el._flTrack.getCapabilities():{};var fb=el.querySelector('.flnCamFlash');if(fb){if(!caps||!caps.torch){fb.setAttribute('data-notorch','1');fb.style.opacity='.45';}else{fb.removeAttribute('data-notorch');fb.style.opacity='1';}}}}catch(e){}
+  }catch(e){flNCamHint(el,'Scanner indisponible — utilise Manuel');}
+ });}
+function flNBarcodeStop(el){try{if(el&&el._flZX){el._flZX.reset();el._flZX=null;}}catch(e){}}
+function flNBarcodeHit(el,code){flNBarcodeStop(el);flNCamClose();flNBarcodeLookup(code);}
+function flNBarcodeLookup(code){code=String(code||'').replace(/\D/g,'');if(!code){flNToast('Code invalide');return;}
+ flNToast('Recherche du produit…');
+ fetch('https://world.openfoodfacts.org/api/v2/product/'+code+'.json?fields=product_name,product_name_fr,brands,nutriments').then(function(r){return r.json();}).then(function(d){
+  if(!d||d.status!==1||!d.product){flNToast('Produit introuvable — saisis-le à la main');flNManual();return;}
+  var p=d.product,n=p.nutriments||{};var nm=(p.product_name_fr||p.product_name||'Produit');if(p.brands)nm=nm+' · '+String(p.brands).split(',')[0];
+  flNAddMeal(nm+' (100 g)',Math.round(n['energy-kcal_100g']||n['energy-kcal']||0),Math.round(n['proteins_100g']||0),{carb:Math.round(n['carbohydrates_100g']||0),fat:Math.round(n['fat_100g']||0),est:true});
+ }).catch(function(){flNToast('Erreur réseau');});}
+
+/* --- photo → vrai cerveau Gemini (analyzeMealPhoto existant) → journal, non bloquant --- */
+function flNScanPhoto(el){var doc=flNdoc();var c=flNCamShotThumb(el,900),tc=flNCamShotThumb(el,300);
+ var thumb=null;try{if(tc)thumb=tc.toDataURL('image/jpeg',0.6);}catch(e){}
+ flNCamClose();
+ var off=window._nutOff||0,K=tk(off),mn=flNnow(),id='sc'+Date.now()+Math.floor(Math.random()*1e4);
+ var meal={name:'Analyse en cours…',kcal:0,prot:0,carb:0,fat:0,time:flNfmt(mn),est:true,analyzing:true,portion:1,k0:0,p0:0,c0:0,f0:0,id:id};
+ if(thumb)meal.photo=thumb;
+ var a=mealsOf(K);a.push(meal);flNmealsSave(K,a);meal._hl=1;window._nutOff=off;mdNutrition(doc);
+ if(typeof haptic==='function')haptic();
+ if(!c||typeof window.analyzeMealPhoto!=='function'){flNScanApply(K,id,null);return;}
+ c.toBlob(function(blob){
+  if(!blob){flNScanApply(K,id,null);return;}
+  var file=new File([blob],'repas.jpg',{type:'image/jpeg'});
+  window.analyzeMealPhoto(file).then(function(r){flNScanApply(K,id,r);}).catch(function(){flNScanApply(K,id,null);});
+ },'image/jpeg',0.82);
+}
+function flNScanApply(K,id,r){var doc=flNdoc();var a=mealsOf(K);var idx=-1;for(var i=0;i<a.length;i++){if(a[i].id===id){idx=i;break;}}if(idx<0)return;var m=a[idx];
+ m.analyzing=false;
+ if(!r||!r.kcal){m.name='Repas — à compléter';m.est=true;flNmealsSave(K,a);if(doc)mdNutrition(doc);flNToast('Analyse indisponible — ajuste à la main');return;}
+ m.name=r.name||'Mon repas';m.kcal=Math.round(r.kcal||0);m.prot=Math.round(r.prot||0);m.carb=Math.round(r.carb||0);m.fat=Math.round(r.fat||0);
+ m.k0=m.kcal;m.p0=m.prot;m.c0=m.carb;m.f0=m.fat;m.portion=1;m.est=true;
+ try{var items=window._flintScanItems;if(items&&items.length)m.ing=items.map(function(it){return {name:it.name,grams:Math.round(it.grams||0),kcal:Math.round(it.kcal||0)};});}catch(e){}
+ flNmealsSave(K,a);if(doc)mdNutrition(doc);
+ if(typeof haptic==='function')haptic();flNToast('Repas analysé : '+m.name);
+}
+
 var FLN_CAMMODES=['Code-barres','Photo','Manuel'];
 function flNCamera(mode){var doc=flNdoc();if(!doc)return;flNCss(doc);mode=mode||'Photo';
  var el=doc.getElementById('screen-fln-cam');
@@ -7491,8 +7539,7 @@ function flNCamera(mode){var doc=flNdoc();if(!doc)return;flNCss(doc);mode=mode||
   +'</div>';
  el._flMode=mode;
  var strip=el.querySelector('.flnModeStrip'),row=el.querySelector('.flnModeRow');
- function applyMode(m,anim){el._flMode=m;
-  /* centre le mode actif au-dessus du déclencheur */
+ function applyMode(m,anim){var prev=el._flMode;el._flMode=m;
   var btns=[].slice.call(row.querySelectorAll('.flnMode'));
   var active=btns.filter(function(b){return b.dataset.m===m;})[0];if(!active)return;
   btns.forEach(function(b){var on=b.dataset.m===m;b.style.color=on?'rgb(251,96,21)':'rgb(140,133,124)';b.querySelector('span:last-child').style.fontWeight=on?'600':'400';});
@@ -7500,20 +7547,24 @@ function flNCamera(mode){var doc=flNdoc();if(!doc)return;flNCss(doc);mode=mode||
   var tx=strip.clientWidth/2-(active.offsetLeft+active.offsetWidth/2);
   row.style.transform='translateX('+tx+'px)';
   if(!anim){void row.offsetWidth;row.style.transition='transform .28s cubic-bezier(.22,1,.36,1)';}
-  /* viseur par mode */
   var isCode=(m==='Code-barres');
   el.querySelector('.flnOvPhoto').style.display=isCode?'none':'block';
   el.querySelector('.flnOvCode').style.display=isCode?'flex':'none';
   el.querySelector('.flnCamTitle').textContent=isCode?'Scanne un code-barres':'Cadre ton repas pour commencer';
+  /* bascule flux photo ↔ scanner code-barres */
+  if(isCode&&prev!=='Code-barres'){flNCamStop(el);flNBarcodeStart(el);}
+  else if(!isCode&&prev==='Code-barres'){flNBarcodeStop(el);flNCamStart(el);}
   flNCamHint(el);
  }
  function goMode(m){if(m==='Manuel'){flNCamClose();flNManual();return;}applyMode(m,true);try{haptic&&haptic(4);}catch(e){}}
  el.querySelector('.flnCamX').addEventListener('click',function(){flNCamClose();});
  el.querySelector('.flnCamHelp').addEventListener('click',function(){flNToast(el._flMode==='Code-barres'?'Aligne le code-barres dans le cadre.':'Cadre ton assiette dans les repères, appuie sur le déclencheur.');});
- el.querySelector('.flnCamFlash').addEventListener('click',function(){flNToast('Flash — bientôt');});
+ el.querySelector('.flnCamFlash').addEventListener('click',function(){var tr=el._flTrack,fb=this;
+   if(!tr||fb.getAttribute('data-notorch')){flNToast('Flash indisponible sur cette caméra');return;}
+   el._flTorch=!el._flTorch;try{tr.applyConstraints({advanced:[{torch:el._flTorch}]}).catch(function(){});}catch(e){}
+   fb.style.background=el._flTorch?'rgb(251,96,21)':'rgb(244,241,235)';fb.style.color=el._flTorch?'#fff':'rgb(60,58,54)';});
  el.querySelector('.flnCamGallery').addEventListener('click',function(){flNToast('Galerie — bientôt (pense à régler l\'heure 🕐)');});
  [].slice.call(el.querySelectorAll('.flnMode')).forEach(function(b){b.addEventListener('click',function(){goMode(b.dataset.m);});});
- /* swipe façon Apple : gauche→mode de gauche, droite→mode de droite */
  var vf=el.querySelector('.flnCamVF'),sx=0,sw=false;
  vf.addEventListener('pointerdown',function(e){sx=e.clientX;sw=true;});
  vf.addEventListener('pointerup',function(e){if(!sw)return;sw=false;var dx=e.clientX-sx;if(Math.abs(dx)<40)return;
@@ -7523,11 +7574,9 @@ function flNCamera(mode){var doc=flNdoc();if(!doc)return;flNCss(doc);mode=mode||
  var sh=el.querySelector('.flnShutter');
  sh.addEventListener('pointerdown',function(){sh.style.transform='scale(.92)';});
  ['pointerup','pointerleave','pointercancel'].forEach(function(t){sh.addEventListener(t,function(){sh.style.transform='scale(1)';});});
- sh.addEventListener('click',function(){var mm=el._flMode,photo=flNCamShot(el);flNCamClose();
-   if(mm==='Code-barres')flNAddMeal('Produit scanné','—',0,{est:true,photo:photo});
-   else flNAddMeal('Repas scanné','—',0,{est:true,photo:photo});});
+ sh.addEventListener('click',function(){if(el._flMode==='Code-barres'){flNToast('Vise le code-barres — détection auto');return;}flNScanPhoto(el);});
  el.scrollTop=0;setTimeout(function(){el.style.opacity='1';el.style.pointerEvents='auto';},20);
- flNCamStart(el);
+ if(mode==='Code-barres')flNBarcodeStart(el);else flNCamStart(el);
  applyMode(mode,false);setTimeout(function(){applyMode(el._flMode,false);},60);
  try{haptic&&haptic(6);}catch(e){}}
 function flNSearch(tab){var doc=flNdoc();
@@ -10306,7 +10355,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v501';
+const APP_VERSION='flint-v502';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
