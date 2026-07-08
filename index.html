@@ -7463,14 +7463,32 @@ function flNCamShotThumb(el,max){try{var v=el.querySelector('.flnCamVid');if(!v|
 
 /* --- code-barres / QR : ZXing décode des snapshots du MÊME flux (pas de bascule caméra = pas d'écran noir) --- */
 function flNLoadZX(cb){var w=window;if(w.ZXing){cb(w.ZXing);return;}var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js';s.onload=function(){cb(w.ZXing);};s.onerror=function(){cb(null);};document.head.appendChild(s);}
-function flNBarcodeStart(el){flNCamHint(el);
- if(el._flZXReader){flNBarcodeLoop(el);return;}
- flNLoadZX(function(ZX){if(!ZX||el._flMode!=='Code-barres')return;try{el._flZXReader=new ZX.BrowserMultiFormatReader();}catch(e){flNCamHint(el,'Scanner indisponible — utilise Manuel');return;}flNBarcodeLoop(el);});}
-function flNBarcodeLoop(el){if(!el||el._flMode!=='Code-barres'||!el._flZXReader)return;
- var c=flNCamShotThumb(el,760);
- if(c){try{el._flZXReader.decodeFromImageUrl(c.toDataURL('image/jpeg',0.72)).then(function(res){if(res&&res.getText&&el._flMode==='Code-barres'){try{haptic&&haptic(12);}catch(e){}flNBarcodeHit(el,res.getText());}}).catch(function(){});}catch(e){}}
- el._flZXLoop=setTimeout(function(){flNBarcodeLoop(el);},470);}
-function flNBarcodeStop(el){try{if(el){if(el._flZXLoop){clearTimeout(el._flZXLoop);el._flZXLoop=null;}}}catch(e){}}
+function flNBarcodeStart(el){flNCamHint(el);el._flBCActive=true;
+ var v=el.querySelector('.flnCamVid');
+ var win=(flNdoc()||{}).defaultView||window;
+ var BD=window.BarcodeDetector||(win&&win.BarcodeDetector);
+ if(BD){ /* détecteur NATIF (matériel) : quasi instantané */
+  try{if(!el._flBD)el._flBD=new BD({formats:['ean_13','ean_8','upc_a','upc_e','code_128','code_39','qr_code']});
+   (function loop(){if(!el._flBCActive||el._flMode!=='Code-barres')return;
+    if(v&&v.videoWidth){el._flBD.detect(v).then(function(codes){
+      if(codes&&codes.length&&el._flBCActive&&el._flMode==='Code-barres'&&codes[0].rawValue){try{haptic&&haptic(12);}catch(e){}flNBarcodeHit(el,codes[0].rawValue);return;}
+      el._flZXLoop=setTimeout(loop,110);
+     }).catch(function(){el._flZXLoop=setTimeout(loop,180);});}
+    else el._flZXLoop=setTimeout(loop,150);})();
+   return;}catch(e){}}
+ /* repli : ZXing en DÉCODAGE CONTINU sur le même élément vidéo (pas de snapshots JPEG) */
+ flNLoadZX(function(ZX){if(!ZX||!el._flBCActive||el._flMode!=='Code-barres')return;
+  try{if(!el._flZXReader)el._flZXReader=new ZX.BrowserMultiFormatReader();
+   el._flZXReader.timeBetweenDecodingAttempts=80;
+   el._flZXReader.decodeFromVideoElement(v,function(res){if(res&&res.getText&&el._flBCActive&&el._flMode==='Code-barres'){try{haptic&&haptic(12);}catch(e){}flNBarcodeHit(el,res.getText());}});
+  }catch(e){flNCamHint(el,'Scanner indisponible — utilise Manuel');}});}
+function flNBarcodeStop(el){try{if(el){el._flBCActive=false;
+ if(el._flZXLoop){clearTimeout(el._flZXLoop);el._flZXLoop=null;}
+ if(el._flZXReader){try{el._flZXReader.stopContinuousDecode&&el._flZXReader.stopContinuousDecode();}catch(e){}el._flZXReader=null;}
+ /* garde-fou : si ZXing a détaché la vidéo, on rebranche NOTRE flux */
+ var v=el.querySelector&&el.querySelector('.flnCamVid');
+ if(v&&el._flStream&&v.srcObject!==el._flStream){v.srcObject=el._flStream;v.play&&v.play().catch(function(){});}
+}}catch(e){}}
 function flNBarcodeHit(el,code){flNBarcodeStop(el);flNCamClose();flNBarcodeLookup(code);}
 function flNBarcodeLookup(code){code=String(code||'').replace(/\D/g,'');if(!code){flNToast('Code invalide');return;}
  flNToast('Recherche du produit…');
@@ -10390,7 +10408,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v509';
+const APP_VERSION='flint-v510';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
