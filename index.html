@@ -7673,17 +7673,8 @@ function flNFoodDetail(f){var doc=flNdoc();var base={kcal:f[1],prot:f[2],carb:f[
 
 /* ═══════════ AJOUT MANUEL ═══════════ */
 /* ═══════════ AJOUT MANUEL — ultra simple ═══════════ */
-function flNManual(){
- var body='<input class="fln-input" id="flnMName" placeholder="Nom de l\'aliment" style="font-size:16px">'
-  +'<input class="fln-input" id="flnMKcal" inputmode="numeric" placeholder="Calories (kcal)">'
-  +'<input class="fln-input" id="flnMP" inputmode="numeric" placeholder="Protéines (g) — optionnel">'
-  +'<div class="fln-row" style="margin:2px 0 18px"><span class="fln-k" style="margin:0">Mangé :</span><span style="flex:1"></span><button class="fln-when fln-whenbtn5">🕐 <span class="fln-wlab">'+flNWhenLabel()+'</span> ▾</button></div>'
-  +'<button class="fln-btn pri" id="flnMAdd">Ajouter au journal</button>';
- var el=flNScreen('screen-fln-manual','Ajouter un aliment',body);
- el.querySelector('.fln-whenbtn5').addEventListener('click',function(){flNOpenWhen('manual');});
- el.querySelector('#flnMAdd').addEventListener('click',function(){var n=el.querySelector('#flnMName').value.trim();if(!n){flNToast('Indique le nom de l\'aliment');return;}var k=parseInt(el.querySelector('#flnMKcal').value)||0;if(!k){flNToast('Indique les calories');return;}
-   flNAddMeal(n,k,parseInt(el.querySelector('#flnMP').value)||0,{});});
- flNOpen('screen-fln-manual');}
+function flNManual(){flN.when={label:'Maintenant',min:-1,day:0};
+ flNIngAdd(function(ing){flNAddMeal(ing.name,ing.kcal,ing.prot,{carb:ing.carb,fat:ing.fat,score:ing.h});},null,'Ajouter un aliment');}
 /* ═══════════════ NUTRITION V2 — Module 2 : MODIFICATION (menu ⋯ + détail repas) ═══════════════ */
 function flMealBase(m){if(m.k0==null){m.k0=+m.kcal||0;m.p0=+m.prot||0;m.c0=+m.carb||0;m.f0=+m.fat||0;}if(m.portion==null)m.portion=1;return m;}
 function flNSnap(K){return JSON.parse(JSON.stringify(mealsOf(K)));}
@@ -7849,13 +7840,13 @@ function flNIngCalc(it,qty,ui){var g2=qty*it.u[ui][1];var r=g2/100;
 function flNQtyLabel(it,ui){var u=it.u[ui][0];return u==='g'?'g':u;}
 
 /* écran d'ajout : cb(ing) appelé avec {name,grams,kcal,prot,carb,fat,h} */
-function flNIngAdd(cb,ctxName){var doc=flNdoc();if(!doc)return;
+function flNIngAdd(cb,ctxName,title){var doc=flNdoc();if(!doc)return;
  var st={sel:null,ui:0,qty:1};
- var body='<input class="fln-input" id="flnIaIn" placeholder="Nom de l\'ingrédient (ex. avocat)" autocomplete="off" style="font-size:16px">'
+ var body='<input class="fln-input" id="flnIaIn" placeholder="Nom de l\'aliment (ex. avocat, riz…)" autocomplete="off" style="font-size:16px">'
   +'<div id="flnIaList"></div>'
   +'<div id="flnIaCard" style="display:none"></div>'
   +'<button class="fln-btn pri" id="flnIaAdd" style="display:none;margin-top:4px">Ajouter</button>';
- var el=flNScreen('screen-fln-ingadd','Ajouter un ingrédient',(ctxName?('<div style="font-family:-apple-system,system-ui,sans-serif;font-size:13px;color:rgb(167,162,154);margin:-2px 4px 14px">à « '+esc(ctxName)+' »</div>'):'')+body);
+ var el=flNScreen('screen-fln-ingadd',title||'Ajouter un ingrédient',(ctxName?('<div style="font-family:-apple-system,system-ui,sans-serif;font-size:13px;color:rgb(167,162,154);margin:-2px 4px 14px">à « '+esc(ctxName)+' »</div>'):'')+body);
  var inp=el.querySelector('#flnIaIn'),list=el.querySelector('#flnIaList'),card=el.querySelector('#flnIaCard'),addBtn=el.querySelector('#flnIaAdd');
  function renderList(){var q=inp.value;var found=flNDbSearch(q);
   list.innerHTML=found.map(function(it,i){var d0=flNIngCalc(it,it.u[0][0]==='g'?(it.dq||100):1,0);
@@ -10575,7 +10566,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v515';
+const APP_VERSION='flint-v516';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
