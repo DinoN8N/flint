@@ -7840,56 +7840,64 @@ function flNIngCalc(it,qty,ui){var g2=qty*it.u[ui][1];var r=g2/100;
 function flNQtyLabel(it,ui){var u=it.u[ui][0];return u==='g'?'g':u;}
 
 /* écran d'ajout : cb(ing) appelé avec {name,grams,kcal,prot,carb,fat,h} */
-function flNIngAdd(cb,ctxName,title){var doc=flNdoc();if(!doc)return;
+function flNIaUnitQty(it,ui){if(it.u[ui][0]!=='g')return 1;if(it.dq)return it.dq;for(var j=0;j<it.u.length;j++){if(it.u[j][0]!=='g')return it.u[j][1];}return 100;}
+function flNIngAdd(cb,ctxName,title){var doc=flNdoc();if(!doc)return;flNCss(doc);
+ var isAliment=/aliment/i.test(title||'');var addLbl=isAliment?"Ajouter l'aliment":"Ajouter l'ingrédient";
  var st={sel:null,ui:0,qty:1};
- var body='<input class="fln-input" id="flnIaIn" placeholder="Nom de l\'aliment (ex. avocat, riz…)" autocomplete="off" style="font-size:16px">'
-  +'<div id="flnIaList"></div>'
-  +'<div id="flnIaCard" style="display:none"></div>'
-  +'<button class="fln-btn pri" id="flnIaAdd" style="display:none;margin-top:4px">Ajouter</button>';
- var el=flNScreen('screen-fln-ingadd',title||'Ajouter un ingrédient',(ctxName?('<div style="font-family:-apple-system,system-ui,sans-serif;font-size:13px;color:rgb(167,162,154);margin:-2px 4px 14px">à « '+esc(ctxName)+' »</div>'):'')+body);
- var inp=el.querySelector('#flnIaIn'),list=el.querySelector('#flnIaList'),card=el.querySelector('#flnIaCard'),addBtn=el.querySelector('#flnIaAdd');
- function renderList(){var q=inp.value;var found=flNDbSearch(q);
-  list.innerHTML=found.map(function(it,i){var d0=flNIngCalc(it,it.u[0][0]==='g'?(it.dq||100):1,0);
-   return '<div class="fln-li flnIaSug" data-i="'+FLN_DB.indexOf(it)+'" style="cursor:pointer"><div><div class="n">'+esc(it.n)+'</div><div class="d">'+(it.u[0][0]==='g'?(it.dq||100)+' g':'1 '+it.u[0][0])+' · '+flNInt(d0.kcal)+' kcal</div></div><span style="margin-left:auto;color:rgb(200,195,187)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg></span></div>';}).join('')
-   +(q.trim().length>=2&&!found.length?('<div class="fln-li" id="flnIaManu" style="cursor:pointer"><div><div class="n">« '+esc(q.trim())+' »</div><div class="d">Introuvable — saisir les calories à la main</div></div><span class="fln-plus">+</span></div>'):'');
-  [].slice.call(list.querySelectorAll('.flnIaSug')).forEach(function(li){li.addEventListener('click',function(){select(FLN_DB[+li.dataset.i]);});});
-  var manu=list.querySelector('#flnIaManu');
-  if(manu)manu.addEventListener('click',function(){var name=inp.value.trim();var kc=parseInt(doc.defaultView.prompt('Calories pour cette quantité ?','100'))||0;if(!kc)return;
-   done({name:name,grams:0,kcal:kc,prot:0,carb:0,fat:0,h:5});});}
- function select(it){st.sel=it;st.ui=0;st.qty=(it.u[0][0]==='g')?(it.dq||100):1;
-  inp.value=it.n;list.innerHTML='';renderCard();}
- function renderCard(){var it=st.sel;if(!it)return;
-  var r=flNIngCalc(it,st.qty,st.ui);
-  var unitChips=it.u.map(function(u,i){return '<span class="fln-chip'+(i===st.ui?' on':'')+'" data-ui="'+i+'" style="font-weight:600">'+u[0]+'</span>';}).join('');
-  var qtyTxt=(st.qty%1===0?st.qty:st.qty.toFixed(1).replace('.',','));
-  card.style.display='block';
-  card.innerHTML='<div class="fln-card"><div class="fln-k">Combien ?</div>'
-   +'<div class="fln-row" style="gap:8px;flex-wrap:wrap;margin-bottom:14px">'+unitChips+'</div>'
-   +'<div class="fln-row" style="justify-content:center;gap:18px;border:1px solid rgb(240,236,229);border-radius:14px;padding:13px;background:rgb(250,248,245)">'
-   +'<button id="flnIaM" style="font-size:22px;font-weight:700;background:none;border:none;color:rgb(251,96,21);cursor:pointer;padding:0 10px">−</button>'
-   +'<span id="flnIaQ" style="font-family:Archivo,sans-serif;font-size:24px;font-weight:700;min-width:64px;text-align:center;cursor:pointer;text-decoration:underline dotted;text-underline-offset:4px">'+qtyTxt+'</span>'
-   +'<span style="color:rgb(167,162,154);font-size:14px;font-family:-apple-system,system-ui,sans-serif">'+flNQtyLabel(it,st.ui)+(it.u[st.ui][0]!=='g'?(' <span style="font-size:11.5px">(~'+r.grams+' g)</span>'):'')+'</span>'
-   +'<button id="flnIaP" style="font-size:22px;font-weight:700;background:none;border:none;color:rgb(251,96,21);cursor:pointer;padding:0 10px">+</button></div>'
-   +'<div class="fln-row" style="margin-top:14px;font-family:-apple-system,system-ui,sans-serif;font-size:13.5px"><span><b id="flnIaK" style="font-family:Archivo,sans-serif;font-size:17px">'+flNInt(r.kcal)+'</b> kcal</span><span style="flex:1"></span><span style="color:rgb(111,106,97)">'+r.prot+' P · '+r.carb+' G · '+r.fat+' L</span></div></div>';
-  addBtn.style.display='flex';addBtn.textContent='Ajouter · '+flNInt(r.kcal)+' kcal';
-  [].slice.call(card.querySelectorAll('[data-ui]')).forEach(function(c){c.addEventListener('click',function(){st.ui=+c.dataset.ui;st.qty=(it.u[st.ui][0]==='g')?(it.dq||100):1;renderCard();});});
-  var step=(it.u[st.ui][0]==='g')?10:0.5;
-  card.querySelector('#flnIaM').addEventListener('click',function(){st.qty=Math.max(step,+(st.qty-step).toFixed(2));renderCard();try{haptic&&haptic(3);}catch(e){}});
-  card.querySelector('#flnIaP').addEventListener('click',function(){st.qty=+(st.qty+step).toFixed(2);renderCard();try{haptic&&haptic(3);}catch(e){}});
-  card.querySelector('#flnIaQ').addEventListener('click',function(){var v=doc.defaultView.prompt('Quantité ('+flNQtyLabel(it,st.ui)+') ?',st.qty);if(v!=null){v=parseFloat(String(v).replace(',','.'));if(v>0)st.qty=v;renderCard();}});}
+ var el=doc.getElementById('screen-fln-ingadd');
+ if(!el){el=doc.createElement('section');el.id='screen-fln-ingadd';doc.body.appendChild(el);}
+ el.style.cssText="font-family:'Archivo',-apple-system,system-ui,sans-serif;color:#14110f;position:fixed;top:0;bottom:0;left:50%;width:100%;max-width:464px;transform:translateX(-50%) translateX(100vw);transition:transform .4s cubic-bezier(.32,.72,0,1);display:flex;flex-direction:column;background:#fdfcfa;z-index:126;pointer-events:none";
+ el.innerHTML=
+  '<div class="flnIaScroll" style="flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:max(20px,calc(env(safe-area-inset-top,0px) + 12px)) 24px 20px">'
+   +'<button class="flnIaBack" aria-label="Retour" style="width:52px;height:52px;border-radius:50%;border:none;background:#fff;color:#fb6015;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(20,17,15,.08);margin-bottom:24px"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></button>'
+   +'<h1 style="font-size:34px;font-weight:800;letter-spacing:-0.03em;line-height:1;margin:0 0 10px;color:#14110f">'+esc(title||'Ajouter un ingrédient')+'<span style="color:#fb6015">.</span></h1>'
+   +(ctxName?('<div style="font-size:17px;font-weight:200;color:#a29c92;margin-bottom:24px">à « '+esc(ctxName)+' »</div>'):'<div style="height:14px"></div>')
+   +'<div style="background:#fff;border-radius:18px;padding:18px 22px;box-shadow:inset 0 0 0 1px #ece7df;margin-bottom:14px"><input class="flnIaIn" type="text" placeholder="Nom de l\'aliment (ex. avocat, riz…)" autocomplete="off" style="width:100%;border:none;outline:none;background:transparent;font-family:inherit;font-size:20px;font-weight:400;color:#14110f"></div>'
+   +'<div class="flnIaList" style="margin-bottom:6px"></div>'
+   +'<div class="flnIaCard" style="display:none;background:#fff;border-radius:24px;padding:24px;box-shadow:inset 0 0 0 1px #ece7df"></div>'
+  +'</div>'
+  +'<div style="padding:14px 24px calc(env(safe-area-inset-bottom,0px) + 16px);background:#fdfcfa;box-shadow:0 -1px 0 #ece7df">'
+   +'<button class="flnIaAdd" style="width:100%;padding:20px;border:none;border-radius:18px;background:#fb6015;color:#fff;cursor:pointer;font-family:inherit;font-size:18px;font-weight:600;letter-spacing:-0.01em;box-shadow:0 10px 24px rgba(251,96,21,.28);opacity:.4;pointer-events:none">'+addLbl+'</button>'
+  +'</div>';
+ var inp=el.querySelector('.flnIaIn'),list=el.querySelector('.flnIaList'),card=el.querySelector('.flnIaCard'),addBtn=el.querySelector('.flnIaAdd');
+ el.querySelector('.flnIaBack').addEventListener('click',function(){flNClose('screen-fln-ingadd');},true);
  function done(ing){flNClose('screen-fln-ingadd');
-  if(typeof flOkShow==='function')flOkShow('Ajouté','+ '+esc(ing.name)+' · '+flNInt(ing.kcal)+' kcal',function(){cb(ing);});
-  else cb(ing);}
+  if(typeof flOkShow==='function')flOkShow('Enregistré','+ '+esc(ing.name),function(){cb(ing);});else cb(ing);}
+ function renderList(){var q=inp.value;var found=flNDbSearch(q);
+  list.innerHTML=found.map(function(it){var g0=(it.u[0][0]==='g'?(it.dq||100):1);var d0=flNIngCalc(it,g0,0);
+   return '<div class="fln-li flnIaSug" data-i="'+FLN_DB.indexOf(it)+'" style="cursor:pointer"><div><div class="n">'+esc(it.n)+'</div><div class="d">'+(it.u[0][0]==='g'?(it.dq||100)+' g':'1 '+it.u[0][0])+' · '+flNInt(d0.kcal)+' kcal</div></div><span style="margin-left:auto;color:#c9c2b6"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg></span></div>';}).join('')
+   +(q.trim().length>=2&&!found.length?('<div class="fln-li flnIaManu" style="cursor:pointer"><div><div class="n">« '+esc(q.trim())+' »</div><div class="d">Introuvable — saisir les calories</div></div><span class="fln-plus">+</span></div>'):'');
+  [].slice.call(list.querySelectorAll('.flnIaSug')).forEach(function(li){li.addEventListener('click',function(){select(FLN_DB[+li.dataset.i]);});});
+  var manu=list.querySelector('.flnIaManu');
+  if(manu)manu.addEventListener('click',function(){var name=inp.value.trim();var kc=parseInt(doc.defaultView.prompt('Calories pour cette quantité ?','100'))||0;if(!kc)return;done({name:name,grams:0,kcal:kc,prot:0,carb:0,fat:0,h:5});});}
+ function select(it){st.sel=it;st.ui=0;st.qty=flNIaUnitQty(it,0);inp.value=it.n;list.innerHTML='';renderCard();}
+ function renderCard(){var it=st.sel;if(!it)return;var r=flNIngCalc(it,st.qty,st.ui);
+  var unitChips=it.u.map(function(u,i){var on=(i===st.ui);return '<button class="flnIaU" data-ui="'+i+'" style="padding:13px 24px;border:none;border-radius:14px;background:'+(on?'#fff1e9':'#fff')+';box-shadow:inset 0 0 0 '+(on?'1.5px #fb6015':'1px #ece7df')+';color:'+(on?'#fb6015':'#14110f')+';font-family:inherit;font-size:16px;font-weight:600;cursor:pointer;white-space:nowrap">'+u[0]+'</button>';}).join('');
+  var qtyTxt=(st.qty%1===0?st.qty:(''+st.qty).replace('.',','));
+  var sub=flNQtyLabel(it,st.ui)+(it.u[st.ui][0]!=='g'?(' (~'+r.grams+' g)'):'');
+  card.style.display='block';
+  card.innerHTML='<div style="font-family:-apple-system,system-ui,sans-serif;font-size:12px;font-weight:400;letter-spacing:0.14em;color:#8a857c;margin-bottom:18px">COMBIEN&#8239;?</div>'
+   +'<div style="display:flex;gap:10px;margin-bottom:22px;flex-wrap:wrap">'+unitChips+'</div>'
+   +'<div style="display:flex;align-items:stretch;background:#f6f3ee;border-radius:18px;box-shadow:inset 0 0 0 1px #ece7df;overflow:hidden">'
+    +'<button class="flnIaMinus" aria-label="Moins" style="width:74px;border:none;background:transparent;color:#fb6015;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14"></path></svg></button>'
+    +'<div style="flex:1;text-align:center;padding:20px 0;box-shadow:inset 1px 0 0 #ece7df,inset -1px 0 0 #ece7df;cursor:pointer" class="flnIaQtyBox"><div style="font-size:40px;font-weight:700;letter-spacing:-0.02em;line-height:0.9;color:#14110f">'+qtyTxt+'</div><div style="font-size:14px;font-weight:300;color:#a29c92;margin-top:6px">'+sub+'</div></div>'
+    +'<button class="flnIaPlus" aria-label="Plus" style="width:74px;border:none;background:transparent;color:#fb6015;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></button>'
+   +'</div>'
+   +'<div style="display:flex;align-items:center;margin-top:22px"><div style="flex:1;display:flex;align-items:baseline;gap:6px"><span style="font-size:22px;font-weight:700;letter-spacing:-0.02em;color:#14110f">'+flNInt(r.kcal)+'</span><span style="font-size:14px;font-weight:400;color:#14110f">kcal</span></div><div style="width:1px;align-self:stretch;background:#ece7df;margin:2px 20px"></div><div style="flex:1;text-align:center;font-size:16px;font-weight:300;color:#6f6a61">'+r.prot+' P · '+r.carb+' G · '+r.fat+' L</div></div>';
+  addBtn.style.opacity='1';addBtn.style.pointerEvents='auto';
+  var step=(it.u[st.ui][0]==='g')?10:0.5;
+  [].slice.call(card.querySelectorAll('.flnIaU')).forEach(function(c){c.addEventListener('click',function(){var ui=+c.dataset.ui;if(ui===st.ui)return;st.ui=ui;st.qty=flNIaUnitQty(it,ui);renderCard();try{haptic&&haptic(3);}catch(e){}});});
+  card.querySelector('.flnIaMinus').addEventListener('click',function(){st.qty=Math.max(step,+(st.qty-step).toFixed(2));renderCard();try{haptic&&haptic(3);}catch(e){}});
+  card.querySelector('.flnIaPlus').addEventListener('click',function(){st.qty=+(st.qty+step).toFixed(2);renderCard();try{haptic&&haptic(3);}catch(e){}});
+  card.querySelector('.flnIaQtyBox').addEventListener('click',function(){var v=doc.defaultView.prompt('Quantité ('+flNQtyLabel(it,st.ui)+') ?',st.qty);if(v!=null){v=parseFloat((''+v).replace(',','.'));if(v>0){st.qty=v;renderCard();}}});}
  addBtn.addEventListener('click',function(){var it=st.sel;if(!it)return;var r=flNIngCalc(it,st.qty,st.ui);
-  var ql=(st.qty%1===0?st.qty:st.qty.toFixed(1).replace('.',','));
+  var ql=(st.qty%1===0?st.qty:(''+st.qty).replace('.',','));
   var suffix=(it.u[st.ui][0]!=='g')?(' ('+ql+' '+it.u[st.ui][0]+')'):'';
   done({name:it.n+suffix,grams:r.grams,kcal:r.kcal,prot:r.prot,carb:r.carb,fat:r.fat,h:it.h});});
- inp.addEventListener('input',function(){st.sel=null;card.style.display='none';addBtn.style.display='none';renderList();});
+ inp.addEventListener('input',function(){st.sel=null;card.style.display='none';addBtn.style.opacity='.4';addBtn.style.pointerEvents='none';renderList();});
  renderList();
  flNOpen('screen-fln-ingadd');
  setTimeout(function(){try{inp.focus();}catch(e){}},350);}
-
-/* ajoute l'ingrédient au repas : totaux + base portion + score pondéré par calories */
 function flNMealAddIng(K,i,ing){var doc=flNdoc();var a=mealsOf(K),m=a[i];if(!m)return;flMealBase(m);
  var oldK=+m.kcal||0;
  m.ing=m.ing||[];m.ing.push({name:ing.name,grams:ing.grams,kcal:ing.kcal,ih:ing.h});
@@ -10566,7 +10574,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v516';
+const APP_VERSION='flint-v517';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
