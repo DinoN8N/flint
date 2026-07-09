@@ -2090,7 +2090,7 @@ body.modalview nav,body.modalview header{display:none}
 #flOk{position:fixed;inset:0;background:#FAF8F5;display:none;align-items:center;justify-content:center;z-index:120}
 #flOk.on{display:flex}
 #flOk .jdc{text-align:center;animation:jPop .5s cubic-bezier(.2,.9,.3,1.2)}
-#flOk .jdring{width:104px;height:104px;border-radius:50%;border:4px solid #2FAE67;color:#2FAE67;display:grid;place-items:center;font-size:46px;margin:0 auto 22px;animation:jRing .55s ease both}
+#flOk .jdring{width:104px;height:104px;border-radius:50%;border:4px solid #fb6015;color:#fb6015;display:grid;place-items:center;font-size:46px;margin:0 auto 22px;animation:jRing .55s ease both}
 #flOk .jdt{font-family:'Geist';font-style:normal;text-transform:uppercase;font-size:22px;letter-spacing:.5px;color:#161512}
 #flOk .jds{font-size:15px;color:#8F8982;margin-top:6px}
 .fltrend{font-family:'Switzer','Inter',sans-serif;color:#161512;padding:6px 4px 18px}
@@ -7860,8 +7860,9 @@ function flNIngAdd(cb,ctxName,title){var doc=flNdoc();if(!doc)return;flNCss(doc)
    +'<button class="flnIaAdd" style="width:100%;padding:20px;border:none;border-radius:18px;background:#fb6015;color:#fff;cursor:pointer;font-family:inherit;font-size:18px;font-weight:600;letter-spacing:-0.01em;box-shadow:0 10px 24px rgba(251,96,21,.28);opacity:.4;pointer-events:none">'+addLbl+'</button>'
   +'</div>';
  var inp=el.querySelector('.flnIaIn'),list=el.querySelector('.flnIaList'),card=el.querySelector('.flnIaCard'),addBtn=el.querySelector('.flnIaAdd');
- el.querySelector('.flnIaBack').addEventListener('click',function(){flNClose('screen-fln-ingadd');},true);
- function done(ing){flNClose('screen-fln-ingadd');
+ function iaClose(){el.style.transform='translateX(-50%) translateX(100vw)';el.style.pointerEvents='none';}
+ el.querySelector('.flnIaBack').addEventListener('click',function(){iaClose();},true);
+ function done(ing){iaClose();
   if(typeof flOkShow==='function')flOkShow('Enregistré','+ '+esc(ing.name),function(){cb(ing);});else cb(ing);}
  function renderList(){var q=inp.value;var found=flNDbSearch(q);
   list.innerHTML=found.map(function(it){var g0=(it.u[0][0]==='g'?(it.dq||100):1);var d0=flNIngCalc(it,g0,0);
@@ -7896,7 +7897,9 @@ function flNIngAdd(cb,ctxName,title){var doc=flNdoc();if(!doc)return;flNCss(doc)
   done({name:it.n+suffix,grams:r.grams,kcal:r.kcal,prot:r.prot,carb:r.carb,fat:r.fat,h:it.h});});
  inp.addEventListener('input',function(){st.sel=null;card.style.display='none';addBtn.style.opacity='.4';addBtn.style.pointerEvents='none';renderList();});
  renderList();
- flNOpen('screen-fln-ingadd');
+ el.style.pointerEvents='auto';el.scrollTop=0;
+ setTimeout(function(){el.style.transform='translateX(-50%) translateX(0px)';},20);
+ try{haptic&&haptic(6);}catch(e){}
  setTimeout(function(){try{inp.focus();}catch(e){}},350);}
 function flNMealAddIng(K,i,ing){var doc=flNdoc();var a=mealsOf(K),m=a[i];if(!m)return;flMealBase(m);
  var oldK=+m.kcal||0;
@@ -10574,7 +10577,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v517';
+const APP_VERSION='flint-v518';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
