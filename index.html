@@ -7053,7 +7053,7 @@ function flNutGoals(){var p=getProfile();var kcal=+p.kcalGoal||2400,prot=+p.prot
  var carb=p.carbGoal,fat=p.fatGoal;
  if(carb==null||fat==null){var rest=Math.max(0,kcal-prot*4);carb=Math.round(rest*0.6/4);fat=Math.round(rest*0.4/9);}
  return {kcal:kcal,prot:prot,carb:+carb,fat:+fat};}
-function flMealScore(m){var k=+m.kcal||0;if(!k)return null;if(m.score!=null)return m.score;var pr=(+m.prot||0)*4/k;return Math.max(1,Math.min(10,Math.round(3+pr*20)));}
+function flMealScore(m){var k=+m.kcal||0;if(!k)return null;if(m.score!=null)return m.score;var pr=(+m.prot||0)*4/k;var s2=5+pr*12;if(k>=900)s2-=1.5;else if(k<=400)s2+=0.5;return Math.max(1,Math.min(10,Math.round(s2)));}
 function flNutFmt(n){var neg=n<0;var s=(''+Math.round(Math.abs(n))).replace(/\B(?=(\d{3})+(?!\d))/g,' ');return (neg?'−':'')+s;}
 var FLN_JOURSF=['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];
 var FLN_JL=['D','L','M','M','J','V','S'];
@@ -7409,7 +7409,7 @@ function flNAddMeal(name,kcal,prot,opts){opts=opts||{};var doc=flNdoc();
  var day=flN.when.day||0,off=-day,K=tk(off);var mn=flN.when.min<0?flNnow():flN.when.min;
  var meal={name:name,kcal:(kcal==='—'||kcal==null)?0:+kcal,prot:+prot||0,carb:+opts.carb||0,fat:+opts.fat||0,time:flNfmt(mn),est:!!opts.est,portion:1};
  meal.k0=meal.kcal;meal.p0=meal.prot;meal.c0=meal.carb;meal.f0=meal.fat;
- if(opts.photo)meal.photo=opts.photo;if(opts.prod)meal.prod=1;if(opts.ing&&opts.ing.length)meal.ing=opts.ing;
+ if(opts.photo)meal.photo=opts.photo;if(opts.prod)meal.prod=1;if(opts.ing&&opts.ing.length)meal.ing=opts.ing;if(opts.score!=null)meal.score=opts.score;
  var a=mealsOf(K);a.push(meal);try{flNmealsSave(K,a);}catch(e1){flNPrunePhotos('meals_'+K);try{flNmealsSave(K,a);}catch(e2){delete meal.photo;flNmealsSave(K,a);}}
  flNCloseAll();flNSheetClose('flnAddSheet');
  window._nutOff=off;meal._hl=1;mdNutrition(doc);
@@ -7492,11 +7492,12 @@ function flNBarcodeStop(el){try{if(el){el._flBCActive=false;
 function flNBarcodeHit(el,code){flNBarcodeStop(el);flNCamClose();flNBarcodeLookup(code);}
 function flNBarcodeLookup(code){code=String(code||'').replace(/\D/g,'');if(!code){flNToast('Code invalide');return;}
  flNToast('Recherche du produit…');
- fetch('https://world.openfoodfacts.org/api/v2/product/'+code+'.json?fields=product_name,product_name_fr,brands,nutriments,image_front_url,image_url').then(function(r){return r.json();}).then(function(d){
+ fetch('https://world.openfoodfacts.org/api/v2/product/'+code+'.json?fields=product_name,product_name_fr,brands,nutriments,image_front_url,image_url,nutriscore_grade').then(function(r){return r.json();}).then(function(d){
   if(!d||d.status!==1||!d.product){flNToast('Produit introuvable — saisis-le à la main');flNManual();return;}
   var p=d.product,n=p.nutriments||{};var nm=(p.product_name_fr||p.product_name||'Produit');if(p.brands)nm=nm+' · '+String(p.brands).split(',')[0];
   var img=p.image_front_url||p.image_url||null;
-  flNScanReviewOpen({status:'done',name:nm+' (100 g)',kcal:Math.round(n['energy-kcal_100g']||n['energy-kcal']||0),prot:Math.round(n['proteins_100g']||0),carb:Math.round(n['carbohydrates_100g']||0),fat:Math.round(n['fat_100g']||0),photo:img,prod:true});
+  var nsc={a:9,b:8,c:6,d:4,e:2}[String(p.nutriscore_grade||'').toLowerCase()]||null; /* Nutri-Score officiel */
+  flNScanReviewOpen({status:'done',name:nm+' (100 g)',kcal:Math.round(n['energy-kcal_100g']||n['energy-kcal']||0),prot:Math.round(n['proteins_100g']||0),carb:Math.round(n['carbohydrates_100g']||0),fat:Math.round(n['fat_100g']||0),photo:img,prod:true,score:nsc});
  }).catch(function(){flNToast('Erreur réseau');});}
 
 /* --- photo/galerie → vrai cerveau Gemini → journal, non bloquant --- */
@@ -7505,7 +7506,7 @@ function flNPrunePhotos(keepFullKey){try{var keys=[];for(var i=0;i<localStorage.
 function flNScanReviewOpen(st){window._flnScanSt=st;flN.when={label:'Maintenant',min:-1,day:0};flNScanReviewRender();flNOpen('screen-fln-scanres');}
 function flNScanUpdate(r){var st=window._flnScanSt;if(!st)return;
  if(!r||!r.kcal){st.status='fail';}
- else{st.status='done';st.name=r.name||'Mon repas';st.kcal=Math.round(r.kcal||0);st.prot=Math.round(r.prot||0);st.carb=Math.round(r.carb||0);st.fat=Math.round(r.fat||0);
+ else{st.status='done';st.name=r.name||'Mon repas';st.kcal=Math.round(r.kcal||0);st.prot=Math.round(r.prot||0);st.carb=Math.round(r.carb||0);st.fat=Math.round(r.fat||0);if(r.score!=null)st.score=r.score;
   try{var items=window._flintScanItems;if(items&&items.length)st.ing=items.map(function(it){return {name:it.name,grams:Math.round(it.grams||0),kcal:Math.round(it.kcal||0)};});}catch(e){}}
  flNScanReviewRender();try{haptic&&haptic(10);}catch(e){}}
 function flNScanReviewRender(){var st=window._flnScanSt;if(!st)return;var doc=flNdoc();if(!doc)return;
@@ -7523,7 +7524,7 @@ function flNScanReviewRender(){var st=window._flnScanSt;if(!st)return;var doc=fl
    +'<div style="font-family:-apple-system,system-ui,sans-serif;font-size:13px;color:rgb(167,162,154);margin-top:6px">Réseau ou service indisponible — tu peux saisir le repas à la main.</div></div>'
    +'<button class="fln-btn pri" id="flnSrManual">Saisir à la main</button>';
  }else{title=st.name||'Ton repas';
-  var score=flMealScore({kcal:st.kcal,prot:st.prot});
+  var score=(st.score!=null)?st.score:flMealScore({kcal:st.kcal,prot:st.prot});
   var ingRows=(st.ing&&st.ing.length)?st.ing.map(function(g2){return '<div class="fln-li"><div><div class="n">'+esc(g2.name)+'</div><div class="d">'+g2.grams+' g · '+flNInt(g2.kcal)+' kcal</div></div></div>';}).join(''):'';
   body=photoBlock
    +'<div class="fln-grid2" style="margin-bottom:14px"><div class="fln-card" style="margin:0;padding:16px 18px"><div class="fln-k">Calories</div><div style="font-family:Archivo,-apple-system,sans-serif;font-size:40px;font-weight:400;letter-spacing:-.02em;line-height:1;margin-top:4px">'+flNInt(st.kcal)+'</div></div>'
@@ -7537,7 +7538,7 @@ function flNScanReviewRender(){var st=window._flnScanSt;if(!st)return;var doc=fl
  var man=el.querySelector('#flnSrManual');if(man)man.addEventListener('click',function(){flNClose('screen-fln-scanres');flNManual();});
  var wh=el.querySelector('.flnSrWhen');if(wh)wh.addEventListener('click',function(){flNOpenWhen('scanres');});
  var add=el.querySelector('#flnSrAdd');if(add)add.addEventListener('click',function(){
-  flNAddMeal(st.name,st.kcal,st.prot,{carb:st.carb,fat:st.fat,est:true,photo:st.photo,prod:st.prod,ing:st.ing});
+  flNAddMeal(st.name,st.kcal,st.prot,{carb:st.carb,fat:st.fat,est:true,photo:st.photo,prod:st.prod,ing:st.ing,score:st.score});
   window._flnScanSt=null;});
 }
 function flNScanPhoto(el){var c=flNCamShotThumb(el,1100),tc=flNCamShotThumb(el,1200);
@@ -10408,7 +10409,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v512';
+const APP_VERSION='flint-v513';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
@@ -10445,7 +10446,7 @@ document.addEventListener('visibilitychange',function(){if(document.hidden)retur
                 window._flintScanItems=d.items.map(function(it){return Object.assign({},it);});
                 setTimeout(function(){renderItems();syncUI();},30);
                 var t=d.total||{};
-                resolve({name:d.mealName||'Mon repas',kcal:Math.round(t.kcal||0),prot:Math.round(t.prot||0),carb:Math.round(t.carb||0),fat:Math.round(t.fat||0)});
+                resolve({name:d.mealName||'Mon repas',kcal:Math.round(t.kcal||0),prot:Math.round(t.prot||0),carb:Math.round(t.carb||0),fat:Math.round(t.fat||0),score:(d.healthScore!=null?Math.max(1,Math.min(10,Math.round(d.healthScore))):undefined),scoreNote:d.healthNote||''});
               })
               .catch(function(){resolve(fallback());});
           });

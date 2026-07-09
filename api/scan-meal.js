@@ -30,16 +30,30 @@ const SCHEMA = {
   },
   required: ['mealName', 'items']
 };
+// healthScore ajouté au schéma via propriétés supplémentaires
+SCHEMA.properties.healthScore = { type: 'number' };
+SCHEMA.properties.healthNote = { type: 'string' };
+SCHEMA.required = ['mealName', 'items', 'healthScore'];
 
-const PROMPT = `Tu es un expert en nutrition. Analyse la photo de ce repas.
+const PROMPT = `Tu es un nutritionniste rigoureux. Analyse la photo de ce repas.
 Identifie CHAQUE aliment visible séparément (ne regroupe pas tout en un seul item).
-Pour chaque aliment, estime de façon réaliste :
-- name : nom court en français
-- grams : portion en grammes
-- kcal, prot (protéines g), carb (glucides g), fat (lipides g)
-- confidence : 0 à 1 (ta certitude)
-Tiens compte des matières grasses de cuisson et sauces PROBABLES même si peu visibles (huile, beurre, vinaigrette) — ajoute-les comme items distincts si pertinent.
-Donne un mealName court résumant le plat. Réponds UNIQUEMENT en JSON conforme au schéma.`;
+Pour chaque aliment : name (français court), grams (portion RÉALISTE pour une personne, estimée depuis les repères visuels : assiette ~26 cm, couverts), kcal, prot, carb, fat (grammes), confidence (0-1).
+
+RÈGLES DE PRÉCISION — les calories doivent être VRAIES :
+1. Sois CONSERVATEUR. N'ajoute une matière grasse (huile, beurre, sauce) QUE si elle est visible ou quasi certaine (aliment luisant, frit, pané). Vinaigrette sur salade : max 10-15 g (~90-130 kcal). Jamais plus de 15 g d'huile invisible au total.
+2. VÉRIFIE ta cohérence : pour chaque item, kcal doit ≈ 4×prot + 4×carb + 9×fat (±10 %). Corrige avant de répondre.
+3. Ordres de grandeur à respecter : salade composée 250-600 kcal ; assiette protéine+féculent+légumes 400-800 ; légumes verts ~25 kcal/100 g ; crudités ~30 kcal/100 g ; poulet cuit ~165 kcal/100 g ; riz/pâtes cuits ~130 kcal/100 g. Si ton total sort de l'ordre de grandeur du plat, ré-estime.
+4. Ne gonfle JAMAIS les portions : en cas de doute entre deux tailles, prends la plus petite.
+
+healthScore : note santé du plat de 1 à 10 (entier), pour un sportif :
+- 8-10 : aliments bruts, légumes/fruits abondants, bonne source de protéines, peu transformé (ex. salade complète 9, poisson-riz-brocoli 9)
+- 6-7 : équilibré mais un point faible (peu de légumes, sauce riche, portion très calorique)
+- 4-5 : transformé, frit, ou très déséquilibré (pizza 5, burger-frites 4)
+- 1-3 : ultra-transformé, sucré ou friture pure (soda 2, viennoiserie industrielle 3)
+La quantité de protéines seule ne fait PAS le score : une salade de légumes frais sans viande reste 8+.
+healthNote : justification en une phrase courte.
+
+Donne un mealName court. Réponds UNIQUEMENT en JSON conforme au schéma.`;
 
 function cors(res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -107,18 +121,24 @@ module.exports = async function handler(req, res) {
     let data;
     try { data = JSON.parse(txt); } catch (e) { return res.status(502).json({ error: 'JSON Gemini invalide' }); }
 
-    const items = (data.items || []).map(it => ({
-      name: String(it.name || 'Aliment'),
-      grams: round(it.grams),
-      kcal: round(it.kcal),
-      prot: round(it.prot),
-      carb: round(it.carb),
-      fat: round(it.fat),
-      confidence: Math.max(0, Math.min(1, Number(it.confidence) || 0.5))
-    }));
+    const items = (data.items || []).map(it => {
+      const prot = round(it.prot), carb = round(it.carb), fat = round(it.fat);
+      let kcal = round(it.kcal);
+      // Garde-fou mathématique : kcal doit coller aux macros (4P+4G+9L).
+      const kcalM = 4 * prot + 4 * carb + 9 * fat;
+      if (kcalM > 0 && (kcal > kcalM * 1.3 || kcal < kcalM * 0.7)) kcal = Math.round(kcalM);
+      return {
+        name: String(it.name || 'Aliment'),
+        grams: round(it.grams),
+        kcal, prot, carb, fat,
+        confidence: Math.max(0, Math.min(1, Number(it.confidence) || 0.5))
+      };
+    });
     const total = items.reduce((a, it) => ({ kcal: a.kcal + it.kcal, prot: a.prot + it.prot, carb: a.carb + it.carb, fat: a.fat + it.fat }), { kcal: 0, prot: 0, carb: 0, fat: 0 });
+    const healthScore = Math.max(1, Math.min(10, Math.round(Number(data.healthScore) || 0))) || null;
+    const healthNote = data.healthNote ? String(data.healthNote).slice(0, 160) : '';
 
-    return res.status(200).json({ mealName: String(data.mealName || 'Mon repas'), items, total });
+    return res.status(200).json({ mealName: String(data.mealName || 'Mon repas'), items, total, healthScore, healthNote });
   } catch (e) {
     return res.status(500).json({ error: String((e && e.message) || e) });
   }
