@@ -35,15 +35,31 @@ SCHEMA.properties.healthScore = { type: 'number' };
 SCHEMA.properties.healthNote = { type: 'string' };
 SCHEMA.required = ['mealName', 'items', 'healthScore'];
 
-const PROMPT = `Tu es un nutritionniste rigoureux. Analyse la photo de ce repas.
+const PROMPT = `Tu es un nutritionniste expert en estimation visuelle. Analyse la photo de ce repas.
 Identifie CHAQUE aliment visible séparément (ne regroupe pas tout en un seul item).
-Pour chaque aliment : name (français court), grams (portion RÉALISTE pour une personne, estimée depuis les repères visuels : assiette ~26 cm, couverts), kcal, prot, carb, fat (grammes), confidence (0-1).
+Pour chaque aliment : name (français court), grams, kcal, prot, carb, fat (grammes), confidence (0-1).
 
-RÈGLES DE PRÉCISION — les calories doivent être VRAIES :
-1. Sois CONSERVATEUR. N'ajoute une matière grasse (huile, beurre, sauce) QUE si elle est visible ou quasi certaine (aliment luisant, frit, pané). Vinaigrette sur salade : max 10-15 g (~90-130 kcal). Jamais plus de 15 g d'huile invisible au total.
-2. VÉRIFIE ta cohérence : pour chaque item, kcal doit ≈ 4×prot + 4×carb + 9×fat (±10 %). Corrige avant de répondre.
-3. Ordres de grandeur à respecter : salade composée 250-600 kcal ; assiette protéine+féculent+légumes 400-800 ; légumes verts ~25 kcal/100 g ; crudités ~30 kcal/100 g ; poulet cuit ~165 kcal/100 g ; riz/pâtes cuits ~130 kcal/100 g. Si ton total sort de l'ordre de grandeur du plat, ré-estime.
-4. Ne gonfle JAMAIS les portions : en cas de doute entre deux tailles, prends la plus petite.
+OBJECTIF : le nombre de calories le plus JUSTE possible. Ni prudent, ni généreux — exact.
+
+MÉTHODE D'ESTIMATION DES PORTIONS :
+1. Repères d'échelle : assiette standard ~26 cm, bol ~15 cm, couverts, mains, verre.
+2. Estime le VOLUME, pas seulement la surface : un plat profond, empilé ou en sauce pèse bien plus lourd qu'une fine couche. Burgers, kebabs, gratins, lasagnes : compte l'épaisseur.
+3. Portion la plus PROBABLE d'après la photo — pas la plus petite, pas la plus grande.
+
+DENSITÉS CALORIQUES DE RÉFÉRENCE (kcal pour 100 g) — vérifie chaque item contre sa catégorie :
+- légumes crus/cuits 15-45 · fruits 30-90 · féculents cuits (riz, pâtes, purée) 100-160
+- viandes maigres 100-170 · viandes grasses/panées 200-300 · poissons 80-210
+- pain 250-290 · pizza 220-280 · frites 280-330 · plats frits 250-350
+- fromages 260-400 · charcuterie 250-400 · sauces grasses (mayo, béarnaise) 400-700
+- pâtisseries/viennoiseries 350-450 · chocolat 500-550 · huile/beurre 720-900
+Matières grasses de cuisson : compte-les si le plat est luisant, frit, pané ou en sauce (10-20 g d'huile pour un plat sauté, davantage pour une friture) ; n'en invente pas sur des crudités nature.
+
+UN PLAT RICHE PEUT ÊTRE TRÈS CALORIQUE : burger-frites complet 1100-1600 kcal, kebab assiette 1200-1800, raclette/tartiflette 1300-2200, pizza entière 1600-2400. Ne sous-estime JAMAIS par prudence — si la photo montre beaucoup de nourriture dense, le chiffre doit suivre.
+
+AUTO-VÉRIFICATION avant de répondre (corrige si besoin) :
+1. Chaque item : kcal ≈ 4×prot + 4×carb + 9×fat (±10 %).
+2. Chaque item : kcal/grams cohérent avec sa densité de catégorie ci-dessus.
+3. Total : plausible pour ce que montre RÉELLEMENT la photo (quantité, richesse, épaisseur).
 
 healthScore : note santé du plat de 1 à 10 (entier), pour un sportif :
 - 8-10 : aliments bruts, légumes/fruits abondants, bonne source de protéines, peu transformé (ex. salade complète 9, poisson-riz-brocoli 9)
@@ -106,7 +122,7 @@ module.exports = async function handler(req, res) {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${key}`;
     const gReq = {
       contents: [{ parts: [{ text: PROMPT }, { inline_data: { mime_type: mime, data: image } }] }],
-      generationConfig: { responseMimeType: 'application/json', responseSchema: SCHEMA, temperature: 0.2 }
+      generationConfig: { responseMimeType: 'application/json', responseSchema: SCHEMA, temperature: 0.1 }
     };
 
     const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(gReq) });

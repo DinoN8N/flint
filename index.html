@@ -10575,7 +10575,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v514';
+const APP_VERSION='flint-v515';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
@@ -10603,7 +10603,7 @@ document.addEventListener('visibilitychange',function(){if(document.hidden)retur
       try{
         var rd=new FileReader();
         rd.onload=function(e){
-          _downscaleImg(e.target.result,1024,function(dataUrl){
+          _downscaleImg(e.target.result,1280,function(dataUrl){
             if(!dataUrl){resolve(fallback());return;}
             fetch(window.FLINT_SCAN_API,{method:'POST',headers:{'Content-Type':'application/json','x-flint-key':window.FLINT_APP_KEY},body:JSON.stringify({image:dataUrl})})
               .then(function(r){return r.json();})
@@ -10615,7 +10615,7 @@ document.addEventListener('visibilitychange',function(){if(document.hidden)retur
                 resolve({name:d.mealName||'Mon repas',kcal:Math.round(t.kcal||0),prot:Math.round(t.prot||0),carb:Math.round(t.carb||0),fat:Math.round(t.fat||0),score:(d.healthScore!=null?Math.max(1,Math.min(10,Math.round(d.healthScore))):undefined),scoreNote:d.healthNote||''});
               })
               .catch(function(){resolve(fallback());});
-          });
+          },0.85);
         };
         rd.onerror=function(){resolve(fallback());};
         rd.readAsDataURL(file);
