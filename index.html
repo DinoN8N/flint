@@ -7554,6 +7554,17 @@ function flNAnaStart(){flNAnaStop();if(!window._flnAnaT0)window._flnAnaT0=Date.n
   var prog=95*(1-Math.exp(-el/2400));if(prog>95)prog=95;
   if(!flNAnaPaint(d,prog))flNAnaStop();
  },60);}
+/* carte 3 colonnes CALORIES · MACROS · SCORE SANTÉ (chiffres noirs + gras) — partagée détail repas & résultat scan */
+function flNMacroCard(kcal,prot,carb,fat,score){var hs=(score!=null);
+ return '<div class="fln-card" style="margin:0 0 14px;padding:0;display:flex;align-items:stretch">'
+  +'<div style="flex:0 0 '+(hs?'32%':'42%')+';padding:16px 12px 16px 18px"><div class="fln-k">Calories</div>'
+   +'<div style="font-family:Archivo,-apple-system,sans-serif;font-size:37px;font-weight:800;letter-spacing:-.03em;line-height:1;margin-top:5px;color:rgb(20,17,15)">'+flNInt(kcal)+'</div>'
+   +'<div style="font-family:-apple-system,system-ui,sans-serif;font-size:12px;color:rgb(167,162,154);margin-top:4px">kcal</div></div>'
+  +'<div style="flex:1;padding:16px 12px;box-shadow:inset 1px 0 0 #efeae2'+(hs?',inset -1px 0 0 #efeae2':'')+'"><div class="fln-k">Macros</div>'
+   +'<div style="font-family:-apple-system,system-ui,sans-serif;font-size:15px;font-weight:700;margin-top:8px;color:rgb(20,17,15)">'+prot+' P · '+carb+' G · '+fat+' L</div></div>'
+  +(hs?('<div style="flex:0 0 27%;padding:16px 16px 16px 12px"><div class="fln-k">Score santé</div>'
+   +'<div style="font-family:Archivo,-apple-system,sans-serif;font-size:33px;font-weight:800;letter-spacing:-.02em;line-height:1;margin-top:5px;color:rgb(20,17,15)">'+score+'<span style="font-family:-apple-system,system-ui,sans-serif;font-size:14px;font-weight:400;letter-spacing:0;color:rgb(167,162,154)">/10</span></div></div>'):'')
+ +'</div>';}
 function flNScanReviewOpen(st){window._flnScanSt=st;window._flnAnaT0=null;flN.when={label:'Maintenant',min:-1,day:0};flNScanReviewRender();flNOpen('screen-fln-scanres');}
 function flNScanUpdate(r){var st=window._flnScanSt;if(!st)return;
  if(!r||!r.kcal){st.status='fail';}
@@ -7574,8 +7585,7 @@ function flNScanReviewRender(){var st=window._flnScanSt;if(!st)return;var doc=fl
   var score=(st.score!=null)?st.score:flMealScore({kcal:st.kcal,prot:st.prot});
   var ingRows=(st.ing&&st.ing.length)?st.ing.map(function(g2){return '<div class="fln-li"><div><div class="n">'+esc(g2.name)+'</div><div class="d">'+g2.grams+' g · '+flNInt(g2.kcal)+' kcal</div></div></div>';}).join(''):'';
   body=photoBlock
-   +'<div class="fln-grid2" style="margin-bottom:14px"><div class="fln-card" style="margin:0;padding:16px 18px"><div class="fln-k">Calories</div><div style="font-family:Archivo,-apple-system,sans-serif;font-size:40px;font-weight:400;letter-spacing:-.02em;line-height:1;margin-top:4px">'+flNInt(st.kcal)+'</div></div>'
-   +'<div class="fln-card" style="margin:0;padding:16px 18px"><div class="fln-k">Macros</div><div style="font-family:-apple-system,system-ui,sans-serif;font-size:17px;font-weight:700;margin-top:2px;color:rgb(20,17,15)">'+st.prot+' P · '+st.carb+' G · '+st.fat+' L</div>'+(score!=null?'<div class="fln-k" style="margin:10px 0 0">Score santé '+score+'/10</div>':'')+'</div></div>'
+   +flNMacroCard(st.kcal,st.prot,st.carb,st.fat,score)
    +(ingRows?('<div class="fln-k">Aliments détectés</div>'+ingRows+'<div style="height:6px"></div>'):'')
    +'<div class="fln-row" style="margin-bottom:14px"><span class="fln-k" style="margin:0">Mangé :</span><span style="flex:1"></span><button class="fln-when flnSrWhen">🕐 <span class="fln-wlab">'+flNWhenLabel()+'</span> ▾</button></div>'
    +'<button class="fln-btn pri" id="flnSrAdd">Ajouter au journal</button>'
@@ -8204,8 +8214,7 @@ function flNMealDetail(K,i){var doc=flNdoc();var m=mealsOf(K)[i];if(!m)return;fl
    +(m.photo?'':'<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:rgb(201,194,182)">'+FLN_IC.leaf+'</span>')+'</div>'
   +'<div class="fln-row" style="gap:10px;margin-bottom:16px"><button class="fln-ochip flnMealTime">'+FLN_IC.clock+'<span>'+esc(m.time||'\u2014')+'</span>'+FLN_IC.chev+'</button><button class="fln-ochip flnMealDay">'+FLN_IC.cal+'<span>'+dayLbl+'</span>'+FLN_IC.chev+'</button></div>'
   +'<div class="fln-card"><div class="fln-k">Quelle part de l\'assiette as-tu mang\u00e9e ?</div>'+'<div style="display:flex;align-items:baseline;gap:8px;margin:6px 0 15px"><span class="flnPortVal" style="font-family:Archivo,-apple-system,sans-serif;font-size:30px;font-weight:800;color:rgb(251,96,21);line-height:1">'+FLN_FRAC[m.portion||1]+'</span><span style="font-family:-apple-system,system-ui,sans-serif;font-size:13px;color:rgb(138,131,120)"><span class="flnPortDesc">'+flNPortDesc(m.portion||1)+'</span> \u00b7 <b class="flnPortKcal">'+flNInt(m.kcal)+'</b> kcal</span></div>'+'<input type="range" class="flnPortSlider" min="0" max="5" step="1" value="'+FLN_PFRAC.indexOf(m.portion||1)+'">'+'<div style="display:flex;justify-content:space-between;font-family:Archivo,-apple-system,sans-serif;font-size:12px;font-weight:600;color:rgb(168,162,154);margin-top:9px;padding:0 3px">'+FLN_PFRAC.map(function(f){return '<span>'+FLN_FRAC[f]+'</span>';}).join('')+'</div>'+'<div style="font-family:-apple-system,system-ui,sans-serif;font-size:11.5px;color:rgb(168,162,154);margin-top:13px;line-height:1.55">\u00ab 1 \u00bb = <b style="color:rgb(120,114,105)">toute l\'assiette</b> de la photo, pas un seul aliment. Les calories sont estim\u00e9es pour l\'assiette enti\u00e8re \u2014 ajuste selon ce que tu as vraiment mang\u00e9.</div></div>'
-  +'<div class="fln-grid2" style="margin-bottom:14px"><div class="fln-card" style="margin:0;padding:16px 18px"><div class="fln-k">Calories</div><div style="font-family:Archivo,-apple-system,sans-serif;font-size:40px;font-weight:400;letter-spacing:-.02em;line-height:1;margin-top:4px">'+flNInt(m.kcal)+'</div></div>'
-   +'<div class="fln-card" style="margin:0;padding:16px 18px"><div class="fln-k">Macros</div><div style="font-family:-apple-system,system-ui,sans-serif;font-size:17px;font-weight:700;margin-top:2px;color:rgb(20,17,15)">'+Math.round(m.prot)+' P \u00b7 '+Math.round(m.carb)+' G \u00b7 '+Math.round(m.fat)+' L</div>'+(score!=null?'<div class="fln-k" style="margin:10px 0 0">Score sant\u00e9 '+score+'/10</div>':'')+'</div></div>'
+  +flNMacroCard(m.kcal,Math.round(m.prot),Math.round(m.carb),Math.round(m.fat),score)
   +'<div class="fln-k" style="margin-top:2px">Aliments</div>'+ingRows
   +'<button class="fln-act" id="flnAddIng" style="width:100%;border-style:dashed;margin-bottom:18px">'+FLN_IC.plus+' Ajouter un ingr\u00e9dient</button>'
   +'<div class="fln-grid2"><button class="fln-act del" data-mact="del">'+FLN_IC.trash+' Supprimer</button><button class="fln-act save" data-mact="save">'+FLN_IC.bookmark+' Enregistrer</button></div>';
@@ -10847,7 +10856,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v520';
+const APP_VERSION='flint-v521';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
