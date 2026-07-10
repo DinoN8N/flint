@@ -73,17 +73,21 @@ hr{border:0;border-top:1.5px dashed #bbb;margin:12px 0}
   <!-- carte d'identité -->
   <div class="box solid">
     <div class="row">
-      <span class="avatar" onclick="toast('Changer la photo : caméra ou galerie')">photo</span>
+      <span style="position:relative;flex:none">
+        <span class="avatar" onclick="go('editprofile')">photo</span>
+        <span style="position:absolute;right:-4px;bottom:-4px;width:22px;height:22px;border:1.5px solid #111;border-radius:7px;background:#fff;display:grid;place-items:center;font-size:11px;cursor:pointer" onclick="go('editprofile')">✎</span>
+      </span>
       <div style="min-width:0">
-        <div style="font-weight:800;font-size:16px;cursor:pointer" onclick="go('account')">Dino Astori</div>
+        <div style="font-weight:800;font-size:16px;cursor:pointer" id="rname" onclick="go('editprofile')">Dino Astori</div>
         <div style="font-size:11.5px;color:#666;cursor:pointer" onclick="go('account')" id="remail2">dino.astori25@gmail.com</div>
         <div style="margin-top:6px"><span class="badge">🔒 FLINT À VIE</span> <span style="font-size:10px;color:#999">membre depuis mars 2026</span></div>
       </div>
     </div>
   </div>
-  <span class="note" style="margin:-4px 0 8px">→ La carte d'identité : photo, nom, email <b>visibles et tappables</b> dès l'arrivée.
-  (Whoop enterre l'email à 3 niveaux de réglages — ici, 1 tap → Compte.) Le badge <b>À VIE</b> vit SUR la carte :
-  c'est l'identité FLINT, pas un détail de facturation.</span>
+  <span class="note" style="margin:-4px 0 8px">→ La carte d'identité : photo, nom, email <b>visibles et tappables</b> dès l'arrivée
+  (Whoop enterre tout ça à 3 niveaux : Plus → Mon compte → Informations du profil). Le crayon ✎ sur la photo = repris
+  de Whoop. Tap photo/nom → formulaire « Modifier le profil » ; tap email → Compte &amp; sécurité. Le badge <b>À VIE</b>
+  vit SUR la carte : c'est l'identité FLINT, pas un détail de facturation.</span>
 
   <!-- stats identité sportive -->
   <div class="grid3">
@@ -126,12 +130,13 @@ hr{border:0;border-top:1.5px dashed #bbb;margin:12px 0}
   <div class="sechead">Préférences</div>
   <div class="box solid" style="padding:4px 12px">
     <div class="prow" onclick="go('notifs')"><span class="lab">Notifications</span><span class="val">4 actives</span><span class="ch">›</span></div>
-    <div class="prow" onclick="event.stopPropagation()"><span class="lab">Unités</span><span class="val" id="runit">kg · cm</span><span class="sw on" style="margin-left:10px" onclick="toggleUnits(this)"><i></i></span></div>
+    <div class="prow" style="cursor:default"><span class="lab">Unités</span><span class="sp"></span><span class="chip" id="uImp" onclick="setUnits(0)">Impérial</span><span class="chip on" id="uMet" onclick="setUnits(1)">Métrique</span></div>
     <div class="prow" onclick="toast('Français / English — toute l\'app bascule')"><span class="lab">Langue</span><span class="val">Français</span><span class="ch">›</span></div>
     <div class="prow" onclick="event.stopPropagation()"><span class="lab">Thème sombre</span><span class="sw" onclick="sw(this);toast('Thème appliqué immédiatement, pas de redémarrage')"><i></i></span></div>
   </div>
-  <span class="note">→ Les préférences qui changent l'expérience quotidienne, directement actionnables
-  (interrupteurs qui marchent, essaie). Unités = un interrupteur kg·cm ↔ lb·ft, pas un sous-menu.</span>
+  <span class="note">→ Les préférences qui changent l'expérience quotidienne, directement actionnables sur place
+  (tout marche, essaie). Unités = <b>segmented Impérial / Métrique repris de Whoop</b> — deux états visibles d'un coup,
+  plus clair qu'un interrupteur ou un sous-menu.</span>
 
   <!-- données -->
   <div class="sechead">Données &amp; confidentialité</div>
@@ -159,9 +164,13 @@ hr{border:0;border-top:1.5px dashed #bbb;margin:12px 0}
   <div class="sechead">Support</div>
   <div class="box solid" style="padding:4px 12px">
     <div class="prow" onclick="toast('FAQ + chat support')"><span class="lab">Aide &amp; contact</span><span class="ch">›</span></div>
+    <div class="prow" onclick="toast('Guides : bien porter le bracelet, comprendre la récup, scanner un repas')"><span class="lab">Tutoriels — bien démarrer</span><span class="ch">›</span></div>
+    <div class="prow" onclick="toast('Boutique : bracelets de rechange, chargeur, textile')"><span class="lab">Boutique FLINT</span><span class="ch">›</span></div>
     <div class="prow" onclick="toast('Ouvre l\'App Store')"><span class="lab">Noter FLINT</span><span class="ch">›</span></div>
     <div class="prow" style="cursor:default"><span class="lab" style="color:#999;font-weight:400">Version</span><span class="val">1.0 (build 274)</span></div>
   </div>
+  <span class="note">→ Tutoriels et Boutique : repris de Whoop, mais relégués ICI, en bas — chez eux les accessoires
+  à 59 € trônent au-dessus de « Mon compte ». Le profil est au service de l'utilisateur, pas un magasin.</span>
 
   <div style="margin-top:14px"><span class="btn danger" style="width:100%;justify-content:center" onclick="go('delete')">Supprimer mon compte</span></div>
   <span class="note" style="text-align:center">→ En bas, isolé, rouge — jamais à côté d'une action courante.</span>
@@ -186,6 +195,36 @@ hr{border:0;border-top:1.5px dashed #bbb;margin:12px 0}
   <div class="pick"><div class="wheel" id="ph2"></div><div class="sel"></div></div>
   <div style="text-align:center;font-size:12px;color:#666;margin-top:6px">cm</div>
   <div style="text-align:center;margin-top:14px"><span class="btn pri" onclick="saveH()">Enregistrer</span></div>
+</section>
+
+<!-- ════════ 3b. MODIFIER LE PROFIL (formulaire identité, pattern Whoop amélioré) ════════ -->
+<section class="scr" id="editprofile">
+  <div class="bar"><span class="btn" onclick="go('profil')">‹</span><span class="t">Modifier le profil</span><span></span></div>
+  <div class="row" style="margin:6px 0 16px">
+    <span style="position:relative;flex:none">
+      <span class="avatar" onclick="toast('Changer la photo : caméra ou galerie')">photo</span>
+      <span style="position:absolute;right:-4px;bottom:-4px;width:22px;height:22px;border:1.5px solid #111;border-radius:7px;background:#fff;display:grid;place-items:center;font-size:11px;cursor:pointer" onclick="toast('Changer la photo : caméra ou galerie')">✎</span>
+    </span>
+    <div style="font-weight:800;font-size:18px" id="epname">Dino Astori</div>
+  </div>
+  <div class="k">Prénom</div>
+  <div class="input" contenteditable="true" oninput="epDirty()" id="epFirst">Dino</div>
+  <div class="k">Nom de famille</div>
+  <div class="input" contenteditable="true" oninput="epDirty()" id="epLast">Astori</div>
+  <div class="k">Date de naissance</div>
+  <div class="input ph" onclick="epDirty();toast('Roue jour / mois / année — la même roue que partout')">21 oct. 2004</div>
+  <div class="grid2">
+    <div><div class="k">Pays</div><div class="input ph" onclick="epDirty();toast('Liste des pays')">France</div></div>
+    <div><div class="k">Ville</div><div class="input" contenteditable="true" oninput="epDirty()">Paris</div></div>
+  </div>
+  <div class="k">Genre</div>
+  <div class="input ph" onclick="epDirty();toast('Homme / Femme / Préfère ne pas dire — influence les modèles physiologiques')">Homme</div>
+  <span class="btn" id="epSave" style="width:100%;justify-content:center;opacity:.35;pointer-events:none" onclick="epApply()">Enregistrer</span>
+  <span class="note">→ Le formulaire Whoop, mieux rangé : <b>uniquement l'identité froide</b> (prénom, nom, naissance,
+  pays, ville, genre — modifiés une fois par vie). Poids et taille n'y sont PAS : ce sont des données <b>vivantes</b>
+  qui pilotent les calculs, elles s'éditent en 2 taps depuis « Mon corps » (roue + fraîcheur de la pesée) —
+  Whoop mélange les deux dans le même formulaire. « Enregistrer » reste grisé tant que rien n'a changé
+  (repris de Whoop, bon pattern — essaie : modifie le prénom, le bouton s'allume, valide → la carte d'identité suit).</span>
 </section>
 
 <!-- ════════ 4. MON BRACELET ════════ -->
@@ -251,10 +290,13 @@ hr{border:0;border-top:1.5px dashed #bbb;margin:12px 0}
     <div class="prow" onclick="toast('Facture PDF envoyée par email')"><span class="lab">Télécharger ma facture</span><span class="ch">›</span></div>
     <div class="prow" onclick="toast('Achat restauré depuis l\'App Store ✓')"><span class="lab">Restaurer mon achat</span><span class="ch">›</span></div>
     <div class="prow" onclick="toast('Offrir FLINT — page cadeau')"><span class="lab">Offrir FLINT à quelqu'un</span><span class="ch">›</span></div>
+    <div class="prow" onclick="toast('Ton lien de parrainage : ton pote a −20 €, toi un bracelet de rechange offert')"><span class="lab">Parrainer un ami</span><span class="val">−20 € pour lui<small>un cadeau pour toi</small></span><span class="ch">›</span></div>
   </div>
-  <span class="note">→ Là où Whoop affiche « prochain prélèvement », FLINT affiche <b>« Aucun abonnement. Jamais. »</b> —
-  l'écran de facturation devient un écran de fierté. « Offrir » : le meilleur vendeur d'un produit à vie, c'est son
-  propriétaire.</span>
+  <span class="note">→ Là où Whoop affiche « prochain prélèvement » + « mode de paiement » + « prolongations », FLINT affiche
+  <b>« Aucun abonnement. Jamais. »</b> — l'écran de facturation devient un écran de fierté. Le <b>parrainage</b> est repris
+  de Whoop (« Référez un ami ») mais adapté au modèle à vie : une réduction pour lui, un cadeau physique pour toi (pas
+  « 1 mois de crédit » — il n'y a rien à créditer). Et note l'absence volontaire de « Mode de paiement » :
+  <b>aucune carte stockée, parce qu'il n'y a rien à prélever</b>. C'est un argument, pas un manque.</span>
 </section>
 
 <!-- ════════ 8. COMPTE & SÉCURITÉ ════════ -->
@@ -268,9 +310,11 @@ hr{border:0;border-top:1.5px dashed #bbb;margin:12px 0}
   <div class="box solid" style="padding:4px 12px">
     <div class="prow" onclick="toast('Ancien mot de passe → nouveau ×2')"><span class="lab">Changer le mot de passe</span><span class="ch">›</span></div>
     <div class="prow" style="cursor:default"><span class="lab">Connexion Apple</span><span class="val">Liée ✓</span></div>
-    <div class="prow" onclick="toast('Code par email pour vérifier les nouveaux appareils')"><span class="lab">Vérification en 2 étapes</span><span class="sw" onclick="event.stopPropagation();sw(this)"><i></i></span></div>
-    <div class="prow" style="cursor:default"><span class="lab">Prénom / Nom</span><span class="val" contenteditable="true">Dino Astori</span></div>
+    <div class="prow" style="cursor:default"><span class="lab">Authentification multifacteur (MFA)<small style="display:block;font-weight:400;color:#999;font-size:10px">tes données de santé méritent une serrure de plus</small></span><span class="sw" onclick="sw(this);toast(this.classList.contains('on')?'MFA activée — code à la connexion sur un nouvel appareil':'MFA désactivée')"><i></i></span></div>
   </div>
+  <span class="note">→ Le MFA de Whoop, gardé — c'est le bon standard pour des données de santé — mais leur paragraphe
+  de 4 lignes devient une sous-ligne de 8 mots. La réassurance, pas le juridique. (Prénom/nom s'éditent dans
+  « Modifier le profil », pas ici — un seul endroit par info.)</span>
 </section>
 
 <!-- ════════ 9. SUPPRESSION (la seule vraie confirmation) ════════ -->
@@ -300,7 +344,7 @@ hr{border:0;border-top:1.5px dashed #bbb;margin:12px 0}
   <b style="align-self:center">PLAN&nbsp;:</b>
   <a onclick="go('profil')">1 Profil</a><a onclick="openW()">2 Poids</a><a onclick="openH()">3 Taille</a>
   <a onclick="go('device')">4 Bracelet</a><a onclick="go('notifs')">5 Notifs</a><a onclick="go('data')">6 Données</a>
-  <a onclick="go('access')">7 Accès</a><a onclick="go('account')">8 Compte</a><a onclick="go('delete')">9 Suppression</a>
+  <a onclick="go('access')">7 Accès</a><a onclick="go('account')">8 Compte</a><a onclick="go('delete')">9 Suppression</a><a onclick="go('editprofile')">10 Modifier</a>
 </div>
 
 <script>
@@ -317,9 +361,24 @@ function toastAct(){if(UNDO){UNDO();UNDO=null;document.getElementById('toastmsg'
 
 /* interrupteurs */
 function sw(el){el.classList.toggle('on')}
-function toggleUnits(el){sw(el);var u=document.getElementById('runit');
- var prev=u.textContent;u.textContent=el.classList.contains('on')?'kg · cm':'lb · ft';
- toast('Unités : '+u.textContent+' — toute l\'app bascule',function(){u.textContent=prev;el.classList.toggle('on')})}
+function setUnits(i){var prev=document.getElementById('uMet').classList.contains('on')?1:0;
+ if(i===prev){return}
+ document.getElementById('uImp').classList.toggle('on',i===0);
+ document.getElementById('uMet').classList.toggle('on',i===1);
+ toast('Unités : '+(i?'kg · cm':'lb · ft')+' — toute l\'app bascule',function(){setUnitsSilent(prev)})}
+function setUnitsSilent(i){document.getElementById('uImp').classList.toggle('on',i===0);
+ document.getElementById('uMet').classList.toggle('on',i===1)}
+
+/* formulaire Modifier le profil */
+function epDirty(){var b=document.getElementById('epSave');b.style.opacity=1;b.style.pointerEvents='auto';b.classList.add('pri')}
+function epApply(){
+ var n=(document.getElementById('epFirst').textContent.trim()+' '+document.getElementById('epLast').textContent.trim()).trim();
+ var prev=document.getElementById('rname').textContent;
+ document.getElementById('rname').textContent=n;
+ document.getElementById('epname').textContent=n;
+ var b=document.getElementById('epSave');b.style.opacity=.35;b.style.pointerEvents='none';b.classList.remove('pri');
+ go('profil');
+ toast('Profil mis à jour ✓',function(){document.getElementById('rname').textContent=prev;document.getElementById('epname').textContent=prev})}
 
 /* roues poids / taille */
 var CUR={w:76,h:183};
