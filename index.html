@@ -4927,181 +4927,203 @@ body.stepsview header{display:none}
 </section>
 
 <!-- ===================== PROFIL ===================== -->
-<section class="view" id="v-profile">
-<div class="flprofile">
-  <style>
-  .pf2-hd{display:flex;align-items:center;gap:10px;padding:4px 2px 20px}
-  .pf2-hd .bk{width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:#fff;color:#15140F;font-size:21px;display:grid;place-items:center;cursor:pointer;flex:none;box-shadow:0 5px 14px rgba(20,18,12,.06);transition:transform .15s ease}
-  .pf2-hd .bk:active{transform:scale(.88)}
-  .pf2-hd .t{flex:1;text-align:center;font-family:'Switzer',sans-serif;font-weight:800;letter-spacing:.2em;text-transform:uppercase;font-size:12.5px;color:#15140F}
-  .pf2-tier{font-family:'Switzer',sans-serif;font-weight:800;letter-spacing:.18em;font-size:10.5px;color:#fff;background:var(--accent);padding:7px 12px;border-radius:10px;flex:none;box-shadow:0 6px 16px -4px rgba(240,73,46,.5)}
-  .pf2-hero{margin-bottom:20px}
-  .pf2-av{width:84px;height:84px;border-radius:50%;display:grid;place-items:center;font-family:'Geist',sans-serif;font-weight:700;font-size:31px;color:#fff;background:linear-gradient(140deg,#FF8A5C,#F0492E);box-shadow:0 16px 34px -10px rgba(240,73,46,.55);margin-bottom:16px;background-size:cover;background-position:center}
-  .pf2-namerow{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
-  .pf2-name{font-family:'Geist',sans-serif;font-weight:700;letter-spacing:-.025em;font-size:29px;color:#15140F;line-height:1.02}
-  .pf2-meta{font-size:14px;font-weight:600;color:#8A857D;margin-top:7px}
-  .pf2-edit{flex:none;display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:#fff;border-radius:13px;padding:9px 13px;font-family:'Switzer',sans-serif;font-weight:800;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#15140F;cursor:pointer;box-shadow:var(--sh-card);transition:transform .12s ease;margin-top:3px}
-  .pf2-edit:active{transform:scale(.95)}.pf2-edit i{font-size:14px;color:var(--accent)}
-  .pf2-since{display:inline-flex;align-items:center;gap:9px;margin-top:15px;background:#fff;border:1px solid var(--line);border-radius:30px;padding:9px 15px;font-size:13px;font-weight:600;color:#56514B;box-shadow:var(--sh-card)}
-  .pf2-since b{color:#15140F;font-weight:800}.pf2-since .ic{display:grid;place-items:center;color:var(--accent);font-size:15px}
-  .pf2-row{display:flex;align-items:center;gap:14px;width:100%;background:#fff;border:1px solid var(--line);border-radius:20px;padding:15px 16px;margin-bottom:11px;box-shadow:var(--sh-card);cursor:pointer;font-family:inherit;text-align:left;transition:transform .12s ease,box-shadow .18s ease}
-  .pf2-row:active{transform:scale(.985)}
-  .pf2-row .lvl{width:50px;height:50px;border-radius:16px;display:grid;place-items:center;flex:none;background:linear-gradient(140deg,#FFE7DC,#FCD3C4);font-family:'Geist',sans-serif;font-weight:700;font-size:21px;color:var(--accentD)}
-  .pf2-row .ic{width:50px;height:50px;border-radius:16px;display:grid;place-items:center;flex:none;font-size:23px}
-  .pf2-row .ic.amber{background:#FCEFD8;color:#E0922A}.pf2-row .ic.mem{background:#E9F6EE;color:#2FA86A}
-  .pf2-row .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
-  .pf2-row .tx b{font-family:'Switzer',sans-serif;font-weight:800;letter-spacing:.06em;text-transform:uppercase;font-size:13px;color:#15140F}
-  .pf2-row .tx span{font-size:12.5px;font-weight:600;color:#8A857D}
-  .pf2-row .val{font-family:'Geist',sans-serif;font-weight:700;font-size:18px;color:#15140F;flex:none;display:flex;align-items:center;gap:7px}
-  .pf2-row .val i{color:var(--accent);font-size:18px}
-  .pf2-row .chv{color:#C8C2B8;font-size:20px;flex:none}
-  .pf2-sect{font-family:'Geist',sans-serif;font-weight:700;letter-spacing:-.01em;font-size:22px;color:#15140F;margin:22px 2px 14px}
-  .pf2-ach{display:flex;gap:11px;overflow-x:auto;padding:2px 2px 6px;scrollbar-width:none}
-  .pf2-ach::-webkit-scrollbar{display:none}
-  .pf2-acard{flex:none;width:104px;background:#fff;border:1px solid var(--line);border-radius:20px;padding:15px 10px 13px;box-shadow:var(--sh-card);text-align:center}
-  .pf2-aic{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;margin:0 auto 9px;font-size:24px;position:relative}
-  .pf2-aic .n{position:absolute;bottom:-2px;right:-2px;background:#15140F;color:#fff;font-family:'Geist',sans-serif;font-weight:700;font-size:11px;min-width:20px;height:20px;border-radius:10px;display:grid;place-items:center;border:2px solid #fff;padding:0 4px}
-  .pf2-aname{font-size:11px;font-weight:700;color:#56514B;line-height:1.25}
-  .pf2-stats{display:grid;grid-template-columns:1fr 1fr;gap:11px}
-  .pf2-stat{background:#fff;border:1px solid var(--line);border-radius:20px;padding:15px 16px;box-shadow:var(--sh-card)}
-  .pf2-stat .l{display:flex;align-items:center;gap:7px;font-family:'Switzer',sans-serif;font-weight:800;letter-spacing:.06em;text-transform:uppercase;font-size:10px;color:#8A857D}
-  .pf2-stat .l i{font-size:14px;color:var(--accent)}
-  .pf2-stat .v{font-family:'Geist',sans-serif;font-weight:700;letter-spacing:-.02em;font-size:26px;color:#15140F;margin-top:9px;line-height:1}
-  .pf2-stat .v small{font-family:'Switzer',sans-serif;font-weight:700;font-size:12px;color:#8A857D;letter-spacing:0}
-  .pf2-edcard{display:block;width:100%;text-align:left;background:#fff;border:1px solid var(--line);border-radius:22px;padding:0 0 14px;box-shadow:var(--sh-card);cursor:pointer;font-family:inherit;margin:22px 0 14px;transition:transform .12s}
-  .pf2-edcard:active{transform:scale(.99)}
-  .pf2-edtop{display:flex;align-items:center;gap:13px;padding:15px 15px 13px}
-  .pf2-edtop .ic{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:#FCE7E0;color:var(--accent);font-size:22px;flex:none}
-  .pf2-edtop .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
-  .pf2-edtop .tx b{font-family:'Switzer',sans-serif;font-weight:800;font-size:15px;color:#15140F}
-  .pf2-edtop .tx span{font-size:12px;font-weight:600;color:#8A857D}
-  .pf2-edtop .chv{color:#C8C2B8;font-size:20px;flex:none}
-  .pf2-edgrid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border-radius:14px;overflow:hidden;margin:0 12px}
-  .pf2-edcell{background:#FAF8F5;padding:11px 13px;display:flex;flex-direction:column;gap:3px}
-  .pf2-edcell .k{font-family:'Switzer',sans-serif;font-weight:700;letter-spacing:.05em;text-transform:uppercase;font-size:9.5px;color:#9A938A}
-  .pf2-edcell b{font-family:'Geist',sans-serif;font-weight:600;font-size:14px;color:#15140F;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  /* ---- profil v3 (inspiré maquettes) ---- */
-  .pf3-h1{font-family:'Geist',sans-serif;font-weight:700;letter-spacing:-.03em;font-size:31px;color:#15140F;line-height:1;margin:2px 2px 5px}
-  .pf3-sub{font-size:14px;font-weight:600;color:#8A857D;margin:0 2px 18px}
-  .pf3-hero{position:relative;overflow:hidden;border-radius:26px;background:linear-gradient(135deg,#FDEEE7 0%,#FCE2D6 58%,#FBD7C9 100%);border:1px solid #F7DACD;box-shadow:0 18px 42px -20px rgba(240,73,46,.4);margin-bottom:24px}
-  .pf3-strk{position:absolute;top:0;right:0;width:190px;height:100%;opacity:.45;pointer-events:none}
-  .pf3-htop{display:flex;align-items:center;gap:16px;padding:20px 20px 0;position:relative}
-  .pf3-av{width:84px;height:84px;border-radius:50%;background-size:cover;background-position:center;flex:none;box-shadow:0 12px 26px -8px rgba(20,18,12,.32);position:relative;border:3px solid #fff}
-  .pf3-avb{position:absolute;bottom:-3px;right:-3px;width:30px;height:30px;border-radius:50%;background:linear-gradient(140deg,#FF8A5C,#F0492E);color:#fff;font-family:'Geist',sans-serif;font-weight:700;font-size:13px;display:grid;place-items:center;border:2.5px solid #fff;box-shadow:0 4px 10px -2px rgba(240,73,46,.5)}
-  .pf3-id{min-width:0}
-  .pf3-name{font-family:'Geist',sans-serif;font-weight:700;letter-spacing:-.025em;font-size:27px;color:#15140F;line-height:1.02}
-  .pf3-handle{font-size:14px;font-weight:600;color:#BC6A52;margin-top:5px}
-  .pf3-meta2{font-size:13.5px;font-weight:600;color:#8E7064;margin-top:3px}
-  .pf3-hact{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 20px 18px;position:relative}
-  .pf3-tier{display:inline-flex;align-items:center;gap:7px;background:var(--accent);color:#fff;font-family:'Switzer',sans-serif;font-weight:800;letter-spacing:.12em;font-size:11px;padding:11px 14px;border-radius:12px;box-shadow:0 8px 18px -5px rgba(240,73,46,.5);white-space:nowrap;flex:none}
-  .pf3-tier i{font-size:14px}
-  .pf3-edit{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:8px;background:#fff;border:1px solid #F3D8CB;border-radius:14px;padding:12px 14px;font-family:'Switzer',sans-serif;font-weight:800;font-size:13px;color:#15140F;cursor:pointer;box-shadow:0 7px 16px -6px rgba(20,18,12,.16);transition:transform .12s;white-space:nowrap}
-  .pf3-edit i{font-size:15px;color:var(--accent)}.pf3-edit:active{transform:scale(.97)}
-  .pf3-foot{display:grid;grid-template-columns:1fr 1fr 1.05fr;background:rgba(255,255,255,.62);border-top:1px solid rgba(240,73,46,.13);position:relative}
-  .pf3-fcell{padding:13px 13px 14px;display:flex;flex-direction:column;gap:3px;border-left:1px solid rgba(240,73,46,.1);min-width:0}
-  .pf3-fcell:first-child{border-left:none}
-  .pf3-fcell .fh{display:flex;align-items:center;gap:6px;font-size:10px;font-weight:700;color:#9C7C70;letter-spacing:.01em;white-space:nowrap}
-  .pf3-fcell .fh i{font-size:13px;color:var(--accent)}
-  .pf3-fcell b{font-family:'Geist',sans-serif;font-weight:700;font-size:14px;color:#15140F;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .pf3-fbar{height:5px;border-radius:3px;background:rgba(240,73,46,.16);overflow:hidden;margin-top:5px}
-  .pf3-fbar i{display:block;height:100%;border-radius:3px;background:linear-gradient(90deg,#FF8A5C,#F0492E)}
-  .pf3-shead{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:24px 2px 14px}
-  .pf3-shead h3{font-family:'Geist',sans-serif;font-weight:700;letter-spacing:-.015em;font-size:21px;color:#15140F}
-  .pf3-shead a{font-family:'Switzer',sans-serif;font-weight:700;font-size:13.5px;color:var(--accent);cursor:pointer;flex:none}
-  .pf3-act{display:flex;gap:11px;overflow-x:auto;padding:2px 2px 6px;scrollbar-width:none}
-  .pf3-act::-webkit-scrollbar{display:none}
-  .pf3-acard{flex:none;width:150px;background:#fff;border:1px solid var(--line);border-radius:20px;padding:15px 15px 16px;box-shadow:var(--sh-card);display:flex;flex-direction:column;cursor:pointer;text-align:left;font-family:inherit;transition:transform .12s}
-  .pf3-acard:active{transform:scale(.98)}
-  .pf3-aico{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;font-size:22px;margin-bottom:12px}
-  .pf3-aico.pe{background:#FCE7E0;color:var(--accent)}.pf3-aico.am{background:#FCEFD8;color:#E0922A}.pf3-aico.gr{background:#E7F5EC;color:#2FA86A}
-  .pf3-aico .num{font-family:'Geist',sans-serif;font-weight:700;font-size:21px;color:var(--accentD)}
-  .pf3-alab{font-family:'Switzer',sans-serif;font-weight:800;letter-spacing:.05em;text-transform:uppercase;font-size:11px;color:#8A857D;line-height:1.25;min-height:27px}
-  .pf3-aval{font-family:'Geist',sans-serif;font-weight:700;letter-spacing:-.02em;font-size:25px;color:#15140F;margin-top:7px;line-height:1}
-  .pf3-anote{font-family:'Switzer',sans-serif;font-weight:800;font-size:12px;color:var(--accent);margin-top:4px}
-  .pf3-asub{font-size:11.5px;font-weight:600;color:#8A857D;line-height:1.3;margin-top:5px}
-  .pf3-abar{height:5px;border-radius:3px;background:#F0EBE3;overflow:hidden;margin-top:auto}
-  .pf3-abwrap{margin-top:13px}
-  .pf3-abar i{display:block;height:100%;border-radius:3px;background:linear-gradient(90deg,#FF8A5C,#F0492E)}
-  .pf3-achv{width:30px;height:30px;border-radius:50%;background:#F4F1EB;display:grid;place-items:center;color:#8A857D;font-size:16px;margin-top:11px}
-  .pf3-insight{display:flex;align-items:center;gap:14px;background:#fff;border:1px solid var(--line);border-radius:20px;padding:15px 16px;box-shadow:var(--sh-card);overflow:hidden}
-  .pf3-inico{width:46px;height:46px;border-radius:14px;background:#FCE7E0;color:var(--accent);display:grid;place-items:center;font-size:22px;flex:none}
-  .pf3-intx{flex:1;min-width:0}
-  .pf3-intx b{font-family:'Switzer',sans-serif;font-weight:800;font-size:14.5px;color:#15140F;display:block}
-  .pf3-intx span{font-size:12.5px;font-weight:600;color:#8A857D;line-height:1.35;display:block;margin-top:2px}
-  .pf3-inspark{width:92px;height:46px;flex:none}
-  </style>
-  <div class="pf3-h1">Mon profil</div>
-  <div class="pf3-sub">Tes infos, tes objectifs, ton suivi.</div>
+<section class="view" id="v-profile" style="background:rgb(251,251,250)">
+<div class="pfx">
+<style>
+/* ═══ PROFIL — DA accueil (maquette 16) : Archivo, fond blanc cassé, orange rgb(251,96,21), gris fins ═══ */
+.pfx{--accent:#fb6015;font-family:Archivo,-apple-system,system-ui,sans-serif;color:rgb(20,17,15);padding:6px 0 34px}
+.pfx .pfx-back{width:44px;height:44px;border-radius:50%;background:#fff;border:none;box-shadow:rgba(20,17,15,.06) 0 1px 2px,rgba(20,17,15,.06) 0 8px 20px;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;margin-bottom:10px}
+.pfx .pfx-h1{font-family:Archivo,-apple-system,system-ui,sans-serif;font-size:32px;font-weight:800;letter-spacing:-.03em;line-height:1.02;margin:0 4px 16px;color:rgb(20,17,15)}
+.pfx .pfx-h1 .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:rgb(251,96,21);margin-left:4px}
+.pfx .pfx-card{background:#fff;border:1px solid rgb(240,236,229);border-radius:22px;padding:16px 18px;box-shadow:rgba(20,17,15,.05) 0 8px 26px;margin-bottom:12px}
+.pfx .pfx-k{font-family:-apple-system,system-ui,sans-serif;font-size:10.5px;font-weight:600;letter-spacing:.13em;text-transform:uppercase;color:rgb(124,118,108);margin:22px 6px 9px}
+.pfx .pfx-row{display:flex;align-items:center;gap:12px;padding:13px 2px;cursor:pointer;background:none;border:none;width:100%;text-align:left;font-family:inherit}
+.pfx .pfx-row + .pfx-row{border-top:1px solid rgb(246,243,238)}
+.pfx .pfx-row .pfx-lab{font-family:Archivo,-apple-system,sans-serif;font-size:15px;font-weight:600;color:rgb(20,17,15)}
+.pfx .pfx-row .pfx-sub{display:block;font-family:-apple-system,system-ui,sans-serif;font-size:11.5px;font-weight:300;color:rgb(143,137,127);margin-top:2px}
+.pfx .pfx-row .pfx-val{margin-left:auto;text-align:right;font-family:Archivo,-apple-system,sans-serif;font-size:15px;font-weight:600;color:rgb(20,17,15);flex:none}
+.pfx .pfx-row .pfx-val small{display:block;font-size:10.5px;font-weight:300;color:rgb(167,162,154);font-family:-apple-system,system-ui,sans-serif}
+.pfx .pfx-chv{color:rgb(200,195,187);flex:none}
+.pfx .pfx-btn{width:100%;padding:15px;border:1px solid rgb(233,228,220);border-radius:15px;background:#fff;color:rgb(20,17,15);font-family:-apple-system,system-ui,sans-serif;font-size:15px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px}
+.pfx .pfx-btn.pri{background:rgb(251,96,21);color:#fff;border:none;box-shadow:rgba(251,96,21,.28) 0 8px 22px}
+.pfx .pfx-btn.danger{color:rgb(224,49,32);border-color:rgb(245,205,200)}
+.pfx .pfx-in{width:100%;border:1px solid rgb(233,228,220);border-radius:14px;padding:13px;font-family:Archivo,-apple-system,sans-serif;font-size:15px;color:rgb(20,17,15);background:rgb(250,248,245);outline:none}
+.pfx .pfx-ingrid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}
+.pfx .pfx-inlab{font-family:-apple-system,system-ui,sans-serif;font-size:10.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgb(124,118,108);margin:0 2px 5px;display:block}
+/* identité */
+.pfx .pfx-idcard{display:flex;align-items:center;gap:14px;cursor:pointer}
+.pfx .pfx-av{width:64px;height:64px;border-radius:50%;background:rgb(255,241,233) center/cover;flex:none;position:relative;display:grid;place-items:center;font-family:Archivo;font-weight:700;font-size:24px;color:rgb(251,96,21)}
+.pfx .pfx-av .edit{position:absolute;right:-3px;bottom:-3px;width:24px;height:24px;border-radius:8px;background:#fff;border:1px solid rgb(240,236,229);display:flex;align-items:center;justify-content:center;box-shadow:rgba(20,17,15,.08) 0 2px 8px}
+.pfx .pfx-name{font-family:Archivo,-apple-system,sans-serif;font-size:20px;font-weight:700;letter-spacing:-.02em;color:rgb(20,17,15);line-height:1.1}
+.pfx .pfx-handle{font-family:-apple-system,system-ui,sans-serif;font-size:12.5px;font-weight:300;color:rgb(143,137,127);margin-top:2px}
+.pfx .pfx-badges{display:flex;align-items:center;gap:8px;margin-top:7px;flex-wrap:wrap}
+.pfx .pfx-life{display:inline-flex;align-items:center;gap:5px;background:rgb(255,241,233);color:rgb(251,96,21);border-radius:999px;padding:4px 10px;font-family:-apple-system,system-ui,sans-serif;font-size:11px;font-weight:600;white-space:nowrap}
+.pfx .pfx-since{font-family:-apple-system,system-ui,sans-serif;font-size:11px;font-weight:300;color:rgb(167,162,154);white-space:nowrap}
+/* têtes de section avec lien */
+.pfx .pfx-shead{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:22px 6px 9px}
+.pfx .pfx-shead .pfx-k{margin:0}
+.pfx .pfx-shead a{font-family:-apple-system,system-ui,sans-serif;font-size:12.5px;font-weight:600;color:rgb(251,96,21);cursor:pointer;flex:none}
+/* restyle des blocs GÉNÉRÉS par renderProfileHero (ids conservés) */
+#v-profile .pf3-act{display:flex;gap:10px;overflow-x:auto;padding:2px 2px 6px;scrollbar-width:none}
+#v-profile .pf3-act::-webkit-scrollbar{display:none}
+#v-profile .pf3-acard{flex:none;width:148px;background:#fff;border:1px solid rgb(240,236,229);border-radius:18px;padding:14px;box-shadow:rgba(20,17,15,.05) 0 6px 20px;display:flex;flex-direction:column;cursor:pointer;text-align:left;font-family:inherit}
+#v-profile .pf3-aico{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;font-size:20px;margin-bottom:11px;background:rgb(255,241,233)!important;color:rgb(251,96,21)!important}
+#v-profile .pf3-aico .num{font-family:Archivo,-apple-system,sans-serif;font-weight:700;font-size:19px;color:rgb(251,96,21)}
+#v-profile .pf3-alab{font-family:-apple-system,system-ui,sans-serif;font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:9.5px;color:rgb(124,118,108);line-height:1.3;min-height:25px}
+#v-profile .pf3-aval{font-family:Archivo,-apple-system,sans-serif;font-weight:700;letter-spacing:-.02em;font-size:24px;color:rgb(20,17,15);margin-top:6px;line-height:1}
+#v-profile .pf3-anote{font-family:-apple-system,system-ui,sans-serif;font-weight:600;font-size:11.5px;color:rgb(251,96,21);margin-top:4px}
+#v-profile .pf3-asub{font-family:-apple-system,system-ui,sans-serif;font-size:11px;font-weight:300;color:rgb(143,137,127);line-height:1.35;margin-top:4px}
+#v-profile .pf3-abwrap{margin-top:12px}
+#v-profile .pf3-abar{height:5px;border-radius:3px;background:rgb(244,241,235);overflow:hidden}
+#v-profile .pf3-abar i{display:block;height:100%;border-radius:3px;background:rgb(251,96,21)}
+#v-profile .pf3-achv{width:28px;height:28px;border-radius:50%;background:rgb(250,248,245);display:grid;place-items:center;color:rgb(143,137,127);font-size:15px;margin-top:10px}
+#v-profile .pf2-ach{display:flex;gap:10px;overflow-x:auto;padding:2px 2px 6px;scrollbar-width:none}
+#v-profile .pf2-ach::-webkit-scrollbar{display:none}
+#v-profile .pf2-acard{flex:none;width:100px;background:#fff;border:1px solid rgb(240,236,229);border-radius:18px;padding:14px 8px 12px;box-shadow:rgba(20,17,15,.04) 0 4px 16px;text-align:center}
+#v-profile .pf2-aic{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;margin:0 auto 8px;font-size:21px;position:relative;background:rgb(255,241,233)!important;color:rgb(251,96,21)!important}
+#v-profile .pf2-aic .n{position:absolute;bottom:-2px;right:-2px;background:rgb(20,17,15);color:#fff;font-family:Archivo,-apple-system,sans-serif;font-weight:700;font-size:10.5px;min-width:19px;height:19px;border-radius:10px;display:grid;place-items:center;border:2px solid #fff;padding:0 4px}
+#v-profile .pf2-aname{font-family:-apple-system,system-ui,sans-serif;font-size:10.5px;font-weight:600;color:rgb(87,83,78);line-height:1.3}
+#v-profile .pf3-insight{display:flex;align-items:center;gap:13px;background:#fff;border:1px solid rgb(240,236,229);border-radius:22px;padding:15px 16px;box-shadow:rgba(20,17,15,.05) 0 8px 26px;overflow:hidden}
+#v-profile .pf3-inico{width:42px;height:42px;border-radius:13px;background:rgb(255,241,233);color:rgb(251,96,21);display:grid;place-items:center;font-size:20px;flex:none}
+#v-profile .pf3-intx{flex:1;min-width:0}
+#v-profile .pf3-intx b{font-family:Archivo,-apple-system,sans-serif;font-weight:700;font-size:14.5px;color:rgb(20,17,15);display:block}
+#v-profile .pf3-intx span{font-family:-apple-system,system-ui,sans-serif;font-size:12px;font-weight:300;color:rgb(143,137,127);line-height:1.4;display:block;margin-top:2px}
+#v-profile .pf3-inspark{width:88px;height:44px;flex:none}
+#v-profile .pf2-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+#v-profile .pf2-stat{background:#fff;border:1px solid rgb(240,236,229);border-radius:18px;padding:14px 15px;box-shadow:rgba(20,17,15,.04) 0 4px 16px}
+#v-profile .pf2-stat .l{display:flex;align-items:center;gap:6px;font-family:-apple-system,system-ui,sans-serif;font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:9.5px;color:rgb(124,118,108)}
+#v-profile .pf2-stat .l i{font-size:13px;color:rgb(251,96,21)}
+#v-profile .pf2-stat .v{font-family:Archivo,-apple-system,sans-serif;font-weight:700;letter-spacing:-.02em;font-size:24px;color:rgb(20,17,15);margin-top:8px;line-height:1}
+#v-profile .pf2-stat .v small{font-family:-apple-system,system-ui,sans-serif;font-weight:300;font-size:11.5px;color:rgb(143,137,127);letter-spacing:0}
+/* interrupteurs DA */
+.pfx .switch{position:relative;width:46px;height:28px;flex:none;display:inline-block}
+.pfx .switch input{opacity:0;width:0;height:0;position:absolute}
+.pfx .switch .sl2{position:absolute;inset:0;border-radius:999px;background:rgb(240,236,229);transition:.18s;cursor:pointer}
+.pfx .switch .sl2:before{content:'';position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:rgba(20,17,15,.18) 0 2px 6px;transition:.18s}
+.pfx .switch input:checked + .sl2{background:rgb(251,96,21)}
+.pfx .switch input:checked + .sl2:before{left:21px}
+/* accès à vie */
+.pfx .pfx-life-card{background:#fff;border:1px solid rgb(240,236,229);border-radius:22px;padding:20px 18px;box-shadow:rgba(20,17,15,.05) 0 8px 26px;margin-bottom:12px;cursor:pointer;text-align:center}
+.pfx .pfx-life-card .big{display:inline-flex;align-items:center;gap:7px;background:rgb(255,241,233);color:rgb(251,96,21);border-radius:999px;padding:8px 16px;font-family:Archivo,-apple-system,sans-serif;font-size:14px;font-weight:700}
+.pfx .pfx-life-card p{font-family:-apple-system,system-ui,sans-serif;font-size:12.5px;font-weight:300;color:rgb(143,137,127);margin:10px 0 0;line-height:1.5}
+.pfx .pfx-life-card p b{color:rgb(20,17,15);font-weight:600}
+/* feuille roue poids/taille */
+.pfx-sheetbg{position:fixed;inset:0;background:rgba(20,17,15,0);z-index:180;opacity:0;pointer-events:none;transition:opacity .28s cubic-bezier(.22,1,.36,1);display:flex;align-items:flex-end;justify-content:center}
+.pfx-sheetbg.on{opacity:1;pointer-events:auto;background:rgba(20,17,15,.4)}
+.pfx-sheet{width:100%;max-width:464px;background:#fff;border-radius:30px 30px 0 0;padding:22px 22px calc(env(safe-area-inset-bottom,0px) + 24px);box-shadow:rgba(20,17,15,.16) 0 -10px 40px;transform:translateY(100%);transition:transform .32s cubic-bezier(.22,1,.36,1);font-family:Archivo,-apple-system,system-ui,sans-serif}
+.pfx-sheetbg.on .pfx-sheet{transform:translateY(0)}
+.pfx-sheet h3{font-family:Archivo,-apple-system,sans-serif;font-size:20px;font-weight:800;letter-spacing:-.02em;color:rgb(20,17,15);margin:0 0 14px}
+.pfx-pick{position:relative;display:flex;border:1px solid rgb(233,228,220);border-radius:16px;padding:0 8px;background:rgb(250,248,245);overflow:hidden;max-width:200px;margin:0 auto}
+.pfx-wheel{flex:1;height:176px;overflow-y:auto;scroll-snap-type:y mandatory;text-align:center;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.pfx-wheel::-webkit-scrollbar{display:none}
+.pfx-wheel::before,.pfx-wheel::after{content:'';display:block;height:72px}
+.pfx-wheel .it{height:32px;line-height:32px;font-family:Archivo,-apple-system,sans-serif;font-size:17px;font-weight:600;color:rgb(200,195,187);cursor:pointer;scroll-snap-align:center;transition:color .12s}
+.pfx-wheel .it.on{color:rgb(20,17,15);font-weight:700}
+.pfx-selband{position:absolute;left:8px;right:8px;top:50%;height:32px;transform:translateY(-50%);border-top:1.5px solid rgb(240,236,229);border-bottom:1.5px solid rgb(240,236,229);pointer-events:none;background:rgba(251,96,21,.04)}
+.pfx-unit{text-align:center;font-family:-apple-system,system-ui,sans-serif;font-size:12px;font-weight:300;color:rgb(143,137,127);margin-top:8px}
+/* journal diagnostic (rempli par renderJournal, styles hérités .flprofile) */
+.pfx .pfx-journal{margin-top:10px}
+</style>
 
-  <div class="pf3-hero">
-    <svg class="pf3-strk" viewBox="0 0 190 220" preserveAspectRatio="none"><g stroke="var(--accent)" stroke-width="7" stroke-linecap="round"><line x1="66" y1="24" x2="186" y2="24"/><line x1="106" y1="48" x2="190" y2="48"/><line x1="44" y1="72" x2="180" y2="72"/><line x1="92" y1="96" x2="190" y2="96"/><line x1="64" y1="120" x2="176" y2="120"/><line x1="116" y1="144" x2="190" y2="144"/><line x1="78" y1="168" x2="184" y2="168"/><line x1="100" y1="192" x2="190" y2="192"/></g></svg>
-    <div class="pf3-htop">
-      <div class="pf3-av" id="pf3Av"><span class="pf3-avb" id="pf3Avb">A</span></div>
-      <div class="pf3-id"><div class="pf3-name" id="pf2Name">—</div><div class="pf3-handle" id="pf3Handle">—</div><div class="pf3-meta2" id="pf2Meta">—</div></div>
-    </div>
-    <div class="pf3-hact">
-      <span class="pf3-tier"><i class="ti ti-crown"></i>À VIE</span>
-      <button class="pf3-edit" type="button" onclick="go('pfedit')"><i class="ti ti-pencil"></i>Modifier mon profil</button>
-    </div>
-    <div class="pf3-foot">
-      <div class="pf3-fcell"><div class="fh"><i class="ti ti-calendar-event"></i>Membre depuis</div><b id="pf2Since">—</b></div>
-      <div class="pf3-fcell"><div class="fh"><i class="ti ti-rosette"></i>Objectif</div><b id="pf3Goal">—</b></div>
-      <div class="pf3-fcell"><div class="fh"><i class="ti ti-chart-bar"></i>Complété</div><b id="pf3Pct">—</b><div class="pf3-fbar"><i id="pf3PctBar" style="width:0%"></i></div></div>
-    </div>
+<button class="pfx-back" type="button" onclick="go('today')" aria-label="Retour"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fb6015" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></button>
+<h1 class="pfx-h1">Profil<span class="dot"></span></h1>
+
+<!-- carte d'identité -->
+<div class="pfx-card pfx-idcard" onclick="go('pfedit')">
+  <div class="pfx-av" id="pf3Av"><span style="display:none" id="pf3Avb">A</span>
+    <span class="edit"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fb6015" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg></span>
   </div>
-
-  <div class="pf3-shead"><h3>Mon activité</h3><a onclick="go('trends')">Voir tout</a></div>
-  <div class="pf3-act" id="pf3Act"></div>
-
-  <div class="pf3-shead"><h3>Mes accomplissements</h3><a onclick="toast('Bientôt : tous tes badges 🏅')">Voir tous</a></div>
-  <div class="pf2-ach" id="pf2Ach"></div>
-
-  <div class="pf3-shead"><h3>Points forts des données</h3></div>
-  <div class="pf3-insight" id="pf3Insight"></div>
-  <div class="pf2-stats" id="pf2Stats" style="margin-top:11px"></div>
-
-  <div class="flcard" id="journalCard"></div>
-
-  <div class="flcard">
-    <div class="sect"><i class="ti ti-watch"></i>Capteur · Polar Loop</div>
-    <button class="fbtn dark" onclick="pullHealthConnect()"><i class="ti ti-refresh"></i>Synchroniser mon capteur</button>
-    <button class="fbtn ghost" onclick="setWatchWorn(window._watchWorn===false)"><i class="ti ti-watch"></i><span id="pfWatchLbl">Simuler : retirer le bracelet</span></button>
-    <div class="divlab">Ou saisir la nuit à la main</div>
-    <div class="fgrid">
-      <div class="fld"><span class="flab">HRV (ms)</span><input aria-label="HRV (ms)" id="snHrv" class="fin2" type="number" inputmode="decimal"></div>
-      <div class="fld"><span class="flab">FC repos</span><input aria-label="FC repos" id="snRhr" class="fin2" type="number" inputmode="numeric"></div>
-      <div class="fld"><span class="flab">Resp /min</span><input aria-label="Resp /min" id="snResp" class="fin2" type="number" inputmode="decimal"></div>
-      <div class="fld"><span class="flab">Sommeil (h)</span><input aria-label="Sommeil (h)" id="snSleep" class="fin2" type="number" inputmode="decimal" step="0.1"></div>
-    </div>
-    <button class="fbtn ghost" style="margin-top:14px" onclick="saveSensorManual()"><i class="ti ti-device-floppy"></i>Enregistrer la nuit</button>
-    <button class="fbtn ghost" onclick="simulateData()"><i class="ti ti-dice-5"></i>Recharger la démo (28 jours)</button>
-    <p class="hint">Sur Android, ta Polar Loop remplit ça via Health Connect : nuit (HRV/sommeil) <b>et tes séances de sport détectées automatiquement</b> (type + intensité). ~4 nuits pour calibrer ta baseline.</p>
+  <div style="min-width:0;flex:1">
+    <div class="pfx-name" id="pf2Name">—</div>
+    <div class="pfx-handle"><span id="pf3Handle">—</span> · <span id="pf2Meta">—</span></div>
+    <div class="pfx-badges"><span class="pfx-life">&#128274; FLINT À VIE</span><span class="pfx-since">membre depuis <span id="pf2Since">—</span></span></div>
   </div>
+  <svg class="pfx-chv" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg>
+</div>
+<span style="display:none" id="pf3Goal"></span><span style="display:none" id="pf3Pct"></span><i style="display:none" id="pf3PctBar"></i>
 
-  <div class="flcard">
-    <div class="sect"><i class="ti ti-bell"></i>Notifications</div>
-    <div class="swrow"><div><div class="swt">Rappel de coucher</div><div class="sws">Pour atteindre ton objectif de sommeil</div></div><label class="switch"><input type="checkbox" id="ntBed" onchange="toggleNotif('bed',this.checked)"><span class="sl2"></span></label></div>
-    <div class="swrow"><div><div class="swt">Récup du matin</div><div class="sws">Ton score dès le réveil</div></div><label class="switch"><input type="checkbox" id="ntMorning" onchange="toggleNotif('morning',this.checked)"><span class="sl2"></span></label></div>
-    <p class="ntnote" id="ntNote"></p>
-  </div>
+<!-- activité -->
+<div class="pfx-shead"><div class="pfx-k">Mon activité</div><a onclick="go('trends')">Voir tout</a></div>
+<div class="pf3-act" id="pf3Act"></div>
 
-  <div class="flcard lifetime" role="button" tabindex="0" onclick="go('manifesto')">
-    <div class="ltic"><i class="ti ti-infinity"></i></div>
-    <div class="ltt">Tout débloqué à vie</div>
-    <p class="lts">Pas d'abonnement, jamais. Coach, anomalies, stades de sommeil, bilans, export — tout est inclus pour toujours. L'étincelle t'appartient.</p>
-    <div class="ltrow"><i class="ti ti-check"></i>Aucune fonctionnalité derrière un paywall</div>
-    <div class="ltrow"><i class="ti ti-check"></i>Tes données restent à toi — export en 1 tap</div>
-    <div class="ltrow"><i class="ti ti-check"></i>Mises à jour incluses, à vie</div>
-    <span class="ltmore">Lire notre engagement<i class="ti ti-arrow-right"></i></span>
-  </div>
+<!-- accomplissements -->
+<div class="pfx-shead"><div class="pfx-k">Mes accomplissements</div><a onclick="toast('Bientôt : tous tes badges 🏅')">Voir tous</a></div>
+<div class="pf2-ach" id="pf2Ach"></div>
 
-  <div class="flcard">
-    <div class="sect"><i class="ti ti-settings"></i>App</div>
-    <button class="fbtn ghost" onclick="forceUpdate()"><i class="ti ti-refresh"></i>Forcer la mise à jour</button>
-    <p class="verline" id="verLine"></p>
-    <button class="fbtn ghost" style="margin-top:14px" onclick="exportData()"><i class="ti ti-upload"></i>Exporter mes données</button>
-    <button class="fbtn danger" onclick="wipeData()"><i class="ti ti-trash"></i>Vider les données capteur</button>
+<!-- mon corps -->
+<div class="pfx-k">Mon corps</div>
+<div class="pfx-card" style="padding:5px 18px">
+  <button class="pfx-row" type="button" onclick="pfxBody('w')"><span><span class="pfx-lab">Poids</span><span class="pfx-sub" id="pfxWSub">dernière mesure</span></span><span class="pfx-val" id="pfxW">— kg</span><svg class="pfx-chv" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg></button>
+  <button class="pfx-row" type="button" onclick="pfxBody('h')"><span class="pfx-lab">Taille</span><span class="pfx-val" id="pfxH">— cm</span><svg class="pfx-chv" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg></button>
+  <button class="pfx-row" type="button" onclick="go('pfedit')"><span class="pfx-lab">Âge</span><span class="pfx-val" id="pfxA">—</span><svg class="pfx-chv" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg></button>
+  <button class="pfx-row" type="button" onclick="go('pfedit')"><span class="pfx-lab">Sexe</span><span class="pfx-val" id="pfxG">—</span><svg class="pfx-chv" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg></button>
+</div>
+
+<!-- objectifs -->
+<div class="pfx-k">Mes objectifs</div>
+<div class="pfx-card" style="padding:5px 18px">
+  <button class="pfx-row" type="button" onclick="go('goal')"><span><span class="pfx-lab">Objectif actuel</span><span class="pfx-sub" id="pfxGoalSub">—</span></span><span class="pfx-val" id="pfxGoalV">—</span><svg class="pfx-chv" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg></button>
+</div>
+
+<!-- bracelet -->
+<div class="pfx-k">Mon bracelet</div>
+<div class="pfx-card">
+  <div class="pfx-row" style="cursor:default;padding-top:4px"><span><span class="pfx-lab">Polar Loop</span><span class="pfx-sub" id="pfxWatchSub">connecté</span></span><span class="pfx-val" id="pfxBatt">—</span></div>
+  <button class="pfx-btn pri" type="button" onclick="pullHealthConnect()"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 11-2.64-6.36M21 3v6h-6"></path></svg>Synchroniser mon capteur</button>
+  <button class="pfx-btn" type="button" onclick="setWatchWorn(window._watchWorn===false)"><span id="pfWatchLbl">Simuler : retirer le bracelet</span></button>
+  <div class="pfx-k" style="margin:16px 2px 8px">Ou saisir la nuit à la main</div>
+  <div class="pfx-ingrid" style="margin-top:0">
+    <div><span class="pfx-inlab">HRV (ms)</span><input aria-label="HRV (ms)" id="snHrv" class="pfx-in" type="number" inputmode="decimal"></div>
+    <div><span class="pfx-inlab">FC repos</span><input aria-label="FC repos" id="snRhr" class="pfx-in" type="number" inputmode="numeric"></div>
+    <div><span class="pfx-inlab">Resp /min</span><input aria-label="Resp /min" id="snResp" class="pfx-in" type="number" inputmode="decimal"></div>
+    <div><span class="pfx-inlab">Sommeil (h)</span><input aria-label="Sommeil (h)" id="snSleep" class="pfx-in" type="number" inputmode="decimal" step="0.1"></div>
   </div>
+  <button class="pfx-btn" type="button" onclick="saveSensorManual()">Enregistrer la nuit</button>
+</div>
+
+<!-- notifications -->
+<div class="pfx-k">Notifications</div>
+<div class="pfx-card" style="padding:5px 18px">
+  <div class="pfx-row" style="cursor:default"><span><span class="pfx-lab">Rappel de coucher</span><span class="pfx-sub">pour atteindre ton objectif de sommeil</span></span><label class="switch"><input type="checkbox" id="ntBed" onchange="toggleNotif('bed',this.checked)"><span class="sl2"></span></label></div>
+  <div class="pfx-row" style="cursor:default"><span><span class="pfx-lab">Récup du matin</span><span class="pfx-sub">ton score dès le réveil</span></span><label class="switch"><input type="checkbox" id="ntMorning" onchange="toggleNotif('morning',this.checked)"><span class="sl2"></span></label></div>
+  <p style="font-family:-apple-system,system-ui,sans-serif;font-size:11px;font-weight:300;color:rgb(167,162,154);margin:2px 2px 12px;line-height:1.4" id="ntNote"></p>
+</div>
+
+<!-- points forts -->
+<div class="pfx-k">Points forts des données</div>
+<div class="pf3-insight" id="pf3Insight"></div>
+<div class="pf2-stats" id="pf2Stats"></div>
+
+<!-- accès -->
+<div class="pfx-k">Mon accès</div>
+<div class="pfx-life-card" role="button" tabindex="0" onclick="go('manifesto')">
+  <span class="big">&#128274; FLINT À VIE</span>
+  <p><b>Aucun abonnement. Jamais.</b><br>Coach, anomalies, stades de sommeil, bilans, export — tout est inclus pour toujours. Tes données restent à toi.<br><span style="color:rgb(251,96,21);font-weight:600">Lire notre engagement →</span></p>
+</div>
+
+<!-- app & données -->
+<div class="pfx-k">App &amp; données</div>
+<div class="pfx-card">
+  <button class="pfx-btn" type="button" style="margin-top:0" onclick="exportData()">Exporter mes données</button>
+  <button class="pfx-btn" type="button" onclick="forceUpdate()">Forcer la mise à jour</button>
+  <button class="pfx-btn" type="button" onclick="simulateData()">Recharger la démo (28 jours)</button>
+  <button class="pfx-btn danger" type="button" onclick="wipeData()">Vider les données capteur</button>
+  <p style="font-family:-apple-system,system-ui,sans-serif;font-size:11px;font-weight:300;color:rgb(167,162,154);margin:12px 2px 0;text-align:center" id="verLine"></p>
+</div>
+
+<!-- journal diagnostic -->
+<div class="pfx-journal flprofile"><div class="flcard" id="journalCard"></div></div>
+
+<!-- feuille roue poids / taille -->
+<div class="pfx-sheetbg" id="pfxSheetBg" onclick="pfxBodyClose()">
+  <div class="pfx-sheet" onclick="event.stopPropagation()">
+    <h3 id="pfxSheetT">Ton poids</h3>
+    <div class="pfx-pick"><div class="pfx-wheel" id="pfxWheel"></div><div class="pfx-selband"></div></div>
+    <div class="pfx-unit" id="pfxSheetU">kg</div>
+    <button class="pfx-btn pri" type="button" onclick="pfxBodySave()">Enregistrer</button>
+  </div>
+</div>
+
 </div>
 </section>
 
@@ -10688,7 +10710,7 @@ function renderTrends(){const metrics=[['recov','Récupération','var(--accent)'
 
 /* ---------- PROFIL ---------- */
 function renderProfile(){const p=getProfile();document.getElementById('pfName').value=p.name;document.getElementById('pfAge').value=p.age;document.getElementById('pfWake').value=p.wake;document.getElementById('pfNeed').value=p.need;document.getElementById('pfKcal').value=p.kcalGoal;document.getElementById('pfProt').value=p.protGoal;set('verLine','Version : '+APP_VERSION+(DB.get('demo')?' · mode démo':''));var _pwl=document.getElementById('pfWatchLbl');if(_pwl)_pwl.textContent=window._watchWorn===false?'Simuler : remettre le bracelet':'Simuler : retirer le bracelet';renderJournal();
- const np=notifPrefs();const b=document.getElementById('ntBed');if(b)b.checked=np.bed;const m=document.getElementById('ntMorning');if(m)m.checked=np.morning;renderNotifNote(!!_LN());renderProfileHero()}
+ const np=notifPrefs();const b=document.getElementById('ntBed');if(b)b.checked=np.bed;const m=document.getElementById('ntMorning');if(m)m.checked=np.morning;renderNotifNote(!!_LN());renderProfileHero();pfxFill()}
 function pfSpark(vals,w,h){
   if(!vals||vals.length<2)vals=[50,52,50];
   const mn=Math.min.apply(null,vals),mx=Math.max.apply(null,vals),rg=(mx-mn)||1,pad=6,n=vals.length;
@@ -10744,6 +10766,48 @@ function renderProfileHero(){
   ];
   const st=document.getElementById('pf2Stats');if(st)st.innerHTML=stats.map(function(s){return '<div class="pf2-stat"><div class="l"><i class="ti '+s.ic+'"></i>'+s.l+'</div><div class="v">'+s.v+'</div></div>'}).join('');
 }
+/* ===== Profil DA accueil : corps (poids/taille), objectif, batterie ===== */
+function pfxFill(){try{
+ var p=getProfile();
+ var bl=DB.get('bodylog',{}),w=null,wAgo=null;
+ for(var i=0;i<120;i++){var b=bl[tk(-i)];if(b&&b.weight!=null){w=b.weight;wAgo=i;break;}}
+ if(w==null)w=p.weight||76;
+ set('pfxW',(String(w).replace('.',','))+' kg');
+ set('pfxWSub',wAgo==null?'aucune mesure — ajoute la première':(wAgo===0?'mesuré aujourd\'hui':'mesuré il y a '+wAgo+' j'));
+ set('pfxH',(p.height||183)+' cm');
+ set('pfxA',(p.age||28)+' ans');
+ set('pfxG',p.gender==='f'?'Femme':(p.gender==='m'?'Homme':'—'));
+ var GO=(typeof PFA_GOALS!=='undefined')?(PFA_GOALS.filter(function(x){return x.k===(p.goal||'recup')})[0]||{}):{};
+ set('pfxGoalV',GO.t||'Mieux récupérer');
+ set('pfxGoalSub',(p.kcalGoal||2400)+' kcal · '+(p.protGoal||150)+' g de protéines / j');
+ var bv=document.getElementById('wbattV'),tx=bv?bv.textContent:'—';
+ set('pfxBatt',tx&&tx!=='—'?tx:'—');
+ set('pfxWatchSub',window._watchWorn===false?'retiré (simulation)':'connecté · synchro auto');
+}catch(e){}}
+/* feuille roue poids / taille (même roue que partout dans l'app) */
+var PFX={kind:'w'};
+function pfxWheelBuild(min,max,cur){var el=document.getElementById('pfxWheel');if(!el)return;
+ var h='';for(var v=min;v<=max;v++)h+='<div class="it" data-v="'+v+'">'+v+'</div>';
+ el.innerHTML=h;el.dataset.min=min;
+ if(!el._b){el._b=1;
+  el.addEventListener('scroll',function(){clearTimeout(el._s);el._s=setTimeout(function(){pfxWheelHl(el)},80)});
+  el.addEventListener('click',function(e){var it=e.target.closest('.it');if(it)el.scrollTo({top:(+it.dataset.v-(+el.dataset.min))*32,behavior:'smooth'})});}
+ requestAnimationFrame(function(){el.scrollTop=(cur-min)*32;pfxWheelHl(el);});}
+function pfxWheelHl(el){var i=Math.round(el.scrollTop/32);[].slice.call(el.querySelectorAll('.it')).forEach(function(it,j){it.classList.toggle('on',j===i)})}
+function pfxWheelVal(){var el=document.getElementById('pfxWheel');return (+el.dataset.min)+Math.round(el.scrollTop/32)}
+function pfxBody(kind){PFX.kind=kind;var p=getProfile();
+ if(kind==='w'){var bl=DB.get('bodylog',{}),w=null;for(var i=0;i<120;i++){var b=bl[tk(-i)];if(b&&b.weight!=null){w=Math.round(b.weight);break;}}if(w==null)w=Math.round(p.weight||76);
+  set('pfxSheetT','Ton poids');set('pfxSheetU','kg');pfxWheelBuild(40,150,w);}
+ else{set('pfxSheetT','Ta taille');set('pfxSheetU','cm');pfxWheelBuild(140,210,p.height||183);}
+ document.getElementById('pfxSheetBg').classList.add('on');try{haptic&&haptic(5);}catch(e){}}
+function pfxBodyClose(){document.getElementById('pfxSheetBg').classList.remove('on')}
+function pfxBodySave(){var v=pfxWheelVal(),p=getProfile();
+ if(PFX.kind==='w'){p.weight=v;DB.set('profile',p);
+  var bl=DB.get('bodylog',{});bl[tk()]=Object.assign({},bl[tk()]||{},{weight:v});DB.set('bodylog',bl);
+  toast('Poids '+v+' kg enregistré ✓');}
+ else{p.height=v;DB.set('profile',p);toast('Taille '+v+' cm enregistrée ✓');}
+ pfxBodyClose();pfxFill();}
+
 /* ===== Éditeur de profil immersif ===== */
 var PFA_REGIONS=['Île-de-France','Auvergne-Rhône-Alpes','Hauts-de-France','Nouvelle-Aquitaine','Occitanie','Grand Est','Provence-Alpes-Côte d\'Azur','Pays de la Loire','Normandie','Bretagne','Bourgogne-Franche-Comté','Centre-Val de Loire','Corse','Outre-mer'];
 var PFA_GOALS=[
@@ -10920,7 +10984,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v527';
+const APP_VERSION='flint-v528';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
