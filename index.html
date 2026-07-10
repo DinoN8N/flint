@@ -7125,7 +7125,8 @@ function mdNutrition(doc){try{
    });
   }
   var chev=[].slice.call(strip.children).filter(function(c){return getComputedStyle(c).position==='absolute';})[0];
-  if(chev&&!chev._flW){chev._flW=1;chev.addEventListener('click',function(ev){ev.preventDefault();ev.stopPropagation();window._nutOff=(window._nutOff||0)-7;mdNutrition(doc);try{haptic&&haptic(5);}catch(e){}},true);}
+  if(chev&&!chev._flW){chev._flW=1;chev.addEventListener('click',function(ev){ev.preventDefault();ev.stopPropagation();flNCalOpen();},true);}
+  if(!strip._flCalW){strip._flCalW=1;strip.style.cursor='pointer';strip.addEventListener('click',function(ev){flNCalOpen();});}
  }
  /* ---- journal ---- */
  var jTitle=flLeaf(nut,'Journal');
@@ -7179,6 +7180,39 @@ function flMealCard(doc,m,i,K){
  return card;
 }
 
+/* ---- calendrier mensuel nutrition (feuille : défiler les mois, choisir un jour) ---- */
+function flNCalClose(){var doc=flNdoc();if(!doc)return;var el=doc.getElementById('screen-fln-cal');if(!el)return;var sh=el.querySelector('.flnCalSheet'),bd=el.querySelector('.flnCalBd');if(sh)sh.style.transform='translate(-50%,100%)';if(bd)bd.style.opacity='0';el.style.pointerEvents='none';setTimeout(function(){if(el&&el.style.pointerEvents==='none')el.style.display='none';},320);}
+function flNCalOpen(){var doc=flNdoc();if(!doc)return;flNCss(doc);
+ var sel=flNutDate(window._nutOff||0);window._flnCalYM={y:sel.getFullYear(),m:sel.getMonth()};
+ var el=doc.getElementById('screen-fln-cal');
+ if(!el){el=doc.createElement('section');el.id='screen-fln-cal';el.style.cssText='position:fixed;inset:0;z-index:130;display:none';
+  el.innerHTML='<div class="flnCalBd" style="position:absolute;inset:0;background:rgba(20,17,15,.28);opacity:0;transition:opacity .3s"></div><div class="flnCalSheet" style="position:absolute;left:50%;bottom:0;width:100%;max-width:464px;transform:translate(-50%,100%);transition:transform .34s cubic-bezier(.32,.72,0,1);background:#fff;border-radius:26px 26px 0 0;padding:18px 20px calc(env(safe-area-inset-bottom,0px) + 22px);box-shadow:0 -12px 40px rgba(20,17,15,.16);font-family:Archivo,-apple-system,system-ui,sans-serif"></div>';
+  doc.body.appendChild(el);el.querySelector('.flnCalBd').addEventListener('click',flNCalClose);}
+ el.style.display='block';el.style.pointerEvents='auto';flNCalRender();
+ var sh=el.querySelector('.flnCalSheet'),bd=el.querySelector('.flnCalBd');sh.style.transform='translate(-50%,100%)';
+ setTimeout(function(){sh.style.transform='translate(-50%,0)';bd.style.opacity='1';},20);try{haptic&&haptic(6);}catch(e){}}
+function flNCalRender(){var doc=flNdoc();if(!doc)return;var el=doc.getElementById('screen-fln-cal');if(!el)return;var sh=el.querySelector('.flnCalSheet');
+ var ym=window._flnCalYM,y=ym.y,m=ym.m;
+ var today=new Date();today.setHours(0,0,0,0);
+ var selD=flNutDate(window._nutOff||0);selD.setHours(0,0,0,0);
+ var startDow=(new Date(y,m,1).getDay()+6)%7,ndays=new Date(y,m+1,0).getDate();
+ var canNext=(new Date(y,m+1,1)<=today);
+ var cells='';for(var b=0;b<startDow;b++)cells+='<div></div>';
+ for(var day=1;day<=ndays;day++){var dd=new Date(y,m,day);dd.setHours(0,0,0,0);
+  var off=Math.round((dd-today)/86400000),future=dd>today,isSel=(dd.getTime()===selD.getTime()),isToday=(dd.getTime()===today.getTime()),has=!future&&mealsOf(tk(off)).length>0;
+  cells+='<button class="flnCalDay" data-off="'+off+'" '+(future?'disabled':'')+' style="position:relative;aspect-ratio:1;border:none;background:'+(isSel?'#fb6015':'transparent')+';border-radius:50%;font-family:Archivo,-apple-system,system-ui,sans-serif;font-size:15px;font-weight:'+(isSel||isToday?700:500)+';color:'+(isSel?'#fff':future?'#d3cdc3':'#14110f')+';cursor:'+(future?'default':'pointer')+';display:flex;align-items:center;justify-content:center'+((isToday&&!isSel)?';box-shadow:inset 0 0 0 1.6px #fb6015':'')+'">'+day+(has?'<span style="position:absolute;bottom:5px;left:50%;transform:translateX(-50%);width:5px;height:5px;border-radius:50%;background:'+(isSel?'#fff':'#fb6015')+'"></span>':'')+'</button>';}
+ sh.innerHTML='<div style="width:38px;height:4px;border-radius:2px;background:#e6e0d6;margin:0 auto 16px"></div>'
+  +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">'
+   +'<button class="flnCalPrev" aria-label="Mois précédent" style="width:38px;height:38px;border:none;border-radius:50%;background:#f6f3ee;color:#14110f;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></button>'
+   +'<div style="flex:1;text-align:center;font-size:19px;font-weight:800;letter-spacing:-.01em;color:#14110f">'+FLN_MOISF[m].charAt(0).toUpperCase()+FLN_MOISF[m].slice(1)+' '+y+'</div>'
+   +'<button class="flnCalNext" aria-label="Mois suivant" '+(canNext?'':'disabled')+' style="width:38px;height:38px;border:none;border-radius:50%;background:'+(canNext?'#f6f3ee':'#faf8f5')+';color:'+(canNext?'#14110f':'#dcd6cc')+';cursor:'+(canNext?'pointer':'default')+';display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg></button></div>'
+  +'<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:6px">'+['L','M','M','J','V','S','D'].map(function(w){return '<div style="text-align:center;font-size:11px;font-weight:600;color:#a29c92">'+w+'</div>';}).join('')+'</div>'
+  +'<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px">'+cells+'</div>'
+  +'<button class="flnCalToday" style="width:100%;margin-top:16px;padding:14px;border:none;border-radius:16px;background:#fff1e9;color:#fb6015;font-family:Archivo,-apple-system,system-ui,sans-serif;font-size:15px;font-weight:700;cursor:pointer">Aujourd\'hui</button>';
+ sh.querySelector('.flnCalPrev').addEventListener('click',function(){window._flnCalYM={y:(m===0?y-1:y),m:(m===0?11:m-1)};flNCalRender();});
+ var nx=sh.querySelector('.flnCalNext');if(nx&&canNext)nx.addEventListener('click',function(){window._flnCalYM={y:(m===11?y+1:y),m:(m===11?0:m+1)};flNCalRender();});
+ sh.querySelector('.flnCalToday').addEventListener('click',function(){window._nutOff=0;flNCalClose();mdNutrition(doc);try{haptic&&haptic(6);}catch(e){}});
+ [].slice.call(sh.querySelectorAll('.flnCalDay')).forEach(function(bn){if(bn.disabled)return;bn.addEventListener('click',function(){window._nutOff=+bn.dataset.off;flNCalClose();mdNutrition(doc);try{haptic&&haptic(6);}catch(e){}});});}
 /* ---- ouverture / fermeture onglet nutrition ---- */
 function flOpenNutrition(doc){try{doc=doc||(document.getElementById('frToday')||{}).contentDocument;if(!doc)return;var nut=doc.getElementById('screen-nutrition');if(!nut)return;window._nutOff=window._nutOff||0;mdNutrition(doc);nut.style.setProperty('transform','translateX(-50%) translateX(0px)','important');nut.style.pointerEvents='auto';nut.scrollTop=0;setTimeout(function(){try{mdNutrition(doc);mdFonts(doc);}catch(e){}},220);}catch(e){}}
 function flNutBack(doc){try{doc=doc||(document.getElementById('frToday')||{}).contentDocument;if(!doc)return;var nut=doc.getElementById('screen-nutrition');if(nut){nut.style.setProperty('transform','translateX(-50%) translateX(100vw)','important');nut.style.pointerEvents='none';}}catch(e){}}
@@ -7286,9 +7320,13 @@ function flNCss(doc){if(doc.getElementById('flnut2css'))return;
  '.fln-sheet{width:100%;max-width:464px;background:#fff;border-radius:30px 30px 0 0;padding:22px 22px calc(env(safe-area-inset-bottom,0px) + 24px);box-shadow:rgba(20,17,15,.16) 0 -10px 40px;transform:translateY(100%);transition:transform .32s cubic-bezier(.22,1,.36,1);font-family:Archivo,-apple-system,system-ui,sans-serif;max-height:88vh;overflow-y:auto}',
  '.fln-sheetbg.fln-on .fln-sheet{transform:translateY(0)}',
  '.fln-sh-x{width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgb(244,239,232);cursor:pointer;border:none;flex:none}',
- '.fln-toast{position:fixed;left:14px;right:14px;bottom:calc(env(safe-area-inset-bottom,0px) + 92px);max-width:436px;margin:0 auto;background:rgb(20,17,15);color:#fff;border-radius:16px;padding:14px 16px;font-family:-apple-system,system-ui,sans-serif;font-size:13.5px;font-weight:500;display:none;align-items:center;gap:12px;z-index:200;box-shadow:rgba(20,17,15,.3) 0 10px 30px;transform:translateY(8px);opacity:0;transition:opacity .22s,transform .22s}',
- '.fln-toast.fln-on{display:flex;opacity:1;transform:translateY(0)}',
- '.fln-toast u{margin-left:auto;font-weight:700;color:rgb(255,168,116);cursor:pointer;text-decoration:none;white-space:nowrap}',
+ '.fln-toast{position:fixed;left:16px;right:16px;bottom:calc(env(safe-area-inset-bottom,0px) + 96px);max-width:420px;margin:0 auto;background:#fff;color:#14110f;border-radius:18px;padding:12px 14px;font-family:Archivo,-apple-system,system-ui,sans-serif;font-size:15px;font-weight:600;letter-spacing:-.01em;display:none;align-items:center;gap:12px;z-index:200;box-shadow:0 14px 38px rgba(20,17,15,.15);border:1px solid #ece7df;transform:translateY(16px) scale(.97);opacity:0;transition:opacity .3s cubic-bezier(.32,.72,0,1),transform .3s cubic-bezier(.32,.72,0,1)}',
+ '.fln-toast.fln-on{display:flex;opacity:1;transform:translateY(0) scale(1)}',
+ '.fln-toast .ic{flex:none;width:36px;height:36px;border-radius:50%;background:#fff1e9;display:flex;align-items:center;justify-content:center;color:#fb6015}',
+ '.fln-toast .ic svg{width:19px;height:19px}',
+ '.fln-toast .msg{flex:1;min-width:0;line-height:1.2}',
+ '.fln-toast u{flex:none;font-weight:700;color:#fb6015;cursor:pointer;text-decoration:none;white-space:nowrap;padding:8px 12px;margin:-8px -4px -8px 0;border-radius:12px}',
+ '.fln-toast u:active{background:#fff1e9}',
  '.fln-pick{position:relative;display:flex;gap:4px;border:1px solid rgb(233,228,220);border-radius:16px;padding:0 8px;background:rgb(250,248,245);overflow:hidden}',
  '.fln-wheel{flex:1;height:176px;overflow-y:auto;scroll-snap-type:y mandatory;text-align:center;scrollbar-width:none;-webkit-overflow-scrolling:touch}',
  '.fln-wheel::-webkit-scrollbar{display:none}',
@@ -7322,11 +7360,14 @@ function flNCss(doc){if(doc.getElementById('flnut2css'))return;
 
 /* ---- toast + undo (jamais de confirm) ---- */
 var _flNT,flNUndo=null;
-function flNToast(msg,undoFn){var doc=flNdoc();if(!doc)return;flNCss(doc);
+var FLN_TOAST_CHK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg>';
+function flNToast(msg,undoFn,icon){var doc=flNdoc();if(!doc)return;flNCss(doc);
  var t=doc.getElementById('flnToast');
- if(!t){t=doc.createElement('div');t.id='flnToast';t.className='fln-toast';t.innerHTML='<span class="msg"></span><u class="act"></u>';doc.body.appendChild(t);
+ if(!t){t=doc.createElement('div');t.id='flnToast';t.className='fln-toast';t.innerHTML='<span class="ic"></span><span class="msg"></span><u class="act"></u>';doc.body.appendChild(t);
   t.querySelector('.act').addEventListener('click',function(){flNToastAct();});}
+ t.querySelector('.ic').innerHTML=icon||FLN_TOAST_CHK;
  t.querySelector('.msg').textContent=msg;flNUndo=undoFn||null;t.querySelector('.act').textContent=flNUndo?'Annuler':'OK';
+ t.classList.remove('fln-on');void t.offsetWidth;/* rejoue l'animation d'entrée */
  t.classList.add('fln-on');clearTimeout(_flNT);_flNT=setTimeout(function(){t.classList.remove('fln-on');flNUndo=null;},4800);
  try{haptic&&haptic(5);}catch(e){}}
 function flNToastAct(){var doc=flNdoc(),t=doc&&doc.getElementById('flnToast');if(flNUndo){flNUndo();flNUndo=null;if(t){t.querySelector('.msg').textContent='Annulé';t.querySelector('.act').textContent='OK';clearTimeout(_flNT);_flNT=setTimeout(function(){t.classList.remove('fln-on');},1100);}}else if(t)t.classList.remove('fln-on');}
@@ -7794,7 +7835,7 @@ function flNCtxMenu(K,i){var doc=flNdoc();var m=mealsOf(K)[i];if(!m)return;
  flNSheetOpen('flnCtxSheet');}
 
 function flNDelMeal(K,i){var doc=flNdoc();var snap=flNSnap(K);var a=mealsOf(K);a.splice(i,1);flNmealsSave(K,a);flNCloseAll();mdNutrition(doc);
- flNToast('Repas supprimé',function(){flNRestore(K,snap);});}
+ flNToast('Repas supprimé',function(){flNRestore(K,snap);},FLN_IC.trash);}
 function flNDup(K,i){var doc=flNdoc();var m=mealsOf(K)[i];if(!m)return;var copy=JSON.parse(JSON.stringify(m));copy.time=flNfmt(flNnow());delete copy._hl;
  var a=mealsOf(K);a.push(copy);flNmealsSave(K,a);copy._hl=1;mdNutrition(doc);
  flNToast('Dupliqué à '+copy.time,function(){var b=mealsOf(K);b.splice(b.indexOf(b.filter(function(x){return x===copy;})[0]),1);var idx=-1;b=mealsOf(K);for(var j=b.length-1;j>=0;j--){if(b[j].time===copy.time&&b[j].name===copy.name){idx=j;break;}}if(idx>=0){b.splice(idx,1);flNmealsSave(K,b);mdNutrition(doc);}});}
@@ -10882,7 +10923,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v523';
+const APP_VERSION='flint-v524';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
