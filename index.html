@@ -7504,53 +7504,77 @@ function flNBarcodeLookup(code){code=String(code||'').replace(/\D/g,'');if(!code
 function flNPrunePhotos(keepFullKey){try{var keys=[];for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.indexOf('meals_')===0&&k!==keepFullKey)keys.push(k);}var pruned=false;keys.forEach(function(kk){var arr=DB.get(kk,[]);var ch=false;arr.forEach(function(m){if(m.photo){delete m.photo;ch=true;}});if(ch){DB.set(kk,arr);pruned=true;}});return pruned;}catch(e){return false;}}
 /* --- écran intermédiaire de résultat : scan → « Analyse en cours… » (animé) → résultats → Ajouter au journal --- */
 var FLN_ANA_STEPS=[['Reconnaissance des aliments','Détection des ingrédients présents'],['Estimation des portions','Évaluation des quantités'],['Calcul des calories','Analyse nutritionnelle en cours'],['Validation','Vérification et ajustements']];
-function flNAnaRow(i){var s=FLN_ANA_STEPS[i];
- return '<div style="display:flex;align-items:stretch;min-height:76px">'
-  +'<div style="width:40px;flex:none;display:flex;flex-direction:column;align-items:center">'
-   +'<div style="position:relative;width:36px;height:36px;flex:none">'
-    +'<svg id="flnAnaRing'+i+'" width="36" height="36" viewBox="0 0 36 36" style="position:absolute;inset:0"><circle cx="18" cy="18" r="15" fill="none" stroke="#eee7de" stroke-width="3"></circle><circle id="flnAnaArc'+i+'" cx="18" cy="18" r="15" fill="none" stroke="#fb6015" stroke-width="3" stroke-linecap="round" stroke-dasharray="0 94.25" transform="rotate(-90 18 18)" style="transition:stroke-dasharray .18s linear"></circle></svg>'
-    +'<svg id="flnAnaSpin'+i+'" width="36" height="36" viewBox="0 0 36 36" style="position:absolute;inset:0;display:none;animation:flnAnaRot .9s linear infinite"><circle cx="18" cy="18" r="15" fill="none" stroke="#fb6015" stroke-width="3" stroke-linecap="round" stroke-dasharray="15 200" transform="rotate(-90 18 18)"></circle></svg>'
-    +'<div id="flnAnaDot'+i+'" style="display:none;position:absolute;inset:0;place-items:center"><div style="width:15px;height:15px;border-radius:50%;background:#fb6015;animation:flnAnaHalo 1.7s ease-in-out infinite"></div></div>'
-   +'</div>'
-   +(i<3?'<div id="flnAnaLine'+i+'" style="flex:1;width:2px;background:#eee7de;margin:5px 0;transition:background .3s"></div>':'')
-  +'</div>'
-  +'<div style="flex:1;min-width:0;padding:1px 8px 0 15px"><div style="font-family:Archivo,-apple-system,sans-serif;font-size:19px;font-weight:600;letter-spacing:-.01em;color:#14110f">'+s[0]+'</div><div style="font-family:-apple-system,system-ui,sans-serif;font-size:14px;color:#a7a29a;margin-top:3px">'+s[1]+'</div></div>'
-  +'<div id="flnAnaStat'+i+'" style="flex:none;align-self:center;min-width:46px;text-align:right"></div>'
+/* écran « Analyse en cours » — design maquette 17 : gros anneau vitré + % central + 4 étapes */
+function flNAnaStepRow(i){var s=FLN_ANA_STEPS[i];
+ return '<div style="display:flex;align-items:center;gap:16px;padding:20px 0'+(i>0?';border-top:1px solid #f0ece4':'')+'">'
+  +'<span id="flnA_node'+i+'" style="position:relative;flex-shrink:0;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:transparent;transition:background .3s">'
+    +'<svg id="flnA_ring'+i+'" width="30" height="30" viewBox="0 0 30 30" fill="none" style="position:absolute;inset:0"><circle cx="15" cy="15" r="12" stroke="#f0eae1" stroke-width="3"></circle><circle id="flnA_arc'+i+'" cx="15" cy="15" r="12" stroke="#fb6015" stroke-width="3" fill="none" stroke-linecap="round" stroke-dasharray="0 75.4" transform="rotate(-90 15 15)" style="transition:stroke-dasharray .18s linear"></circle></svg>'
+    +'<svg id="flnA_check'+i+'" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0;position:relative"><path d="M20 6L9 17l-5-5"></path></svg>'
+  +'</span>'
+  +'<div style="flex:1;min-width:0"><div style="font-family:Archivo,-apple-system,system-ui,sans-serif;font-size:18px;font-weight:700;letter-spacing:-.01em;color:#14110f">'+s[0]+'</div><div style="font-family:Archivo,-apple-system,system-ui,sans-serif;font-size:14px;font-weight:300;color:#a29c92;margin-top:2px">'+s[1]+'</div></div>'
+  +'<span id="flnA_right'+i+'" style="flex-shrink:0;min-width:26px;text-align:right"></span>'
  +'</div>';}
-function flNAnaBody(){
- return '<style id="flnAnaCss">@keyframes flnAnaRot{to{transform:rotate(360deg)}}@keyframes flnAnaHalo{0%,100%{box-shadow:0 0 0 4px rgba(251,96,21,.20)}50%{box-shadow:0 0 0 9px rgba(251,96,21,.05)}}@keyframes flnAnaFade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}</style>'
-  +'<div class="fln-card" style="padding:30px 22px 26px;border-radius:28px;animation:flnAnaFade .4s ease both">'
-   +'<div style="text-align:center;font-family:Archivo,-apple-system,sans-serif;font-size:27px;font-weight:500;letter-spacing:-.02em;color:#14110f">Analyse en cours…</div>'
-   +'<div style="text-align:center;font-family:-apple-system,system-ui,sans-serif;font-size:15px;color:#a7a29a;margin:9px 0 20px">L\'IA identifie les aliments et estime les calories</div>'
-   +'<div style="height:1px;background:#efeae2;margin:0 4px 18px"></div>'
-   +FLN_ANA_STEPS.map(function(_,i){return flNAnaRow(i);}).join('')
-   +'<div style="display:flex;align-items:flex-end;gap:14px;margin-top:22px"><div id="flnAnaBigPct" style="font-family:Archivo,-apple-system,sans-serif;font-size:44px;font-weight:500;letter-spacing:-.03em;color:#fb6015;line-height:.85">0 %</div><div style="font-family:-apple-system,system-ui,sans-serif;font-size:14px;color:#a7a29a;padding-bottom:7px">Progression de l\'analyse</div></div>'
-   +'<div style="position:relative;height:10px;border-radius:6px;background:#f0ece4;overflow:hidden;margin-top:12px"><div id="flnAnaBar" style="position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,#fb6015,#ff8f52);border-radius:6px;transition:width .18s linear"></div></div>'
-  +'</div>'
-  +'<button class="fln-btn pri" disabled style="pointer-events:none;margin-top:16px">Analyse en cours…</button>';}
-function flNAnaPaint(doc,prog){var big=doc.getElementById('flnAnaBigPct');if(!big)return false;
- big.textContent=Math.round(prog)+' %';
- var bar=doc.getElementById('flnAnaBar');if(bar)bar.style.width=prog.toFixed(1)+'%';
- var CHK='<div style="display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;border:1.5px solid #fb6015;color:#fb6015"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l4 4L19 8"></path></svg></div>';
- var DASH='<span style="font-size:22px;font-weight:300;color:#d8d2c8">—</span>';
+function flNAnaBody(photo){
+ var photoBg=photo?('background-image:url('+photo+');background-size:cover;background-position:center'):'background:#ece7df';
+ return '<div style="flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch">'
+   +'<div id="flnA_photo" style="position:relative;height:150px;'+photoBg+';border-bottom-left-radius:28px;border-bottom-right-radius:28px;overflow:hidden">'
+     +(photo?'':'<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#cabfae"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7c1.5-2.5 4-3 5.5-2.5C19 5 19.5 8 18 12s-3.5 6.5-5 6.5-1.5-1-3-1-1.5 1-3 1S3.5 16 2.5 12 3 5 4.5 4.5 10.5 4.5 12 7z"></path></svg></div>')
+   +'</div>'
+   +'<div style="padding:34px 24px 20px">'
+     +'<h1 style="text-align:center;font-family:Archivo,-apple-system,system-ui,sans-serif;font-size:46px;font-weight:800;letter-spacing:-.03em;line-height:.98;margin:0 0 12px;color:#14110f">Analyse en cours<span style="color:#fb6015">.</span></h1>'
+     +'<p style="text-align:center;font-family:Archivo,-apple-system,system-ui,sans-serif;font-size:18px;font-weight:300;color:#8a857c;margin:0 0 30px">L\'IA identifie les aliments et estime les calories</p>'
+     +'<div style="display:flex;justify-content:center;margin-bottom:34px"><div style="position:relative;width:250px;height:250px">'
+       +'<svg width="250" height="250" viewBox="0 0 250 250" fill="none">'
+         +'<defs><linearGradient id="flnAnaTrackGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"></stop><stop offset="0.5" stop-color="#f7f3ed"></stop><stop offset="1" stop-color="#ece5db"></stop></linearGradient>'
+           +'<filter id="flnAnaTrackShadow" x="-40%" y="-40%" width="180%" height="180%"><feDropShadow dx="0" dy="3" stdDeviation="5" flood-color="#c8bda9" flood-opacity="0.4"></feDropShadow></filter>'
+           +'<filter id="flnAnaArcGlow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="7"></feGaussianBlur></filter></defs>'
+         +'<circle cx="125" cy="125" r="110" stroke="url(#flnAnaTrackGrad)" stroke-width="16" fill="none" filter="url(#flnAnaTrackShadow)"></circle>'
+         +'<circle cx="125" cy="125" r="110" stroke="#ffffff" stroke-width="6" fill="none" opacity="0.7" stroke-dasharray="150 541" transform="rotate(-135 125 125)"></circle>'
+         +'<circle id="flnA_halo" cx="125" cy="125" r="110" stroke="#fb6015" stroke-width="16" fill="none" stroke-linecap="round" stroke-dasharray="0 691.15" transform="rotate(-90 125 125)" opacity="0.35" filter="url(#flnAnaArcGlow)" style="transition:stroke-dasharray .18s linear"></circle>'
+         +'<circle id="flnA_bigarc" cx="125" cy="125" r="110" stroke="#fb6015" stroke-width="14" fill="none" stroke-linecap="round" stroke-dasharray="0 691.15" transform="rotate(-90 125 125)" style="transition:stroke-dasharray .18s linear"></circle>'
+       +'</svg>'
+       +'<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">'
+         +'<div style="display:flex;align-items:baseline"><span id="flnA_pct" style="font-family:Archivo,-apple-system,system-ui,sans-serif;font-size:80px;font-weight:500;letter-spacing:-.04em;line-height:.8;color:#14110f;font-variant-numeric:tabular-nums">0</span><span style="font-family:Archivo,-apple-system,system-ui,sans-serif;font-size:24px;font-weight:400;color:#14110f;margin-left:3px">%</span></div>'
+         +'<div style="text-align:center;font-family:Archivo,-apple-system,system-ui,sans-serif;font-size:16px;font-weight:200;color:#8a857c;margin-top:12px;line-height:1.2">Progression<br>de l\'analyse</div>'
+       +'</div>'
+     +'</div></div>'
+     +'<div style="background:#ffffff;border-radius:24px;padding:4px 22px;box-shadow:inset 0 0 0 1px #ece7df">'
+       +FLN_ANA_STEPS.map(function(_,i){return flNAnaStepRow(i);}).join('')
+     +'</div>'
+   +'</div>'
+ +'</div>'
+ +'<div style="flex-shrink:0;padding:14px 24px calc(env(safe-area-inset-bottom,0px) + 16px);background:#ffffff"><button id="flnA_btn" disabled style="width:100%;padding:22px;border:none;border-radius:20px;background:#fb6015;color:#fff;pointer-events:none;opacity:.5;font-family:Archivo,-apple-system,system-ui,sans-serif;font-size:19px;font-weight:700;letter-spacing:-.01em;box-shadow:0 12px 28px rgba(251,96,21,.28)">Analyse en cours…</button></div>';}
+function flNAnaPaint(doc,prog){var pct=doc.getElementById('flnA_pct');if(!pct)return false;
+ pct.textContent=Math.round(prog);
+ var bd=(prog/100*691.15).toFixed(1)+' 691.15';
+ var ba=doc.getElementById('flnA_bigarc'),ha=doc.getElementById('flnA_halo');if(ba)ba.setAttribute('stroke-dasharray',bd);if(ha)ha.setAttribute('stroke-dasharray',bd);
+ var CHK='<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#fb6015" stroke-width="1.6"></circle><path d="M8 12l2.5 2.5L16 9" stroke="#fb6015" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
  var act=Math.min(3,Math.floor(prog/25));
  for(var i=0;i<4;i++){
   var state=i<act?'done':(i===act?'active':'pending');
-  var pct=i<act?100:(i===act?((prog-i*25)/25*100):0);
-  var arc=doc.getElementById('flnAnaArc'+i),ring=doc.getElementById('flnAnaRing'+i),spin=doc.getElementById('flnAnaSpin'+i),dot=doc.getElementById('flnAnaDot'+i),stat=doc.getElementById('flnAnaStat'+i),line=doc.getElementById('flnAnaLine'+i);
-  if(arc)arc.setAttribute('stroke-dasharray',(pct/100*94.25).toFixed(1)+' 94.25');
-  if(state==='done'){if(ring)ring.style.display='none';if(spin)spin.style.display='none';if(dot)dot.style.display='grid';if(stat)stat.innerHTML=CHK;}
-  else if(state==='active'){if(ring)ring.style.display='block';if(spin)spin.style.display='block';if(dot)dot.style.display='none';if(stat)stat.innerHTML='<span style="font-family:Archivo,-apple-system,sans-serif;font-size:19px;font-weight:600;color:#fb6015">'+Math.round(prog)+' %</span>';}
-  else{if(ring)ring.style.display='block';if(spin)spin.style.display='none';if(dot)dot.style.display='none';if(stat)stat.innerHTML=DASH;}
-  if(line)line.style.background=(i<act?'#fb6015':'#eee7de');
+  var sp=i<act?100:(i===act?((prog-i*25)/25*100):0);
+  var node=doc.getElementById('flnA_node'+i),ring=doc.getElementById('flnA_ring'+i),arc=doc.getElementById('flnA_arc'+i),chk=doc.getElementById('flnA_check'+i),right=doc.getElementById('flnA_right'+i);
+  if(arc)arc.setAttribute('stroke-dasharray',(sp/100*75.4).toFixed(1)+' 75.4');
+  if(state==='done'){if(node)node.style.background='#fb6015';if(ring)ring.style.opacity='0';if(chk)chk.style.opacity='1';if(right)right.innerHTML=CHK;}
+  else if(state==='active'){if(node)node.style.background='transparent';if(ring)ring.style.opacity='1';if(chk)chk.style.opacity='0';if(right)right.innerHTML='<span style="font-family:Archivo,-apple-system,system-ui,sans-serif;font-size:16px;font-weight:600;color:#fb6015">'+Math.round(prog)+' %</span>';}
+  else{if(node)node.style.background='transparent';if(ring)ring.style.opacity='1';if(chk)chk.style.opacity='0';if(right)right.innerHTML='';}
  }
  return true;}
+function flNAnaScreenShow(st){var doc=flNdoc();if(!doc)return;flNCss(doc);
+ var el=doc.getElementById('screen-fln-analyse');
+ if(!el){el=doc.createElement('section');el.id='screen-fln-analyse';doc.body.appendChild(el);}
+ el.style.cssText="font-family:'Archivo',-apple-system,system-ui,sans-serif;color:#14110f;position:fixed;top:0;bottom:0;left:50%;width:100%;max-width:464px;transform:translateX(-50%) translateY(100%);transition:transform .4s cubic-bezier(.32,.72,0,1);display:flex;flex-direction:column;background:#fff;z-index:127;pointer-events:auto";
+ el.innerHTML=flNAnaBody(st&&st.photo);
+ flNAnaPaint(doc,0);el.scrollTop=0;
+ setTimeout(function(){el.style.transform='translateX(-50%) translateY(0)';},20);}
+function flNAnaScreenHide(){var doc=flNdoc();if(!doc)return;var el=doc.getElementById('screen-fln-analyse');if(el){el.style.transform='translateX(-50%) translateY(100%)';el.style.pointerEvents='none';}}
+function flNAnaSetPhoto(thumb){var doc=flNdoc();if(!doc)return;var ph=doc.getElementById('flnA_photo');if(ph&&thumb){ph.style.backgroundImage='url('+thumb+')';ph.style.backgroundSize='cover';ph.style.backgroundPosition='center';ph.innerHTML='';}}
 function flNAnaStop(){if(window._flnAnaTimer){clearInterval(window._flnAnaTimer);window._flnAnaTimer=null;}}
 function flNAnaStart(){flNAnaStop();if(!window._flnAnaT0)window._flnAnaT0=Date.now();
  window._flnAnaTimer=setInterval(function(){var st=window._flnScanSt,d=flNdoc();
   if(!st||st.status!=='pending'||!d){flNAnaStop();return;}
-  var scr=d.getElementById('screen-fln-scanres');var el=Date.now()-window._flnAnaT0;
-  if(scr&&scr.className.indexOf('fln-on')<0&&el>800){flNAnaStop();return;}
+  var scr=d.getElementById('screen-fln-analyse');var el=Date.now()-window._flnAnaT0;
+  if(scr&&/100%/.test(scr.style.transform||'')&&el>800){flNAnaStop();return;}
   var prog=95*(1-Math.exp(-el/2400));if(prog>95)prog=95;
   if(!flNAnaPaint(d,prog))flNAnaStop();
  },60);}
@@ -7565,18 +7589,20 @@ function flNMacroCard(kcal,prot,carb,fat,score){var hs=(score!=null);
   +(hs?('<div style="flex:0 0 27%;padding:16px 16px 16px 12px"><div class="fln-k">Score santé</div>'
    +'<div style="font-family:Archivo,-apple-system,sans-serif;font-size:33px;font-weight:800;letter-spacing:-.02em;line-height:1;margin-top:5px;color:rgb(20,17,15)">'+score+'<span style="font-family:-apple-system,system-ui,sans-serif;font-size:14px;font-weight:400;letter-spacing:0;color:rgb(167,162,154)">/10</span></div></div>'):'')
  +'</div>';}
-function flNScanReviewOpen(st){window._flnScanSt=st;window._flnAnaT0=null;flN.when={label:'Maintenant',min:-1,day:0};flNScanReviewRender();flNOpen('screen-fln-scanres');}
+function flNScanReviewOpen(st){window._flnScanSt=st;window._flnAnaT0=null;flN.when={label:'Maintenant',min:-1,day:0};
+ if(st&&st.status==='pending'){flNAnaScreenShow(st);flNAnaStart();}
+ else{flNScanReviewRender();flNOpen('screen-fln-scanres');}}
 function flNScanUpdate(r){var st=window._flnScanSt;if(!st)return;
  if(!r||!r.kcal){st.status='fail';}
  else{st.status='done';st.name=r.name||'Mon repas';st.kcal=Math.round(r.kcal||0);st.prot=Math.round(r.prot||0);st.carb=Math.round(r.carb||0);st.fat=Math.round(r.fat||0);if(r.score!=null)st.score=r.score;
   try{var items=window._flintScanItems;if(items&&items.length)st.ing=items.map(function(it){return {name:it.name,grams:Math.round(it.grams||0),kcal:Math.round(it.kcal||0)};});}catch(e){}}
- flNScanReviewRender();try{haptic&&haptic(10);}catch(e){}}
+ flNAnaStop();window._flnAnaT0=null;flNAnaScreenHide();
+ flNScanReviewRender();flNOpen('screen-fln-scanres');try{haptic&&haptic(10);}catch(e){}}
 function flNScanReviewRender(){var st=window._flnScanSt;if(!st)return;var doc=flNdoc();if(!doc)return;
+ if(st.status==='pending'){flNAnaSetPhoto(st.photo);return;}/* l'état « analyse » a son propre écran plein écran */
  var photoBlock=st.photo?('<div style="height:210px;border-radius:22px;background-image:url('+st.photo+');background-position:center;background-repeat:no-repeat;'+(st.prod?'background-size:contain;background-color:#fff;border:1px solid rgb(240,236,229)':'background-size:cover')+';box-shadow:rgba(20,17,15,.05) 0 8px 26px;margin-bottom:16px"></div>'):'';
  var body,title;
- if(st.status==='pending'){title='Ton repas';
-  body=photoBlock+flNAnaBody();
- }else if(st.status==='fail'){title='Ton repas';
+ if(st.status==='fail'){title='Ton repas';
   body=photoBlock
    +'<div class="fln-card" style="text-align:center;padding:26px 18px"><div style="font-family:Archivo,-apple-system,sans-serif;font-size:17px;font-weight:600;color:rgb(20,17,15)">Analyse indisponible</div>'
    +'<div style="font-family:-apple-system,system-ui,sans-serif;font-size:13px;color:rgb(167,162,154);margin-top:6px">Réseau ou service indisponible — tu peux saisir le repas à la main.</div></div>'
@@ -7597,7 +7623,6 @@ function flNScanReviewRender(){var st=window._flnScanSt;if(!st)return;var doc=fl
  var add=el.querySelector('#flnSrAdd');if(add)add.addEventListener('click',function(){
   flNAddMeal(st.name,st.kcal,st.prot,{carb:st.carb,fat:st.fat,est:true,photo:st.photo,prod:st.prod,ing:st.ing,score:st.score});
   window._flnScanSt=null;});
- if(st.status==='pending'){flNAnaStart();}else{flNAnaStop();window._flnAnaT0=null;}
 }
 function flNScanPhoto(el){var c=flNCamShotThumb(el,1100),tc=flNCamShotThumb(el,1200);
  var thumb=null;try{if(tc)thumb=tc.toDataURL('image/jpeg',0.9);}catch(e){}
@@ -10856,7 +10881,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v521';
+const APP_VERSION='flint-v522';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
