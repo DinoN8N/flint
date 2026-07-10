@@ -5042,14 +5042,6 @@ body.stepsview header{display:none}
 </div>
 <span style="display:none" id="pf3Goal"></span><span style="display:none" id="pf3Pct"></span><i style="display:none" id="pf3PctBar"></i>
 
-<!-- activité -->
-<div class="pfx-shead"><div class="pfx-k">Mon activité</div><a onclick="go('trends')">Voir tout</a></div>
-<div class="pf3-act" id="pf3Act"></div>
-
-<!-- accomplissements -->
-<div class="pfx-shead"><div class="pfx-k">Mes accomplissements</div><a onclick="toast('Bientôt : tous tes badges 🏅')">Voir tous</a></div>
-<div class="pf2-ach" id="pf2Ach"></div>
-
 <!-- mon corps -->
 <div class="pfx-k">Mon corps</div>
 <div class="pfx-card" style="padding:5px 18px">
@@ -5089,11 +5081,6 @@ body.stepsview header{display:none}
   <p style="font-family:-apple-system,system-ui,sans-serif;font-size:11px;font-weight:300;color:rgb(167,162,154);margin:2px 2px 12px;line-height:1.4" id="ntNote"></p>
 </div>
 
-<!-- points forts -->
-<div class="pfx-k">Points forts des données</div>
-<div class="pf3-insight" id="pf3Insight"></div>
-<div class="pf2-stats" id="pf2Stats"></div>
-
 <!-- accès -->
 <div class="pfx-k">Mon accès</div>
 <div class="pfx-life-card" role="button" tabindex="0" onclick="go('manifesto')">
@@ -5110,9 +5097,6 @@ body.stepsview header{display:none}
   <button class="pfx-btn danger" type="button" onclick="wipeData()">Vider les données capteur</button>
   <p style="font-family:-apple-system,system-ui,sans-serif;font-size:11px;font-weight:300;color:rgb(167,162,154);margin:12px 2px 0;text-align:center" id="verLine"></p>
 </div>
-
-<!-- journal diagnostic -->
-<div class="pfx-journal flprofile"><div class="flcard" id="journalCard"></div></div>
 
 <!-- feuille roue poids / taille -->
 <div class="pfx-sheetbg" id="pfxSheetBg" onclick="pfxBodyClose()">
@@ -10984,7 +10968,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v528';
+const APP_VERSION='flint-v529';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
