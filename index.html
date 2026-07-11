@@ -11021,7 +11021,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v535';
+const APP_VERSION='flint-v536';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
@@ -11448,9 +11448,16 @@ document.addEventListener('visibilitychange',function(){if(document.hidden)retur
   function bmrDay(){var p={};try{p=getProfile()||{};}catch(e){}
    var w=p.weight||76,h=p.height||178,a=p.age||24,male=(p.gender||'')!=='f';
    return Math.round(10*w+6.25*h-5*a+(male?5:-161));}
+  function watchHas(k){var w=watchOf(k);return !!(w&&(w.kcal!=null||w.steps!=null||(w.hr&&w.hr.length)||w.night));}
   window.caloriesBurned=function(k){k=k||tk();var w=watchOf(k);
+   if(k!==tk()&&!watchHas(k))return 0; /* passé sans données = rien (pas de métabolisme fantôme) */
    var frac=(k===tk())?((new Date().getHours()*60+new Date().getMinutes())/1440):1;
    return Math.round(bmrDay()*frac+((w&&w.kcal)?w.kcal:0));};
+  /* historiques : un jour sans données montre = null (trou dans le graphe, pas une fausse barre) */
+  var _mdGet=window.mdGet;
+  if(typeof _mdGet==='function')window.mdGet=function(key,off){
+   if(off!==0&&['steps','calories','effortrecup','fcavg','vo2'].indexOf(key)>=0&&!watchHas(tk(off)))return null;
+   return _mdGet(key,off);};
   window.flNActive=function(off){var w=watchOf(tk(off||0));return (w&&w.kcal)?w.kcal:0;};
   /* détection de séances réelles depuis la FC (bins 5 min ≥ repos+25, ≥15 min) */
   function detectSessions(K){var w=watchOf(K);if(!w||!w.hr||w.hr.length<12)return [];
@@ -11474,8 +11481,11 @@ document.addEventListener('visibilitychange',function(){if(document.hidden)retur
    if(st!=null)close(seq.length-1);
    return out;}
   function syncSessions(K){try{var det=detectSessions(K);
+   var w=watchOf(K);var names=(w&&w.sessNames)||{};var dis=(w&&w.disSess)||[];
    var cur=DB.get('sessions_'+K,[])||[];var manual=cur.filter(function(x){return !x.real;});
-   var rows=det.map(function(d3){return {name:'Activité',icon:'🏃',start:String(Math.floor(d3.startMin/60)).padStart(2,'0')+':'+String(d3.startMin%60).padStart(2,'0'),dur:d3.endMin-d3.startMin,int:d3.eff>=12?4:d3.eff>=7?3:2,auto:true,real:true,eff:d3.eff,avgHr:d3.avgHr,maxHr:d3.maxHr,endMin:d3.endMin,startMin:d3.startMin};});
+   var rows=det.filter(function(d3){return !dis.some(function(sm){return Math.abs(sm-d3.startMin)<=10;});})
+    .map(function(d3){var nm='Activité';Object.keys(names).forEach(function(sm){if(Math.abs(+sm-d3.startMin)<=10)nm=names[sm];});
+    return {name:nm,icon:'🏃',start:String(Math.floor(d3.startMin/60)).padStart(2,'0')+':'+String(d3.startMin%60).padStart(2,'0'),dur:d3.endMin-d3.startMin,int:d3.eff>=12?4:d3.eff>=7?3:2,auto:true,real:true,eff:d3.eff,avgHr:d3.avgHr,maxHr:d3.maxHr,endMin:d3.endMin,startMin:d3.startMin};});
    DB.set('sessions_'+K,manual.concat(rows));return rows;}catch(e){return [];}}
   window._flSyncSessions=syncSessions;
   /* effort réel : zones de FC du jour (au-dessus de repos+15), échelle 0-21 */
@@ -11531,7 +11541,13 @@ document.addEventListener('visibilitychange',function(){if(document.hidden)retur
   var sn=null;try{sn=sensorOf(K);}catch(e){}
   if(sn&&sn.sleepMin!=null&&sn.bedMin!=null)entries.push({tpl:'Nuit',title:'Nuit',sub:jrClock(sn.bedMin)+' → '+jrClock(sn.wakeMin)+' · sommeil',sort:(sn.wakeMin||0)-1440,tap:'Nuit',rightTime:jrClock(sn.wakeMin),stat:Math.floor(sn.sleepMin/60)+':'+String(Math.round(sn.sleepMin)%60).padStart(2,'0')});
   var sess=[];try{sess=(window._flSyncSessions?_flSyncSessions(K):[]);}catch(e){}
-  sess.forEach(function(s2){entries.push({tpl:'Marche',title:'Activité',sub:jrClock(s2.startMin)+' → '+jrClock(s2.endMin)+' · auto',sort:s2.startMin,tap:'Marche',rightTime:jrClock(s2.endMin),stat:String(s2.eff).replace('.',',')});});
+  function tplFor(nm){return orig[nm]?nm:(/foot/i.test(nm)?'Football':/padel|tennis/i.test(nm)?'Padel':'Marche');}
+  sess.forEach(function(s2){entries.push({tpl:tplFor(s2.name),title:s2.name,sub:jrClock(s2.startMin)+' → '+jrClock(s2.endMin)+' · auto',sort:s2.startMin,tap:'Marche',rightTime:jrClock(s2.endMin),stat:String(s2.eff).replace('.',','),sess:{startMin:s2.startMin,real:true}});});
+  /* activités MANUELLES (bouton Ajouter) */
+  try{(DB.get('sessions_'+K,[])||[]).filter(function(x){return !x.real;}).forEach(function(m2){
+   var sp=(m2.start||'12:00').split(':');var sm=(+sp[0])*60+(+sp[1]);var em=sm+(m2.dur||30);
+   var eff2=0;try{eff2=actStrain(m2);}catch(e){}
+   entries.push({tpl:tplFor(m2.name||''),title:m2.name||'Activité',sub:jrClock(sm)+' → '+jrClock(em)+' · manuel',sort:sm,tap:'Marche',rightTime:jrClock(em),stat:String(eff2).replace('.',','),sess:{startMin:sm,manual:true}});});}catch(e){}
   var meals=[];try{meals=mealsOf(K)||[];}catch(e){}
   meals.forEach(function(m,i2){var mm=(m.time||'12:00').split(':');var mn=(+mm[0])*60+(+mm[1]);
    entries.push({tpl:'Repas',title:(m.name||'Repas').length>22?'Repas':(m.name||'Repas'),sub:(m.time||'')+' · repas',sort:mn,tap:'meal:'+i2,rightTime:m.time||'',stat:''+Math.round(m.kcal||0)});});
@@ -11557,7 +11573,8 @@ document.addEventListener('visibilitychange',function(){if(document.hidden)retur
    c.addEventListener('click',function(ev){ev.preventDefault();ev.stopPropagation();
     try{
      if(e.tap&&e.tap.indexOf('meal:')===0){var mi=+e.tap.slice(5);if(typeof flNMealDetail==='function'){flNMealDetail(K,mi);return;}}
-     var target=orig[e.tap==='Nuit'?'Nuit':'Marche'];if(!target)return;
+     if(e.sess)window._flCurSess={K:K,startMin:e.sess.startMin,manual:!!e.sess.manual,title:e.title};
+     var target=orig[e.tap==='Nuit'?'Nuit':(orig[e.tpl]?e.tpl:'Marche')];if(!target)return;
      var btn=target.querySelector('[role="button"]')||target;
      ['pointerdown','pointerup','click'].forEach(function(t2){try{btn.dispatchEvent(new (doc.defaultView.PointerEvent||MouseEvent)(t2,{bubbles:true,cancelable:true}));}catch(e2){btn.dispatchEvent(new MouseEvent(t2,{bubbles:true,cancelable:true}));}});
     }catch(e3){}},true);
@@ -11567,6 +11584,16 @@ document.addEventListener('visibilitychange',function(){if(document.hidden)retur
   entries.forEach(function(e,i3){var r=mkRow(e);frag.appendChild(r);
    if(conn&&i3<entries.length-1){var cn=conn.cloneNode(true);cn.classList.add('fl-jr');cn.style.display='';frag.appendChild(cn);}});
   cont.insertBefore(frag,addRow);
+  if(!addRow._flAdd){addRow._flAdd=1;addRow.style.cursor='pointer';
+   addRow.addEventListener('click',function(ev){ev.preventDefault();ev.stopPropagation();flAddActivity(doc);},true);}
+  /* ⋯ du détail d'activité → Modifier l'activité (zone haut-droite de screen-marche) */
+  if(!doc._flDots){doc._flDots=1;
+   doc.addEventListener('click',function(ev){try{
+    var sm3=doc.getElementById('screen-marche');if(!sm3)return;
+    if((sm3.style.transform||'').indexOf('translateY(0')<0&&!/translateY\(0/.test(sm3.style.transform||''))return;
+    var vw=doc.defaultView.innerWidth;
+    if(ev.clientX>vw-96&&ev.clientY<120){ev.preventDefault();ev.stopPropagation();flEditActivity(doc);}
+   }catch(e){}},true);}
   /* en-tête de section : « N entrées · cumul X » + phrase */
   try{var sec=cont.parentElement;var lv2=[].slice.call(sec.querySelectorAll('div,span')).filter(function(x){return x.children.length===0;});
    var cntEl=lv2.filter(function(x){return /entrées? · cumul/.test(x.textContent||'');})[0];
@@ -11574,6 +11601,70 @@ document.addEventListener('visibilitychange',function(){if(document.hidden)retur
    var phEl=lv2.filter(function(x){var t2=(x.textContent||'').trim();return /Journée bien remplie|Journée en cours|Rien pour l/.test(t2)||t2==='—';})[0];
    if(phEl)phEl.textContent=entries.length>=4?'Journée bien remplie':entries.length>0?'Journée en cours':'—';}catch(e4){}
  }catch(e){}};
+ /* --- FEUILLE ACTIVITÉ (ajouter / modifier) — DA blanche, chips sport, heure, durée, intensité --- */
+ var FL_SPORTS=[['Marche','🚶'],['Course','🏃'],['Vélo','🚴'],['Muscu','🏋️'],['Padel','🎾'],['Football','⚽'],['Tennis','🎾'],['Natation','🏊'],['Autre','✨']];
+ function flActClose(doc){var el=doc.getElementById('flActSheet');if(!el)return;var sh=el.querySelector('.fas-sh');if(sh)sh.style.transform='translate(-50%,105%)';var bd=el.querySelector('.fas-bd');if(bd)bd.style.opacity='0';el.style.pointerEvents='none';setTimeout(function(){try{el.remove();}catch(e){}},340);}
+ function flActSheet(doc,mode,sess){try{
+  var K=tk(0);var isEdit=(mode==='edit');var isReal=isEdit&&sess&&!sess.manual;
+  var cur={name:'Marche',start:(function(){var d2=new Date();d2.setMinutes(d2.getMinutes()-45);return String(d2.getHours()).padStart(2,'0')+':'+String(Math.floor(d2.getMinutes()/5)*5).padStart(2,'0');})(),dur:45,int:2};
+  if(isEdit&&sess){
+   if(sess.manual){var row=(DB.get('sessions_'+K,[])||[]).filter(function(x){return !x.real&&Math.abs(((x.start||'0:0').split(':').reduce(function(a,b,i){return i===0?+b*60:a+ +b;},0))-sess.startMin)<=2;})[0];
+    if(row)cur={name:row.name||'Marche',start:row.start,dur:row.dur||30,int:row.int||2};}
+   else cur.name=sess.title||'Activité';}
+  var old=doc.getElementById('flActSheet');if(old)old.remove();
+  var el=doc.createElement('div');el.id='flActSheet';el.style.cssText='position:fixed;inset:0;z-index:140';
+  var chips=FL_SPORTS.map(function(sp){var on=sp[0]===cur.name;return '<button class="fas-sp" data-n="'+sp[0]+'" style="padding:11px 14px;border:none;border-radius:14px;font-family:Archivo,-apple-system,sans-serif;font-size:14px;font-weight:600;cursor:pointer;background:'+(on?'#fff1e9':'#f6f3ee')+';box-shadow:inset 0 0 0 '+(on?'1.5px #fb6015':'1px #ece7df')+';color:'+(on?'#fb6015':'#14110f')+'">'+sp[1]+' '+sp[0]+'</button>';}).join('');
+  var ints=['Légère','Modérée','Intense','Max'].map(function(nm,i2){var on=(i2+1)===cur.int;return '<button class="fas-int" data-i="'+(i2+1)+'" style="flex:1;padding:12px 4px;border:none;border-radius:13px;font-family:Archivo,-apple-system,sans-serif;font-size:13px;font-weight:600;cursor:pointer;background:'+(on?'#fff1e9':'#f6f3ee')+';box-shadow:inset 0 0 0 '+(on?'1.5px #fb6015':'1px #ece7df')+';color:'+(on?'#fb6015':'#14110f')+'">'+nm+'</button>';}).join('');
+  el.innerHTML='<div class="fas-bd" style="position:absolute;inset:0;background:rgba(20,17,15,.3);opacity:0;transition:opacity .3s"></div>'
+   +'<div class="fas-sh" style="position:absolute;left:50%;bottom:0;width:100%;max-width:464px;transform:translate(-50%,105%);transition:transform .34s cubic-bezier(.32,.72,0,1);background:#fff;border-radius:26px 26px 0 0;padding:18px 22px calc(env(safe-area-inset-bottom,0px) + 20px);box-shadow:0 -12px 40px rgba(20,17,15,.18);font-family:Archivo,-apple-system,sans-serif;color:#14110f;max-height:86vh;overflow-y:auto">'
+    +'<div style="width:38px;height:4px;border-radius:2px;background:#e6e0d6;margin:0 auto 16px"></div>'
+    +'<div style="font-size:26px;font-weight:800;letter-spacing:-.02em;margin-bottom:16px">'+(isEdit?'Modifier l\'activité':'Ajouter une activité')+'<span style="color:#fb6015">.</span></div>'
+    +'<div style="font-family:-apple-system,system-ui,sans-serif;font-size:11px;font-weight:600;letter-spacing:.12em;color:#a29c92;margin-bottom:10px">SPORT</div>'
+    +'<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px">'+chips+'</div>'
+    +(isReal?'<div style="font-family:-apple-system,system-ui,sans-serif;font-size:12.5px;color:#a29c92;margin-bottom:16px">Horaires et effort mesurés par ton bracelet — seuls le sport et la suppression sont modifiables.</div>'
+     :('<div style="display:flex;gap:12px;margin-bottom:18px">'
+      +'<div style="flex:1"><div style="font-family:-apple-system,system-ui,sans-serif;font-size:11px;font-weight:600;letter-spacing:.12em;color:#a29c92;margin-bottom:8px">DÉBUT</div><input class="fas-t" type="time" value="'+cur.start+'" style="width:100%;border:none;background:#f6f3ee;box-shadow:inset 0 0 0 1px #ece7df;border-radius:14px;padding:13px;font-family:Archivo,-apple-system,sans-serif;font-size:17px;font-weight:700;color:#14110f"></div>'
+      +'<div style="flex:1"><div style="font-family:-apple-system,system-ui,sans-serif;font-size:11px;font-weight:600;letter-spacing:.12em;color:#a29c92;margin-bottom:8px">DURÉE</div><div style="display:flex;align-items:center;background:#f6f3ee;box-shadow:inset 0 0 0 1px #ece7df;border-radius:14px;overflow:hidden"><button class="fas-dm" style="width:44px;padding:13px 0;border:none;background:transparent;color:#fb6015;font-size:19px;cursor:pointer">−</button><div class="fas-dv" style="flex:1;text-align:center;font-size:17px;font-weight:700">'+cur.dur+' min</div><button class="fas-dp" style="width:44px;padding:13px 0;border:none;background:transparent;color:#fb6015;font-size:19px;cursor:pointer">+</button></div></div></div>'
+      +'<div style="font-family:-apple-system,system-ui,sans-serif;font-size:11px;font-weight:600;letter-spacing:.12em;color:#a29c92;margin-bottom:10px">INTENSITÉ</div>'
+      +'<div style="display:flex;gap:8px;margin-bottom:20px">'+ints+'</div>'))
+    +'<button class="fas-ok" style="width:100%;padding:18px;border:none;border-radius:18px;background:#fb6015;color:#fff;font-family:Archivo,-apple-system,sans-serif;font-size:17px;font-weight:700;cursor:pointer;box-shadow:0 10px 24px rgba(251,96,21,.28)">'+(isEdit?'Enregistrer':'Ajouter')+'</button>'
+    +(isEdit?'<button class="fas-del" style="width:100%;margin-top:10px;padding:14px;border:none;border-radius:16px;background:#fbeae5;color:#e0492e;font-family:Archivo,-apple-system,sans-serif;font-size:15px;font-weight:700;cursor:pointer">Supprimer cette activité</button>':'')
+   +'</div>';
+  doc.body.appendChild(el);
+  var sh=el.querySelector('.fas-sh'),bd=el.querySelector('.fas-bd'),dv=el.querySelector('.fas-dv');
+  setTimeout(function(){sh.style.transform='translate(-50%,0)';bd.style.opacity='1';},20);
+  bd.addEventListener('click',function(){flActClose(doc);});
+  [].slice.call(el.querySelectorAll('.fas-sp')).forEach(function(c){c.addEventListener('click',function(){cur.name=c.dataset.n;
+   [].slice.call(el.querySelectorAll('.fas-sp')).forEach(function(o){var on=o===c;o.style.background=on?'#fff1e9':'#f6f3ee';o.style.boxShadow='inset 0 0 0 '+(on?'1.5px #fb6015':'1px #ece7df');o.style.color=on?'#fb6015':'#14110f';});});});
+  [].slice.call(el.querySelectorAll('.fas-int')).forEach(function(c){c.addEventListener('click',function(){cur.int=+c.dataset.i;
+   [].slice.call(el.querySelectorAll('.fas-int')).forEach(function(o){var on=o===c;o.style.background=on?'#fff1e9':'#f6f3ee';o.style.boxShadow='inset 0 0 0 '+(on?'1.5px #fb6015':'1px #ece7df');o.style.color=on?'#fb6015':'#14110f';});});});
+  var dm=el.querySelector('.fas-dm'),dp=el.querySelector('.fas-dp');
+  if(dm)dm.addEventListener('click',function(){cur.dur=Math.max(10,cur.dur-15);dv.textContent=cur.dur+' min';});
+  if(dp)dp.addEventListener('click',function(){cur.dur=Math.min(360,cur.dur+15);dv.textContent=cur.dur+' min';});
+  function refresh(){try{var frd=(document.getElementById('frToday')||{}).contentDocument;if(frd){var cont=frd.querySelector('[data-fl-jr]');if(cont)cont.setAttribute('data-fl-jr','stale');flShellHonest(frd);}}catch(e){}}
+  el.querySelector('.fas-ok').addEventListener('click',function(){
+   var tIn=el.querySelector('.fas-t');if(tIn&&tIn.value)cur.start=tIn.value;
+   try{
+    if(isReal&&sess){var w=wGet(K);w.sessNames=w.sessNames||{};w.sessNames[sess.startMin]=cur.name;wSaveK(K);}
+    else if(isEdit&&sess){var a=DB.get('sessions_'+K,[])||[];var idx=-1;
+     a.forEach(function(x,i3){if(!x.real&&Math.abs(((x.start||'0:0').split(':').reduce(function(ac,b,i4){return i4===0?+b*60:ac+ +b;},0))-sess.startMin)<=2)idx=i3;});
+     if(idx>=0)a[idx]={name:cur.name,icon:'🏃',start:cur.start,dur:cur.dur,int:cur.int};DB.set('sessions_'+K,a);}
+    else{var a2=DB.get('sessions_'+K,[])||[];a2.push({name:cur.name,icon:'🏃',start:cur.start,dur:cur.dur,int:cur.int});DB.set('sessions_'+K,a2);}
+   }catch(e){}
+   flActClose(doc);refresh();
+   try{if(typeof flOkShow==='function')flOkShow('Enregistré',cur.name);}catch(e){}});
+  var del=el.querySelector('.fas-del');
+  if(del)del.addEventListener('click',function(){
+   try{
+    if(isReal&&sess){var w=wGet(K);w.disSess=w.disSess||[];w.disSess.push(sess.startMin);wSaveK(K);}
+    else if(sess){var a=DB.get('sessions_'+K,[])||[];DB.set('sessions_'+K,a.filter(function(x){return x.real||Math.abs(((x.start||'0:0').split(':').reduce(function(ac,b,i4){return i4===0?+b*60:ac+ +b;},0))-sess.startMin)>2;}));}
+   }catch(e){}
+   flActClose(doc);
+   try{var sm2=doc.getElementById('screen-marche');if(sm2)sm2.style.transform='translateX(-50%) translateY(100%)';}catch(e){}
+   refresh();});
+ }catch(e){}}
+ window.flAddActivity=function(doc){flActSheet(doc,'add',null);};
+ window.flEditActivity=function(doc){flActSheet(doc,'edit',window._flCurSess||null);};
  window.flShellHonest=function(doc){try{
   if(!SHELL||!doc)return;
   try{flRealJournee(doc);}catch(e0){}
@@ -11586,6 +11677,12 @@ document.addEventListener('visibilitychange',function(){if(document.hidden)retur
   /* écrans à courbes/timeline 100% démo, sans injecteur réel : toujours « — » en coquille */
   ['screen-trends'].forEach(function(id){
    var sc=doc.getElementById(id);if(sc&&!sc.__flHon2){sc.__flHon2=1;honBlank(sc);}});
+  /* écran Calories (historique) : « — » tant que la montre n'a rien envoyé aujourd'hui */
+  (function(){var wc=null;try{wc=wGet(tk(0));}catch(e){}
+   var hasKcal=!!(wc&&wc.kcal!=null);
+   var sc=doc.getElementById('screen-cal-hebdo');if(!sc)return;
+   if(hasKcal){if(sc.__flHon){sc.__flHon=0;honRestore(sc);}}
+   else if(!sc.__flHon){sc.__flHon=1;honBlank(sc);}})();
   var noSess=true;try{noSess=!(DB.get('sessions_'+tk(off),[])||[]).length;}catch(e){}
   var sm=doc.getElementById('screen-marche');
   if(sm){if(!noSess){if(sm.__flHon){sm.__flHon=0;honRestore(sm);}}
