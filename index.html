@@ -11021,7 +11021,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v530';
+const APP_VERSION='flint-v531';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 ensureDemo();
@@ -11341,6 +11341,39 @@ document.addEventListener('visibilitychange',function(){if(document.hidden)retur
  window.nutCamera=function(){openCamera();};
  window.nutBarcode=function(code){if(code&&typeof code==='string'){barcodeLookup(code);return;}openScanner();};
  window.nutDescribe=function(){var q=window.prompt('Décris ton plat / l\'aliment (ex : « yaourt grec », « pâtes bolognaise ») :');if(q)searchFood(q);};
+})();
+</script>
+<script>
+/* ===== Pont natif FLINT (coquille iOS WKWebView + FlintTestBand) =====
+   La coquille appelle window.flintNative(type,data) pour chaque evenement montre
+   (hr, battery, steps, kcal, distance, status, log...). Ici : pastille FC live (DA),
+   stockage window._watchLive + localStorage, et event 'flintWatch' pour les ecrans. */
+(function(){
+ var native=window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint;
+ var W=window._watchLive={status:'idle'};
+ var chip,chipHr,chipBat,hideT;
+ function ensureChip(){if(chip)return;
+  chip=document.createElement('div');chip.id='flWatchChip';
+  chip.style.cssText='position:fixed;top:calc(env(safe-area-inset-top,0px) + 10px);right:12px;z-index:9999;display:none;align-items:center;gap:5px;background:#fff;border:1px solid #ece7df;border-radius:999px;padding:7px 13px;box-shadow:0 8px 22px rgba(20,17,15,.14);font-family:Archivo,-apple-system,sans-serif;pointer-events:none;transition:opacity .3s';
+  chip.innerHTML='<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#fb6015;animation:flwPulse 1.2s ease-in-out infinite"></span><b style="font-size:16px;font-weight:800;letter-spacing:-.02em;color:#14110f" id="flWatchHr">--</b><span style="font-size:10.5px;font-weight:600;color:#a29c92">bpm</span><span id="flWatchBat" style="font-size:10.5px;font-weight:600;color:#a29c92"></span>';
+  var st=document.createElement('style');st.textContent='@keyframes flwPulse{0%,100%{opacity:1}50%{opacity:.35}}';document.head.appendChild(st);
+  document.body.appendChild(chip);chipHr=chip.querySelector('#flWatchHr');chipBat=chip.querySelector('#flWatchBat');}
+ window.flintNative=function(type,data){try{
+  data=data||{};
+  if(type==='hr'&&data.hr){W.hr=data.hr;W.t=Date.now();ensureChip();chip.style.display='flex';chip.style.opacity='1';chipHr.textContent=data.hr;
+   clearTimeout(hideT);hideT=setTimeout(function(){if(chip)chip.style.opacity='.35';},20000);}
+  else if(type==='battery'&&data.level!=null){W.battery=data.level;ensureChip();chipBat.textContent='· '+data.level+'%';}
+  else if(type==='steps')W.steps=data.steps;
+  else if(type==='kcal')W.kcal=data.kcal;
+  else if(type==='distance')W.dist=data.distance;
+  else if(type==='status')W.status=data.status;
+  else if(type==='hrhistory')W.hrHistory=data.samples;
+  else if(type==='rr')W.rr=data.rr;
+  try{localStorage.setItem('flint_watch_live',JSON.stringify(W));}catch(e){}
+  try{document.dispatchEvent(new CustomEvent('flintWatch',{detail:{type:type,data:data}}));}catch(e){}
+ }catch(e){}};
+ /* dans la coquille : scan + connexion auto a la montre au lancement */
+ if(native)setTimeout(function(){try{native.postMessage({cmd:'start'});}catch(e){}},1500);
 })();
 </script>
 </body>
