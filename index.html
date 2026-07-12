@@ -6339,7 +6339,7 @@ var el=ev.target;var a=el;for(var d1=0;d1<7&&a;d1++,a=a.parentElement){if(!a.que
   var kc=(typeof caloriesBurned==='function'?caloriesBurned(K):0);setTile('CALORIES',(''+Math.round(kc)).replace(/\B(?=(\d{3})+(?!\d))/g,' '));
   mdBalance(doc);mdSleep(doc);mdFonts(doc);mdStickyBacks(doc);mdSleepScrub(doc);mdWeekBarsScrub(doc);mdDualScrub(doc);mdCalDualScrub(doc);mdMarcheScrub(doc);mdDashChevrons(doc);mdNavNoCoach(doc);if(typeof flShellHonest==='function')flShellHonest(doc);mdRings(doc);mdTrioRings(doc);mdHebTrend(doc);mdNutrition(doc);mdObjectifs(doc);
  }catch(e){}
- if(!doc._navWired){doc._navWired=true;try{doc.addEventListener('click',function(ev){var el=ev.target;for(var i=0;i<6&&el;i++,el=el.parentElement){if(el.getAttribute&&el.getAttribute('role')==='button'){var t=(el.textContent||'').trim().toLowerCase();if(t==='coach'){ev.preventDefault();ev.stopPropagation();go('coach');return;}if(t==='profil'){ev.preventDefault();ev.stopPropagation();go('profile');return;}if(t==='nutrition'){setTimeout(function(){try{flOpenNutrition(doc);}catch(e){}},20);setTimeout(function(){try{mdNutrition(doc);}catch(e){}},400);return;}if(t==="aujourd'hui"||t==='aujourd’hui'){setTimeout(function(){try{var sn=doc.getElementById('screen-nutrition');if(sn){var r=sn.getBoundingClientRect();var w=doc.defaultView.innerWidth;if(Math.abs(r.left-(w-r.width)/2)<40){var bk=[].slice.call(sn.querySelectorAll('*')).filter(function(x){return x.children.length<3&&/Aujourd/.test((x.textContent||'').trim())&&x.getBoundingClientRect().top<80;})[0];if(bk){var rb2=bk;while(rb2&&rb2.getAttribute&&rb2.getAttribute('role')!=='button'&&rb2.tagName!=='BUTTON')rb2=rb2.parentElement;var tt=rb2||bk;['pointerdown','pointerup','click'].forEach(function(e2){tt.dispatchEvent(new MouseEvent(e2,{bubbles:true,cancelable:true}));});}}}}catch(e){}},0);return;}return;}}},true);}catch(e){}}
+ if(!doc._navWired){doc._navWired=true;try{doc.addEventListener('click',function(ev){var el=ev.target;for(var i=0;i<6&&el;i++,el=el.parentElement){if(el.getAttribute&&el.getAttribute('role')==='button'){var t=(el.textContent||'').trim().toLowerCase();if(t==='coach'){ev.preventDefault();ev.stopPropagation();go('coach');return;}if(t==='profil'){ev.preventDefault();ev.stopPropagation();try{flPfOpen(doc);}catch(e){go('profile');}return;}if(t==='nutrition'){try{flPfCloseAll(doc);}catch(e){}setTimeout(function(){try{flOpenNutrition(doc);}catch(e){}},20);setTimeout(function(){try{mdNutrition(doc);}catch(e){}},400);return;}if(t==="aujourd'hui"||t==='aujourd’hui'){try{flPfCloseAll(doc);}catch(e){}setTimeout(function(){try{var sn=doc.getElementById('screen-nutrition');if(sn){var r=sn.getBoundingClientRect();var w=doc.defaultView.innerWidth;if(Math.abs(r.left-(w-r.width)/2)<40){var bk=[].slice.call(sn.querySelectorAll('*')).filter(function(x){return x.children.length<3&&/Aujourd/.test((x.textContent||'').trim())&&x.getBoundingClientRect().top<80;})[0];if(bk){var rb2=bk;while(rb2&&rb2.getAttribute&&rb2.getAttribute('role')!=='button'&&rb2.tagName!=='BUTTON')rb2=rb2.parentElement;var tt=rb2||bk;['pointerdown','pointerup','click'].forEach(function(e2){tt.dispatchEvent(new MouseEvent(e2,{bubbles:true,cancelable:true}));});}}}}catch(e){}},0);return;}return;}}},true);}catch(e){}}
 }
 /* ===== Écran de détail métrique (dynamique, DA maquette VFC) ===== */
 function mdApplyActivity(doc){var st=window._mdAct;if(!st||!doc)return;var el=doc.getElementById('screen-marche');if(!el)return;
@@ -11046,7 +11046,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v539';
+const APP_VERSION='flint-v540';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
@@ -11367,6 +11367,219 @@ document.addEventListener('visibilitychange',function(){if(document.hidden)retur
  window.nutBarcode=function(code){if(code&&typeof code==='string'){barcodeLookup(code);return;}openScanner();};
  window.nutDescribe=function(){var q=window.prompt('Décris ton plat / l\'aliment (ex : « yaourt grec », « pâtes bolognaise ») :');if(q)searchFood(q);};
 })();
+</script>
+<script>
+/* ===== PROFIL v3 — maquette « Flint Aujourd'hui » du 12/07 + sous-pages (Mon bracelet, Mon compte,
+   Sécurité, Aide, Réglages, mesures Poids/Taille, photo). DA stricte : blanc pur, Archivo,
+   orange #fb6015 rare, cartes radius 22 ombre douce. Écrans injectés dans l'iframe (maquette intacte),
+   z-index 85-88 : la nav de la maquette reste visible (fini l'ancienne page avec l'ancien menu). ===== */
+function flPfP(){try{return getProfile()||{};}catch(e){return {};}}
+function flPfSaveP(p){try{DB.set('profile',p);}catch(e){}}
+function flPfWeight(){try{var bl=DB.get('bodylog',{})||{};var ks=Object.keys(bl).sort();for(var i=ks.length-1;i>=0;i--){if(bl[ks[i]]&&bl[ks[i]].weight!=null)return bl[ks[i]].weight;}}catch(e){}return flPfP().weight||76;}
+function flPfHeight(){return flPfP().height||178;}
+function flPfName(){var n=(flPfP().name||'Dino').trim().split(' ')[0];return n==='Arthur'?'Dino':n;}
+function flPfSince(){var s=null;try{s=DB.get('flSince',null);if(!s){s=Date.now();DB.set('flSince',s);}}catch(e){}
+ var d=new Date(s||Date.now());var M=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+ return 'membre depuis '+M[d.getMonth()]+' '+d.getFullYear();}
+function flPfAvatar(){try{return localStorage.getItem('flAvatar')||null;}catch(e){return null;}}
+var FLPF_CHEV='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fb6015" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M9 18l6-6-6-6"></path></svg>';
+function flPfRow(icon,label,cls,value){return '<div role="button" class="'+cls+'" style="display:flex;align-items:center;gap:16px;padding:20px 20px;cursor:pointer">'+icon
+ +'<span style="flex:1;font-family:Archivo,-apple-system,system-ui,sans-serif;font-size:15px;font-weight:300;letter-spacing:-.01em;color:#14110f">'+label+'</span>'
+ +(value?('<span style="font-family:Archivo,-apple-system,system-ui,sans-serif;font-size:15px;font-weight:600;color:#14110f;margin-right:2px">'+value+'</span>'):'')
+ +FLPF_CHEV+'</div>';}
+var FLPF_SEP='<div style="height:1px;background:#f2eee8;margin:0 20px"></div>';
+function flPfScr(doc,id,z){var el=doc.getElementById(id);
+ var wasOpen=el&&(el.style.transform||'').indexOf('translateY(0')>=0;
+ if(!el){el=doc.createElement('section');el.id=id;doc.body.appendChild(el);}
+ el.style.cssText="font-family:'Archivo',-apple-system,system-ui,sans-serif;color:#14110f;position:fixed;top:0;bottom:0;left:50%;width:100%;max-width:464px;z-index:"+z+";overflow-y:auto;-webkit-overflow-scrolling:touch;background:#fff;transition:transform .4s cubic-bezier(.32,.72,0,1);transform:translateX(-50%) translateY(100%);box-shadow:0 -8px 30px rgba(20,17,15,.06);pointer-events:none";
+ if(wasOpen){el.style.transition='none';el.style.transform='translateX(-50%) translateY(0)';el.style.pointerEvents='auto';setTimeout(function(){el.style.transition='transform .4s cubic-bezier(.32,.72,0,1)';},60);}
+ return el;}
+function flPfGlobalBack(doc,show){try{var b=doc.getElementById('flBackBtn');if(b)b.style.setProperty('display',show?'':'none','important');}catch(e){}}
+function flPfShow(el){try{flPfGlobalBack(el.ownerDocument,false);}catch(e){}el.style.pointerEvents='auto';el.scrollTop=0;setTimeout(function(){el.style.transform='translateX(-50%) translateY(0)';},20);}
+function flPfHide(el){if(!el)return;el.style.transform='translateX(-50%) translateY(100%)';el.style.pointerEvents='none';
+ try{var doc=el.ownerDocument,main=doc.getElementById('screen-fl-profil');
+  if(!main||(main.style.transform||'').indexOf('100%')>=0)flPfGlobalBack(doc,true);}catch(e){}}
+function flPfCloseAll(doc){try{['screen-fl-profil','screen-fl-pf-bracelet','screen-fl-pf-compte','screen-fl-pf-secu','screen-fl-pf-aide','screen-fl-pf-regl'].forEach(function(id){flPfHide(doc.getElementById(id));});var sh=doc.getElementById('flPfSheet');if(sh)sh.remove();flPfGlobalBack(doc,true);}catch(e){}}
+function flPfBack(){return '<button class="pf-back" aria-label="Retour" style="width:52px;height:52px;border-radius:50%;border:none;background:#fff;color:#fb6015;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(20,17,15,.08);margin-bottom:22px"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></button>';}
+function flPfTitle(t){return '<h1 style="font-size:34px;font-weight:800;letter-spacing:-.03em;line-height:1;margin:0 0 24px;color:#14110f">'+t+'<span style="color:#fb6015">.</span></h1>';}
+function flPfPad(inner){return '<div style="min-height:100%;display:flex;flex-direction:column;padding:max(28px,calc(env(safe-area-inset-top,0px) + 20px)) 24px calc(env(safe-area-inset-bottom,0px) + 120px)">'+inner+'</div>';}
+function flPfCard(inner,pad){return '<div style="background:#fff;border-radius:22px;box-shadow:0 8px 26px rgba(20,17,15,.05);padding:'+(pad||'20px')+'">'+inner+'</div>';}
+/* --- feuille générique : question + input / steppers --- */
+function flPfSheet(doc,title,bodyHTML,onOpen){var old=doc.getElementById('flPfSheet');if(old)old.remove();
+ var el=doc.createElement('div');el.id='flPfSheet';el.style.cssText='position:fixed;inset:0;z-index:139';
+ el.innerHTML='<div class="pfs-bd" style="position:absolute;inset:0;background:rgba(20,17,15,.3);opacity:0;transition:opacity .3s"></div>'
+  +'<div class="pfs-sh" style="position:absolute;left:50%;bottom:0;width:100%;max-width:464px;transform:translate(-50%,105%);transition:transform .34s cubic-bezier(.32,.72,0,1);background:#fff;border-radius:26px 26px 0 0;padding:18px 22px calc(env(safe-area-inset-bottom,0px) + 20px);box-shadow:0 -12px 40px rgba(20,17,15,.18);font-family:Archivo,-apple-system,system-ui,sans-serif;color:#14110f">'
+  +'<div style="width:38px;height:4px;border-radius:2px;background:#e6e0d6;margin:0 auto 16px"></div>'
+  +'<div style="font-size:24px;font-weight:800;letter-spacing:-.02em;margin-bottom:18px">'+title+'<span style="color:#fb6015">.</span></div>'
+  +bodyHTML+'</div>';
+ doc.body.appendChild(el);
+ var sh=el.querySelector('.pfs-sh'),bd=el.querySelector('.pfs-bd');
+ setTimeout(function(){sh.style.transform='translate(-50%,0)';bd.style.opacity='1';},20);
+ function close(){sh.style.transform='translate(-50%,105%)';bd.style.opacity='0';setTimeout(function(){try{el.remove();}catch(e){}},340);}
+ bd.addEventListener('click',close);
+ if(onOpen)onOpen(el,close);
+ return el;}
+/* --- mesure Poids / Taille --- */
+function flPfMesure(doc,kind){var isW=kind==='poids';var val=isW?flPfWeight():flPfHeight();var step=isW?0.1:1;
+ flPfSheet(doc,isW?'Nouvelle pesée':'Ta taille',
+  '<div style="display:flex;align-items:stretch;background:#f6f3ee;border-radius:18px;box-shadow:inset 0 0 0 1px #ece7df;overflow:hidden;margin-bottom:18px">'
+  +'<button class="pfm-m" style="width:74px;border:none;background:transparent;color:#fb6015;cursor:pointer;font-size:26px">−</button>'
+  +'<div style="flex:1;text-align:center;padding:20px 0"><div class="pfm-v" style="font-size:40px;font-weight:700;letter-spacing:-.02em;line-height:.9">'+(''+val).replace('.',',')+'</div><div style="font-size:14px;font-weight:300;color:#a29c92;margin-top:6px">'+(isW?'kg':'cm')+'</div></div>'
+  +'<button class="pfm-p" style="width:74px;border:none;background:transparent;color:#fb6015;cursor:pointer;font-size:26px">+</button></div>'
+  +'<button class="pfm-ok" style="width:100%;padding:18px;border:none;border-radius:18px;background:#fb6015;color:#fff;font-family:Archivo,-apple-system,system-ui,sans-serif;font-size:17px;font-weight:700;cursor:pointer;box-shadow:0 10px 24px rgba(251,96,21,.28)">Enregistrer</button>',
+  function(el,close){var v=val,vd=el.querySelector('.pfm-v');
+   function paint(){vd.textContent=(''+(Math.round(v*10)/10)).replace('.',',');}
+   el.querySelector('.pfm-m').addEventListener('click',function(){v=Math.max(isW?30:120,+(v-step).toFixed(1));paint();});
+   el.querySelector('.pfm-p').addEventListener('click',function(){v=Math.min(isW?250:230,+(v+step).toFixed(1));paint();});
+   el.querySelector('.pfm-ok').addEventListener('click',function(){
+    var p=flPfP();
+    if(isW){p.weight=v;flPfSaveP(p);try{var bl=DB.get('bodylog',{})||{};bl[tk()]=Object.assign(bl[tk()]||{},{weight:v});DB.set('bodylog',bl);}catch(e){}}
+    else{p.height=v;flPfSaveP(p);}
+    close();flPfMain(doc);
+    try{flOkShow('Enregistré',(isW?v+' kg':v+' cm'));}catch(e){}});});}
+/* --- saisie texte/nombre générique (compte) --- */
+function flPfAsk(doc,title,cur,type,cb){flPfSheet(doc,title,
+  '<input class="pfa-in" type="'+(type||'text')+'" value="'+String(cur==null?'':cur).replace(/"/g,'&quot;')+'" style="width:100%;border:none;background:#f6f3ee;box-shadow:inset 0 0 0 1px #ece7df;border-radius:16px;padding:16px;font-family:Archivo,-apple-system,sans-serif;font-size:19px;font-weight:600;color:#14110f;margin-bottom:16px">'
+  +'<button class="pfa-ok" style="width:100%;padding:18px;border:none;border-radius:18px;background:#fb6015;color:#fff;font-family:Archivo,-apple-system,system-ui,sans-serif;font-size:17px;font-weight:700;cursor:pointer;box-shadow:0 10px 24px rgba(251,96,21,.28)">Enregistrer</button>',
+  function(el,close){var inp=el.querySelector('.pfa-in');setTimeout(function(){try{inp.focus();inp.select();}catch(e){}},350);
+   el.querySelector('.pfa-ok').addEventListener('click',function(){cb(inp.value.trim());close();});});}
+/* --- ÉCRAN PRINCIPAL --- */
+function flPfMain(doc){var el=flPfScr(doc,'screen-fl-profil',85);
+ var p=flPfP(),av=flPfAvatar();
+ var avatarHTML=av?('<div style="position:absolute;inset:9px;border-radius:50%;background-image:url('+av+');background-size:cover;background-position:center"></div>')
+  :('<div style="position:absolute;inset:9px;border-radius:50%;background:#f6f3ee;display:flex;align-items:center;justify-content:center;font-size:44px;font-weight:800;color:#d8d2c8">'+flPfName().charAt(0)+'</div>');
+ el.innerHTML=flPfPad(
+  '<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px">'
+   +'<span style="font-family:Archivo,-apple-system,sans-serif;font-weight:900;font-size:46px;letter-spacing:-.03em;color:#14110f;line-height:.9">Profil<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#fb6015;margin-left:4px;vertical-align:baseline"></span></span>'
+   +'<button class="pf-gear" aria-label="Réglages" style="flex-shrink:0;margin-top:6px;width:46px;height:46px;border-radius:50%;border:none;background:#fff;color:#14110f;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(20,17,15,.06)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></button>'
+  +'</div>'
+  +'<div style="display:flex;flex-direction:column;align-items:center;margin-top:14px">'
+   +'<div style="position:relative;width:128px;height:128px">'
+    +'<svg viewBox="0 0 160 160" style="position:absolute;inset:-16px;width:160px;height:160px;overflow:visible;pointer-events:none"><defs><linearGradient id="gAvatarRing2" x1="15.7" y1="50" x2="130.2" y2="130.2" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#fff4ee" stop-opacity="0"></stop><stop offset="0.14" stop-color="#fff2ea" stop-opacity="0.35"></stop><stop offset="0.28" stop-color="#ffe4d3" stop-opacity="0.8"></stop><stop offset="0.45" stop-color="#ffc9ac"></stop><stop offset="0.75" stop-color="#ff9163"></stop><stop offset="1" stop-color="#ff6a38"></stop></linearGradient></defs><path d="M 15.7 50 A 71 71 0 1 1 130.2 130.2" fill="none" stroke="url(#gAvatarRing2)" stroke-width="1.8" stroke-linecap="round"></path></svg>'
+    +avatarHTML
+    +'<button class="pf-photo" aria-label="Modifier la photo" style="position:absolute;bottom:4px;right:4px;width:34px;height:34px;border-radius:50%;border:none;background:#fff;color:#fb6015;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 3px 12px rgba(20,17,15,.14)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"></path></svg></button>'
+    +'<input class="pf-file" type="file" accept="image/*" style="display:none">'
+   +'</div>'
+   +'<div style="font-size:30px;font-weight:700;letter-spacing:-.02em;line-height:1;margin-top:20px">'+flPfName()+'</div>'
+   +'<div style="font-size:16px;font-weight:400;color:#7a746b;margin-top:9px">'+(p.age||24)+' ans · '+(p.region||'France')+'</div>'
+   +'<div style="font-size:12px;font-weight:200;color:#a7a29a;margin-top:5px">'+flPfSince()+'</div>'
+  +'</div>'
+  +'<div style="font-family:-apple-system,system-ui,sans-serif;font-size:12px;font-weight:700;letter-spacing:.16em;color:#14110f;text-transform:uppercase;margin:30px 4px 14px">Mon corps</div>'
+  +'<div style="display:flex;gap:14px">'
+   +'<div role="button" class="pf-poids" style="flex:1;background:#fff;border-radius:22px;box-shadow:0 8px 26px rgba(20,17,15,.05);padding:18px 16px;display:flex;align-items:center;gap:14px;cursor:pointer">'
+    +'<span style="flex-shrink:0;display:flex;width:40px;height:40px;border-radius:12px;border:1px solid #ffddc9;align-items:center;justify-content:center;color:#fb6015"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="4"></rect><circle cx="12" cy="9" r="1"></circle><path d="M12 9l1.6-2.4"></path></svg></span>'
+    +'<div style="min-width:0"><div style="font-size:14px;font-weight:400;color:#8a857c;margin-bottom:3px">Poids</div><div style="font-size:22px;font-weight:600;letter-spacing:-.01em">'+(''+flPfWeight()).replace('.',',')+' <span style="font-size:13px;font-weight:400;color:#8a857c">kg</span></div></div></div>'
+   +'<div role="button" class="pf-taille" style="flex:1;background:#fff;border-radius:22px;box-shadow:0 8px 26px rgba(20,17,15,.05);padding:18px 16px;display:flex;align-items:center;gap:14px;cursor:pointer">'
+    +'<span style="flex-shrink:0;display:flex;width:40px;height:40px;border-radius:12px;border:1px solid #ffddc9;align-items:center;justify-content:center;color:#fb6015"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16.5L16.5 4l3.5 3.5L7.5 20z"></path><path d="M9 8l1.6 1.6M12 5l1.6 1.6M6 11l1.6 1.6"></path></svg></span>'
+    +'<div style="min-width:0"><div style="font-size:14px;font-weight:400;color:#8a857c;margin-bottom:3px">Taille</div><div style="font-size:22px;font-weight:600;letter-spacing:-.01em">'+flPfHeight()+' <span style="font-size:13px;font-weight:400;color:#8a857c">cm</span></div></div></div>'
+  +'</div>'
+  +'<div style="font-family:-apple-system,system-ui,sans-serif;font-size:12px;font-weight:700;letter-spacing:.16em;color:#14110f;text-transform:uppercase;margin:30px 4px 14px">Mon objectif</div>'
+  +'<div role="button" class="pf-obj" style="background:#fff;border-radius:22px;box-shadow:0 8px 26px rgba(20,17,15,.05);padding:22px 20px;display:flex;align-items:center;gap:18px;cursor:pointer">'
+   +'<span style="flex-shrink:0;width:62px;height:62px;border-radius:50%;background:#fff4ee;display:flex;align-items:center;justify-content:center"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#fb6015" stroke-width="1.6"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="5"></circle><circle cx="12" cy="12" r="1.6" fill="#fb6015" stroke="none"></circle></svg></span>'
+   +'<div style="flex:1;min-width:0"><div style="font-size:22px;font-weight:700;letter-spacing:-.02em;line-height:1.05">'+(function(){try{return flNGoalWord()==='Maintien'?'Mieux récupérer':flNGoalWord();}catch(e){return 'Mieux récupérer';}})()+'</div>'
+   +'<div style="font-size:14px;font-weight:300;color:#a7a29a;margin-top:6px">'+(function(){try{var g=flNutGoals();return g.kcal+' kcal · '+g.prot+' g de protéines / j';}catch(e){return '';}})()+'</div></div>'+FLPF_CHEV.replace('width="20" height="20"','width="20" height="20"')
+  +'</div>'
+  +'<div style="margin-top:26px;background:#fff;border-radius:22px;box-shadow:0 8px 26px rgba(20,17,15,.05);overflow:hidden">'
+   +flPfRow('<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#14110f" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><rect x="7" y="7" width="10" height="10" rx="3"></rect><path d="M9 7V4.5A1.5 1.5 0 0 1 10.5 3h3A1.5 1.5 0 0 1 15 4.5V7M9 17v2.5A1.5 1.5 0 0 0 10.5 21h3a1.5 1.5 0 0 0 1.5-1.5V17"></path></svg>','Mon bracelet','pf-brac')
+   +FLPF_SEP
+   +flPfRow('<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#14110f" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="12" cy="8" r="3.6"></circle><path d="M5.5 20c.6-3.4 3.2-5.4 6.5-5.4s5.9 2 6.5 5.4"></path></svg>','Mon compte','pf-cpt')
+   +FLPF_SEP
+   +flPfRow('<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#14110f" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><rect x="5" y="11" width="14" height="10" rx="2.5"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg>','Sécurité','pf-secu')
+   +FLPF_SEP
+   +flPfRow('<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#14110f" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="12" cy="12" r="9"></circle><path d="M9.6 9.2a2.4 2.4 0 0 1 4.7.7c0 1.6-2.3 2-2.3 3.4"></path><path d="M12 17h.01"></path></svg>','Aide &amp; support','pf-aide')
+  +'</div>');
+ el.querySelector('.pf-gear').addEventListener('click',function(){flPfRegl(doc);});
+ el.querySelector('.pf-poids').addEventListener('click',function(){flPfMesure(doc,'poids');});
+ el.querySelector('.pf-taille').addEventListener('click',function(){flPfMesure(doc,'taille');});
+ el.querySelector('.pf-obj').addEventListener('click',function(){try{flNGoalsHub();}catch(e){}});
+ el.querySelector('.pf-brac').addEventListener('click',function(){flPfBracelet(doc);});
+ el.querySelector('.pf-cpt').addEventListener('click',function(){flPfCompte(doc);});
+ el.querySelector('.pf-secu').addEventListener('click',function(){flPfSecu(doc);});
+ el.querySelector('.pf-aide').addEventListener('click',function(){flPfAide(doc);});
+ var file=el.querySelector('.pf-file');
+ el.querySelector('.pf-photo').addEventListener('click',function(){file.click();});
+ file.addEventListener('change',function(){var f=file.files&&file.files[0];if(!f)return;
+  var fr=new FileReader();fr.onload=function(ev){_downscaleImg(ev.target.result,512,function(url){if(url){try{localStorage.setItem('flAvatar',url);}catch(e){}flPfMain(doc);try{flOkShow('Enregistré','Photo de profil');}catch(e){}}},0.82);};fr.readAsDataURL(f);});
+ return el;}
+function flPfOpen(doc){var el=flPfMain(doc);flPfShow(el);}
+/* --- SOUS-PAGE générique --- */
+function flPfSub(doc,id,title,inner,wire){var el=flPfScr(doc,id,87);
+ el.innerHTML=flPfPad(flPfBack()+flPfTitle(title)+inner);
+ el.querySelector('.pf-back').addEventListener('click',function(){flPfHide(el);});
+ if(wire)wire(el);flPfShow(el);return el;}
+/* --- Mon bracelet : l'essentiel (état réel, batterie, synchro, recherche) --- */
+function flPfBracelet(doc){var W=window._watchLive||{};
+ var fresh=W.t&&(Date.now()-W.t<120000);
+ var state=fresh?'Connecté':(W.status==='scanning'?'Recherche en cours…':'Non connecté');
+ var dotCol=fresh?'#2FAE67':'#c9c2b6';
+ var lastSync=W.t?(function(){var m=Math.round((Date.now()-W.t)/60000);return m<1?'à l\'instant':('il y a '+m+' min');})():'—';
+ var bat=(W.battery!=null)?W.battery:null;
+ flPfSub(doc,'screen-fl-pf-bracelet','Mon bracelet',
+  flPfCard('<div style="display:flex;align-items:center;gap:16px"><span style="width:12px;height:12px;border-radius:50%;background:'+dotCol+';flex:none'+(fresh?';box-shadow:0 0 0 4px rgba(47,174,103,.15)':'')+'"></span>'
+   +'<div style="flex:1"><div style="font-size:19px;font-weight:700;letter-spacing:-.01em">FLINT Band</div><div style="font-size:14px;font-weight:300;color:#a7a29a;margin-top:3px">'+state+(fresh&&W.hr?(' · '+W.hr+' bpm'):'')+'</div></div>'
+   +(fresh?'<span style="font-family:Archivo,sans-serif;font-size:13px;font-weight:700;color:#2FAE67">● live</span>':'')+'</div>','22px 20px')
+  +'<div style="height:14px"></div>'
+  +flPfCard('<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><span style="font-size:14px;font-weight:400;color:#8a857c">Batterie</span><span style="font-size:19px;font-weight:700">'+(bat!=null?bat+' %':'—')+'</span></div>'
+   +'<div style="height:8px;border-radius:6px;background:#f0ece4;overflow:hidden"><div style="width:'+(bat||0)+'%;height:100%;border-radius:6px;background:'+((bat||0)>20?'#fb6015':'#e0492e')+'"></div></div>','20px')
+  +'<div style="height:14px"></div>'
+  +flPfCard('<div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:14px;font-weight:400;color:#8a857c">Dernière synchro</span><span style="font-size:15px;font-weight:600">'+lastSync+'</span></div>','20px')
+  +'<button class="pfb-scan" style="width:100%;margin-top:22px;padding:18px;border:none;border-radius:18px;background:#fb6015;color:#fff;font-family:Archivo,-apple-system,sans-serif;font-size:16px;font-weight:700;cursor:pointer;box-shadow:0 10px 24px rgba(251,96,21,.28)">Rechercher mon bracelet</button>'
+  +'<div style="font-family:-apple-system,system-ui,sans-serif;font-size:12.5px;color:#a7a29a;text-align:center;margin-top:14px;line-height:1.5">Porte le bracelet bien serré, capteur contre la peau.<br>La connexion se fait toute seule à l\'ouverture de l\'app.</div>',
+  function(el){el.querySelector('.pfb-scan').addEventListener('click',function(){
+   var nat=window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint;
+   if(nat){try{nat.postMessage({cmd:'start'});}catch(e){}try{flOkShow('Recherche lancée','Approche ton bracelet');}catch(e){}setTimeout(function(){flPfBracelet(doc);},4000);}
+   else{try{flNToast('Connexion au bracelet : sur l\'app iPhone');}catch(e){}}});});}
+/* --- Mon compte --- */
+function flPfCompte(doc){var p=flPfP();
+ flPfSub(doc,'screen-fl-pf-compte','Mon compte',
+  '<div style="background:#fff;border-radius:22px;box-shadow:0 8px 26px rgba(20,17,15,.05);overflow:hidden">'
+  +flPfRow('','Prénom','pfc-nom',flPfName())+FLPF_SEP
+  +flPfRow('','Âge','pfc-age',(p.age||24)+' ans')+FLPF_SEP
+  +flPfRow('','Pays','pfc-pays',p.region||'France')+FLPF_SEP
+  +flPfRow('','E-mail','pfc-mail',p.email||'Ajouter')
+  +'</div>',
+  function(el){
+   el.querySelector('.pfc-nom').addEventListener('click',function(){flPfAsk(doc,'Ton prénom',flPfName(),'text',function(v){if(!v)return;var p2=flPfP();p2.name=v;flPfSaveP(p2);flPfCompte(doc);flPfMain(doc);});});
+   el.querySelector('.pfc-age').addEventListener('click',function(){flPfAsk(doc,'Ton âge',p.age||24,'number',function(v){var n=parseInt(v);if(!n||n<10||n>110)return;var p2=flPfP();p2.age=n;flPfSaveP(p2);flPfCompte(doc);flPfMain(doc);});});
+   el.querySelector('.pfc-pays').addEventListener('click',function(){flPfAsk(doc,'Ton pays',p.region||'France','text',function(v){if(!v)return;var p2=flPfP();p2.region=v;flPfSaveP(p2);flPfCompte(doc);flPfMain(doc);});});
+   el.querySelector('.pfc-mail').addEventListener('click',function(){flPfAsk(doc,'Ton e-mail',p.email||'','email',function(v){var p2=flPfP();p2.email=v;flPfSaveP(p2);flPfCompte(doc);});});});}
+/* --- Sécurité --- */
+function flPfSecu(doc){flPfSub(doc,'screen-fl-pf-secu','Sécurité',
+  flPfCard('<div style="font-size:15px;font-weight:300;line-height:1.6;color:#45403a">Tes données vivent <b style="font-weight:700">sur ton téléphone</b>, pas dans un cloud. Pas d\'abonnement, pas de revente de données — l\'étincelle t\'appartient.</div>','22px 20px')
+  +'<div style="height:14px"></div>'
+  +'<div style="background:#fff;border-radius:22px;box-shadow:0 8px 26px rgba(20,17,15,.05);overflow:hidden">'
+  +flPfRow('','Exporter mes données','pfs-exp')+FLPF_SEP
+  +flPfRow('','Effacer toutes mes données','pfs-wipe')
+  +'</div>',
+  function(el){
+   el.querySelector('.pfs-exp').addEventListener('click',function(){try{
+    var out={};for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);out[k]=localStorage.getItem(k);}
+    var blob=new Blob([JSON.stringify(out)],{type:'application/json'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='flint-donnees.json';a.click();
+    flOkShow('Enregistré','Export téléchargé');}catch(e){}});
+   el.querySelector('.pfs-wipe').addEventListener('click',function(){
+    flPfSheet(doc,'Tout effacer','<div style="font-size:15px;font-weight:300;color:#45403a;line-height:1.55;margin-bottom:18px">Toutes tes données locales (nuits, activités, repas, profil) seront supprimées. C\'est définitif.</div>'
+     +'<button class="pfw-ok" style="width:100%;padding:17px;border:none;border-radius:18px;background:#e0492e;color:#fff;font-family:Archivo,sans-serif;font-size:16px;font-weight:700;cursor:pointer">Oui, tout effacer</button>',
+     function(el2,close){el2.querySelector('.pfw-ok').addEventListener('click',function(){try{localStorage.clear();}catch(e){}location.reload();});});});});}
+/* --- Aide & support --- */
+function flPfAide(doc){function qa(q,a){return '<div style="padding:18px 20px"><div style="font-size:15px;font-weight:700;letter-spacing:-.01em;margin-bottom:7px">'+q+'</div><div style="font-family:-apple-system,system-ui,sans-serif;font-size:13.5px;font-weight:300;color:#6f6a61;line-height:1.55">'+a+'</div></div>';}
+ flPfSub(doc,'screen-fl-pf-aide','Aide & support',
+  '<div style="background:#fff;border-radius:22px;box-shadow:0 8px 26px rgba(20,17,15,.05);overflow:hidden">'
+  +qa('D\'où viennent mes chiffres ?','Tout vient de ton bracelet (FC, pas, batterie) et de tes scans de repas. Quand une donnée n\'existe pas, l\'app affiche « — » : jamais un chiffre inventé.')
+  +FLPF_SEP+qa('Ma nuit n\'apparaît pas','Garde l\'app ouverte en arrière-plan (ne la ferme pas de force), le téléphone en charge près du lit et le bracelet au poignet.')
+  +FLPF_SEP+qa('Le scan de repas se trompe','Ouvre le repas et corrige les ingrédients — l\'estimation photo reste à ±15 %.')
+  +'</div>'
+  +'<button class="pfh-mail" style="width:100%;margin-top:22px;padding:18px;border:none;border-radius:18px;background:#fb6015;color:#fff;font-family:Archivo,sans-serif;font-size:16px;font-weight:700;cursor:pointer;box-shadow:0 10px 24px rgba(251,96,21,.28)">Écrire au support</button>',
+  function(el){el.querySelector('.pfh-mail').addEventListener('click',function(){try{location.href='mailto:support@flint.app?subject=FLINT%20—%20support';}catch(e){}});});}
+/* --- Réglages (engrenage) --- */
+function flPfRegl(doc){var APPV='';try{APPV=APP_VERSION||'';}catch(e){}
+ flPfSub(doc,'screen-fl-pf-regl','Réglages',
+  '<div style="background:#fff;border-radius:22px;box-shadow:0 8px 26px rgba(20,17,15,.05);overflow:hidden">'
+  +'<div style="display:flex;align-items:center;gap:16px;padding:20px 20px"><span style="flex:1;font-size:15px;font-weight:300">Unités</span><span style="font-size:15px;font-weight:600">Métrique</span></div>'
+  +FLPF_SEP
+  +'<div style="display:flex;align-items:center;gap:16px;padding:20px 20px"><span style="flex:1;font-size:15px;font-weight:300">Version</span><span style="font-family:-apple-system,system-ui,sans-serif;font-size:13px;color:#a7a29a">'+APPV+'</span></div>'
+  +'</div>'
+  +'<button class="pfr-rel" style="width:100%;margin-top:22px;padding:17px;border:none;border-radius:18px;background:#f6f3ee;color:#14110f;box-shadow:inset 0 0 0 1px #ece7df;font-family:Archivo,sans-serif;font-size:15px;font-weight:700;cursor:pointer">Recharger l\'application</button>',
+  function(el){el.querySelector('.pfr-rel').addEventListener('click',function(){location.reload();});});}
 </script>
 <script>
 /* ===== Pont natif FLINT (coquille iOS WKWebView + FlintTestBand) + COUCHE DONNÉES RÉELLES =====
