@@ -6600,11 +6600,15 @@ function mdDashChevrons(doc){try{var tb=doc.getElementById('screen-tableau');if(
  var GRP=/^(RÉCUPÉRATION|SOMMEIL|ACTIVITÉ|CARDIO|CORPS)$/;
  [].slice.call(tb.querySelectorAll('div')).forEach(function(row){
   var st=row.getAttribute('style')||'';
-  if(st.indexOf('padding: 22px')<0||st.indexOf('display: flex')<0||st.indexOf('align-items: center')<0)return;
+  if((st.indexOf('padding: 22px')<0&&st.indexOf('padding: 20px')<0)||st.indexOf('display: flex')<0||st.indexOf('align-items: center')<0||st.indexOf('border-top')<0)return;
   if((row.textContent||'').replace(/\s+/g,' ').trim().length>60)return;
   var isHeader=[].slice.call(row.querySelectorAll('div,span')).some(function(e){return e.children.length===0&&GRP.test((e.textContent||'').trim());});
   if(isHeader)return;
-  if(row.querySelector('.fl-chev'))return;
+  /* chevron natif de la maquette déjà présent → ne rien ajouter (et retirer un éventuel doublon) */
+  var native=[].slice.call(row.querySelectorAll('svg path')).some(function(p2){return /^M9 6L15 12L9 18/i.test(p2.getAttribute('d')||'');});
+  var mine=row.querySelector('.fl-chev');
+  if(native){if(mine)mine.remove();return;}
+  if(mine)return;
   var NS='http://www.w3.org/2000/svg';
   var svg=doc.createElementNS(NS,'svg');svg.setAttribute('class','fl-chev');svg.setAttribute('width','16');svg.setAttribute('height','16');svg.setAttribute('viewBox','0 0 24 24');svg.setAttribute('fill','none');
   svg.style.cssText='flex:none;margin-left:10px;opacity:.85';
@@ -11042,7 +11046,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v538';
+const APP_VERSION='flint-v539';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
