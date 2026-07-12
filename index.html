@@ -11187,7 +11187,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v544';
+const APP_VERSION='flint-v545';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
@@ -11723,6 +11723,159 @@ function flPfRegl(doc){var APPV='';try{APPV=APP_VERSION||'';}catch(e){}
   function(el){el.querySelector('.pfr-rel').addEventListener('click',function(){location.reload();});});}
 </script>
 <script>
+/* ===== AJOUT D'ACTIVITÉ façon WHOOP, DA FLINT (founder 12/07) =====
+   Écran 1 « Ajouter une activité » : sélecteur d'activité + TEMPS (début/fin, roues date·heure·minute
+   inline) + Enregistrer. Écran 2 « Sélectionner une activité » : recherche, onglets TOUT/EFFORT/
+   RÉCUPÉRATION/SOMMEIL, Le plus récent, liste A→Z. Sans bannière ni localisation. Icônes svgIcon (IC). */
+var FL_ACT_CAT=(function(){var out=[];
+ SPORTS.forEach(function(sp){if(sp[0]!=='Autre')out.push({n:sp[0],ic:sp[1],cat:'effort'});});
+ out.push({n:'Autre – Effort',ic:'spark',cat:'effort'});
+ [['Sauna','flame'],['Bain froid','bolt'],['Bain chaud','flame'],['Douche froide','bolt'],['Massage','heart'],['Kiné','heart'],['Méditation','yoga'],['Respiration','yoga'],['Étirements','yoga'],['Autre – Récupération','spark']].forEach(function(r){out.push({n:r[0],ic:r[1],cat:'recup'});});
+ [['Sieste','moon'],['Sommeil','moon']].forEach(function(r){out.push({n:r[0],ic:r[1],cat:'sommeil'});});
+ return out;})();
+function flActNorm(x){return String(x||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');}
+function flActScrPage(doc,id,z){var el=doc.getElementById(id);var wasOpen=el&&(el.style.transform||'').indexOf('translateY(0')>=0;
+ if(!el){el=doc.createElement('section');el.id=id;doc.body.appendChild(el);}
+ el.style.cssText="font-family:'Archivo',-apple-system,system-ui,sans-serif;color:#14110f;position:fixed;top:0;bottom:0;left:50%;width:100%;max-width:464px;z-index:"+z+";display:flex;flex-direction:column;background:#fff;transition:transform .38s cubic-bezier(.32,.72,0,1);transform:translateX(-50%) translateY(100%);pointer-events:none";
+ if(wasOpen){el.style.transition='none';el.style.transform='translateX(-50%) translateY(0)';el.style.pointerEvents='auto';setTimeout(function(){el.style.transition='transform .38s cubic-bezier(.32,.72,0,1)';},60);}
+ return el;}
+function flActShowP(el){el.style.pointerEvents='auto';setTimeout(function(){el.style.transform='translateX(-50%) translateY(0)';},20);}
+function flActHideP(el){if(el){el.style.transform='translateX(-50%) translateY(100%)';el.style.pointerEvents='none';}}
+/* état du formulaire */
+var flActSt=null;
+function flActDefaults(){var end=new Date();end.setMinutes(Math.floor(end.getMinutes()/5)*5,0,0);
+ var start=new Date(end.getTime()-60*60000);
+ return {act:null,start:start,end:end,openWheel:null};}
+function flActFmt(d2){var M=['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
+ return d2.getDate()+' '+M[d2.getMonth()]+' à '+String(d2.getHours()).padStart(2,'0')+':'+String(d2.getMinutes()).padStart(2,'0');}
+/* roue 3 colonnes : jour · heure · minute */
+function flActWheel(doc,which){var st=flActSt;var cur=st[which];
+ var days=[];var today=new Date();today.setHours(0,0,0,0);
+ for(var o=-13;o<=0;o++){var dd=new Date(today);dd.setDate(dd.getDate()+o);
+  var J=['dim.','lun.','mar.','mer.','jeu.','ven.','sam.'];var M=['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
+  days.push({lab:(o===0?"auj.":J[dd.getDay()]+' '+dd.getDate()+' '+M[dd.getMonth()]),d:dd});}
+ function col(cls,items,selIdx){return '<div class="fln-wheel '+cls+'">'+items.map(function(it,i){return '<div class="it" data-i="'+i+'">'+it+'</div>';}).join('')+'</div>';}
+ var dayIdx=13;days.forEach(function(dy,i){if(dy.d.toDateString()===new Date(cur.getFullYear(),cur.getMonth(),cur.getDate()).toDateString())dayIdx=i;});
+ var html='<div class="fla-wheel" data-w="'+which+'" style="margin:12px 0 4px">'
+  +'<div class="fln-pick" style="max-width:100%">'
+   +col('w-day',days.map(function(x){return x.lab;}),dayIdx)
+   +col('w-h',Array.from({length:24},function(_,i){return String(i).padStart(2,'0');}),cur.getHours())
+   +col('w-m',Array.from({length:12},function(_,i){return String(i*5).padStart(2,'0');}),Math.floor(cur.getMinutes()/5))
+   +'<div class="fln-selband"></div>'
+  +'</div></div>';
+ return {html:html,days:days,dayIdx:dayIdx,hIdx:cur.getHours(),mIdx:Math.floor(cur.getMinutes()/5)};}
+function flActWireWheel(doc,box,meta,which){
+ var wd=box.querySelector('.w-day'),wh=box.querySelector('.w-h'),wm=box.querySelector('.w-m');
+ [[wd,meta.dayIdx],[wh,meta.hIdx],[wm,meta.mIdx]].forEach(function(p){if(p[0])p[0].scrollTop=p[1]*32;});
+ function read(){var st=flActSt;
+  var di=Math.max(0,Math.min(13,Math.round(wd.scrollTop/32)));
+  var hi=Math.max(0,Math.min(23,Math.round(wh.scrollTop/32)));
+  var mi=Math.max(0,Math.min(11,Math.round(wm.scrollTop/32)));
+  var base=meta.days[di].d;var d2=new Date(base);d2.setHours(hi,mi*5,0,0);
+  st[which]=d2;
+  if(which==='start'&&st.end<=st.start)st.end=new Date(st.start.getTime()+60*60000);
+  if(which==='end'&&st.end<=st.start)st.start=new Date(st.end.getTime()-60*60000);
+  var chip=doc.querySelector('.fla-chip[data-w="start"] b');if(chip)chip.textContent=flActFmt(flActSt.start);
+  var chip2=doc.querySelector('.fla-chip[data-w="end"] b');if(chip2)chip2.textContent=flActFmt(flActSt.end);}
+ [wd,wh,wm].forEach(function(w){if(!w)return;var t;w.addEventListener('scroll',function(){clearTimeout(t);t=setTimeout(read,120);},{passive:true});
+  [].slice.call(w.querySelectorAll('.it')).forEach(function(it){it.addEventListener('click',function(){w.scrollTo({top:(+it.dataset.i)*32,behavior:'smooth'});});});});}
+/* écran 1 : Ajouter une activité */
+function flActAdd(doc){try{flNCss(doc);
+ if(!flActSt)flActSt=flActDefaults();
+ var st=flActSt;
+ var el=flActScrPage(doc,'screen-fla-add',141);
+ var actRow=st.act
+  ?('<span style="flex:none;width:44px;height:44px;border-radius:14px;background:#fff1e9;display:flex;align-items:center;justify-content:center;color:#fb6015">'+svgIcon(st.act.ic,{size:22,sw:1.8})+'</span><span style="flex:1;font-size:18px;font-weight:700;letter-spacing:-.01em;color:#14110f">'+st.act.n+'</span>')
+  :('<span style="flex:none;width:44px;height:44px;border-radius:14px;background:#f6f3ee;box-shadow:inset 0 0 0 1px #ece7df;display:flex;align-items:center;justify-content:center;color:#a29c92">'+svgIcon('spark',{size:22,sw:1.8})+'</span><span style="flex:1;font-size:17px;font-weight:400;color:#8a857c">Sélectionner une activité</span>');
+ function timeRow(lab,which){var open=st.openWheel===which;var w=open?flActWheel(doc,which):null;
+  return '<div class="fla-trow" data-w="'+which+'" style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 0;cursor:pointer'+(which==='end'?';border-top:1px solid #f0ece4':'')+'">'
+   +'<span style="font-size:16px;font-weight:400;color:#14110f">'+lab+'</span>'
+   +'<span class="fla-chip" data-w="'+which+'" style="padding:9px 14px;border-radius:12px;background:'+(open?'#fb6015':'#fff1e9')+';font-family:Archivo,-apple-system,sans-serif"><b style="font-size:14px;font-weight:700;color:'+(open?'#fff':'#fb6015')+'">'+flActFmt(st[which])+'</b></span>'
+  +'</div>'+(open?w.html:'');}
+ el.innerHTML='<div style="flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:max(20px,calc(env(safe-area-inset-top,0px) + 12px)) 24px 20px">'
+  +'<button class="fla-x" aria-label="Fermer" style="width:52px;height:52px;border-radius:50%;border:none;background:#fff;color:#fb6015;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(20,17,15,.08);margin-bottom:22px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>'
+  +'<h1 style="font-size:34px;font-weight:800;letter-spacing:-.03em;line-height:1;margin:0 0 26px;color:#14110f">Ajouter une activité<span style="color:#fb6015">.</span></h1>'
+  +'<div class="fla-sel" role="button" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:22px;box-shadow:0 8px 26px rgba(20,17,15,.05),inset 0 0 0 1px rgba(20,17,15,.035);padding:16px 18px;cursor:pointer;margin-bottom:26px">'
+   +actRow
+   +'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fb6015" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M9 18l6-6-6-6"></path></svg>'
+  +'</div>'
+  +'<div style="font-family:-apple-system,system-ui,sans-serif;font-size:12px;font-weight:700;letter-spacing:.16em;color:#14110f;text-transform:uppercase;margin:0 4px 6px">Temps</div>'
+  +'<div style="background:#fff;border-radius:22px;box-shadow:0 8px 26px rgba(20,17,15,.05),inset 0 0 0 1px rgba(20,17,15,.035);padding:2px 18px">'
+   +timeRow('Heure de début','start')
+   +timeRow('Heure de fin','end')
+  +'</div>'
+ +'</div>'
+ +'<div style="flex-shrink:0;padding:14px 24px calc(env(safe-area-inset-bottom,0px) + 16px);background:#fff">'
+  +'<button class="fla-save" '+(st.act?'':'disabled')+' style="width:100%;padding:19px;border:none;border-radius:18px;background:'+(st.act?'#fb6015':'#f0ece4')+';color:'+(st.act?'#fff':'#b8b1a5')+';font-family:Archivo,-apple-system,sans-serif;font-size:17px;font-weight:700;cursor:'+(st.act?'pointer':'default')+';'+(st.act?'box-shadow:0 10px 24px rgba(251,96,21,.28);':'')+'pointer-events:'+(st.act?'auto':'none')+'">Enregistrer</button>'
+ +'</div>';
+ el.querySelector('.fla-x').addEventListener('click',function(){flActSt=null;flActHideP(el);});
+ el.querySelector('.fla-sel').addEventListener('click',function(){flActPick(doc);});
+ [].slice.call(el.querySelectorAll('.fla-trow')).forEach(function(r){r.addEventListener('click',function(ev){
+  if(ev.target.closest('.fla-wheel'))return;
+  var w=r.dataset.w;st.openWheel=(st.openWheel===w?null:w);flActAdd(doc);});});
+ if(st.openWheel){var box=el.querySelector('.fla-wheel[data-w="'+st.openWheel+'"]');
+  if(box){var meta=flActWheel(doc,st.openWheel);flActWireWheel(doc,box,meta,st.openWheel);}}
+ var sv=el.querySelector('.fla-save');
+ if(sv)sv.addEventListener('click',function(){
+  var a=st.act;if(!a)return;
+  var start=st.start,end=st.end;if(end<=start)end=new Date(start.getTime()+30*60000);
+  var K=start.getFullYear()+'-'+(start.getMonth()+1)+'-'+start.getDate();
+  var dur=Math.max(5,Math.round((end-start)/60000));
+  var row={name:a.n,icon:a.ic,start:String(start.getHours()).padStart(2,'0')+':'+String(start.getMinutes()).padStart(2,'0'),dur:dur,int:(a.cat==='effort'?3:1)};
+  if(a.cat==='sommeil')row.type='nap';
+  try{var arr=DB.get('sessions_'+K,[])||[];arr.push(row);DB.set('sessions_'+K,arr);}catch(e){}
+  try{localStorage.setItem('flLastAct',JSON.stringify({n:a.n,ic:a.ic,cat:a.cat}));}catch(e){}
+  flActSt=null;flActHideP(el);flActHideP(doc.getElementById('screen-fla-pick'));
+  try{var cont=doc.querySelector('[data-fl-jr]');if(cont)cont.setAttribute('data-fl-jr','stale');if(typeof flShellHonest==='function')flShellHonest(doc);}catch(e){}
+  try{flOkShow('Enregistré',a.n+' · '+dur+' min');}catch(e){}});
+ flActShowP(el);
+}catch(e){}}
+/* écran 2 : Sélectionner une activité */
+function flActPick(doc){try{flNCss(doc);
+ var el=flActScrPage(doc,'screen-fla-pick',142);
+ var tab=el._flTab||'tout';var q=el._flQ||'';
+ var last=null;try{last=JSON.parse(localStorage.getItem('flLastAct')||'null');}catch(e){}
+ function rows(list){return list.map(function(a){
+  return '<div class="fla-item" data-n="'+a.n.replace(/"/g,'&quot;')+'" role="button" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:18px;box-shadow:0 6px 20px rgba(20,17,15,.035),inset 0 0 0 1px rgba(20,17,15,.03);padding:14px 16px;cursor:pointer;margin-bottom:10px">'
+   +'<span style="flex:none;width:40px;height:40px;border-radius:12px;background:#f6f3ee;display:flex;align-items:center;justify-content:center;color:#57534c">'+svgIcon(a.ic,{size:20,sw:1.7})+'</span>'
+   +'<span style="flex:1;font-size:16px;font-weight:600;letter-spacing:-.01em;color:#14110f">'+a.n+'</span>'
+  +'</div>';}).join('');}
+ var nq=flActNorm(q);
+ var filtered=FL_ACT_CAT.filter(function(a){
+  if(tab!=='tout'&&a.cat!==tab)return false;
+  if(nq&&flActNorm(a.n).indexOf(nq)<0)return false;
+  return true;}).sort(function(a,b){return a.n.localeCompare(b.n,'fr');});
+ function tabBtn(id,lab){var on=tab===id;
+  return '<button class="fla-tab" data-t="'+id+'" style="background:none;border:none;cursor:pointer;padding:8px 2px;font-family:-apple-system,system-ui,sans-serif;font-size:12.5px;font-weight:700;letter-spacing:.1em;color:'+(on?'#fb6015':'#a29c92')+';border-bottom:2px solid '+(on?'#fb6015':'transparent')+'">'+lab+'</button>';}
+ el.innerHTML='<div style="flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:max(20px,calc(env(safe-area-inset-top,0px) + 12px)) 24px calc(env(safe-area-inset-bottom,0px) + 30px)">'
+  +'<button class="fla-back" aria-label="Retour" style="width:52px;height:52px;border-radius:50%;border:none;background:#fff;color:#fb6015;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(20,17,15,.08);margin-bottom:22px"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></button>'
+  +'<h1 style="font-size:34px;font-weight:800;letter-spacing:-.03em;line-height:1;margin:0 0 20px;color:#14110f">Sélectionner une activité<span style="color:#fb6015">.</span></h1>'
+  +'<div style="display:flex;align-items:center;gap:10px;background:#fff;border-radius:16px;box-shadow:inset 0 0 0 1px #ece7df;padding:14px 16px;margin-bottom:16px">'
+   +'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a29c92" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>'
+   +'<input class="fla-q" type="text" placeholder="Rechercher une activité" value="'+q.replace(/"/g,'&quot;')+'" style="flex:1;border:none;outline:none;background:transparent;font-family:Archivo,-apple-system,sans-serif;font-size:16px;color:#14110f">'
+  +'</div>'
+  +'<div style="display:flex;gap:18px;margin-bottom:18px">'+tabBtn('tout','TOUT')+tabBtn('effort','EFFORT')+tabBtn('recup','RÉCUPÉRATION')+tabBtn('sommeil','SOMMEIL')+'</div>'
+  +((last&&!nq&&tab==='tout')?('<div style="font-family:-apple-system,system-ui,sans-serif;font-size:11px;font-weight:700;letter-spacing:.14em;color:#a29c92;margin:0 4px 10px">LE PLUS RÉCENT</div>'+rows([last])):'')
+  +'<div style="font-family:-apple-system,system-ui,sans-serif;font-size:11px;font-weight:700;letter-spacing:.14em;color:#a29c92;margin:6px 4px 10px">'+(nq?'RÉSULTATS':'TOUTES, DE A À Z')+'</div>'
+  +(filtered.length?rows(filtered):'<div style="text-align:center;font-size:14px;font-weight:300;color:#a29c92;padding:30px 0">Aucune activité trouvée</div>')
+ +'</div>';
+ el.querySelector('.fla-back').addEventListener('click',function(){flActHideP(el);});
+ [].slice.call(el.querySelectorAll('.fla-tab')).forEach(function(b){b.addEventListener('click',function(){el._flTab=b.dataset.t;flActPick(doc);});});
+ var qi=el.querySelector('.fla-q');
+ qi.addEventListener('input',function(){el._flQ=qi.value;clearTimeout(el._flQT);el._flQT=setTimeout(function(){var pos=qi.selectionStart;flActPick(doc);var q2=doc.querySelector('#screen-fla-pick .fla-q');if(q2){q2.focus();try{q2.setSelectionRange(pos,pos);}catch(e){}}},260);});
+ [].slice.call(el.querySelectorAll('.fla-item')).forEach(function(it){it.addEventListener('click',function(){
+  var a=FL_ACT_CAT.filter(function(x){return x.n===it.dataset.n;})[0]||(last&&last.n===it.dataset.n?last:null);
+  if(!a)return;
+  if(!flActSt)flActSt=flActDefaults();
+  flActSt.act=a;
+  try{localStorage.setItem('flLastAct',JSON.stringify(a));}catch(e){}
+  flActHideP(el);flActAdd(doc);});});
+ flActShowP(el);
+}catch(e){}}
+/* le bouton « Ajouter une activité » ouvre le nouveau flux */
+window.flAddActivity=function(doc){flActSt=flActDefaults();flActAdd(doc);};
+</script>
+<script>
 /* ===== Pont natif FLINT (coquille iOS WKWebView + FlintTestBand) + COUCHE DONNÉES RÉELLES =====
    Coquille → window.flintNative(type,data) : hr, battery, steps, kcal, distance, rr, status, log…
    + 'nightlog' : rejouage du journal NATIF de la nuit ({hr:[[ts_s,bpm]...], steps, kcal, battery})
@@ -12042,7 +12195,7 @@ function flPfRegl(doc){var APPV='';try{APPV=APP_VERSION||'';}catch(e){}
    try{var sm2=doc.getElementById('screen-marche');if(sm2)sm2.style.transform='translateX(-50%) translateY(100%)';}catch(e){}
    refresh();});
  }catch(e){}}
- window.flAddActivity=function(doc){flActSheet(doc,'add',null);};
+ /* flAddActivity : défini par le module « façon WHOOP » (écran complet) — la feuille ne sert plus qu'au mode édition */
  window.flEditActivity=function(doc){flActSheet(doc,'edit',window._flCurSess||null);};
  window.flShellHonest=function(doc){try{
   if(!SHELL||!doc)return;
