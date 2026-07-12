@@ -6262,7 +6262,7 @@ function injectToday(){
  var f=document.getElementById('frToday');if(!f)return;var doc;try{doc=f.contentDocument;}catch(e){return;}if(!doc||!doc.body)return;
  var _flForce=window._flForceTs&&performance.now()-window._flForceTs<1200;
  if(!_flForce&&doc._lastScrollTs&&performance.now()-doc._lastScrollTs<400)return;
- if(!doc._ptrWired){doc._ptrWired=true;try{doc.addEventListener('click',function(){setTimeout(function(){try{mdSleepScrub(doc);mdWeekBarsScrub(doc);mdDualScrub(doc);mdCalDualScrub(doc);mdMarcheScrub(doc);mdDashChevrons(doc);if(typeof flShellHonest==='function')flShellHonest(doc);mdStickyBacks(doc);}catch(e){}},500);},{capture:true,passive:true});}catch(e){}
+ if(!doc._ptrWired){doc._ptrWired=true;try{doc.addEventListener('click',function(){setTimeout(function(){try{mdSleepScrub(doc);mdWeekBarsScrub(doc);mdDualScrub(doc);mdCalDualScrub(doc);mdMarcheScrub(doc);mdDashChevrons(doc);mdNavNoCoach(doc);if(typeof flShellHonest==='function')flShellHonest(doc);mdStickyBacks(doc);}catch(e){}},500);},{capture:true,passive:true});}catch(e){}
  try{doc.addEventListener('pointerdown',function(){doc._flPtrDown=true;},{capture:true,passive:true});doc.addEventListener('pointerup',function(){doc._flPtrDown=false;doc._flPtrUpTs=performance.now();},{capture:true,passive:true});doc.addEventListener('pointercancel',function(){doc._flPtrDown=false;},{capture:true,passive:true});}catch(e){}}
  if(!_flForce&&doc._flPtrDown)return;
  if(!_flForce&&doc._flPtrUpTs&&performance.now()-doc._flPtrUpTs<600)return;
@@ -6337,7 +6337,7 @@ var el=ev.target;var a=el;for(var d1=0;d1<7&&a;d1++,a=a.parentElement){if(!a.que
   setTile('SOMMEIL',slMin?(Math.floor(slMin/60)+'h'+String(slMin%60).padStart(2,'0')):'—');
   var str=loadStrain(K);setTile('EFFORT',(Math.round(str*10)/10+'').replace('.',','));
   var kc=(typeof caloriesBurned==='function'?caloriesBurned(K):0);setTile('CALORIES',(''+Math.round(kc)).replace(/\B(?=(\d{3})+(?!\d))/g,' '));
-  mdBalance(doc);mdSleep(doc);mdFonts(doc);mdStickyBacks(doc);mdSleepScrub(doc);mdWeekBarsScrub(doc);mdDualScrub(doc);mdCalDualScrub(doc);mdMarcheScrub(doc);mdDashChevrons(doc);if(typeof flShellHonest==='function')flShellHonest(doc);mdRings(doc);mdTrioRings(doc);mdHebTrend(doc);mdNutrition(doc);mdObjectifs(doc);
+  mdBalance(doc);mdSleep(doc);mdFonts(doc);mdStickyBacks(doc);mdSleepScrub(doc);mdWeekBarsScrub(doc);mdDualScrub(doc);mdCalDualScrub(doc);mdMarcheScrub(doc);mdDashChevrons(doc);mdNavNoCoach(doc);if(typeof flShellHonest==='function')flShellHonest(doc);mdRings(doc);mdTrioRings(doc);mdHebTrend(doc);mdNutrition(doc);mdObjectifs(doc);
  }catch(e){}
  if(!doc._navWired){doc._navWired=true;try{doc.addEventListener('click',function(ev){var el=ev.target;for(var i=0;i<6&&el;i++,el=el.parentElement){if(el.getAttribute&&el.getAttribute('role')==='button'){var t=(el.textContent||'').trim().toLowerCase();if(t==='coach'){ev.preventDefault();ev.stopPropagation();go('coach');return;}if(t==='profil'){ev.preventDefault();ev.stopPropagation();go('profile');return;}if(t==='nutrition'){setTimeout(function(){try{flOpenNutrition(doc);}catch(e){}},20);setTimeout(function(){try{mdNutrition(doc);}catch(e){}},400);return;}if(t==="aujourd'hui"||t==='aujourd’hui'){setTimeout(function(){try{var sn=doc.getElementById('screen-nutrition');if(sn){var r=sn.getBoundingClientRect();var w=doc.defaultView.innerWidth;if(Math.abs(r.left-(w-r.width)/2)<40){var bk=[].slice.call(sn.querySelectorAll('*')).filter(function(x){return x.children.length<3&&/Aujourd/.test((x.textContent||'').trim())&&x.getBoundingClientRect().top<80;})[0];if(bk){var rb2=bk;while(rb2&&rb2.getAttribute&&rb2.getAttribute('role')!=='button'&&rb2.tagName!=='BUTTON')rb2=rb2.parentElement;var tt=rb2||bk;['pointerdown','pointerup','click'].forEach(function(e2){tt.dispatchEvent(new MouseEvent(e2,{bubbles:true,cancelable:true}));});}}}}catch(e){}},0);return;}return;}}},true);}catch(e){}}
 }
@@ -6590,6 +6590,11 @@ function mdMarcheScrub(doc){try{var sc=doc.getElementById('screen-marche');if(!s
  svg.addEventListener('pointermove',function(ev){if(!on)return;ev.preventDefault();at(ev);},{passive:false});
  ['pointerup','pointerleave','pointercancel'].forEach(function(t){svg.addEventListener(t,function(){if(!on)return;on=false;render();});});
 }catch(e){}}
+/* masque l'onglet Coach du menu du bas (décision founder 2026-07-12) — les 3 autres se rééquilibrent */
+function mdNavNoCoach(doc){try{var nav=doc.querySelector('nav');if(!nav)return;
+ [].slice.call(nav.querySelectorAll('[role="button"],div')).forEach(function(it){
+  if((it.textContent||'').replace(/\s+/g,' ').trim()==='Coach'&&it.querySelector('svg')&&it.style.display!=='none')it.style.display='none';});
+}catch(e){}}
 /* chevron « › » à droite de chaque ligne métrique du tableau de bord (affordance clicable) */
 function mdDashChevrons(doc){try{var tb=doc.getElementById('screen-tableau');if(!tb)return;
  var GRP=/^(RÉCUPÉRATION|SOMMEIL|ACTIVITÉ|CARDIO|CORPS)$/;
@@ -6775,7 +6780,7 @@ function flOpenCalHebdo(){try{var fr=document.getElementById('frToday');var doc=
  }
  setTimeout(function(){cl.style.setProperty('transform','translateX(-50%) translateY(0px)','important');},30);
  cl.style.pointerEvents='auto';cl.scrollTop=0;
- setTimeout(function(){try{mdWeekBarsScrub(doc);mdCalDualScrub(doc);mdMarcheScrub(doc);mdDashChevrons(doc);if(typeof flShellHonest==='function')flShellHonest(doc);mdStickyBacks(doc);mdFonts(doc);}catch(e){}},200);
+ setTimeout(function(){try{mdWeekBarsScrub(doc);mdCalDualScrub(doc);mdMarcheScrub(doc);mdDashChevrons(doc);mdNavNoCoach(doc);if(typeof flShellHonest==='function')flShellHonest(doc);mdStickyBacks(doc);mdFonts(doc);}catch(e){}},200);
  if(typeof haptic==='function')haptic();
 }catch(e){}}
 function flCloseCalHebdo(){try{var fr=document.getElementById('frToday');var doc=fr&&fr.contentDocument;if(!doc)return;var cl=doc.getElementById('flCalClone');if(!cl)return;
@@ -11037,7 +11042,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v537';
+const APP_VERSION='flint-v538';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
