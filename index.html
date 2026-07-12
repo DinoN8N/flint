@@ -6576,7 +6576,7 @@ function mdMarchePrecise(doc){try{var sm=doc.getElementById('screen-marche');if(
    if(w&&w.hr&&w.hr.length&&cs2.startMin!=null){var span=w.hr.filter(function(x){return x[0]>=cs2.startMin-1&&x[0]<=cs2.startMin+durMin+1;});
     if(span.length>=40){series=span.map(function(x){return x[1];});real=true;}}}}catch(e){}
  if(!real&&!orig)return;
- var sig=(real?'r'+series.length:'d'+Math.round(orig.L))+'|'+durMin;
+ var sig='v2|'+(real?'r'+series.length:'d'+Math.round(orig.L))+'|'+durMin;
  if(svg.getAttribute('data-fl-prec')===sig)return;
  var COLS=300,base=[];
  if(real){for(var i2=0;i2<COLS;i2++){base.push(series[Math.min(series.length-1,Math.floor(i2*series.length/COLS))]);}}
@@ -6602,17 +6602,22 @@ function mdMarchePrecise(doc){try{var sm=doc.getElementById('screen-marche');if(
   if(!(isFinite(bmin)&&isFinite(bmax))||bmax-bmin<10)return;
  }
  svg.setAttribute('data-fl-prec',sig);
- /* variabilité réaliste déterministe (bande min/max) */
+ /* variabilité réaliste, ADAPTATIVE à la durée : court = détail fin, long = bande resserrée */
  var rng=flPrecRng(Math.round(durMin*7919+(base[0]||100)*31));
- var pts=[];
+ var detail=Math.max(0.75,Math.min(1.5,1.7-durMin/180)); /* 30min→1.5 · 51min→1.42 · 2h→0.9 · 3h→0.75 */
+ var hiA=[],loA=[];
  for(var c=0;c<COLS;c++){var b=base[c];
-  var n1=Math.sin(c*0.9)*1.6+Math.sin(c*2.3+1)*1.1;
-  var amp=real?1.2:(2.2+rng()*1.6);
-  var hi2=b+Math.abs(n1)*0.6+amp*(0.4+rng()*0.6);
-  var lo2=b-Math.abs(n1)*0.6-amp*(0.4+rng()*0.6);
-  if(!real&&rng()<0.015)lo2-=6+rng()*9;
-  var x=XMIN+(XMAX-XMIN)*c/(COLS-1);
-  pts.push([x,lo2,hi2]);}
+  var n1=Math.sin(c*0.9)*1.1+Math.sin(c*2.3+1)*0.8;
+  var amp=real?0.9:detail*(0.9+rng()*0.6);
+  hiA.push(b+Math.abs(n1)*0.45+amp*(0.4+rng()*0.6));
+  loA.push(b-Math.abs(n1)*0.45-amp*(0.4+rng()*0.6));
+  if(!real&&rng()<(0.005+durMin/25000))loA[c]-=(3.5+rng()*5)*detail; /* rares vrais décrochages */
+ }
+ /* lissage léger (3 points) : organique, pas nerveux */
+ function sm3(a2){return a2.map(function(v,i3){var p=a2[i3-1]!=null?a2[i3-1]:v,n2=a2[i3+1]!=null?a2[i3+1]:v;return (p+v*2+n2)/4;});}
+ hiA=sm3(hiA);loA=sm3(loA);
+ var pts=[];
+ for(var c9=0;c9<COLS;c9++){var x=XMIN+(XMAX-XMIN)*c9/(COLS-1);pts.push([x,loA[c9],hiA[c9]]);}
  var dStr='M '+pts[0][0].toFixed(1)+' '+yOf(pts[0][1]).toFixed(1);
  for(var c2=0;c2<COLS;c2++){var P=pts[c2];
   dStr+=' L '+P[0].toFixed(1)+' '+yOf(P[1]).toFixed(1)+' L '+(P[0]+0.55).toFixed(1)+' '+yOf(P[2]).toFixed(1);}
@@ -11393,7 +11398,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v549';
+const APP_VERSION='flint-v550';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
