@@ -6590,10 +6590,24 @@ function mdMarcheScrub(doc){try{var sc=doc.getElementById('screen-marche');if(!s
  svg.addEventListener('pointermove',function(ev){if(!on)return;ev.preventDefault();at(ev);},{passive:false});
  ['pointerup','pointerleave','pointercancel'].forEach(function(t){svg.addEventListener(t,function(){if(!on)return;on=false;render();});});
 }catch(e){}}
-/* masque l'onglet Coach du menu du bas (décision founder 2026-07-12) — les 3 autres se rééquilibrent */
+/* menu du bas : Coach ET Profil masqués (founder 2026-07-12) — Profil s'ouvre par le bouton en haut à droite */
 function mdNavNoCoach(doc){try{var nav=doc.querySelector('nav');if(!nav)return;
  [].slice.call(nav.querySelectorAll('[role="button"],div')).forEach(function(it){
-  if((it.textContent||'').replace(/\s+/g,' ').trim()==='Coach'&&it.querySelector('svg')&&it.style.display!=='none')it.style.display='none';});
+  var t=(it.textContent||'').replace(/\s+/g,' ').trim();
+  if((t==='Coach'||t==='Profil')&&it.querySelector('svg')&&it.style.display!=='none')it.style.display='none';});
+ /* bouton personne (haut droite accueil) → écran Profil natif (relais vers l'item nav caché) */
+ if(!doc._flAvWire){doc._flAvWire=1;
+  doc.addEventListener('click',function(ev){try{
+   var vw=doc.defaultView.innerWidth;var el=ev.target,av=null;
+   for(var i=0;i<6&&el;i++,el=el.parentElement){
+    if(el.querySelector&&el.querySelector('svg path[d^="M4 21c0-4.4"]')){var r=el.getBoundingClientRect();
+     if(r.top<110&&r.right>vw-120&&r.width<=80){av=el;break;}}}
+   if(!av)return;
+   ev.preventDefault();ev.stopPropagation();
+   var nav2=doc.querySelector('nav');if(!nav2)return;
+   var pf=[].slice.call(nav2.querySelectorAll('[role="button"]')).filter(function(b){return /Profil/.test(b.textContent||'');})[0];
+   if(pf)['pointerdown','pointerup','click'].forEach(function(t2){pf.dispatchEvent(new MouseEvent(t2,{bubbles:true,cancelable:true}));});
+  }catch(e){}},true);}
 }catch(e){}}
 /* PROFIL natif (maquette 12/07) : vraies valeurs + câblage des lignes vers les sous-pages flPf* */
 function mdProfil(doc){try{var sc=doc.getElementById('screen-profil');if(!sc)return;
@@ -11114,7 +11128,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v541';
+const APP_VERSION='flint-v542';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
