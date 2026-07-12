@@ -8774,31 +8774,102 @@ function flNMealDelIng(K,i,gi){var doc=flNdoc();var a=mealsOf(K),m=a[i];if(!m||!
 var FLN_PFRAC=[0.25,0.5,0.75,1,1.5,2];
 function flNPortDesc(f){return {0.25:'un quart de l\'assiette',0.5:'la moiti\u00e9 de l\'assiette',0.75:'trois quarts de l\'assiette',1:'toute l\'assiette',1.5:'une fois et demie l\'assiette',2:'deux fois l\'assiette'}[f]||'toute l\'assiette';}
 function flNMealDetail(K,i,lite){var doc=flNdoc();var m=mealsOf(K)[i];if(!m)return;flMealBase(m);
- var score=flMealScore(m);
+ /* ══ fiche plat — design « Flint Aujourd\u2019hui (1) » (founder 13/07) ══ */
  var d=new Date(K.replace(/-/g,'/'));var dayLbl=FLN_JOURSF[d.getDay()].charAt(0).toUpperCase()+FLN_JOURSF[d.getDay()].slice(1)+' '+d.getDate();
- var photoStyle=m.photo?('background-image:url('+m.photo+');background-position:center;background-repeat:no-repeat;'+(m.prod?'background-size:contain;background-color:#fff;border:1px solid rgb(240,236,229)':'background-size:cover')):'background:rgb(238,235,230)';
- var ingRows=(m.ing&&m.ing.length)?m.ing.map(function(g,gi){return '<div class="fln-li flnIng" data-gi="'+gi+'"><div><div class="n">'+esc(g.name)+'</div><div class="d">'+g.grams+' g \u00b7 '+flNInt(g.kcal)+' kcal</div></div><button class="fln-plus" style="background:rgb(244,239,232);color:rgb(140,133,124)">\u2715</button></div>';}).join(''):'<div style="font-family:-apple-system,system-ui,sans-serif;font-size:13px;color:rgb(167,162,154);padding:2px 2px 12px">D\u00e9tail des ingr\u00e9dients non disponible pour ce repas.</div>';
- var body='<div style="height:200px;border-radius:22px;'+photoStyle+';box-shadow:rgba(20,17,15,.05) 0 8px 26px;position:relative;margin-bottom:16px;display:flex;align-items:flex-end">'
-   +(m.photo?'':'<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:rgb(201,194,182)">'+FLN_IC.leaf+'</span>')+'</div>'
-  +'<div class="fln-row" style="gap:10px;margin-bottom:16px"><button class="fln-ochip flnMealTime">'+FLN_IC.clock+'<span>'+esc(m.time||'\u2014')+'</span>'+FLN_IC.chev+'</button><button class="fln-ochip flnMealDay">'+FLN_IC.cal+'<span>'+dayLbl+'</span>'+FLN_IC.chev+'</button></div>'
-  +(lite?'':('<div class="fln-card"><div class="fln-k">Quelle part de l\'assiette as-tu mang\u00e9e ?</div>'+'<div style="display:flex;align-items:baseline;gap:8px;margin:6px 0 15px"><span class="flnPortVal" style="font-family:Archivo,-apple-system,sans-serif;font-size:30px;font-weight:800;color:rgb(251,96,21);line-height:1">'+FLN_FRAC[m.portion||1]+'</span><span style="font-family:-apple-system,system-ui,sans-serif;font-size:13px;color:rgb(138,131,120)"><span class="flnPortDesc">'+flNPortDesc(m.portion||1)+'</span> \u00b7 <b class="flnPortKcal">'+flNInt(m.kcal)+'</b> kcal</span></div>'+'<input type="range" class="flnPortSlider" min="0" max="5" step="1" value="'+FLN_PFRAC.indexOf(m.portion||1)+'">'+'<div style="display:flex;justify-content:space-between;font-family:Archivo,-apple-system,sans-serif;font-size:12px;font-weight:600;color:rgb(168,162,154);margin-top:9px;padding:0 3px">'+FLN_PFRAC.map(function(f){return '<span>'+FLN_FRAC[f]+'</span>';}).join('')+'</div></div>'))
-  +flNMacroCard(m.kcal,Math.round(m.prot),Math.round(m.carb),Math.round(m.fat),score)
-  +'<div class="fln-k" style="margin-top:2px">Aliments</div>'+ingRows
-  +(lite?'':'<button class="fln-act" id="flnAddIng" style="width:100%;border-style:dashed;margin-bottom:18px">'+FLN_IC.plus+' Ajouter un ingr\u00e9dient</button>'
-  +'<div class="fln-grid2"><button class="fln-act del" data-mact="del">'+FLN_IC.trash+' Supprimer</button><button class="fln-act save" data-mact="save">'+FLN_IC.bookmark+' Enregistrer</button></div>');
- var el=flNScreen('screen-fln-meal',esc(m.name),body);
+ var G=flNutGoals();
+ var SANS='-apple-system,system-ui,sans-serif';
+ function pct(v,g){return Math.max(4,Math.min(100,Math.round((+v||0)/(g||1)*100)));}
+ var photoIn=m.photo
+  ?('<div style="position:absolute;inset:0;background-image:url('+m.photo+');background-position:center;background-repeat:no-repeat;background-size:'+(m.prod?'contain;background-color:#fff':'cover')+'"></div>')
+  :('<div style="position:absolute;inset:0;background:#f4f1ec;display:flex;align-items:center;justify-content:center;color:rgb(201,194,182)">'+FLN_IC.leaf+'</div>');
+ function infoRow(cls,ic,lab,val,pad){return '<div class="'+cls+'" style="display:flex;align-items:center;gap:16px;padding:'+pad+';cursor:'+(lite?'default':'pointer')+'">'
+  +'<span style="flex-shrink:0;width:46px;height:46px;border-radius:50%;background:#faf9f7;display:flex;align-items:center;justify-content:center">'+ic+'</span>'
+  +'<div style="min-width:0"><div style="font-family:'+SANS+';font-size:11px;font-weight:300;letter-spacing:.18em;color:#a8a29a;margin-bottom:9px">'+lab+'</div>'
+  +'<div style="font-family:Archivo,'+SANS+';font-size:25px;font-weight:300;letter-spacing:-.01em;color:#14110f">'+val+'</div></div></div>';}
+ var icClock='<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#fb6015" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v4.5l3 2"></path></svg>';
+ var icCal='<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#fb6015" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16" rx="3"></rect><path d="M3 9h18M8 2.5v4M16 2.5v4"></path></svg>';
+ function macroCol(lab,v,g){return '<div style="flex:1;padding:0 6px 0 18px;display:flex;flex-direction:column">'
+  +'<div style="font-family:'+SANS+';font-size:10px;font-weight:400;letter-spacing:.1em;color:#a8a29a;margin-bottom:12px">'+lab+'</div>'
+  +'<div style="font-family:Archivo,'+SANS+';font-size:18px;font-weight:300;letter-spacing:-.01em;color:#14110f;margin-bottom:14px">'+Math.round(v)+' <span style="font-family:'+SANS+';font-size:12px;font-weight:300;color:#14110f">g</span></div>'
+  +'<div style="height:3px;border-radius:999px;background:#eceae6;overflow:hidden"><div style="width:'+pct(v,g)+'%;height:100%;border-radius:999px;background:#fb6015"></div></div></div>';}
+ var PF5=[0.25,0.5,1,1.5,2];
+ var f0=m.portion||1;var pi=0,bd=1e9;PF5.forEach(function(f,ix){var dd=Math.abs(f-f0);if(dd<bd){bd=dd;pi=ix;}});
+ var kBase=(+m.k0||+m.kcal||0);
+ var ingRows=(m.ing&&m.ing.length)?m.ing.map(function(g,gi){return '<div class="fln-li flnIng" data-gi="'+gi+'"><div><div class="n">'+esc(g.name)+'</div><div class="d">'+g.grams+' g \u00b7 '+flNInt(g.kcal)+' kcal</div></div><button class="fln-plus" style="background:rgb(244,239,232);color:rgb(140,133,124)">\u2715</button></div>';}).join('')
+  :'<p style="font-family:'+SANS+';font-size:12px;font-weight:300;color:#a29c92;margin:0 0 16px">D\u00e9tail des ingr\u00e9dients non disponible pour ce repas.</p>';
+ var body=''
+  +'<h1 style="font-family:Archivo,'+SANS+';font-size:40px;font-weight:700;letter-spacing:-.03em;line-height:.98;margin:0 0 32px;color:#14110f">'+esc(m.name)+'<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:#fb6015;margin-left:3px;vertical-align:baseline"></span></h1>'
+  /* photo ronde + heure/date */
+  +'<div style="display:flex;gap:22px;margin-bottom:26px;align-items:center">'
+   +'<div style="position:relative;flex:1;min-width:0;aspect-ratio:1/1;border-radius:999px;overflow:hidden;background:#fff;box-shadow:inset 0 0 0 1px #f0ece5">'+photoIn+'</div>'
+   +'<div style="flex:1.05;display:flex;flex-direction:column">'
+    +infoRow('flnMealTime',icClock,'HEURE',esc(m.time||'\u2014'),'4px 0 20px')
+    +'<div style="height:1px;background:#efece6"></div>'
+    +infoRow('flnMealDay',icCal,'DATE',dayLbl,'20px 0 4px')
+   +'</div>'
+  +'</div>'
+  /* APPORTS */
+  +'<div style="background:#fff;border-radius:30px;box-shadow:0 2px 10px rgba(20,17,15,.04),0 12px 30px rgba(20,17,15,.05);margin-bottom:18px;padding:30px 22px 34px">'
+   +'<div style="font-family:'+SANS+';font-size:13px;font-weight:400;letter-spacing:.2em;color:#9a948b;margin-bottom:26px">APPORTS</div>'
+   +'<div style="display:flex;align-items:stretch">'
+    +'<div style="flex:.62;padding-right:16px;display:flex;flex-direction:column;justify-content:center">'
+     +'<div class="flnApKcal" style="font-family:Archivo,'+SANS+';font-size:40px;font-weight:400;letter-spacing:-.01em;line-height:.85;color:#14110f;margin-left:-2px">'+flNInt(m.kcal)+'</div>'
+     +'<div style="font-family:'+SANS+';font-size:12px;font-weight:400;color:#a8a29a;margin-top:8px">kcal</div>'
+    +'</div>'
+    +'<div style="width:1px;background:#f1ede7;margin:-8px 0"></div>'
+    +macroCol('PROT\u00c9INES',m.prot,G.prot)
+    +'<div style="width:1px;background:#f7f4ef"></div>'
+    +macroCol('GLUCIDES',m.carb,G.carb)
+    +'<div style="width:1px;background:#f7f4ef"></div>'
+    +macroCol('LIPIDES',m.fat,G.fat)
+   +'</div>'
+  +'</div>'
+  /* portion + aliments */
+  +'<div style="background:#fff;border-radius:30px;padding:24px 24px 26px;box-shadow:0 2px 10px rgba(20,17,15,.04),0 12px 30px rgba(20,17,15,.05);margin-bottom:22px">'
+   +(lite?'':(''
+    +'<div style="font-family:'+SANS+';font-size:12px;font-weight:500;letter-spacing:.18em;color:#1a1712;margin-bottom:18px">QUELLE PART DE L\u2019ASSIETTE AS-TU MANG\u00c9E ?</div>'
+    +'<div style="display:flex;align-items:center;gap:18px;margin-bottom:22px">'
+     +'<span class="flnPortVal" style="display:inline-flex;align-items:center;justify-content:center;min-width:58px;height:58px;padding:0 12px;border-radius:18px;background:#fff7f2;font-family:Archivo,'+SANS+';font-size:30px;font-weight:400;letter-spacing:-.02em;line-height:1;color:#fb6015;white-space:nowrap">'+FLN_FRAC[PF5[pi]]+'</span>'
+     +'<span style="font-family:'+SANS+';font-size:15px;font-weight:400;color:#2a2620"><span class="flnPortDesc">'+flNPortDesc(PF5[pi])+'</span> \u00b7 <span class="flnPortKcal" style="font-weight:400;color:#2a2620">'+flNInt(kBase*PF5[pi])+'</span> <span style="color:#9a948b">kcal</span></span>'
+    +'</div>'
+    +'<div class="flnPortTrack" style="position:relative;height:28px;margin:0 6px;cursor:pointer;touch-action:none">'
+     +'<div style="position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);height:4px;border-radius:999px;background:#e9e4dc"></div>'
+     +'<div class="flnPortFill" style="position:absolute;left:0;top:50%;transform:translateY(-50%);width:'+(pi/4*100)+'%;height:4px;border-radius:999px;background:#fb6015"></div>'
+     +'<div class="flnPortThumb" style="position:absolute;left:'+(pi/4*100)+'%;top:50%;transform:translate(-50%,-50%);width:26px;height:26px;border-radius:50%;background:#fb6015;border:4px solid #fff;box-shadow:0 2px 10px rgba(251,96,21,.4)"></div>'
+    +'</div>'
+    +'<div style="display:flex;justify-content:space-between;margin:10px 0 0;font-family:Archivo,'+SANS+';font-size:15px;font-weight:400;color:#a29c92"><span>\u00bc</span><span>\u00bd</span><span>\u00d71</span><span>\u00d71\u00bd</span><span>\u00d72</span></div>'
+    +'<p style="font-family:'+SANS+';font-size:14px;font-weight:300;line-height:1.55;color:#6f6a61;margin:22px 0 0;background:#f7f5f1;border-radius:12px;padding:18px 20px"><span style="color:#fb6015;font-weight:700">\u00ab \u00d7 1 \u00bb</span> = toute l\u2019assiette de la photo, pas un seul aliment. Les calories sont estim\u00e9es pour l\u2019assiette enti\u00e8re, ajuste selon ce que tu as vraiment mang\u00e9.</p>'
+    +'<div style="height:1px;background:#f0ece5;margin:24px 0"></div>'))
+   +'<div style="font-family:'+SANS+';font-size:15px;font-weight:600;letter-spacing:.12em;color:#1a1712;margin-bottom:8px">ALIMENTS</div>'
+   +ingRows
+   +(lite?'':'<button id="flnAddIng" style="width:100%;padding:18px;border:1.5px dashed #f0c3ab;border-radius:16px;background:#fffaf7;color:#fb6015;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;font-family:Archivo,'+SANS+';font-size:16px;font-weight:500"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>Ajouter un ingr\u00e9dient</button>')
+  +'</div>'
+  /* barre d\u2019actions collée en bas */
+  +(lite?'':('<div style="position:sticky;bottom:0;display:flex;gap:14px;margin:18px -22px 0;padding:14px 24px calc(env(safe-area-inset-bottom,0px) + 16px);background:#fff;box-shadow:0 -1px 0 #ece7df">'
+   +'<button data-mact="del" style="flex:1;padding:20px;border:1.5px solid #ecc9bd;border-radius:18px;background:#fffaf7;color:#fb6015;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;font-family:Archivo,'+SANS+';font-size:17px;font-weight:600;letter-spacing:-.01em"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6"></path></svg>Supprimer</button>'
+   +'<button data-mact="save" style="flex:1.15;padding:20px;border:none;border-radius:18px;background:#fb6015;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;font-family:Archivo,'+SANS+';font-size:17px;font-weight:600;letter-spacing:-.01em;box-shadow:0 10px 24px rgba(251,96,21,.28)"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>Enregistrer</button>'
+  +'</div>'));
+ var el=flNScreen('screen-fln-meal','',body);
+ el.style.background='#fff';
+ /* back : cercle 52px du design */
+ var bk=el.querySelector('.fln-back');if(bk){bk.style.cssText='width:52px;height:52px;border-radius:50%;border:none;background:#fff;color:#fb6015;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(20,17,15,.08);margin-bottom:24px;padding:0';
+  var bs=bk.querySelector('svg');if(bs){bs.setAttribute('width','26');bs.setAttribute('height','26');bs.setAttribute('stroke-width','2.4');}}
  if(!lite){var _mt=el.querySelector('.flnMealTime');if(_mt)_mt.addEventListener('click',function(){flNRetime(K,i);});
  var _md2=el.querySelector('.flnMealDay');if(_md2)_md2.addEventListener('click',function(){flNRetime(K,i);});}
- (function(){var sl=el.querySelector('.flnPortSlider');if(!sl)return;var vEl=el.querySelector('.flnPortVal'),dEl=el.querySelector('.flnPortDesc'),kEl=el.querySelector('.flnPortKcal');
-   function paint(){var p=(+sl.value)/5*100;sl.style.background='linear-gradient(90deg,rgb(251,96,21) 0%,rgb(251,96,21) '+p+'%,rgb(240,236,229) '+p+'%)';}paint();
-   sl.addEventListener('input',function(){var f=FLN_PFRAC[+sl.value]||1;if(vEl)vEl.textContent=FLN_FRAC[f];if(dEl)dEl.textContent=flNPortDesc(f);if(kEl)kEl.textContent=flNInt((m.k0||m.kcal)*f);paint();});
-   sl.addEventListener('change',function(){var f=FLN_PFRAC[+sl.value]||1;flNPortion(K,i,f,true);});})();
+ /* slider de portion : 5 crans, aper\u00e7u live, application au l\u00e2cher */
+ (function(){var tr=el.querySelector('.flnPortTrack');if(!tr)return;
+  var fill=el.querySelector('.flnPortFill'),th=el.querySelector('.flnPortThumb'),vEl=el.querySelector('.flnPortVal'),dEl=el.querySelector('.flnPortDesc'),kEl=el.querySelector('.flnPortKcal');
+  var cur=pi,drag=false;
+  function ui(ix){var p=ix/4*100;fill.style.width=p+'%';th.style.left=p+'%';vEl.textContent=FLN_FRAC[PF5[ix]];dEl.textContent=flNPortDesc(PF5[ix]);kEl.textContent=flNInt(Math.round(kBase*PF5[ix]));}
+  function ixOf(ev){var r=tr.getBoundingClientRect();var x=Math.max(0,Math.min(r.width,(ev.clientX!=null?ev.clientX:0)-r.left));return Math.max(0,Math.min(4,Math.round(x/r.width*4)));}
+  tr.addEventListener('pointerdown',function(ev){drag=true;try{tr.setPointerCapture(ev.pointerId);}catch(e){}var ix=ixOf(ev);if(ix!==cur){cur=ix;ui(ix);try{haptic&&haptic(3);}catch(e){}}});
+  tr.addEventListener('pointermove',function(ev){if(!drag)return;var ix=ixOf(ev);if(ix!==cur){cur=ix;ui(ix);try{haptic&&haptic(3);}catch(e){}}});
+  tr.addEventListener('pointerup',function(){if(!drag)return;drag=false;if(PF5[cur]!==(m.portion||1))flNPortion(K,i,PF5[cur],true);});
+  tr.addEventListener('pointercancel',function(){drag=false;});})();
  [].slice.call(el.querySelectorAll('.flnIng')).forEach(function(li){var x=li.querySelector('.fln-plus');if(x){if(lite){x.style.display='none';}else{x.addEventListener('click',function(ev){ev.preventDefault();ev.stopPropagation();flNMealDelIng(K,i,+li.dataset.gi);},true);}}});
  var _ai=el.querySelector('#flnAddIng');if(_ai)_ai.addEventListener('click',function(){flNIngAdd(function(ing){flNMealAddIng(K,i,ing);},m.name);});
  [].slice.call(el.querySelectorAll('[data-mact]')).forEach(function(b){b.addEventListener('click',function(){var a=b.dataset.mact;
-   if(a==='dup'){flNDup(K,i);}
-   else if(a==='reana'){flNToast('Nouvelle photo \u2192 nouvelle analyse \u2014 bient\u00f4t');}
-   else if(a==='save'){flNSaveMeal(K,i);}
+   if(a==='save'){flNSaveMeal(K,i);}
    else if(a==='del'){flNDelMeal(K,i);}});});
  flNOpen('screen-fln-meal');}
 /* ═══════════════ NUTRITION V2 — Module 3 : COMPRENDRE & RÉGLER ═══════════════ */
@@ -11464,7 +11535,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v553';
+const APP_VERSION='flint-v554';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
