@@ -6265,7 +6265,7 @@ function injectToday(){
  var f=document.getElementById('frToday');if(!f)return;var doc;try{doc=f.contentDocument;}catch(e){return;}if(!doc||!doc.body)return;
  var _flForce=window._flForceTs&&performance.now()-window._flForceTs<1200;
  if(!_flForce&&doc._lastScrollTs&&performance.now()-doc._lastScrollTs<400)return;
- if(!doc._ptrWired){doc._ptrWired=true;try{doc.addEventListener('click',function(){setTimeout(function(){try{mdSleepScrub(doc);mdWeekBarsScrub(doc);mdDualScrub(doc);mdCalDualScrub(doc);mdMarchePrecise(doc);mdMarcheScrub(doc);mdDashChevrons(doc);mdNavNoCoach(doc);mdProfil(doc);mdJourneeTune(doc);mdCalReadoutPurge(doc);mdNutritionPolish(doc);mdMarcheStats(doc);mdDashUniform(doc);flLoadNativeTaps(doc);if(typeof flShellHonest==='function')flShellHonest(doc);mdStickyBacks(doc);}catch(e){}},500);},{capture:true,passive:true});}catch(e){}
+ if(!doc._ptrWired){doc._ptrWired=true;try{doc.addEventListener('click',function(){setTimeout(function(){try{mdSleepScrub(doc);mdWeekBarsScrub(doc);mdDualScrub(doc);mdCalDualScrub(doc);mdMarchePrecise(doc);mdMarcheScrub(doc);mdDashChevrons(doc);mdNavNoCoach(doc);mdProfil(doc);mdJourneeTune(doc);mdCalReadoutPurge(doc);mdNutritionPolish(doc);mdMarcheStats(doc);mdDashUniform(doc);mdSleepPolish(doc);flLoadNativeTaps(doc);if(typeof flShellHonest==='function')flShellHonest(doc);mdStickyBacks(doc);}catch(e){}},500);},{capture:true,passive:true});}catch(e){}
  try{doc.addEventListener('pointerdown',function(){doc._flPtrDown=true;},{capture:true,passive:true});doc.addEventListener('pointerup',function(){doc._flPtrDown=false;doc._flPtrUpTs=performance.now();},{capture:true,passive:true});doc.addEventListener('pointercancel',function(){doc._flPtrDown=false;},{capture:true,passive:true});}catch(e){}}
  if(!_flForce&&doc._flPtrDown)return;
  if(!_flForce&&doc._flPtrUpTs&&performance.now()-doc._flPtrUpTs<600)return;
@@ -6340,7 +6340,7 @@ var el=ev.target;var a=el;for(var d1=0;d1<7&&a;d1++,a=a.parentElement){if(!a.que
   setTile('SOMMEIL',slMin?(Math.floor(slMin/60)+'h'+String(slMin%60).padStart(2,'0')):'—');
   var str=loadStrain(K);setTile('EFFORT',(Math.round(str*10)/10+'').replace('.',','));
   var kc=(typeof caloriesBurned==='function'?caloriesBurned(K):0);setTile('CALORIES',(''+Math.round(kc)).replace(/\B(?=(\d{3})+(?!\d))/g,' '));
-  mdBalance(doc);mdSleep(doc);mdFonts(doc);mdStickyBacks(doc);mdSleepScrub(doc);mdWeekBarsScrub(doc);mdDualScrub(doc);mdCalDualScrub(doc);mdMarchePrecise(doc);mdMarcheScrub(doc);mdDashChevrons(doc);mdNavNoCoach(doc);mdProfil(doc);mdJourneeTune(doc);mdCalReadoutPurge(doc);mdNutritionPolish(doc);mdMarcheStats(doc);mdDashUniform(doc);flLoadNativeTaps(doc);if(typeof flShellHonest==='function')flShellHonest(doc);mdRings(doc);mdTrioRings(doc);mdHebTrend(doc);mdNutrition(doc);mdObjectifs(doc);
+  mdBalance(doc);mdSleep(doc);mdFonts(doc);mdStickyBacks(doc);mdSleepScrub(doc);mdWeekBarsScrub(doc);mdDualScrub(doc);mdCalDualScrub(doc);mdMarchePrecise(doc);mdMarcheScrub(doc);mdDashChevrons(doc);mdNavNoCoach(doc);mdProfil(doc);mdJourneeTune(doc);mdCalReadoutPurge(doc);mdNutritionPolish(doc);mdMarcheStats(doc);mdDashUniform(doc);mdSleepPolish(doc);flLoadNativeTaps(doc);if(typeof flShellHonest==='function')flShellHonest(doc);mdRings(doc);mdTrioRings(doc);mdHebTrend(doc);mdNutrition(doc);mdObjectifs(doc);
  }catch(e){}
  if(!doc._navWired){doc._navWired=true;try{doc.addEventListener('click',function(ev){var el=ev.target;for(var i=0;i<6&&el;i++,el=el.parentElement){if(el.getAttribute&&el.getAttribute('role')==='button'){var t=(el.textContent||'').trim().toLowerCase();if(t==='coach'){ev.preventDefault();ev.stopPropagation();go('coach');return;}if(t==='profil'){try{flPfCloseAll(doc);flLoad(doc);}catch(e){}return;}if(t==='nutrition'){try{flPfCloseAll(doc);flLoad(doc);}catch(e){}setTimeout(function(){try{flOpenNutrition(doc);}catch(e){}},20);setTimeout(function(){try{mdNutrition(doc);}catch(e){}},400);return;}if(t==="aujourd'hui"||t==='aujourd’hui'){try{flPfCloseAll(doc);flLoad(doc);
     var _nu=doc.getElementById('screen-nutrition');if(_nu){_nu.style.setProperty('transform','translateX(-50%) translateX(100vw)','important');_nu.style.pointerEvents='none';}
@@ -6805,6 +6805,116 @@ function mdDashUniform(doc){try{var tb=doc.getElementById('screen-tableau');if(!
    row.appendChild(sp);}
  });
 }catch(e){}}
+/* Écran sommeil (founder 13/07) : titres des cartes « Heures par rapport aux besoins » et
+   « Efficacité du sommeil » alignés sur le style fin/gris des titres du bas (Temps de sommeil
+   effectif…), h2 hebdo un peu plus gros, et carte MA NUIT remplacée par le design
+   « MA NUIT - carte.html » (démo = valeurs du design ; coquille = vraie nuit). */
+function mdSleepPolish(doc){try{var sc=doc.getElementById('screen-sommeil');if(!sc)return;
+ /* — titres — */
+ [].slice.call(sc.querySelectorAll('span,div,h2')).forEach(function(e){
+  if(e.children.length)return;var t=(e.textContent||'').trim();
+  if(t==='HEURES PAR RAPPORT AUX BESOINS'||t==='EFFICACIT\u00c9 DU SOMMEIL'){
+   if(e.getAttribute('data-fl-ttl'))return;e.setAttribute('data-fl-ttl','1');
+   e.style.setProperty('font-family','-apple-system,system-ui,sans-serif');
+   e.style.setProperty('font-size','11px');e.style.setProperty('font-weight','600');
+   e.style.setProperty('letter-spacing','0.08em');e.style.setProperty('line-height','1.3');
+   e.style.setProperty('color','#8a8378');}});
+ [].slice.call(sc.querySelectorAll('h2')).forEach(function(h){
+  if(/^Mon sommeil cette semaine/.test((h.textContent||'').trim())&&!h.getAttribute('data-fl-ttl')){
+   h.setAttribute('data-fl-ttl','1');h.style.setProperty('font-size','24px');}});
+ /* — carte MA NUIT — */
+ var lf=[].slice.call(sc.querySelectorAll('span')).filter(function(e){return e.children.length===0&&(e.textContent||'').trim()==='MA NUIT'&&!(e.closest&&e.closest('[data-fl-mn]'));})[0];
+ if(!lf)return;
+ var card=lf;for(var u=0;u<7&&card;u++,card=card.parentElement){if(((card.getAttribute&&card.getAttribute('style'))||'').indexOf('border-radius: 24px')>=0)break;}
+ if(!card||!card.getAttribute)return;
+ if(card.getAttribute('data-fl-mnhid')!=='1'){card.setAttribute('data-fl-mnhid','1');card.style.display='none';}
+ var nu=card.nextElementSibling;
+ if(!(nu&&nu.getAttribute&&nu.getAttribute('data-fl-mn'))){nu=doc.createElement('div');nu.setAttribute('data-fl-mn','1');card.parentNode.insertBefore(nu,card.nextSibling);}
+ var SANS='-apple-system,system-ui,sans-serif';var HN="'Helvetica Neue',Arial,sans-serif";
+ function hm(min){min=Math.max(0,Math.round(min));return Math.floor(min/60)+':'+String(min%60).padStart(2,'0');}
+ function clk(min){min=((Math.round(min)%1440)+1440)%1440;return String(Math.floor(min/60)).padStart(2,'0')+':'+String(min%60).padStart(2,'0');}
+ function stadeRow(sub,lab,col,pctTxt,barPct,timeTxt){
+  return '<div style="display:flex;align-items:stretch"><div style="flex:1;display:flex;align-items:center;gap:12px;background:#fffdfb;border-radius:15px;padding:14px 15px 14px 11px;box-shadow:inset 0 0 0 1px rgba(20,17,15,0.05)">'
+   +'<div style="width:5px;flex-shrink:0;align-self:stretch;border-radius:100px;background:'+col+'"></div>'
+   +'<div style="width:106px;flex-shrink:0;min-height:33px;display:flex;flex-direction:column;justify-content:center"><div style="font-family:'+SANS+';font-size:11px;font-weight:500;color:#9a938a">'+sub+'</div><div style="font-family:Archivo,'+SANS+';font-size:13px;font-weight:600;letter-spacing:0.14em;color:#14110f;margin-top:2px">'+lab+'</div></div>'
+   +'<div style="width:40px;flex-shrink:0;font-family:'+SANS+';font-size:13.5px;font-weight:600;color:'+col+'">'+pctTxt+'</div>'
+   +'<div style="flex:1;height:8px;border-radius:5px;background:#f4eee7;position:relative;overflow:hidden"><div style="position:absolute;left:0;top:0;bottom:0;width:'+barPct+'%;border-radius:5px;background:'+col+'"></div></div>'
+   +'<div style="width:52px;flex-shrink:0;text-align:right;font-family:'+SANS+';font-size:15px;font-weight:600;color:#14110f">'+timeTxt+'<span style="font-size:11px;font-weight:500;color:#b3ab9f">:00</span></div>'
+  +'</div></div>';}
+ function buildCard(o){
+  var head='<div style="display:flex;align-items:center;justify-content:space-between">'
+   +'<span style="font-size:12px;font-weight:500;letter-spacing:0.14em;color:#14110f"><span style="display:inline-block;padding-bottom:4px;border-bottom:2.5px solid #fb6015">MA</span> NUIT</span>'
+   +'<span style="width:50px;height:50px;border-radius:50%;background:#faf6f2;display:flex;align-items:center;justify-content:center;transform:translate(-3px,4px)"><svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="#fb6015" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path></svg></span>'
+  +'</div>';
+  if(o.empty)return head
+   +'<div style="font-family:'+HN+';font-size:40px;font-weight:500;letter-spacing:-0.03em;color:#14110f;line-height:1;margin-top:9px">\u2014</div>'
+   +'<div style="font-family:'+SANS+';font-size:13px;font-weight:300;color:#a2a09c;margin-top:10px;line-height:1.5">Porte ton bracelet cette nuit \u2014 ta nuit s\u2019affichera ici.</div>';
+  var yl=[110,90,70,50,30].map(function(v,ix){return '<text x="9" y="'+(23.7+ix*37.05).toFixed(1)+'" text-anchor="end" font-family="'+HN.replace(/"/g,"&quot;")+'" font-size="11" font-weight="400" fill="#a49d92">'+v+'</text>';}).join('');
+  return head
+   +'<div style="display:flex;align-items:baseline;gap:6px;margin-top:9px">'
+    +'<span style="font-family:'+HN+';font-size:40px;font-weight:500;letter-spacing:-0.03em;color:#14110f;line-height:1">'+o.big+'</span>'
+    +(o.up?'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fb6015" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"></path></svg>':'')
+   +'</div>'
+   +(o.moy?'<div style="font-size:13px;font-weight:300;color:#a2a09c;margin-top:2px">moy. '+o.moy+'</div>':'')
+   +'<div style="margin-top:10px;position:relative"><svg viewBox="0 0 340 198" width="100%" style="display:block;overflow:visible">'
+    +'<defs><linearGradient id="flMnGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#fb6015" stop-opacity="0.24"></stop><stop offset="50%" stop-color="#fb6015" stop-opacity="0.1"></stop><stop offset="85%" stop-color="#fb6015" stop-opacity="0.015"></stop><stop offset="100%" stop-color="#fb6015" stop-opacity="0"></stop></linearGradient></defs>'
+    +'<path d="'+o.line+' L 336 168 L 16 168 Z" fill="url(#flMnGrad)" stroke="none"></path>'
+    +yl
+    +'<line x1="16" y1="16" x2="16" y2="168" stroke="#d9d6d1" stroke-width="1" stroke-dasharray="3 3"></line><line x1="336" y1="16" x2="336" y2="168" stroke="#d9d6d1" stroke-width="1" stroke-dasharray="3 3"></line>'
+    +'<circle cx="16" cy="168" r="2.6" fill="#fb6015"></circle><circle cx="336" cy="168" r="2.6" fill="#fb6015"></circle>'
+    +'<path d="'+o.line+'" fill="none" stroke="#fb6015" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"></path>'
+    +'<text x="16" y="192" text-anchor="middle" font-family="'+HN.replace(/"/g,"&quot;")+'" font-size="10.5" font-weight="400" fill="#14110f">'+o.t0+'</text>'
+    +'<text x="336" y="192" text-anchor="middle" font-family="'+HN.replace(/"/g,"&quot;")+'" font-size="10.5" font-weight="400" fill="#14110f">'+o.t1+'</text>'
+   +'</svg></div>'
+   +'<div style="display:flex;align-items:center;justify-content:space-between;margin-top:15px;padding-top:14px;border-top:1px solid #f0ece5">'
+    +'<span style="font-size:11px;font-weight:500;letter-spacing:0.14em;color:#14110f">STADES DE SOMMEIL</span>'
+    +'<span style="display:flex;align-items:baseline;gap:9px"><span style="font-size:11px;font-weight:400;letter-spacing:0.12em;color:#a2a09c">DUR\u00c9E</span><span style="font-family:'+HN+';font-size:14px;font-weight:400;color:#14110f">'+o.duree+'</span></span>'
+   +'</div>'
+   +'<div style="margin-top:11px;display:flex;flex-direction:column;gap:7px">'
+    +stadeRow('Sommeil','PROFOND','#cc3d00',o.deepPct+' %',Math.max(o.deepPct,6),hm(o.deep))
+    +stadeRow('Sommeil','L\u00c9GER','#fb6015',o.lightPct+' %',Math.max(o.lightPct,6),hm(o.light))
+    +stadeRow('','R\u00c9VEIL','#f6c3a3',o.awakePct+' %',Math.max(o.awakePct,6),hm(o.awake))
+   +'</div>';}
+ var o=null,sig='';
+ var SH=!!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)||(function(){try{return localStorage.getItem('flintForceShell')==='1';}catch(e){return false;}})();
+ if(!SH){
+  sig='demo';
+  if(nu.getAttribute('data-fl-sig')===sig)return;
+  /* démo : la courbe du design (rejouée depuis ses valeurs, mêmes points) */
+  var demoY=[121.7,123.5,127.2,119.8,123.5,121.7,118,123.5,114.2,110.5,119.8,114.2,116.1,108.7,110.5,108.7,116.1,118,34.5,17.9,119.8,123.5,116.1,118,125.4,121.7,119.8,129.1,127.2,123.5,132.8,43.8,132.8,127.2,136.5,125.4,132.8,127.2,127.2,132.8,136.5,129.1,51.2,49.4,130.9,136.5,130.9,21.6,130.9,121.7,125.4,130.9,127.2,125.4,49.4,129.1,47.5,123.5,123.5,114.2,123.5,119.8,116.1,114.2,116.1,114.2,108.7,116.1,118,110.5,114.2,118,119.8,116.1,121.7,121.7,125.4,116.1,116.1,125.4,127.2,125.4,127.2,130.9,132.8,43.8,132.8,125.4,132.8,129.1,132.8,132.8,127.2,136.5,138.3,132.8,127.2,92,125.4,125.4,129.1,125.4,125.4,86.4,121.7,125.4,130.9,129.1,119.8,127.2,47.5,125.4,123.5,121.7,118,121.7,119.8,56.8,118,118,114.2,114.2,116.1,110.5,118,110.5,119.8,118,116.1,114.2,118,118];
+  var d='';demoY.forEach(function(y,ix){d+=(ix?' L ':'M ')+(16+ix*320/(demoY.length-1)).toFixed(1)+' '+y;});
+  o={big:'7:42',up:true,moy:'7:03',line:d,t0:'00:46',t1:'08:50',duree:'7:54',deep:104,light:240,awake:12,deepPct:22,lightPct:51,awakePct:3};
+ }else{
+  var n=null;try{n=sleepNight(tk(0));}catch(e){}
+  if(!n||!(n.asleep>0||n.sleepMin>0)){sig='vide';if(nu.getAttribute('data-fl-sig')===sig)return;o={empty:true};}
+  else{
+   var asleep=n.asleep||n.sleepMin||0,tib=n.timeInBed||asleep,bed=n.bedMin!=null?n.bedMin:0,wake=n.wakeMin!=null?n.wakeMin:0;
+   var deep=n.deep||0,light=(n.light||0)+(n.rem||0),awake=n.awake||0;
+   /* moyenne 7 derniers jours */
+   var tot=0,nn=0;for(var k2=1;k2<=7;k2++){try{var s2=sensorOf(tk(-k2));if(s2&&s2.sleepMin){tot+=s2.sleepMin;nn++;}}catch(e){}}
+   var moy=nn?Math.round(tot/nn):null;
+   /* courbe : FC de la nuit depuis le store montre */
+   var span=((wake-bed)%1440+1440)%1440||1;var samples=[];
+   function grab(key,fromMin,toMin,offset){try{var w2=DB.get(key,null);if(!w2||!w2.hr)return;w2.hr.forEach(function(p2){var mn=p2[0];if(mn>=fromMin&&mn<=toMin)samples.push([mn+offset-bed,p2[1]]);});}catch(e){}}
+   var K0=tk(0),Km1=tk(-1);
+   if(bed<=wake){grab('watch_'+K0,bed,wake,0);}
+   else{grab('watch_'+Km1,bed,1440,0);grab('watch_'+K0,0,wake,1440);}
+   sig='n|'+asleep+'|'+tib+'|'+bed+'|'+wake+'|'+samples.length;
+   if(nu.getAttribute('data-fl-sig')===sig)return;
+   var COLS=132,buck=[];for(var c2=0;c2<COLS;c2++)buck.push([]);
+   samples.forEach(function(p2){var c3=Math.max(0,Math.min(COLS-1,Math.floor(p2[0]/span*COLS)));buck[c3].push(p2[1]);});
+   var last=null,pts=[];for(var c4=0;c4<COLS;c4++){var b2=buck[c4];var v2=b2.length?b2.reduce(function(a3,x3){return a3+x3;},0)/b2.length:last;if(v2==null)v2=55;last=v2;pts.push(v2);}
+   var d2='';pts.forEach(function(bpm,ix){var y2=16+(110-Math.max(30,Math.min(110,bpm)))/80*152;d2+=(ix?' L ':'M ')+(16+ix*320/(COLS-1)).toFixed(1)+' '+y2.toFixed(1);});
+   var tot=Math.max(tib,deep+light+awake,1);
+   o={big:hm(asleep),up:(moy!=null&&asleep>=moy),moy:moy!=null?hm(moy):null,line:d2,t0:clk(bed),t1:clk(wake),duree:hm(Math.max(tib,asleep+awake)),
+    deep:deep,light:light,awake:awake,
+    deepPct:Math.round(deep/tot*100),lightPct:Math.round(light/tot*100),awakePct:Math.round(awake/tot*100)};
+  }
+ }
+ nu.setAttribute('data-fl-sig',sig);
+ nu.setAttribute('style','margin-top:40px;background:#ffffff;border-radius:24px;padding:18px 20px 18px;box-shadow:0 3px 16px rgba(150,118,72,0.06),inset 0 0 0 1px rgba(20,17,15,0.045);font-family:Archivo,-apple-system,system-ui,sans-serif;color:#14110f');
+ nu.innerHTML=buildCard(o);
+}catch(e){}}
 /* Détail d'effort : stats en 2×2 plus grandes + case DURÉE + titre agrandi + marge basse (founder 12/07) */
 function mdMarcheStats(doc){try{var sm=doc.getElementById('screen-marche');if(!sm)return;
  try{[].slice.call(sm.querySelectorAll('div,span,h1,h2')).forEach(function(e){[].slice.call(e.childNodes).forEach(function(tn){if(tn.nodeType===3&&/Arthur/.test(tn.nodeValue||''))tn.nodeValue=tn.nodeValue.replace(/Arthur/g,(function(){try{return flPfName();}catch(e2){return 'Dino';}})());});});}catch(e1){}
@@ -7191,7 +7301,7 @@ function flOpenCalHebdo(){try{var fr=document.getElementById('frToday');var doc=
  }
  setTimeout(function(){cl.style.setProperty('transform','translateX(-50%) translateY(0px)','important');},30);
  cl.style.pointerEvents='auto';cl.scrollTop=0;
- setTimeout(function(){try{mdWeekBarsScrub(doc);mdCalDualScrub(doc);mdMarchePrecise(doc);mdMarcheScrub(doc);mdDashChevrons(doc);mdNavNoCoach(doc);mdProfil(doc);mdJourneeTune(doc);mdCalReadoutPurge(doc);mdNutritionPolish(doc);mdMarcheStats(doc);mdDashUniform(doc);flLoadNativeTaps(doc);if(typeof flShellHonest==='function')flShellHonest(doc);mdStickyBacks(doc);mdFonts(doc);}catch(e){}},200);
+ setTimeout(function(){try{mdWeekBarsScrub(doc);mdCalDualScrub(doc);mdMarchePrecise(doc);mdMarcheScrub(doc);mdDashChevrons(doc);mdNavNoCoach(doc);mdProfil(doc);mdJourneeTune(doc);mdCalReadoutPurge(doc);mdNutritionPolish(doc);mdMarcheStats(doc);mdDashUniform(doc);mdSleepPolish(doc);flLoadNativeTaps(doc);if(typeof flShellHonest==='function')flShellHonest(doc);mdStickyBacks(doc);mdFonts(doc);}catch(e){}},200);
  if(typeof haptic==='function')haptic();
 }catch(e){}}
 function flCloseCalHebdo(){try{var fr=document.getElementById('frToday');var doc=fr&&fr.contentDocument;if(!doc)return;var cl=doc.getElementById('flCalClone');if(!cl)return;
@@ -11535,7 +11645,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v554';
+const APP_VERSION='flint-v555';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
