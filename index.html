@@ -11267,7 +11267,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v547';
+const APP_VERSION='flint-v548';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
@@ -11807,12 +11807,74 @@ function flPfRegl(doc){var APPV='';try{APPV=APP_VERSION||'';}catch(e){}
    Écran 1 « Ajouter une activité » : sélecteur d'activité + TEMPS (début/fin, roues date·heure·minute
    inline) + Enregistrer. Écran 2 « Sélectionner une activité » : recherche, onglets TOUT/EFFORT/
    RÉCUPÉRATION/SOMMEIL, Le plus récent, liste A→Z. Sans bannière ni localisation. Icônes svgIcon (IC). */
-var FL_ACT_CAT=(function(){var out=[];
- SPORTS.forEach(function(sp){if(sp[0]!=='Autre')out.push({n:sp[0],ic:sp[1],cat:'effort'});});
- out.push({n:'Autre – Effort',ic:'spark',cat:'effort'});
- [['Sauna','flame'],['Bain froid','bolt'],['Bain chaud','flame'],['Douche froide','bolt'],['Massage','heart'],['Kiné','heart'],['Méditation','yoga'],['Respiration','yoga'],['Étirements','yoga'],['Autre – Récupération','spark']].forEach(function(r){out.push({n:r[0],ic:r[1],cat:'recup'});});
- [['Sieste','moon'],['Sommeil','moon']].forEach(function(r){out.push({n:r[0],ic:r[1],cat:'sommeil'});});
- return out;})();
+var FL_ACT_CAT=(function(){var E='effort',R='recup',S='sommeil';
+ /* catalogue complet (niveau WHOOP) — icônes Tabler (non-filled), fallback runtime ti-activity */
+ var L=[
+ /* course & marche */
+ ['Course','run',E],['Course sur tapis','treadmill',E],['Trail','trekking',E],['Sprint','bolt',E],['Athlétisme','run',E],
+ ['Marche','walk',E],['Marche rapide','walk',E],['Marche nordique','trekking',E],['Randonnée','trekking',E],['Alpinisme','mountain',E],
+ ['Montée d\'escaliers','stairs',E],['Course d\'orientation','compass',E],['Promenade du chien','dog',E],
+ /* vélo & glisse urbaine */
+ ['Vélo','bike',E],['VTT','bike',E],['Vélo d\'appartement','bike',E],['Spinning','bike',E],['BMX','bike',E],
+ ['Skateboard','skateboard',E],['Roller','roller-skating',E],['Trottinette','scooter',E],
+ /* eau */
+ ['Natation','swimming',E],['Nage en eau libre','ripple',E],['Plongée','scuba-mask',E],['Apnée','lungs',E],
+ ['Surf','wave-saw-tool',E],['Kitesurf','wind',E],['Planche à voile','wind',E],['Paddle','kayak',E],['Kayak','kayak',E],
+ ['Aviron','kayak',E],['Voile','sailboat',E],['Pêche','fish',E],
+ /* force & fitness */
+ ['Musculation','barbell',E],['Powerlifting','barbell',E],['Haltérophilie','barbell',E],['CrossFit','barbell',E],
+ ['Hyrox','barbell',E],['HIIT','flame',E],['Circuit training','repeat',E],['Functional training','activity',E],
+ ['Rameur','kayak',E],['Elliptique','activity',E],['Gainage','stretching',E],['Étirements','stretching',E],
+ ['Mobilité','stretching',E],['Saut à la corde','jump-rope',E],['Gymnastique','gymnastics',E],['Trampoline','arrow-big-up',E],
+ ['Parkour','bolt',E],['Escalade','ladder',E],['Escalade en salle','ladder',E],['Slackline','line',E],
+ /* cours collectifs & danse */
+ ['Yoga','yoga',E],['Pilates','yoga',E],['Barre au sol','yoga',E],['Danse','music',E],['Zumba','music',E],['Aérobic','activity',E],['Step','stairs',E],['Cheerleading','star',E],
+ /* sports co */
+ ['Football','ball-football',E],['Futsal','ball-football',E],['Football américain','ball-american-football',E],
+ ['Rugby','ball-american-football',E],['Basketball','ball-basketball',E],['Handball','ball-volleyball',E],
+ ['Volleyball','ball-volleyball',E],['Beach-volley','ball-volleyball',E],['Baseball','ball-baseball',E],
+ ['Softball','ball-baseball',E],['Cricket','cricket',E],['Hockey','ice-skating',E],['Hockey sur glace','ice-skating',E],
+ /* raquettes */
+ ['Tennis','ball-tennis',E],['Padel','ball-tennis',E],['Squash','ball-tennis',E],['Badminton','ball-tennis',E],
+ ['Ping-pong','ping-pong',E],['Pickleball','ping-pong',E],
+ /* combat */
+ ['Boxe','karate',E],['Kickboxing','karate',E],['MMA','karate',E],['Judo','karate',E],['Karaté','karate',E],
+ ['Taekwondo','karate',E],['Lutte','karate',E],['Escrime','swords',E],['Arts martiaux','karate',E],
+ /* précision & loisirs */
+ ['Golf','golf',E],['Tir à l\'arc','target-arrow',E],['Chasse','target',E],['Paintball','target',E],
+ ['Bowling','ball-bowling',E],['Billard','ball-bowling',E],['Fléchettes','target-arrow',E],['Pétanque','ball-bowling',E],
+ ['Frisbee','disc',E],['Spikeball','ball-volleyball',E],
+ /* hiver & animaux */
+ ['Ski','ski-jumping',E],['Ski de fond','ski-jumping',E],['Snowboard','ski-jumping',E],
+ ['Patinage','ice-skating',E],['Équitation','horseshoe',E],
+ /* quotidien actif & divers */
+ ['Jardinage','plant',E],['Ménage énergique','wash',E],['Déménagement','truck',E],['Travail manuel','hammer',E],
+ ['Jonglage','activity',E],['Arts du cirque','tent',E],['Arbitrage','speakerphone',E],
+ ['Coaching sportif','clipboard-check',E],['E-sport','device-gamepad-2',E],['Sport en fauteuil','wheelchair',E],
+ ['Activité médicale','stethoscope',E],['Art oratoire','microphone-2',E],['Concert / scène','music',E],
+ ['Allaitement','baby-carriage',E],['Autre – Effort','activity',E],
+ /* RÉCUPÉRATION */
+ ['Sauna','flame',R],['Hammam','droplet',R],['Bain froid','snowflake',R],['Bain de glace','snowflake',R],
+ ['Bain chaud','bath',R],['Bain à remous','ripple',R],['Douche froide','droplet-half-2',R],['Cryothérapie','snowflake',R],
+ ['Massage','massage',R],['Pistolet de massage','massage',R],['Rouleau (automassage)','stretching',R],
+ ['Kiné','health-recognition',R],['Ostéopathe','hand-stop',R],['Chiropracteur','user-check',R],['Acupuncture','needle',R],
+ ['Bottes de compression','arrow-autofit-down',R],['Électrostimulation','bolt',R],
+ ['Méditation','brain',R],['Respiration','wind',R],['Cohérence cardiaque','heart',R],['Yoga doux','yoga',R],
+ ['Étirements doux','stretching',R],['Lecture détente','book',R],['Marche digestive','walk',R],
+ ['Journaling','pencil',R],['Prière','building-church',R],['Autre – Récupération','sparkles',R],
+ /* SOMMEIL */
+ ['Sieste','zzz',S],['Sommeil','moon',S]];
+ return L.map(function(x){return {n:x[0],ti:x[1],cat:x[2]};});})();
+function flActTabler(doc){try{
+ if(!doc.getElementById('flTablerCss')){var lk=doc.createElement('link');lk.id='flTablerCss';lk.rel='stylesheet';
+  lk.href='https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.0.0/dist/tabler-icons.min.css';
+  (doc.head||doc.documentElement).appendChild(lk);}
+}catch(e){}}
+function flActIcon(ti,size,color){return '<i class="ti ti-'+ti+'" style="font-size:'+(size||22)+'px;color:'+(color||'#fb6015')+';line-height:1;font-style:normal"></i>';}
+function flActIconFix(doc,root){try{ /* glyphe manquant → ti-activity */
+ [].slice.call((root||doc).querySelectorAll('i.ti')).forEach(function(ic){
+  try{var c=(doc.defaultView||window).getComputedStyle(ic,'::before').content;
+   if(!c||c==='none'||c==='normal')ic.className='ti ti-activity';}catch(e){}});}catch(e){}}
 function flActNorm(x){return String(x||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');}
 function flActScrPage(doc,id,z){var el=doc.getElementById(id);var wasOpen=el&&(el.style.transform||'').indexOf('translateY(0')>=0;
  if(!el){el=doc.createElement('section');el.id=id;doc.body.appendChild(el);}
@@ -11860,12 +11922,12 @@ function flActWireWheel(doc,box,meta,which){
  [wd,wh,wm].forEach(function(w){if(!w)return;var t;w.addEventListener('scroll',function(){clearTimeout(t);t=setTimeout(read,120);},{passive:true});
   [].slice.call(w.querySelectorAll('.it')).forEach(function(it){it.addEventListener('click',function(){w.scrollTo({top:(+it.dataset.i)*32,behavior:'smooth'});});});});}
 /* écran 1 : Ajouter une activité */
-function flActAdd(doc){try{flNCss(doc);
+function flActAdd(doc){try{flNCss(doc);flActTabler(doc);
  if(!flActSt)flActSt=flActDefaults();
  var st=flActSt;
  var el=flActScrPage(doc,'screen-fla-add',141);
  var actRow=st.act
-  ?('<span style="flex:none;width:44px;height:44px;border-radius:14px;background:#fff1e9;display:flex;align-items:center;justify-content:center;color:#fb6015">'+svgIcon(st.act.ic,{size:22,sw:1.8})+'</span><span style="flex:1;font-size:18px;font-weight:700;letter-spacing:-.01em;color:#14110f">'+st.act.n+'</span>')
+  ?('<span style="flex:none;width:44px;height:44px;border-radius:14px;background:#fff1e9;display:flex;align-items:center;justify-content:center">'+flActIcon(st.act.ti||st.act.ic||'activity',23)+'</span><span style="flex:1;font-size:18px;font-weight:700;letter-spacing:-.01em;color:#14110f">'+st.act.n+'</span>')
   :('<span style="flex:none;width:44px;height:44px;border-radius:14px;background:#f6f3ee;box-shadow:inset 0 0 0 1px #ece7df;display:flex;align-items:center;justify-content:center;color:#a29c92">'+svgIcon('spark',{size:22,sw:1.8})+'</span><span style="flex:1;font-size:17px;font-weight:400;color:#8a857c">Sélectionner une activité</span>');
  function timeRow(lab,which){var open=st.openWheel===which;var w=open?flActWheel(doc,which):null;
   return '<div class="fla-trow" data-w="'+which+'" style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 0;cursor:pointer'+(which==='end'?';border-top:1px solid #f0ece4':'')+'">'
@@ -11888,6 +11950,7 @@ function flActAdd(doc){try{flNCss(doc);
  +'<div style="flex-shrink:0;padding:14px 24px calc(env(safe-area-inset-bottom,0px) + 16px);background:#fff">'
   +'<button class="fla-save" '+(st.act?'':'disabled')+' style="width:100%;padding:19px;border:none;border-radius:18px;background:'+(st.act?'#fb6015':'#f0ece4')+';color:'+(st.act?'#fff':'#b8b1a5')+';font-family:Archivo,-apple-system,sans-serif;font-size:17px;font-weight:700;cursor:'+(st.act?'pointer':'default')+';'+(st.act?'box-shadow:0 10px 24px rgba(251,96,21,.28);':'')+'pointer-events:'+(st.act?'auto':'none')+'">Enregistrer</button>'
  +'</div>';
+ setTimeout(function(){flActIconFix(doc,el);},600);
  el.querySelector('.fla-x').addEventListener('click',function(){flActSt=null;flActHideP(el);});
  el.querySelector('.fla-sel').addEventListener('click',function(){flActPick(doc);});
  [].slice.call(el.querySelectorAll('.fla-trow')).forEach(function(r){r.addEventListener('click',function(ev){
@@ -11901,7 +11964,7 @@ function flActAdd(doc){try{flNCss(doc);
   var start=st.start,end=st.end;if(end<=start)end=new Date(start.getTime()+30*60000);
   var K=start.getFullYear()+'-'+(start.getMonth()+1)+'-'+start.getDate();
   var dur=Math.max(5,Math.round((end-start)/60000));
-  var row={name:a.n,icon:a.ic,start:String(start.getHours()).padStart(2,'0')+':'+String(start.getMinutes()).padStart(2,'0'),dur:dur,int:(a.cat==='effort'?3:1)};
+  var row={name:a.n,icon:a.ti||a.ic,start:String(start.getHours()).padStart(2,'0')+':'+String(start.getMinutes()).padStart(2,'0'),dur:dur,int:(a.cat==='effort'?3:1)};
   if(a.cat==='sommeil')row.type='nap';
   try{var arr=DB.get('sessions_'+K,[])||[];arr.push(row);DB.set('sessions_'+K,arr);}catch(e){}
   try{localStorage.setItem('flLastAct',JSON.stringify({n:a.n,ic:a.ic,cat:a.cat}));}catch(e){}
@@ -11911,13 +11974,13 @@ function flActAdd(doc){try{flNCss(doc);
  flActShowP(el);
 }catch(e){}}
 /* écran 2 : Sélectionner une activité */
-function flActPick(doc){try{flNCss(doc);
+function flActPick(doc){try{flNCss(doc);flActTabler(doc);
  var el=flActScrPage(doc,'screen-fla-pick',142);
  var tab=el._flTab||'tout';var q=el._flQ||'';
  var last=null;try{last=JSON.parse(localStorage.getItem('flLastAct')||'null');}catch(e){}
  function rows(list){return list.map(function(a){
   return '<div class="fla-item" data-n="'+a.n.replace(/"/g,'&quot;')+'" role="button" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:18px;box-shadow:0 6px 20px rgba(20,17,15,.035),inset 0 0 0 1px rgba(20,17,15,.03);padding:14px 16px;cursor:pointer;margin-bottom:10px">'
-   +'<span style="flex:none;width:40px;height:40px;border-radius:12px;background:#f6f3ee;display:flex;align-items:center;justify-content:center;color:#57534c">'+svgIcon(a.ic,{size:20,sw:1.7})+'</span>'
+   +'<span style="flex:none;width:42px;height:42px;border-radius:13px;background:#fff1e9;display:flex;align-items:center;justify-content:center">'+flActIcon(a.ti||a.ic||'activity',21)+'</span>'
    +'<span style="flex:1;font-size:16px;font-weight:600;letter-spacing:-.01em;color:#14110f">'+a.n+'</span>'
   +'</div>';}).join('');}
  var nq=flActNorm(q);
@@ -11939,6 +12002,7 @@ function flActPick(doc){try{flNCss(doc);
   +'<div style="font-family:-apple-system,system-ui,sans-serif;font-size:11px;font-weight:700;letter-spacing:.14em;color:#a29c92;margin:6px 4px 10px">'+(nq?'RÉSULTATS':'TOUTES, DE A À Z')+'</div>'
   +(filtered.length?rows(filtered):'<div style="text-align:center;font-size:14px;font-weight:300;color:#a29c92;padding:30px 0">Aucune activité trouvée</div>')
  +'</div>';
+ setTimeout(function(){flActIconFix(doc,el);},600);
  el.querySelector('.fla-back').addEventListener('click',function(){flActHideP(el);});
  [].slice.call(el.querySelectorAll('.fla-tab')).forEach(function(b){b.addEventListener('click',function(){el._flTab=b.dataset.t;flActPick(doc);});});
  var qi=el.querySelector('.fla-q');
