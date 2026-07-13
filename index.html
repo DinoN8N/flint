@@ -6852,10 +6852,11 @@ function mdSleepPolish(doc){try{var sc=doc.getElementById('screen-sommeil');if(!
   var yl=[110,90,70,50,30].map(function(v,ix){return '<text x="9" y="'+(23.7+ix*37.05).toFixed(1)+'" text-anchor="end" font-family="'+HN.replace(/"/g,"&quot;")+'" font-size="11" font-weight="400" fill="#a49d92">'+v+'</text>';}).join('');
   return head
    +'<div style="display:flex;align-items:baseline;gap:6px;margin-top:9px">'
-    +'<span style="font-family:'+HN+';font-size:40px;font-weight:500;letter-spacing:-0.03em;color:#14110f;line-height:1">'+o.big+'</span>'
-    +(o.up?'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fb6015" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"></path></svg>':'')
+    +'<span class="mnbig" style="font-family:'+HN+';font-size:40px;font-weight:500;letter-spacing:-0.03em;color:#14110f;line-height:1">'+o.big+'</span>'
+    +(o.up?'<svg class="mnarrow" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fb6015" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="transition:opacity .2s ease"><path d="M12 19V5M5 12l7-7 7 7"></path></svg>':'')
+    +'<span class="mnunit" style="font-family:'+HN+';font-size:18px;font-weight:300;color:#a2a09c;opacity:0;transition:opacity .2s ease">bpm</span>'
    +'</div>'
-   +(o.moy?'<div style="font-size:13px;font-weight:300;color:#a2a09c;margin-top:2px">moy. '+o.moy+'</div>':'')
+   +'<div class="mnsub" style="font-size:13px;font-weight:300;color:#a2a09c;margin-top:2px;min-height:16px">'+(o.moy?'moy. '+o.moy:'')+'</div>'
    +'<div style="margin-top:10px;position:relative"><svg viewBox="0 0 340 198" width="100%" style="display:block;overflow:visible">'
     +'<defs><linearGradient id="flMnGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#fb6015" stop-opacity="0.24"></stop><stop offset="50%" stop-color="#fb6015" stop-opacity="0.1"></stop><stop offset="85%" stop-color="#fb6015" stop-opacity="0.015"></stop><stop offset="100%" stop-color="#fb6015" stop-opacity="0"></stop></linearGradient></defs>'
     +'<path d="'+o.line+' L 336 168 L 16 168 Z" fill="url(#flMnGrad)" stroke="none"></path>'
@@ -6868,8 +6869,6 @@ function mdSleepPolish(doc){try{var sc=doc.getElementById('screen-sommeil');if(!
      +'<line x1="16" x2="16" y1="16" y2="168" stroke="#fb6015" stroke-width="1.1"></line>'
      +'<circle class="mnhalo" r="9" fill="rgba(251,96,21,0.20)"></circle>'
      +'<circle class="mndot" r="3.6" fill="#fb6015" stroke="#fff" stroke-width="1.6"></circle>'
-     +'<text class="mnval" y="11" text-anchor="middle" font-family="'+HN.replace(/"/g,"&quot;")+'" font-size="15" font-weight="600" fill="#14110f"></text>'
-     +'<text class="mntime" y="192" text-anchor="middle" font-family="'+HN.replace(/"/g,"&quot;")+'" font-size="10.5" font-weight="600" fill="#fb6015"></text>'
     +'</g>'
     +'<text x="16" y="192" text-anchor="middle" font-family="'+HN.replace(/"/g,"&quot;")+'" font-size="10.5" font-weight="400" fill="#14110f">'+o.t0+'</text>'
     +'<text x="336" y="192" text-anchor="middle" font-family="'+HN.replace(/"/g,"&quot;")+'" font-size="10.5" font-weight="400" fill="#14110f">'+o.t1+'</text>'
@@ -6932,7 +6931,9 @@ function mdSleepPolish(doc){try{var sc=doc.getElementById('screen-sommeil');if(!
   function xOf(i){return 16+i*320/(COLS-1);}
   function yOf(b){return 16+(110-Math.max(30,Math.min(110,b)))/80*152;}
   var hi=svg.querySelector('.mnhi'),sg=svg.querySelector('.mnscrub'),base=svg.querySelector('.mnline');
-  var gl=sg.querySelector('line'),halo=sg.querySelector('.mnhalo'),dot=sg.querySelector('.mndot'),tv=sg.querySelector('.mnval'),tt=sg.querySelector('.mntime');
+  var gl=sg.querySelector('line'),halo=sg.querySelector('.mnhalo'),dot=sg.querySelector('.mndot');
+  var big=nu.querySelector('.mnbig'),unit=nu.querySelector('.mnunit'),arrow=nu.querySelector('.mnarrow'),sub=nu.querySelector('.mnsub');
+  var subRest=(o.moy?'moy. '+o.moy:'');
   /* stades par colonne depuis la distribution (mêmes seuils que computeNight) */
   var sorted=pts.slice().sort(function(a,b){return a-b;});
   function q(p){return sorted[Math.max(0,Math.min(sorted.length-1,Math.floor(p*sorted.length)))];}
@@ -6945,14 +6946,16 @@ function mdSleepPolish(doc){try{var sc=doc.getElementById('screen-sommeil');if(!
    var x=xOf(i),y=yOf(pts[i]);
    gl.setAttribute('x1',x);gl.setAttribute('x2',x);
    halo.setAttribute('cx',x);halo.setAttribute('cy',y);dot.setAttribute('cx',x);dot.setAttribute('cy',y);
-   var tx=Math.max(32,Math.min(308,x));
-   tv.setAttribute('x',tx);tv.textContent=Math.round(pts[i]);
-   tt.setAttribute('x',tx);tt.textContent=clk(bed+i/(COLS-1)*span);
+   if(big)big.textContent=Math.round(pts[i]);
+   if(unit)unit.style.opacity='1';
+   if(arrow)arrow.style.opacity='0';
+   if(sub)sub.textContent=clk(bed+i/(COLS-1)*span);
    sg.setAttribute('opacity','1');}
+  function restoreHead(){if(big)big.textContent=o.big;if(unit)unit.style.opacity='0';if(arrow)arrow.style.opacity='1';if(sub)sub.textContent=subRest;}
   var sc=false;svg.style.touchAction='none';svg.style.cursor='crosshair';
   svg.addEventListener('pointerdown',function(ev){sc=true;try{svg.setPointerCapture(ev.pointerId);}catch(e){}showAt(ev.clientX);try{haptic&&haptic(3);}catch(e){}});
   svg.addEventListener('pointermove',function(ev){if(sc)showAt(ev.clientX);});
-  ['pointerup','pointercancel'].forEach(function(t){svg.addEventListener(t,function(){sc=false;sg.setAttribute('opacity','0');});});
+  ['pointerup','pointercancel'].forEach(function(t){svg.addEventListener(t,function(){sc=false;sg.setAttribute('opacity','0');restoreHead();});});
   /* — tap sur un stade → segments colorés sur la courbe — */
   var COLMAP={deep:'#cc3d00',light:'#fb6015',awake:'#f6c3a3'};
   var cur=null;
@@ -6960,17 +6963,19 @@ function mdSleepPolish(doc){try{var sc=doc.getElementById('screen-sommeil');if(!
    [].slice.call(nu.querySelectorAll('.mnrow')).forEach(function(rw){rw.style.boxShadow='inset 0 0 0 1px rgba(20,17,15,0.05)';});}
   function selectSt(stKey,row){if(cur===stKey){clearHi();return;}clearHi();cur=stKey;
    base.setAttribute('stroke','#e8e2d9');
-   var d3='',run=null;
+   /* runs par colonne → élargis (±2) puis fusionnés : des LIGNES nettes, pas des points */
+   var runs=[],run=null;
    for(var i2=0;i2<COLS;i2++){var is=stOf(pts[i2])===stKey;
     if(is&&run==null)run=i2;
-    if((!is||i2===COLS-1)&&run!=null){var end=is?i2:i2-1;
-     var seg='M '+xOf(run).toFixed(1)+' '+yOf(pts[run]).toFixed(1);
-     if(end===run)seg+=' L '+(xOf(run)+1.4).toFixed(1)+' '+yOf(pts[run]).toFixed(1);
-     else for(var i3=run+1;i3<=end;i3++)seg+=' L '+xOf(i3).toFixed(1)+' '+yOf(pts[i3]).toFixed(1);
-     d3+=(d3?' ':'')+seg;run=null;}}
+    if(run!=null&&(!is||i2===COLS-1)){runs.push([run,is?i2:i2-1]);run=null;}}
+   var PAD=2;runs=runs.map(function(r){return [Math.max(0,r[0]-PAD),Math.min(COLS-1,r[1]+PAD)];});
+   var merged=[];runs.forEach(function(r){var L=merged[merged.length-1];if(L&&r[0]<=L[1]+1){L[1]=Math.max(L[1],r[1]);}else merged.push(r.slice());});
+   var d3=merged.map(function(r){var seg='M '+xOf(r[0]).toFixed(1)+' '+yOf(pts[r[0]]).toFixed(1);
+    for(var i3=r[0]+1;i3<=r[1];i3++)seg+=' L '+xOf(i3).toFixed(1)+' '+yOf(pts[i3]).toFixed(1);
+    return seg;}).join(' ');
    var pth=doc.createElementNS(NSs,'path');
    pth.setAttribute('d',d3);pth.setAttribute('fill','none');pth.setAttribute('stroke',COLMAP[stKey]);
-   pth.setAttribute('stroke-width','2');pth.setAttribute('stroke-linecap','round');pth.setAttribute('stroke-linejoin','round');
+   pth.setAttribute('stroke-width','2.4');pth.setAttribute('stroke-linecap','round');pth.setAttribute('stroke-linejoin','round');
    hi.appendChild(pth);
    row.style.boxShadow='inset 0 0 0 1.5px '+COLMAP[stKey];
    try{haptic&&haptic(4);}catch(e){}}
@@ -11729,7 +11734,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v557';
+const APP_VERSION='flint-v558';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
