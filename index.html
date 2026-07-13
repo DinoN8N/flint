@@ -7742,11 +7742,17 @@ function mdNutrition(doc){try{
  }
  /* ---- journal ---- */
  var jTitle=flLeaf(nut,'Journal');
- if(jTitle){var jHead=jTitle;for(var h=0;h<5&&jHead&&!(/Ajouter/.test(jHead.textContent||'')&&jHead.querySelector&&jHead.querySelector('button'));h++)jHead=jHead.parentElement;
-  var jSec=jHead&&jHead.parentElement;
-  if(jSec){
-   var dateLab=[].slice.call(jHead.querySelectorAll('span')).filter(function(s){return /^—/.test((s.textContent||'').trim());})[0];
-   if(dateLab)flSetLeaf(dateLab,'— '+FLN_JOURSF[flNutDate(off).getDay()]+' '+flNutDate(off).getDate()+' '+FLN_MOISF[flNutDate(off).getMonth()]);
+ if(jTitle){
+  /* export 12/07 : l'en-tête n'a plus de bouton « Ajouter » — on remonte jusqu'à ce que
+     le PARENT contienne les cartes (motif horaire) ; marqueur data-fl-jsec en cache */
+  var jSec=nut.querySelector('[data-fl-jsec]'),jHead=null;
+  if(jSec&&jSec.contains(jTitle)){jHead=[].slice.call(jSec.children).filter(function(c){return /Journal/.test(c.textContent||'');})[0];}
+  else{jSec=null;jHead=jTitle;
+   for(var h=0;h<4&&jHead.parentElement;h++){var pt=(jHead.parentElement.textContent||'');if(/\d{1,2}:\d{2}/.test(pt)||/Aucun repas/.test(pt))break;jHead=jHead.parentElement;}
+   jSec=jHead.parentElement;if(jSec)jSec.setAttribute('data-fl-jsec','1');}
+  if(jSec&&jHead){
+   var dateLab=[].slice.call(jHead.querySelectorAll('div,span')).filter(function(s){return s.children.length===0&&s!==jTitle&&(s.textContent||'').trim();})[0];
+   if(dateLab){var jd=flNutDate(off);flSetLeaf(dateLab,FLN_JOURSF[jd.getDay()]+' '+jd.getDate()+' '+FLN_MOISF[jd.getMonth()]);}
    var addBtn=[].slice.call(jHead.querySelectorAll('button')).filter(function(b){return /Ajouter/.test((b.textContent||'').trim());})[0];
    if(addBtn){addBtn.style.display='none';}
    var jk=K+':'+meals.length+':'+meals.map(function(m){return (m.time||'')+(m.kcal||0);}).join(',');
@@ -7763,7 +7769,7 @@ function mdNutrition(doc){try{
  /* ---- back (scp1) → fermer l'onglet ---- */
  var back=nut.querySelector('.scp1')||nut.querySelector('button[aria-label*="Aujourd"]');
  if(back&&!back._flW){back._flW=1;back.addEventListener('click',function(ev){ev.preventDefault();ev.stopPropagation();flNutBack(doc);},true);}
-}catch(e){}}
+}catch(e){window._mdNutErr=(e&&e.message||e)+" | "+((e&&e.stack||"").split("\n")[1]||"");}}
 
 function flMealCard(doc,m,i,K){
  var card=doc.createElement('div');
@@ -7781,9 +7787,17 @@ function flMealCard(doc,m,i,K){
    +'</div>'
    +badge
   +'</div>';
- card.addEventListener('click',function(){flNMealDetail(K,i);});
- var _lp;card.addEventListener('pointerdown',function(){_lp=setTimeout(function(){flNCtxMenu(K,i);},480);},{passive:true});
- ['pointerup','pointerleave','pointermove','pointercancel'].forEach(function(t){card.addEventListener(t,function(){clearTimeout(_lp);},{passive:true});});
+ /* la maquette avale les 'click' avant la cible → dual click+pointerup, dédup + gardes */
+ var _lp,_t0=0,_px=0,_py=0,_fired=0;
+ function goCard(ev){var nw=Date.now();if(nw-_fired<700)return;_fired=nw;if(ev){try{ev.preventDefault();ev.stopPropagation();}catch(e){}}flNMealDetail(K,i);}
+ card.addEventListener('click',goCard,true);
+ card.addEventListener('pointerdown',function(ev){_t0=Date.now();_px=ev.clientX;_py=ev.clientY;_lp=setTimeout(function(){_fired=Date.now();flNCtxMenu(K,i);},480);},{passive:true});
+ ['pointerleave','pointercancel'].forEach(function(t){card.addEventListener(t,function(){clearTimeout(_lp);},{passive:true});});
+ card.addEventListener('pointermove',function(ev){if(Math.abs(ev.clientX-_px)>12||Math.abs(ev.clientY-_py)>12)clearTimeout(_lp);},{passive:true});
+ card.addEventListener('pointerup',function(ev){clearTimeout(_lp);
+  if(Date.now()-_t0>=460)return;
+  if(Math.abs(ev.clientX-_px)>12||Math.abs(ev.clientY-_py)>12)return;
+  goCard(ev);},true);
  return card;
 }
 
@@ -8981,7 +8995,10 @@ function flNMealDetail(K,i,lite){var doc=flNdoc();var m=mealsOf(K)[i];if(!m)retu
  [].slice.call(el.querySelectorAll('[data-mact]')).forEach(function(b){b.addEventListener('click',function(){var a=b.dataset.mact;
    if(a==='save'){flNSaveMeal(K,i);}
    else if(a==='del'){flNDelMeal(K,i);}});});
- flNOpen('screen-fln-meal');}
+ flNOpen('screen-fln-meal');
+ /* filet : si la maquette a ouvert SA fiche repas (ancienne interface) sur le même tap, on la referme */
+ function mnKill(){try{var nm=doc.getElementById('screen-meal');if(nm){nm.style.setProperty('transform','translateX(-50%) translateY(100%)','important');nm.style.setProperty('pointer-events','none','important');}}catch(e){}}
+ mnKill();setTimeout(mnKill,180);setTimeout(mnKill,520);}
 /* ═══════════════ NUTRITION V2 — Module 3 : COMPRENDRE & RÉGLER ═══════════════ */
 var FLN_KCALMIN={1:6,2:8,3:10,4:13};
 function flNActive(off){var K=tk(off);var b=0;try{b=Math.round(caloriesBurned(K));}catch(e){}
@@ -11645,7 +11662,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v555';
+const APP_VERSION='flint-v556';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
