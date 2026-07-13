@@ -7063,7 +7063,16 @@ function flRcTrendCard(T){
     inner+='<rect x="'+(x-12).toFixed(1)+'" y="'+y.toFixed(1)+'" width="24" height="'+(chartBot-y).toFixed(1)+'" rx="7" fill="#fb6015"></rect>';
     inner+='<text x="'+x.toFixed(1)+'" y="'+(y-8).toFixed(1)+'" text-anchor="middle" font-family="Archivo,-apple-system,sans-serif" font-size="12.5" font-weight="700" fill="#14110f">'+T.fmt(p.v)+'</text>';});
   }else{
-   /* segments entre jours cons\u00e9cutifs non nuls */
+   /* segments entre jours cons\u00e9cutifs non nuls + halo d\u00e9grad\u00e9 sous chaque segment */
+   var gid='flrct'+T.key;
+   inner='<defs><linearGradient id="'+gid+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fb6015" stop-opacity="0.16"></stop><stop offset="1" stop-color="#fb6015" stop-opacity="0"></stop></linearGradient></defs>'+inner;
+   var segs=[],curSeg=null;
+   pts.forEach(function(p,i2){if(p.v==null){curSeg=null;return;}if(!curSeg){curSeg=[];segs.push(curSeg);}curSeg.push([cx(i2),cy(p.v)]);});
+   segs.forEach(function(sg){if(sg.length<2)return;
+    var a='M '+sg[0][0].toFixed(1)+' '+sg[0][1].toFixed(1);
+    for(var q=1;q<sg.length;q++)a+=' L '+sg[q][0].toFixed(1)+' '+sg[q][1].toFixed(1);
+    a+=' L '+sg[sg.length-1][0].toFixed(1)+' '+chartBot+' L '+sg[0][0].toFixed(1)+' '+chartBot+' Z';
+    inner+='<path d="'+a+'" fill="url(#'+gid+')" stroke="none"></path>';});
    var d2='';var prev=null;
    pts.forEach(function(p,i2){if(p.v==null){prev=null;return;}var x=cx(i2),y=cy(p.v);
     d2+=(prev==null?' M ':' L ')+x.toFixed(1)+' '+y.toFixed(1);prev=p;});
@@ -7121,10 +7130,13 @@ function flRecupOpen(doc){try{
  var CIRC=653.5,frac=D.score!=null?Math.max(0,Math.min(1,D.score/100)):0;
  el.innerHTML='<div style="flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:max(20px,calc(env(safe-area-inset-top,0px) + 12px)) 22px 120px">'
   +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">'
+   +'<span style="display:flex;align-items:center;gap:12px">'
+   +'<button class="rc-close" aria-label="Retour" style="width:44px;height:44px;border-radius:50%;background:#fff;border:none;box-shadow:0 1px 2px rgba(20,17,15,.06),0 8px 20px rgba(20,17,15,.06);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fb6015" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></button>'
    +'<button class="rc-close" style="display:flex;align-items:center;gap:7px;background:none;border:none;padding:0;cursor:pointer">'
     +'<span style="font-size:13px;font-weight:500;letter-spacing:0.18em;color:#14110f">AUJOURD\u2019HUI</span>'
     +'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fb6015" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg>'
    +'</button>'
+   +'</span>'
    +'<button class="rc-close" aria-label="Tendances" style="width:44px;height:44px;border-radius:50%;background:#fff;border:1px solid #ececea;box-shadow:0 2px 10px rgba(0,0,0,.05);display:flex;align-items:center;justify-content:center;cursor:pointer">'
     +'<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#14110f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"></path><path d="M17 7h4v4"></path></svg>'
    +'</button>'
@@ -7174,13 +7186,22 @@ function flRecupOpen(doc){try{
    if(!closeHit&&!hbKey)return;var nw=Date.now();if(nw-_rcT<700)return;_rcT=nw;
    try{ev.preventDefault();ev.stopPropagation();}catch(e){}
    if(closeHit){sc3.style.transform='translateX(-50%) translateY(100%)';sc3.style.pointerEvents='none';return;}
-   /* carte tendance → page hebdo par-dessus la page Récup */
+   /* carte tendance → page hebdo par-dessus la page Récup, avec SON bouton retour visible */
    try{flOpenHebdo(hbKey);}catch(e){}
-   var raise=function(){var scr2=doc.getElementById('screen-flh-'+hbKey);if(scr2)scr2.style.setProperty('z-index','130','important');};
-   raise();setTimeout(raise,120);
+   var raise=function(){var scr2=doc.getElementById('screen-flh-'+hbKey);if(!scr2)return;
+    scr2.style.setProperty('z-index','130','important');scr2.setAttribute('data-fl-fromrecup','1');
+    var bk2=scr2.querySelector('.flh-back');if(bk2)bk2.style.setProperty('visibility','visible','important');};
+   raise();setTimeout(raise,120);setTimeout(raise,500);
    try{haptic&&haptic(5);}catch(e){}};
-  doc.addEventListener('click',rcGo,true);
-  doc.addEventListener('pointerup',rcGo,true);}
+  var rcBack=function(ev){/* retour des pages hebdo ouvertes depuis R\u00e9cup */
+   var n=ev.target,bk=null;while(n&&n!==doc.body){if(n.classList&&n.classList.contains('flh-back')){bk=n;break;}n=n.parentElement;}
+   if(!bk)return;var scr3=bk.closest('[data-fl-fromrecup]');if(!scr3)return;
+   var nw=Date.now();if(nw-_rcT<700)return;_rcT=nw;
+   try{ev.preventDefault();ev.stopPropagation();}catch(e){}
+   scr3.style.setProperty('transform','translateX(-50%) translateY(100%)','important');
+   scr3.style.pointerEvents='none';scr3.removeAttribute('data-fl-fromrecup');
+   try{haptic&&haptic(6);}catch(e){}};
+  ['click','pointerup','touchend'].forEach(function(t){doc.addEventListener(t,rcGo,true);doc.addEventListener(t,rcBack,true);});}
  el.style.pointerEvents='auto';var sc2=el.firstChild;if(sc2)sc2.scrollTop=0;
  setTimeout(function(){el.style.transform='translateX(-50%) translateY(0)';},20);
  try{haptic&&haptic(6);}catch(e){}
@@ -7817,7 +7838,7 @@ function flOpenHebdo(key){try{
  var st2=cl._flhState;st2.end=window.flDayOff||0;
  flhRender(cl,st2);
  setTimeout(function(){cl.style.setProperty('transform','translateX(-50%) translateY(0px)','important');},30);
- cl.style.pointerEvents='auto';cl.scrollTop=0;
+ cl.removeAttribute('data-fl-fromrecup');cl.style.pointerEvents='auto';cl.scrollTop=0;
  setTimeout(function(){try{mdStickyBacks(doc);mdFonts(doc);}catch(e){}},200);
  if(typeof haptic==='function')haptic();
 }catch(e){}}
@@ -9428,6 +9449,7 @@ function mdStickyBacks(doc){try{
  [].slice.call(doc.querySelectorAll('[id^="flbk-"]')).forEach(function(o){o.remove();});
  [].slice.call(doc.querySelectorAll('[id^="screen-"],#flCalClone')).forEach(function(scn){
   if(scn.id==='screen-nutrition'||scn.id==='screen-fl-manuit'||scn.id==='screen-fl-recup'||scn.id.indexOf('screen-fln-')===0)return;
+  if(scn.getAttribute&&scn.getAttribute('data-fl-fromrecup')==='1')return;
   var cs;try{cs=getComputedStyle(scn);}catch(e){return;}
   if(cs.position!=='fixed'||+(cs.zIndex||0)<60)return;
   var bk=scn.querySelector('[data-fl-back]');
@@ -11950,7 +11972,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v562';
+const APP_VERSION='flint-v563';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
