@@ -9625,7 +9625,11 @@ function getNutGoals(k){k=k||tk();
  return {kcal:kcal,prot:prot,carb:carb,fat:fat,burn:burn,offset:offset};
 }
 function nutStreak(){var s=0,start=mealsOf(tk()).length?0:1;for(var i=start;i<400;i++){if(mealsOf(tk(-i)).length)s++;else break}return s}
-function mealsOf(k){return DB.get('meals_'+(k||tk()),[])}
+/* noms de repas : sans le type en préfixe (« Petit-déj — flocons & œufs » → « Flocons & œufs »),
+   nettoyé À LA LECTURE → tous les affichages (journal, fiche, timeline…) + les scans futurs (founder 13/07) */
+var FLN_PREFIX=/^\s*(petit[\s-]*d[ée]j(?:euner)?|d[ée]jeuner|d[îi]ner|souper|brunch|collation|snack|go[ûu]ter|en[\s-]?cas|repas)\s*[-–—:·,]*\s*/i;
+function flNCleanName(n){if(!n)return n;var c=(''+n).replace(FLN_PREFIX,'').trim();if(!c)return n;return c.charAt(0).toUpperCase()+c.slice(1);}
+function mealsOf(k){var a=DB.get('meals_'+(k||tk()),[]);for(var i=0;i<a.length;i++){if(a[i]&&a[i].name)a[i].name=flNCleanName(a[i].name);}return a}
 function nutTotals(k){return mealsOf(k).reduce((a,x)=>({kcal:a.kcal+(+x.kcal||0),prot:a.prot+(+x.prot||0),carb:a.carb+(+x.carb||0),fat:a.fat+(+x.fat||0)}),{kcal:0,prot:0,carb:0,fat:0})}
 function macroStat(lbl,val,goal,col){const pct=Math.min(100,goal?val/goal*100:0);return '<div class="stat"><div class="sl">'+lbl+'</div><div class="sv" style="font-size:23px">'+Math.round(val)+'<small style="font-size:11px;color:var(--ink2);font-family:var(--sans);font-weight:700"> /'+Math.round(goal)+'g</small></div><div class="progbar" style="margin-top:7px;height:8px"><i style="width:'+pct+'%;background:'+col+'"></i></div></div>'}
 function hydroKey(k){return 'hydro_'+(k||tk());}
@@ -11734,7 +11738,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v558';
+const APP_VERSION='flint-v559';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
