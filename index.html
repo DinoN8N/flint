@@ -7132,15 +7132,15 @@ function flRecupOpen(doc){try{
   +'<h1 style="text-align:center;font-family:\u0027Arial Black\u0027,Arial,sans-serif;font-size:46px;font-weight:900;letter-spacing:-0.03em;line-height:0.95;margin:0 0 4px;color:#14110f">R\u00c9CUP\u00c9RATION<span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#fb6015;margin-left:4px;vertical-align:baseline"></span></h1>'
   +'<div style="position:relative;width:260px;height:260px;margin:10px auto 0">'
    +'<svg viewBox="0 0 240 240" width="260" height="260" style="display:block;transform:rotate(-90deg)">'
-    +'<circle cx="120" cy="120" r="104" fill="none" stroke="#EAE8E4" stroke-width="5"></circle>'
-    +'<circle cx="120" cy="120" r="104" fill="none" stroke="#fb6015" stroke-width="5.5" stroke-linecap="round" stroke-dasharray="'+(frac*CIRC).toFixed(1)+' '+CIRC+'" stroke-dashoffset="0"></circle>'
+    +'<circle cx="120" cy="120" r="104" fill="none" stroke="#EAE8E4" stroke-width="7"></circle>'
+    +'<circle cx="120" cy="120" r="104" fill="none" stroke="#fb6015" stroke-width="7" stroke-linecap="round" stroke-dasharray="'+(frac*CIRC).toFixed(1)+' '+CIRC+'" stroke-dashoffset="0"></circle>'
    +'</svg>'
    +'<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">'
-    +'<div style="display:flex;align-items:flex-start">'
-     +'<span style="font-family:\u0027Archivo\u0027,\u0027Helvetica Neue\u0027,Arial,sans-serif;font-size:72px;font-weight:600;letter-spacing:-0.04em;line-height:0.8;color:#14110f">'+(D.score!=null?D.score:'\u2014')+'</span>'
-     +(D.score!=null?'<span style="font-family:\u0027Archivo\u0027,\u0027Helvetica Neue\u0027,Arial,sans-serif;font-size:30px;font-weight:600;color:#14110f;margin-top:4px">%</span>':'')
+    +'<div style="display:flex;justify-content:center;align-items:flex-end">'
+     +'<span style="font-family:\u0027Archivo\u0027,\u0027Helvetica Neue\u0027,Arial,sans-serif;font-size:72px;font-weight:500;letter-spacing:-0.04em;line-height:0.8;color:#14110f">'+(D.score!=null?D.score:'\u2014')+'</span>'
+     +(D.score!=null?'<span style="font-family:\u0027Archivo\u0027,\u0027Helvetica Neue\u0027,Arial,sans-serif;font-size:26px;font-weight:500;color:#14110f;margin-left:2px">%</span>':'')
     +'</div>'
-    +'<div style="font-size:12px;font-weight:500;letter-spacing:0.18em;color:#14110f;margin-top:10px">R\u00c9CUP\u00c9RATION</div>'
+    +'<div style="font-size:11px;font-weight:400;letter-spacing:0.2em;color:#14110f;margin-top:12px">R\u00c9CUP\u00c9RATION</div>'
    +'</div>'
   +'</div>'
   +(D.verdict?('<div style="display:flex;justify-content:center;margin-top:6px">'
@@ -11950,7 +11950,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v561';
+const APP_VERSION='flint-v562';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
