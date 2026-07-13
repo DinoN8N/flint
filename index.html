@@ -7590,7 +7590,7 @@ function mdCalDualScrub(doc){try{
   ['pointerup','pointerleave','pointercancel'].forEach(function(t){svg.addEventListener(t,function(){if(!ssb)return;ssb=false;render();});});
  });}catch(e){}}
 function flBackScreens(doc){var out=[];[].slice.call(doc.querySelectorAll('[id^="screen-"],#flCalClone')).forEach(function(scn){
- if(scn.id==='screen-nutrition'||scn.id.indexOf('screen-fln-')===0)return;var cs;try{cs=getComputedStyle(scn);}catch(e){return;}
+ if(scn.id==='screen-nutrition'||scn.id==='screen-fla-add'||scn.id==='screen-fla-pick'||scn.id.indexOf('screen-fln-')===0)return;var cs;try{cs=getComputedStyle(scn);}catch(e){return;}
  if(cs.position!=='fixed'||+(cs.zIndex||0)<60)return;
  var r=scn.getBoundingClientRect();var w=doc.defaultView.innerWidth;
  if(r.width>200&&Math.abs(r.top)<40&&r.left<w*0.5&&r.right>w*0.5)out.push(scn);});return out;}
@@ -9481,7 +9481,7 @@ function mdStickyBacks(doc){try{
  }
  [].slice.call(doc.querySelectorAll('[id^="flbk-"]')).forEach(function(o){o.remove();});
  [].slice.call(doc.querySelectorAll('[id^="screen-"],#flCalClone')).forEach(function(scn){
-  if(scn.id==='screen-nutrition'||scn.id==='screen-fl-manuit'||scn.id==='screen-fl-recup'||scn.id.indexOf('screen-fln-')===0)return;
+  if(scn.id==='screen-nutrition'||scn.id==='screen-fl-manuit'||scn.id==='screen-fl-recup'||scn.id==='screen-fla-add'||scn.id==='screen-fla-pick'||scn.id.indexOf('screen-fln-')===0)return;
   if(scn.getAttribute&&scn.getAttribute('data-fl-fromrecup')==='1')return;
   var cs;try{cs=getComputedStyle(scn);}catch(e){return;}
   if(cs.position!=='fixed'||+(cs.zIndex||0)<60)return;
@@ -12005,7 +12005,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v565';
+const APP_VERSION='flint-v566';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
@@ -12659,45 +12659,55 @@ function flActWireWheel(doc,box,meta,which){
   var chip2=doc.querySelector('.fla-chip[data-w="end"] b');if(chip2)chip2.textContent=flActFmt(flActSt.end);}
  [wd,wh,wm].forEach(function(w){if(!w)return;var t;w.addEventListener('scroll',function(){clearTimeout(t);t=setTimeout(read,120);},{passive:true});
   [].slice.call(w.querySelectorAll('.it')).forEach(function(it){it.addEventListener('click',function(){w.scrollTo({top:(+it.dataset.i)*32,behavior:'smooth'});});});});}
-/* écran 1 : Ajouter une activité */
-function flActAdd(doc){try{flNCss(doc);flActTabler(doc);
+/* CSS scopée pour l'écran Ajouter une activité (roue façon design) */
+function flActCss(doc){if(!doc||doc.getElementById('fla-css2'))return;var s=doc.createElement('style');s.id='fla-css2';
+ s.textContent='#screen-fla-add .fln-pick{border:none;background:transparent;padding:0 4px}'
+  +'#screen-fla-add .fln-selband{background:#fff;border:1px solid rgba(20,17,15,0.05);border-radius:14px;box-shadow:0 2px 6px rgba(20,17,15,0.09),0 9px 24px rgba(20,17,15,0.12);height:34px;z-index:0}'
+  +'#screen-fla-add .fln-wheel{position:relative;z-index:2}'
+  +'#screen-fla-add .fla-wheel{margin:14px 0 2px}';
+ (doc.head||doc.body).appendChild(s);}
+/* écran 1 : Ajouter une activité (design « Flint - Ajouter une activité ») */
+function flActAdd(doc){try{flNCss(doc);flActTabler(doc);flActCss(doc);
  if(!flActSt)flActSt=flActDefaults();
  var st=flActSt;
+ if(st.openWheel==null)st.openWheel='start';
  var el=flActScrPage(doc,'screen-fla-add',141);
- var actRow=st.act
-  ?('<span style="flex:none;width:44px;height:44px;border-radius:14px;background:#fff1e9;display:flex;align-items:center;justify-content:center">'+flActIcon(st.act.ti||st.act.ic||'activity',23)+'</span><span style="flex:1;font-size:18px;font-weight:700;letter-spacing:-.01em;color:#14110f">'+st.act.n+'</span>')
-  :('<span style="flex:none;width:44px;height:44px;border-radius:14px;background:#f6f3ee;box-shadow:inset 0 0 0 1px #ece7df;display:flex;align-items:center;justify-content:center;color:#a29c92">'+svgIcon('spark',{size:22,sw:1.8})+'</span><span style="flex:1;font-size:17px;font-weight:400;color:#8a857c">Sélectionner une activité</span>');
- function timeRow(lab,which){var open=st.openWheel===which;var w=open?flActWheel(doc,which):null;
-  return '<div class="fla-trow" data-w="'+which+'" style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 0;cursor:pointer'+(which==='end'?';border-top:1px solid #f0ece4':'')+'">'
-   +'<span style="font-size:16px;font-weight:400;color:#14110f">'+lab+'</span>'
-   +'<span class="fla-chip" data-w="'+which+'" style="padding:9px 14px;border-radius:12px;background:'+(open?'#fb6015':'#fff1e9')+';font-family:Archivo,-apple-system,sans-serif"><b style="font-size:14px;font-weight:700;color:'+(open?'#fff':'#fb6015')+'">'+flActFmt(st[which])+'</b></span>'
-  +'</div>'+(open?w.html:'');}
- el.innerHTML='<div style="flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:max(20px,calc(env(safe-area-inset-top,0px) + 12px)) 24px 20px">'
-  +'<button class="fla-x" aria-label="Fermer" style="width:52px;height:52px;border-radius:50%;border:none;background:#fff;color:#fb6015;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(20,17,15,.08);margin-bottom:22px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>'
-  +'<h1 style="font-size:34px;font-weight:800;letter-spacing:-.03em;line-height:1;margin:0 0 26px;color:#14110f">Ajouter une activité<span style="color:#fb6015">.</span></h1>'
-  +'<div class="fla-sel" role="button" style="display:flex;align-items:center;gap:14px;background:#fff;border-radius:22px;box-shadow:0 8px 26px rgba(20,17,15,.05),inset 0 0 0 1px rgba(20,17,15,.035);padding:16px 18px;cursor:pointer;margin-bottom:26px">'
-   +actRow
-   +'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fb6015" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M9 18l6-6-6-6"></path></svg>'
+ el.style.background='#fdfcfb';
+ var selInner=st.act
+  ?('<span style="width:54px;height:54px;border-radius:50%;background:#fff1e9;display:flex;align-items:center;justify-content:center;flex-shrink:0">'+flActIcon(st.act.ti||st.act.ic||'activity',27)+'</span><span style="flex:1;font-size:17px;font-weight:600;letter-spacing:-.005em;color:#14110f">'+st.act.n+'</span>')
+  :('<span style="width:54px;height:54px;border-radius:50%;background:#f4f1ec;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="#fb6015" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="13" cy="4" r="1.4"></circle><path d="M7 21l3-4"></path><path d="M16 21l-2-4-3-2.5 1-6.5"></path><path d="M6 12l2-3 4-1 3 3 3 1"></path></svg></span><span style="flex:1;font-size:16px;font-weight:300;letter-spacing:-.005em;color:#6f6a62">Sélectionner une activité</span>');
+ var startWheel=st.openWheel==='start'?flActWheel(doc,'start').html:'';
+ var endWheel=st.openWheel==='end'?flActWheel(doc,'end').html:'';
+ el.innerHTML='<div style="flex:1;display:flex;flex-direction:column;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:max(20px,calc(env(safe-area-inset-top,0px) + 12px)) 26px calc(env(safe-area-inset-bottom,0px) + 20px)">'
+  +'<button class="fla-x" aria-label="Retour" style="align-self:flex-start;width:52px;height:52px;border-radius:50%;background:#fff;border:none;box-shadow:0 1px 2px rgba(20,17,15,.06),0 8px 22px rgba(20,17,15,.07);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#14110f" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></button>'
+  +'<h1 style="font-size:34px;font-weight:800;line-height:1.04;letter-spacing:-.03em;margin:34px 0 0;color:#14110f">Ajouter une activité<span style="color:#fb6015">.</span></h1>'
+  +'<div style="margin:38px 4px 0;font-family:-apple-system,system-ui,sans-serif;font-size:12px;font-weight:600;letter-spacing:.2em;color:#363229">ACTIVITÉ</div>'
+  +'<div class="fla-sel" role="button" style="margin-top:14px;background:#fff;border-radius:22px;padding:18px 20px;display:flex;align-items:center;gap:18px;cursor:pointer;box-shadow:0 10px 28px rgba(150,118,72,0.10),0 2px 6px rgba(150,118,72,0.07)">'
+   +selInner
+   +'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#14110f" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M9 6l6 6-6 6"></path></svg>'
   +'</div>'
-  +'<div style="font-family:-apple-system,system-ui,sans-serif;font-size:12px;font-weight:700;letter-spacing:.16em;color:#14110f;text-transform:uppercase;margin:0 4px 6px">Temps</div>'
-  +'<div style="background:#fff;border-radius:22px;box-shadow:0 8px 26px rgba(20,17,15,.05),inset 0 0 0 1px rgba(20,17,15,.035);padding:2px 18px">'
-   +timeRow('Heure de début','start')
-   +timeRow('Heure de fin','end')
+  +'<div style="margin:34px 4px 0;font-family:-apple-system,system-ui,sans-serif;font-size:12px;font-weight:600;letter-spacing:.2em;color:#363229">TEMPS</div>'
+  +'<div style="margin-top:14px;background:#fff;border-radius:26px;padding:22px 22px 20px;box-shadow:0 10px 28px rgba(150,118,72,0.10),0 2px 6px rgba(150,118,72,0.07)">'
+   +'<div class="fla-trow" data-w="start" style="display:flex;align-items:baseline;justify-content:space-between;cursor:pointer"><span style="font-size:13px;font-weight:500;letter-spacing:-.01em;color:#0b0906">Heure de début</span><span style="font-size:14px;font-weight:400;letter-spacing:-.005em;color:#fb6015">'+flActFmt(st.start)+'</span></div>'
+   +startWheel
+   +'<div style="height:1px;background:linear-gradient(90deg,transparent,rgba(20,17,15,0.09) 12%,rgba(20,17,15,0.09) 88%,transparent);margin:'+(st.openWheel==='start'?'6px 0 0':'18px 0 0')+'"></div>'
+   +'<div class="fla-trow" data-w="end" style="display:flex;align-items:center;justify-content:space-between;padding-top:18px;cursor:pointer"><span style="font-size:13px;font-weight:500;letter-spacing:-.01em;color:#0b0906">Heure de fin</span><span style="display:inline-flex;align-items:center;gap:8px"><span style="font-size:14px;font-weight:400;letter-spacing:-.005em;color:#fb6015">'+flActFmt(st.end)+'</span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#14110f" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="transition:transform .2s ease;transform:rotate('+(st.openWheel==='end'?'90deg':'0')+')"><path d="M9 6l6 6-6 6"></path></svg></span></div>'
+   +endWheel
   +'</div>'
- +'</div>'
- +'<div style="flex-shrink:0;padding:14px 24px calc(env(safe-area-inset-bottom,0px) + 16px);background:#fff">'
-  +'<button class="fla-save" '+(st.act?'':'disabled')+' style="width:100%;padding:19px;border:none;border-radius:18px;background:'+(st.act?'#fb6015':'#f0ece4')+';color:'+(st.act?'#fff':'#b8b1a5')+';font-family:Archivo,-apple-system,sans-serif;font-size:17px;font-weight:700;cursor:'+(st.act?'pointer':'default')+';'+(st.act?'box-shadow:0 10px 24px rgba(251,96,21,.28);':'')+'pointer-events:'+(st.act?'auto':'none')+'">Enregistrer</button>'
+  +'<div style="flex:1;min-height:20px"></div>'
+  +'<button class="fla-save" '+(st.act?'':'disabled')+' style="margin-top:22px;width:100%;background:'+(st.act?'#fb6015':'#f0ece4')+';color:'+(st.act?'#fff':'#b8b1a5')+';font-family:Archivo,-apple-system,system-ui,sans-serif;font-size:19px;font-weight:600;letter-spacing:-.01em;border:none;border-radius:22px;padding:22px 0;cursor:'+(st.act?'pointer':'default')+';'+(st.act?'box-shadow:0 10px 26px rgba(251,96,21,0.28);':'')+'pointer-events:'+(st.act?'auto':'none')+'">Enregistrer</button>'
  +'</div>';
  setTimeout(function(){flActIconFix(doc,el);},600);
- el.querySelector('.fla-x').addEventListener('click',function(){flActSt=null;flActHideP(el);});
- el.querySelector('.fla-sel').addEventListener('click',function(){flActPick(doc);});
- [].slice.call(el.querySelectorAll('.fla-trow')).forEach(function(r){r.addEventListener('click',function(ev){
-  if(ev.target.closest('.fla-wheel'))return;
-  var w=r.dataset.w;st.openWheel=(st.openWheel===w?null:w);flActAdd(doc);});});
+ /* câblage robuste (click + pointerup + touchend, dédup) */
+ function bind(node,fn,noPrevent){if(!node)return;var last=0;var g=function(ev){var n=Date.now();if(n-last<600)return;last=n;if(!noPrevent){try{ev.preventDefault();}catch(e){}}try{ev.stopPropagation();}catch(e){}fn(ev);};node.addEventListener('click',g,true);node.addEventListener('pointerup',g,true);node.addEventListener('touchend',g,true);}
+ bind(el.querySelector('.fla-x'),function(){flActSt=null;flActHideP(el);});
+ bind(el.querySelector('.fla-sel'),function(){flActPick(doc);});
+ [].slice.call(el.querySelectorAll('.fla-trow')).forEach(function(r){bind(r,function(ev){
+  if(ev.target&&ev.target.closest&&ev.target.closest('.fla-wheel'))return;
+  st.openWheel=r.dataset.w;flActAdd(doc);});});
  if(st.openWheel){var box=el.querySelector('.fla-wheel[data-w="'+st.openWheel+'"]');
   if(box){var meta=flActWheel(doc,st.openWheel);flActWireWheel(doc,box,meta,st.openWheel);}}
- var sv=el.querySelector('.fla-save');
- if(sv)sv.addEventListener('click',function(){
+ bind(el.querySelector('.fla-save'),function(){
   var a=st.act;if(!a)return;
   var start=st.start,end=st.end;if(end<=start)end=new Date(start.getTime()+30*60000);
   var K=start.getFullYear()+'-'+(start.getMonth()+1)+'-'+start.getDate();
@@ -12711,6 +12721,8 @@ function flActAdd(doc){try{flNCss(doc);flActTabler(doc);
   try{flOkShow('Enregistré',a.n+' · '+dur+' min');}catch(e){}});
  flActShowP(el);
 }catch(e){}}
+/* câblage tactile robuste partagé (click + pointerup + touchend, dédup) */
+function flActBind(node,fn){if(!node)return;var last=0;var g=function(ev){var n=Date.now();if(n-last<600)return;last=n;try{ev.stopPropagation();}catch(e){}fn(ev);};node.addEventListener('click',g,true);node.addEventListener('pointerup',g,true);node.addEventListener('touchend',g,true);}
 /* écran 2 : Sélectionner une activité */
 function flActPick(doc){try{flNCss(doc);flActTabler(doc);
  var el=flActScrPage(doc,'screen-fla-pick',142);
@@ -12741,11 +12753,11 @@ function flActPick(doc){try{flNCss(doc);flActTabler(doc);
   +(filtered.length?rows(filtered):'<div style="text-align:center;font-size:14px;font-weight:300;color:#a29c92;padding:30px 0">Aucune activité trouvée</div>')
  +'</div>';
  setTimeout(function(){flActIconFix(doc,el);},600);
- el.querySelector('.fla-back').addEventListener('click',function(){flActHideP(el);});
- [].slice.call(el.querySelectorAll('.fla-tab')).forEach(function(b){b.addEventListener('click',function(){el._flTab=b.dataset.t;flActPick(doc);});});
+ flActBind(el.querySelector('.fla-back'),function(){flActHideP(el);});
+ [].slice.call(el.querySelectorAll('.fla-tab')).forEach(function(b){flActBind(b,function(){el._flTab=b.dataset.t;flActPick(doc);});});
  var qi=el.querySelector('.fla-q');
  qi.addEventListener('input',function(){el._flQ=qi.value;clearTimeout(el._flQT);el._flQT=setTimeout(function(){var pos=qi.selectionStart;flActPick(doc);var q2=doc.querySelector('#screen-fla-pick .fla-q');if(q2){q2.focus();try{q2.setSelectionRange(pos,pos);}catch(e){}}},260);});
- [].slice.call(el.querySelectorAll('.fla-item')).forEach(function(it){it.addEventListener('click',function(){
+ [].slice.call(el.querySelectorAll('.fla-item')).forEach(function(it){flActBind(it,function(){
   var a=FL_ACT_CAT.filter(function(x){return x.n===it.dataset.n;})[0]||(last&&last.n===it.dataset.n?last:null);
   if(!a)return;
   if(!flActSt)flActSt=flActDefaults();
