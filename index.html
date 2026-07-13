@@ -7025,6 +7025,68 @@ function flRcRow(key,lab,val,unit,dir,sparkD,gid){
 function flRcDir(cur,hist){if(cur==null)return 0;var ok=hist.filter(function(v){return v!=null;});if(ok.length<2)return 0;
  var prev=ok.slice(0,-1);var avg=prev.reduce(function(a,b){return a+b;},0)/prev.length;
  if(cur>avg+0.01)return 1;if(cur<avg-0.01)return -1;return 0;}
+/* — Tendances hebdomadaires (présentation WHOOP, DA FLINT) sous les métriques de la page Récup — */
+var FLRC_TREND=[
+ {key:'recovery',hb:'recovery',title:'R\u00c9CUP\u00c9RATION',kind:'bars',fmt:function(v){return Math.round(v)+'%';},scale:100},
+ {key:'hrv',hb:'hrv',title:'VARIABILIT\u00c9 DE LA FR\u00c9QUENCE CARDIAQUE',kind:'line',fmt:function(v){return ''+Math.round(v);}},
+ {key:'rhr',hb:'rhr',title:'FR\u00c9QUENCE CARDIAQUE AU REPOS',kind:'line',fmt:function(v){return ''+Math.round(v);}},
+ {key:'resp',hb:'resp',title:'FR\u00c9QUENCE RESPIRATOIRE',kind:'line',fmt:function(v){return (''+(+v).toFixed(1)).replace('.',',');}},
+ {key:'sleeppct',hb:'sleep',title:'VOTRE SOMMEIL',kind:'bars',fmt:function(v){return Math.round(v)+'%';},scale:100}];
+function flRcSeries(key){var out=[];var needH=8;try{needH=getProfile().need||8;}catch(e){}
+ for(var i2=6;i2>=0;i2--){var v=null;
+  try{
+   if(key==='sleeppct'){var h=mdGet('sleep',-i2);v=h!=null?Math.min(100,Math.round(h/needH*100)):null;}
+   else v=mdGet(key,-i2);
+  }catch(e){}
+  var d=new Date();d.setDate(d.getDate()-i2);
+  out.push({v:v==null?null:+v,day:['dim','lun','mar','mer','jeu','ven','sam'][d.getDay()],num:d.getDate()});}
+ return out;}
+function flRcTrendCard(T){
+ var pts=flRcSeries(T.key);var ok=pts.filter(function(p){return p.v!=null;});
+ var W=340,L=16,R=16,cw=(W-L-R)/7;
+ function cx(i2){return L+(i2+0.5)*cw;}
+ var chartTop=26,chartBot=126,labY1=150,labY2=166,H=176;
+ var inner='';
+ /* bande du jour (aujourd\u2019hui = derni\u00e8re colonne) */
+ inner+='<rect x="'+(cx(6)-21).toFixed(1)+'" y="6" width="42" height="'+(H-12)+'" rx="10" fill="#f4f1ec"></rect>';
+ if(!ok.length){
+  inner+='<text x="170" y="80" text-anchor="middle" font-family="-apple-system,system-ui,sans-serif" font-size="12.5" font-weight="300" fill="#a29c92">Pas encore de donn\u00e9es \u2014 porte ton bracelet.</text>';
+ }else{
+  var mn,mx;
+  if(T.scale){mn=0;mx=T.scale;}
+  else{mn=Math.min.apply(null,ok.map(function(p){return p.v;}));mx=Math.max.apply(null,ok.map(function(p){return p.v;}));var pad=(mx-mn)*0.35||1;mn-=pad;mx+=pad;}
+  function cy(v){return chartBot-(v-mn)/(mx-mn)*(chartBot-chartTop);}
+  /* lignes de grille discr\u00e8tes */
+  [0.25,0.5,0.75].forEach(function(f){var gy=chartTop+(chartBot-chartTop)*f;inner+='<line x1="'+L+'" y1="'+gy.toFixed(1)+'" x2="'+(W-R)+'" y2="'+gy.toFixed(1)+'" stroke="#f0ece5" stroke-width="1"></line>';});
+  if(T.kind==='bars'){
+   pts.forEach(function(p,i2){if(p.v==null)return;var x=cx(i2),y=cy(p.v);
+    inner+='<rect x="'+(x-12).toFixed(1)+'" y="'+y.toFixed(1)+'" width="24" height="'+(chartBot-y).toFixed(1)+'" rx="7" fill="#fb6015"></rect>';
+    inner+='<text x="'+x.toFixed(1)+'" y="'+(y-8).toFixed(1)+'" text-anchor="middle" font-family="Archivo,-apple-system,sans-serif" font-size="12.5" font-weight="700" fill="#14110f">'+T.fmt(p.v)+'</text>';});
+  }else{
+   /* segments entre jours cons\u00e9cutifs non nuls */
+   var d2='';var prev=null;
+   pts.forEach(function(p,i2){if(p.v==null){prev=null;return;}var x=cx(i2),y=cy(p.v);
+    d2+=(prev==null?' M ':' L ')+x.toFixed(1)+' '+y.toFixed(1);prev=p;});
+   inner+='<path d="'+d2.trim()+'" fill="none" stroke="#fb6015" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>';
+   pts.forEach(function(p,i2){if(p.v==null)return;var x=cx(i2),y=cy(p.v);
+    inner+='<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="4.4" fill="#fff" stroke="#fb6015" stroke-width="2"></circle>';
+    inner+='<text x="'+x.toFixed(1)+'" y="'+(y-11).toFixed(1)+'" text-anchor="middle" font-family="Archivo,-apple-system,sans-serif" font-size="12.5" font-weight="700" fill="#14110f">'+T.fmt(p.v)+'</text>';});
+  }
+ }
+ /* libell\u00e9s des jours */
+ pts.forEach(function(p,i2){var x=cx(i2),td=(i2===6);
+  inner+='<text x="'+x.toFixed(1)+'" y="'+labY1+'" text-anchor="middle" font-family="-apple-system,system-ui,sans-serif" font-size="11.5" font-weight="'+(td?'600':'500')+'" fill="'+(td?'#14110f':'#8a8378')+'">'+p.day+'</text>';
+  inner+='<text x="'+x.toFixed(1)+'" y="'+labY2+'" text-anchor="middle" font-family="-apple-system,system-ui,sans-serif" font-size="11" font-weight="'+(td?'600':'400')+'" fill="'+(td?'#14110f':'#b3ab9f')+'">'+p.num+'</text>';});
+ return '<div class="rc-hebdo" data-key="'+T.hb+'" style="background:#fff;border-radius:24px;padding:20px 18px 14px;box-shadow:0 3px 16px rgba(150,118,72,0.06),inset 0 0 0 1px rgba(20,17,15,0.045);margin-top:14px;cursor:pointer">'
+  +'<div style="display:flex;align-items:flex-start;gap:13px;margin-bottom:10px;padding:0 4px">'
+   +'<h2 style="flex:1;font-family:-apple-system,system-ui,sans-serif;font-size:11px;font-weight:600;letter-spacing:0.08em;line-height:1.4;margin:0;color:#8a8378">'+T.title+'</h2>'
+   +'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fb6015" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M9 18l6-6-6-6"></path></svg>'
+  +'</div>'
+  +'<svg viewBox="0 0 340 176" width="100%" style="display:block">'+inner+'</svg>'
+ +'</div>';}
+function flRcTrendsHTML(){
+ return '<h2 style="font-family:Archivo,-apple-system,system-ui,sans-serif;font-size:24px;font-weight:800;letter-spacing:-0.02em;color:#14110f;margin:34px 0 2px;display:flex;align-items:flex-end;gap:3px">Tendances hebdomadaires<span style="width:6px;height:6px;border-radius:50%;background:#fb6015;margin-bottom:5px"></span></h2>'
+  +FLRC_TREND.map(flRcTrendCard).join('');}
 function flRecupOpen(doc){try{
  var SH=!!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)||(function(){try{return localStorage.getItem('flintForceShell')==='1';}catch(e){return false;}})();
  var D;
@@ -7088,6 +7150,7 @@ function flRecupOpen(doc){try{
   +'<div style="margin-top:26px">'
    +D.rows.map(function(r2,i3){return flRcRow(r2.key,r2.lab,r2.val,r2.unit,r2.dir,r2.spark,'flrcg'+i3);}).join('')
   +'</div>'
+  +flRcTrendsHTML()
  +'</div>'
  +'<div style="flex-shrink:0;position:absolute;left:0;right:0;bottom:0;display:flex;padding:12px 26px calc(env(safe-area-inset-bottom,0px) + 16px);background:rgba(255,255,255,.92);backdrop-filter:blur(12px);box-shadow:0 -1px 0 #ececea">'
   +'<button class="rc-close" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;background:none;border:none;cursor:pointer">'
@@ -7103,10 +7166,19 @@ function flRecupOpen(doc){try{
     événements avant nos overlays body-level — le doc les reçoit toujours */
  if(!doc._flRcClose){doc._flRcClose=1;var _rcT=0;
   var rcGo=function(ev){var sc3=doc.getElementById('screen-fl-recup');if(!sc3||sc3.style.pointerEvents!=='auto')return;
-   var n=ev.target;var hit=false;while(n&&n!==doc.body){if(n.classList&&n.classList.contains('rc-close')){hit=true;break;}n=n.parentElement;}
-   if(!hit)return;var nw=Date.now();if(nw-_rcT<700)return;_rcT=nw;
+   var n=ev.target;var closeHit=false,hbKey=null;
+   while(n&&n!==doc.body){if(n.classList){
+    if(n.classList.contains('rc-close')){closeHit=true;break;}
+    if(n.classList.contains('rc-hebdo')){hbKey=n.getAttribute('data-key');break;}}
+    n=n.parentElement;}
+   if(!closeHit&&!hbKey)return;var nw=Date.now();if(nw-_rcT<700)return;_rcT=nw;
    try{ev.preventDefault();ev.stopPropagation();}catch(e){}
-   sc3.style.transform='translateX(-50%) translateY(100%)';sc3.style.pointerEvents='none';};
+   if(closeHit){sc3.style.transform='translateX(-50%) translateY(100%)';sc3.style.pointerEvents='none';return;}
+   /* carte tendance → page hebdo par-dessus la page Récup */
+   try{flOpenHebdo(hbKey);}catch(e){}
+   var raise=function(){var scr2=doc.getElementById('screen-flh-'+hbKey);if(scr2)scr2.style.setProperty('z-index','130','important');};
+   raise();setTimeout(raise,120);
+   try{haptic&&haptic(5);}catch(e){}};
   doc.addEventListener('click',rcGo,true);
   doc.addEventListener('pointerup',rcGo,true);}
  el.style.pointerEvents='auto';var sc2=el.firstChild;if(sc2)sc2.scrollTop=0;
@@ -11878,7 +11950,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v560';
+const APP_VERSION='flint-v561';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
