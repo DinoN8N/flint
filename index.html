@@ -6731,7 +6731,11 @@ function mdMarcheScrub(doc){try{var sc=doc.getElementById('screen-marche');if(!s
    orangeMarks.forEach(function(o){o.el.setAttribute(o.attr,'#cbc6bd');});
    if(areaEl){areaEl.setAttribute('fill','rgba(150,145,136,0.09)');areaEl.style.opacity='1';}
    var frag='';
-   for(var i=0;i<N;i++){if(pts[i].v>=lo&&pts[i].v<=hi){frag+='<line x1="'+pts[i].x+'" x2="'+pts[i].x+'" y1="'+pts[i].y.toFixed(1)+'" y2="'+baseY+'" stroke="'+col+'" stroke-width="1" opacity="0.30"></line>';}}
+   /* dégradé vertical des colonnes : dense au pic → se fond vers le bas (façon WHOOP) */
+   var _d2=svg.querySelector('defs');if(!_d2){_d2=doc.createElementNS(NS,'defs');svg.insertBefore(_d2,svg.firstChild);}
+   var _dg=svg.querySelector('#flZoneDrop');if(!_dg){_dg=doc.createElementNS(NS,'linearGradient');_dg.setAttribute('id','flZoneDrop');_dg.setAttribute('gradientUnits','userSpaceOnUse');_dg.setAttribute('x1','0');_dg.setAttribute('y1','14');_dg.setAttribute('x2','0');_dg.setAttribute('y2',''+baseY);_d2.appendChild(_dg);}
+   _dg.innerHTML='<stop offset="0" stop-color="'+col+'" stop-opacity="0.42"></stop><stop offset="0.55" stop-color="'+col+'" stop-opacity="0.20"></stop><stop offset="1" stop-color="'+col+'" stop-opacity="0"></stop>';
+   for(var i=0;i<N;i++){if(pts[i].v>=lo&&pts[i].v<=hi){frag+='<line x1="'+pts[i].x+'" x2="'+pts[i].x+'" y1="'+pts[i].y.toFixed(1)+'" y2="'+baseY+'" stroke="url(#flZoneDrop)" stroke-width="1"></line>';}}
    var run=null;for(var i=0;i<N;i++){var inz=pts[i].v>=lo&&pts[i].v<=hi;
     if(inz&&run==null)run=i;
     if(run!=null&&(!inz||i===N-1)){var end=inz?i:i-1;var d='M '+pts[run].x+' '+pts[run].y;for(var j=run+1;j<=end;j++)d+=' L '+pts[j].x+' '+pts[j].y;if(end===run)d+=' L '+(pts[run].x+0.6).toFixed(1)+' '+pts[run].y;frag+='<path d="'+d+'" fill="none" stroke="'+col+'" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"></path>';run=null;}}
@@ -11513,7 +11517,10 @@ function flEffWire(doc,el,o,M){
   if(line)line.setAttribute('stroke','#cbc6bd');if(area){area.setAttribute('fill','rgba(150,145,136,0.09)');}
   [].slice.call(el.querySelectorAll('.fle-zwrap')).forEach(function(w){if(!w.contains(row))w.style.opacity='0.4';});
   var frag='';
-  for(var i=0;i<COLS;i+=1){if(base[i]>=lo&&base[i]<=hi2){var x=xOf(i).toFixed(1),y=yOf(base[i]).toFixed(1);frag+='<line x1="'+x+'" x2="'+x+'" y1="'+y+'" y2="166.5" stroke="'+col+'" stroke-width="1" opacity="0.34"></line>';}}
+  var _NS='http://www.w3.org/2000/svg';var _d2=svg.querySelector('defs');if(!_d2){_d2=doc.createElementNS(_NS,'defs');svg.insertBefore(_d2,svg.firstChild);}
+  var _dg=svg.querySelector('#flZoneDropE');if(!_dg){_dg=doc.createElementNS(_NS,'linearGradient');_dg.setAttribute('id','flZoneDropE');_dg.setAttribute('gradientUnits','userSpaceOnUse');_dg.setAttribute('x1','0');_dg.setAttribute('y1','14');_dg.setAttribute('x2','0');_dg.setAttribute('y2','166.5');_d2.appendChild(_dg);}
+  _dg.innerHTML='<stop offset="0" stop-color="'+col+'" stop-opacity="0.42"></stop><stop offset="0.55" stop-color="'+col+'" stop-opacity="0.20"></stop><stop offset="1" stop-color="'+col+'" stop-opacity="0"></stop>';
+  for(var i=0;i<COLS;i+=1){if(base[i]>=lo&&base[i]<=hi2){var x=xOf(i).toFixed(1),y=yOf(base[i]).toFixed(1);frag+='<line x1="'+x+'" x2="'+x+'" y1="'+y+'" y2="166.5" stroke="url(#flZoneDropE)" stroke-width="1"></line>';}}
   var run=null;for(var i=0;i<COLS;i++){var inz=base[i]>=lo&&base[i]<=hi2;if(inz&&run==null)run=i;if(run!=null&&(!inz||i===COLS-1)){var end=inz?i:i-1;var d='M '+xOf(run).toFixed(1)+' '+yOf(base[run]).toFixed(1);for(var j=run+1;j<=end;j++)d+=' L '+xOf(j).toFixed(1)+' '+yOf(base[j]).toFixed(1);if(end===run)d+=' L '+(xOf(run)+0.6).toFixed(1)+' '+yOf(base[run]).toFixed(1);frag+='<path d="'+d+'" fill="none" stroke="'+col+'" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"></path>';run=null;}}
   hi.innerHTML=frag;
   row.style.boxShadow='inset 0 0 0 1.5px '+col;row.setAttribute('data-fl-zsel','1');
@@ -12271,7 +12278,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v585';
+const APP_VERSION='flint-v586';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
