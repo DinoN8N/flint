@@ -12012,7 +12012,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v568';
+const APP_VERSION='flint-v569';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
@@ -13030,25 +13030,10 @@ window.flAddActivity=function(doc){flActSt=flActDefaults();flActAdd(doc);};
     if(/^\d{1,2}:\d{2}$/.test(t)){if(!rtDone){rtDone=true;x.textContent=e.rightTime||'';}else{x.textContent=e.stat||'';}return;}
     if(/^[\d,.:h\s]+$/.test(t)){x.textContent=e.stat||'';return;}
     if(t===e.tpl)x.textContent=e.title;});
-   /* la maquette avale les 'click' avant la cible (gestion de tap ancêtre) :
-      on écoute AUSSI pointerup au niveau de la ligne, avec dédup + garde de drag */
-   var _pdX=0,_pdY=0,_lastGo=0;
-   c.addEventListener('pointerdown',function(ev){_pdX=ev.clientX;_pdY=ev.clientY;},true);
-   c.addEventListener('touchstart',function(ev){var t=ev.touches&&ev.touches[0];if(t){_pdX=t.clientX;_pdY=t.clientY;}},{capture:true,passive:true});
-   var goRow=function(ev){var nw=Date.now();if(nw-_lastGo<700)return;_lastGo=nw;try{ev.preventDefault();}catch(ep){}ev.stopPropagation();
-    try{
-     if(e.tap==='manuit'){flMyNight(doc,'nuit');return;}
-     if(e.tap==='masieste'){flMyNight(doc,'sieste',{dur:e.durMin||25,startMin:(e.sess&&e.sess.startMin)});return;}
-     if(e.tap&&e.tap.indexOf('meal:')===0){var mi=+e.tap.slice(5);if(typeof flNMealDetail==='function'){flNMealDetail(K,mi,true);return;}}
-     if(e.sess){window._flCurSess={K:K,startMin:e.sess.startMin,manual:!!e.sess.manual,title:e.title};window._flCurSessFresh=1;}
-     var target=orig[e.tap==='Nuit'?'Nuit':(orig[e.tpl]?e.tpl:'Marche')];if(!target)return;
-     var btn=target.querySelector('[role="button"]')||target;
-     ['pointerdown','pointerup','click'].forEach(function(t2){try{btn.dispatchEvent(new (doc.defaultView.PointerEvent||MouseEvent)(t2,{bubbles:true,cancelable:true}));}catch(e2){btn.dispatchEvent(new MouseEvent(t2,{bubbles:true,cancelable:true}));}});
-    }catch(e3){}};
-   c.addEventListener('click',goRow,true);
-   var _upGuard=function(ev){var t=(ev.changedTouches&&ev.changedTouches[0])||ev;if(Math.abs((t.clientX||0)-_pdX)>12||Math.abs((t.clientY||0)-_pdY)>12)return;goRow(ev);};
-   c.addEventListener('pointerup',_upGuard,true);
-   c.addEventListener('touchend',_upGuard,true);
+   /* la maquette avale les événements avant la cible via un handler DOC-level capture :
+      on stocke les données de routage sur la ligne, le routage se fait en délégation DOC (voir plus bas) */
+   c._flEntry=e;c._flK=K;
+   c._flRelay=orig[e.tap==='Nuit'?'Nuit':(orig[e.tpl]?e.tpl:'Marche')];
    c._flWired=1;
    return c;}
   var frag=doc.createDocumentFragment();
@@ -13062,6 +13047,29 @@ window.flAddActivity=function(doc){flActSt=flActDefaults();flActAdd(doc);};
    addRow.addEventListener('pointerdown',function(ev){_apX=ev.clientX;_apY=ev.clientY;},true);
    addRow.addEventListener('click',goAdd,true);
    addRow.addEventListener('pointerup',function(ev){if(Math.abs(ev.clientX-_apX)>12||Math.abs(ev.clientY-_apY)>12)return;goAdd(ev);},true);}
+  /* routage des taps timeline en DÉLÉGATION DOC-level capture (la maquette avale les
+     handlers par-ligne sur device) : Nuit→Ma nuit, Sieste→Ma sieste, repas→fiche, activité→relais */
+  if(!doc._flJrDeleg){doc._flJrDeleg=1;var _jx=0,_jy=0;
+   doc.addEventListener('pointerdown',function(ev){_jx=ev.clientX;_jy=ev.clientY;},true);
+   doc.addEventListener('touchstart',function(ev){var t=ev.touches&&ev.touches[0];if(t){_jx=t.clientX;_jy=t.clientY;}},{capture:true,passive:true});
+   var jrRoute=function(ev){
+    var tt=(ev.changedTouches&&ev.changedTouches[0])||ev;
+    if(ev.type!=='click'&&(Math.abs((tt.clientX||_jx)-_jx)>12||Math.abs((tt.clientY||_jy)-_jy)>12))return;
+    var n=ev.target,g=0;while(n&&n!==doc.body&&g++<12){if(n.classList&&n.classList.contains('fl-jr')&&n._flEntry)break;n=n.parentElement;}
+    if(!n||!n._flEntry)return;
+    var nw=Date.now();if(nw-(doc._flJrLast||0)<600)return;doc._flJrLast=nw;
+    try{ev.preventDefault();ev.stopPropagation();}catch(x){}
+    var e2=n._flEntry,K2=n._flK;
+    try{
+     if(e2.tap==='manuit'){flMyNight(doc,'nuit');return;}
+     if(e2.tap==='masieste'){flMyNight(doc,'sieste',{dur:e2.durMin||25,startMin:(e2.sess&&e2.sess.startMin)});return;}
+     if(e2.tap&&e2.tap.indexOf('meal:')===0){var mi=+e2.tap.slice(5);if(typeof flNMealDetail==='function'){flNMealDetail(K2,mi,true);return;}}
+     if(e2.sess){window._flCurSess={K:K2,startMin:e2.sess.startMin,manual:!!e2.sess.manual,title:e2.title};window._flCurSessFresh=1;}
+     var target=n._flRelay;if(!target)return;
+     var btn=target.querySelector('[role="button"]')||target;
+     ['pointerdown','pointerup','click'].forEach(function(t2){try{btn.dispatchEvent(new (doc.defaultView.PointerEvent||MouseEvent)(t2,{bubbles:true,cancelable:true}));}catch(e3){btn.dispatchEvent(new MouseEvent(t2,{bubbles:true,cancelable:true}));}});
+    }catch(e4){}};
+   ['click','pointerup','touchend'].forEach(function(t){doc.addEventListener(t,jrRoute,true);});}
   /* ⋯ du détail d'activité → Modifier l'activité (zone haut-droite de screen-marche) */
   if(!doc._flDots){doc._flDots=1;
    doc.addEventListener('click',function(ev){try{
