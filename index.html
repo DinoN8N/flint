@@ -6712,11 +6712,11 @@ function mdMarcheScrub(doc){try{var sc=doc.getElementById('screen-marche');if(!s
   var baseY=172,curZ=null,areaFill0=(areaEl&&areaEl.getAttribute('fill'))||null;
   function tintOf(hex,a){hex=(hex||'').replace('#','');if(hex.length===3)hex=hex.replace(/./g,'$&$&');var nn=parseInt(hex,16)||0;var R=(nn>>16)&255,G=(nn>>8)&255,B=nn&255;function mix(c){return Math.round(255*(1-a)+c*a);}return 'rgb('+mix(R)+','+mix(G)+','+mix(B)+')';}
   /* toutes les courbes tracées (base grise + surcouche orange des pics) pour pouvoir TOUT griser */
-  var curvePaths=[].slice.call(svg.querySelectorAll('path')).filter(function(p){var st=p.getAttribute('stroke');return st&&st!=='none'&&(!p.getAttribute('fill')||p.getAttribute('fill')==='none');}).map(function(p){return {p:p,s:p.getAttribute('stroke')};});
+  var curvePaths=[].slice.call(svg.querySelectorAll('path')).filter(function(p){var st=p.getAttribute('stroke');return st&&st!=='none'&&(!p.getAttribute('fill')||p.getAttribute('fill')==='none');}).map(function(p){return {p:p,s:p.getAttribute('stroke'),w:p.getAttribute('stroke-width')};});
   /* marqueurs orange (lignes verticales PLAGE HABITUELLE + points d'extrémité) à griser aussi ; on exclut le guide/halo/point de scrub */
   var orangeMarks=[].slice.call(svg.querySelectorAll('line,circle')).filter(function(el){if(el===guide||el===halo||el===dot)return false;var s=(el.getAttribute('stroke')||'').toLowerCase(),f=(el.getAttribute('fill')||'').toLowerCase();return /^#(fb6015|fdb375|fd7e14)$/.test(s)||/^#(fb6015|fdb375|fd7e14)$/.test(f);}).map(function(el){var isS=/^#(fb6015|fdb375|fd7e14)$/.test((el.getAttribute('stroke')||'').toLowerCase());return {el:el,attr:isS?'stroke':'fill',s:el.getAttribute(isS?'stroke':'fill')};});
   function zCol(t){var m=t.match(/ZONE\s*(\d)/i);var n=m?+m[1]:1;return {5:'#ff3b30',4:'#ff8a1e',3:'#f5c518',2:'#2b7fff',1:'#34c759',0:'#3a3532'}[n]||'#fb6015';}
-  function zClear(){zHi.textContent='';curvePaths.forEach(function(o){o.p.style.opacity='1';o.p.setAttribute('stroke',o.s);});orangeMarks.forEach(function(o){o.el.setAttribute(o.attr,o.s);});if(areaEl){areaEl.style.opacity='1';if(areaFill0!=null)areaEl.setAttribute('fill',areaFill0);}
+  function zClear(){zHi.textContent='';curvePaths.forEach(function(o){o.p.style.opacity='1';o.p.setAttribute('stroke',o.s);if(o.w!=null)o.p.setAttribute('stroke-width',o.w);else o.p.removeAttribute('stroke-width');});orangeMarks.forEach(function(o){o.el.setAttribute(o.attr,o.s);});if(areaEl){areaEl.style.opacity='1';if(areaFill0!=null)areaEl.setAttribute('fill',areaFill0);}
    [].slice.call(sc.querySelectorAll('[data-fl-zsel]')).forEach(function(r){r.style.removeProperty('box-shadow');r.style.removeProperty('background');if(r._flBs)r.style.setProperty('box-shadow',r._flBs);if(r._flBg)r.style.setProperty('background',r._flBg);r._flBs=null;r._flBg=null;r.removeAttribute('data-fl-zsel');});curZ=null;}
   function zShow(row){var t=(row.textContent||'').replace(/\s+/g,' ');var lo=0,hi=9999,mm;
    if((mm=t.match(/[>+]\s*(?:DE )?(\d+)/i)))lo=+mm[1];
@@ -6727,14 +6727,14 @@ function mdMarcheScrub(doc){try{var sc=doc.getElementById('screen-marche');if(!s
    zClear();curZ=row;
    var col=zCol(t);
    /* toutes les courbes (base + pics orange) + l'aire deviennent GRISES ; seuls les segments de la zone gardent la couleur */
-   curvePaths.forEach(function(o){o.p.setAttribute('stroke','#cbc6bd');o.p.style.opacity='1';});
+   curvePaths.forEach(function(o){o.p.setAttribute('stroke','#cbc6bd');o.p.setAttribute('stroke-width','1');o.p.style.opacity='1';});
    orangeMarks.forEach(function(o){o.el.setAttribute(o.attr,'#cbc6bd');});
    if(areaEl){areaEl.setAttribute('fill','rgba(150,145,136,0.09)');areaEl.style.opacity='1';}
    var frag='';
-   for(var i=0;i<N;i++){if(pts[i].v>=lo&&pts[i].v<=hi){frag+='<line x1="'+pts[i].x+'" x2="'+pts[i].x+'" y1="'+pts[i].y.toFixed(1)+'" y2="'+baseY+'" stroke="'+col+'" stroke-width="1.1" opacity="0.34"></line>';}}
+   for(var i=0;i<N;i++){if(pts[i].v>=lo&&pts[i].v<=hi){frag+='<line x1="'+pts[i].x+'" x2="'+pts[i].x+'" y1="'+pts[i].y.toFixed(1)+'" y2="'+baseY+'" stroke="'+col+'" stroke-width="1" opacity="0.30"></line>';}}
    var run=null;for(var i=0;i<N;i++){var inz=pts[i].v>=lo&&pts[i].v<=hi;
     if(inz&&run==null)run=i;
-    if(run!=null&&(!inz||i===N-1)){var end=inz?i:i-1;var d='M '+pts[run].x+' '+pts[run].y;for(var j=run+1;j<=end;j++)d+=' L '+pts[j].x+' '+pts[j].y;if(end===run)d+=' L '+(pts[run].x+0.6).toFixed(1)+' '+pts[run].y;frag+='<path d="'+d+'" fill="none" stroke="'+col+'" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path>';run=null;}}
+    if(run!=null&&(!inz||i===N-1)){var end=inz?i:i-1;var d='M '+pts[run].x+' '+pts[run].y;for(var j=run+1;j<=end;j++)d+=' L '+pts[j].x+' '+pts[j].y;if(end===run)d+=' L '+(pts[run].x+0.6).toFixed(1)+' '+pts[run].y;frag+='<path d="'+d+'" fill="none" stroke="'+col+'" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"></path>';run=null;}}
    zHi.innerHTML=frag;
    /* contour + halo léger sur la CARTE entière, à la couleur de la zone */
    var card=row;for(var cc=0;cc<7&&card&&card!==sc;cc++){var br=0;try{br=parseFloat((doc.defaultView||window).getComputedStyle(card).borderRadius)||0;}catch(e){}if(br>=12&&card.getBoundingClientRect().width>250)break;card=card.parentElement;}
@@ -11514,7 +11514,7 @@ function flEffWire(doc,el,o,M){
   [].slice.call(el.querySelectorAll('.fle-zwrap')).forEach(function(w){if(!w.contains(row))w.style.opacity='0.4';});
   var frag='';
   for(var i=0;i<COLS;i+=1){if(base[i]>=lo&&base[i]<=hi2){var x=xOf(i).toFixed(1),y=yOf(base[i]).toFixed(1);frag+='<line x1="'+x+'" x2="'+x+'" y1="'+y+'" y2="166.5" stroke="'+col+'" stroke-width="1" opacity="0.34"></line>';}}
-  var run=null;for(var i=0;i<COLS;i++){var inz=base[i]>=lo&&base[i]<=hi2;if(inz&&run==null)run=i;if(run!=null&&(!inz||i===COLS-1)){var end=inz?i:i-1;var d='M '+xOf(run).toFixed(1)+' '+yOf(base[run]).toFixed(1);for(var j=run+1;j<=end;j++)d+=' L '+xOf(j).toFixed(1)+' '+yOf(base[j]).toFixed(1);if(end===run)d+=' L '+(xOf(run)+0.6).toFixed(1)+' '+yOf(base[run]).toFixed(1);frag+='<path d="'+d+'" fill="none" stroke="'+col+'" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"></path>';run=null;}}
+  var run=null;for(var i=0;i<COLS;i++){var inz=base[i]>=lo&&base[i]<=hi2;if(inz&&run==null)run=i;if(run!=null&&(!inz||i===COLS-1)){var end=inz?i:i-1;var d='M '+xOf(run).toFixed(1)+' '+yOf(base[run]).toFixed(1);for(var j=run+1;j<=end;j++)d+=' L '+xOf(j).toFixed(1)+' '+yOf(base[j]).toFixed(1);if(end===run)d+=' L '+(xOf(run)+0.6).toFixed(1)+' '+yOf(base[run]).toFixed(1);frag+='<path d="'+d+'" fill="none" stroke="'+col+'" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"></path>';run=null;}}
   hi.innerHTML=frag;
   row.style.boxShadow='inset 0 0 0 1.5px '+col;row.setAttribute('data-fl-zsel','1');
   try{haptic&&haptic(4);}catch(e){}}
@@ -12271,7 +12271,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v583';
+const APP_VERSION='flint-v584';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
