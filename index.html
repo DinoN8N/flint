@@ -6875,11 +6875,11 @@ function flMnBuildCard(o){var SANS=FLMN_SANS,HN=FLMN_HN;var word=o.word||'NUIT';
   +'</div>'
   +'<div class="mnsub" style="font-size:13px;font-weight:300;color:#a2a09c;margin-top:2px;min-height:16px">'+(o.moy?'moy. '+o.moy:'')+'</div>'
   +'<div style="margin-top:10px;position:relative"><svg viewBox="0 0 340 198" width="100%" style="display:block;overflow:visible">'
-   +'<defs><linearGradient id="flMnGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#fb6015" stop-opacity="0.24"></stop><stop offset="50%" stop-color="#fb6015" stop-opacity="0.1"></stop><stop offset="85%" stop-color="#fb6015" stop-opacity="0.015"></stop><stop offset="100%" stop-color="#fb6015" stop-opacity="0"></stop></linearGradient></defs>'
+   +'<defs><linearGradient id="flMnGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#fb6015" stop-opacity="0.24"></stop><stop offset="50%" stop-color="#fb6015" stop-opacity="0.1"></stop><stop offset="85%" stop-color="#fb6015" stop-opacity="0.015"></stop><stop offset="100%" stop-color="#fb6015" stop-opacity="0"></stop></linearGradient><linearGradient id="sleepMarkFade" x1="0" y1="16" x2="0" y2="168" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#14110f" stop-opacity="0.03"></stop><stop offset="1" stop-color="#14110f" stop-opacity="0.30"></stop></linearGradient></defs>'
    +'<path d="'+o.line+' L 336 168 L 16 168 Z" fill="url(#flMnGrad)" stroke="none"></path>'
    +yl
-   +'<line x1="16" y1="16" x2="16" y2="168" stroke="#d9d6d1" stroke-width="1" stroke-dasharray="3 3"></line><line x1="336" y1="16" x2="336" y2="168" stroke="#d9d6d1" stroke-width="1" stroke-dasharray="3 3"></line>'
-   +'<circle cx="16" cy="168" r="2.6" fill="#fb6015"></circle><circle cx="336" cy="168" r="2.6" fill="#fb6015"></circle>'
+   +'<line x1="16" y1="16" x2="16" y2="168" stroke="url(#sleepMarkFade)" stroke-width="1" stroke-dasharray="3 3"></line><line x1="336" y1="16" x2="336" y2="168" stroke="url(#sleepMarkFade)" stroke-width="1" stroke-dasharray="3 3"></line>'
+   +'<circle cx="16" cy="168" r="2.6" fill="#8a857c"></circle><circle cx="336" cy="168" r="2.6" fill="#8a857c"></circle>'
    +'<path class="mnline" d="'+o.line+'" fill="none" stroke="#fb6015" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round" style="transition:stroke .2s ease"></path>'
    +'<g class="mnhi"></g>'
    +'<g class="mnscrub" opacity="0" style="transition:opacity .18s ease;pointer-events:none">'
@@ -12226,7 +12226,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v576';
+const APP_VERSION='flint-v577';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
