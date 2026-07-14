@@ -6702,8 +6702,11 @@ function mdMarcheScrub(doc){try{var sc=doc.getElementById('screen-marche');if(!s
     verticaux transparents jusqu'en bas ; les moments hors zone s'estompent ── */
  if(!svg._flZoneWired){svg._flZoneWired=1;
   var zHi=doc.createElementNS(NS,'g');zHi.style.pointerEvents='none';svg.appendChild(zHi);
-  var baseY=172,curZ=null;
-  function zClear(){zHi.textContent='';[pel,areaEl].forEach(function(e){if(e)e.style.opacity='1';});
+  var baseY=172,curZ=null,areaFill0=(areaEl&&areaEl.getAttribute('fill'))||null;
+  /* toutes les courbes tracées (base grise + surcouche orange des pics) pour pouvoir TOUT griser */
+  var curvePaths=[].slice.call(svg.querySelectorAll('path')).filter(function(p){var st=p.getAttribute('stroke');return st&&st!=='none'&&(!p.getAttribute('fill')||p.getAttribute('fill')==='none');}).map(function(p){return {p:p,s:p.getAttribute('stroke')};});
+  function zCol(t){var m=t.match(/ZONE\s*(\d)/i);var n=m?+m[1]:1;return {5:'#e5342b',4:'#f5842a',3:'#efab1e',2:'#3a86e0',1:'#46ac47',0:'#4a453d'}[n]||'#fb6015';}
+  function zClear(){zHi.textContent='';curvePaths.forEach(function(o){o.p.style.opacity='1';o.p.setAttribute('stroke',o.s);});if(areaEl){areaEl.style.opacity='1';if(areaFill0!=null)areaEl.setAttribute('fill',areaFill0);}
    [].slice.call(sc.querySelectorAll('[data-fl-zsel]')).forEach(function(r){r.style.boxShadow='';r.removeAttribute('data-fl-zsel');});curZ=null;}
   function zShow(row){var t=(row.textContent||'').replace(/\s+/g,' ');var lo=0,hi=9999,mm;
    if((mm=t.match(/[>+]\s*(?:DE )?(\d+)/i)))lo=+mm[1];
@@ -6712,14 +6715,17 @@ function mdMarcheScrub(doc){try{var sc=doc.getElementById('screen-marche');if(!s
    else return;
    if(curZ===row){zClear();return;}
    zClear();curZ=row;
-   [pel,areaEl].forEach(function(e){if(e)e.style.opacity='0.26';});
+   var col=zCol(t);
+   /* toutes les courbes (base + pics orange) + l'aire deviennent GRISES ; seuls les segments de la zone gardent la couleur */
+   curvePaths.forEach(function(o){o.p.setAttribute('stroke','#cbc6bd');o.p.style.opacity='1';});
+   if(areaEl){areaEl.setAttribute('fill','rgba(150,145,136,0.09)');areaEl.style.opacity='1';}
    var frag='';
-   for(var i=0;i<N;i++){if(pts[i].v>=lo&&pts[i].v<=hi){frag+='<line x1="'+pts[i].x+'" x2="'+pts[i].x+'" y1="'+pts[i].y.toFixed(1)+'" y2="'+baseY+'" stroke="#fb6015" stroke-width="1.1" opacity="0.13"></line>';}}
+   for(var i=0;i<N;i++){if(pts[i].v>=lo&&pts[i].v<=hi){frag+='<line x1="'+pts[i].x+'" x2="'+pts[i].x+'" y1="'+pts[i].y.toFixed(1)+'" y2="'+baseY+'" stroke="'+col+'" stroke-width="1.1" opacity="0.34"></line>';}}
    var run=null;for(var i=0;i<N;i++){var inz=pts[i].v>=lo&&pts[i].v<=hi;
     if(inz&&run==null)run=i;
-    if(run!=null&&(!inz||i===N-1)){var end=inz?i:i-1;var d='M '+pts[run].x+' '+pts[run].y;for(var j=run+1;j<=end;j++)d+=' L '+pts[j].x+' '+pts[j].y;if(end===run)d+=' L '+(pts[run].x+0.6).toFixed(1)+' '+pts[run].y;frag+='<path d="'+d+'" fill="none" stroke="#fb6015" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path>';run=null;}}
+    if(run!=null&&(!inz||i===N-1)){var end=inz?i:i-1;var d='M '+pts[run].x+' '+pts[run].y;for(var j=run+1;j<=end;j++)d+=' L '+pts[j].x+' '+pts[j].y;if(end===run)d+=' L '+(pts[run].x+0.6).toFixed(1)+' '+pts[run].y;frag+='<path d="'+d+'" fill="none" stroke="'+col+'" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path>';run=null;}}
    zHi.innerHTML=frag;
-   row.style.boxShadow='inset 0 0 0 1.5px rgba(251,96,21,0.85)';row.setAttribute('data-fl-zsel','1');
+   row.style.boxShadow='inset 0 0 0 1.5px '+col;row.setAttribute('data-fl-zsel','1');
    try{haptic&&haptic(4);}catch(e){}}
   var _zx=0,_zy=0,_zt=0;
   doc.addEventListener('pointerdown',function(ev){_zx=ev.clientX;_zy=ev.clientY;},true);
@@ -12226,7 +12232,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v578';
+const APP_VERSION='flint-v579';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
