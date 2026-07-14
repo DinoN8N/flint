@@ -11327,7 +11327,9 @@ function flEffData(doc){
  if(w&&w.hr&&startMin!=null){var win=w.hr.filter(function(x){return x[0]>=startMin&&x[0]<=startMin+dur;}).map(function(x){return x[1];});if(win.length>=25)hr=win;}
  var real=!!hr;if(!hr)hr=actHRSeries();
  var COLS=300,base=[];for(var i=0;i<COLS;i++)base.push(hr[Math.min(hr.length-1,Math.floor(i*hr.length/COLS))]);
- var zones=genZones(base,totSec);
+ var FLEFF_Z=[{z:5,lab:'ZONE 5',range:'> 181 BPM',col:'#e5342b',lo:181,hi:9999},{z:4,lab:'ZONE 4',range:'168 – 180 BPM',col:'#f5842a',lo:168,hi:180},{z:3,lab:'ZONE 3',range:'156 – 167 BPM',col:'#efab1e',lo:156,hi:167},{z:2,lab:'ZONE 2',range:'143 – 155 BPM',col:'#3a86e0',lo:143,hi:155},{z:1,lab:'ZONE 1',range:'118 – 142 BPM',col:'#46ac47',lo:118,hi:142},{z:0,lab:'ZONE 0',range:'< 118 BPM',col:'#4a453d',lo:0,hi:117}];
+ var _zc=[0,0,0,0,0,0];base.forEach(function(v){for(var kk=0;kk<6;kk++){if(v>=FLEFF_Z[kk].lo&&v<=FLEFF_Z[kk].hi){_zc[kk]++;break;}}});
+ var zones=FLEFF_Z.map(function(z,kk){var frac=_zc[kk]/base.length,sec=Math.round(frac*totSec),pct=frac===0?'0 %':(frac<0.01?'<1 %':Math.round(frac*100)+' %');return Object.assign({},z,{pct:pct,dur:hmsFull(sec),frac:frac});});
  var avg=Math.round(base.reduce(function(a,b){return a+b;},0)/base.length);
  var mx=Math.round(Math.max.apply(null,base));
  var KC={1:6,2:8,3:10,4:13};var intv=(sess&&sess.int)||2;
@@ -11370,9 +11372,9 @@ function flEffOpen(doc){try{var o=flEffData(doc);
  var durVal=o.dur<60?o.dur:(Math.floor(o.dur/60)+'h'+String(o.dur%60).padStart(2,'0'));
  var durUnit=o.dur<60?'min':'';
  /* zones (design) */
- var zHTML=o.zones.map(function(z,i){var accent=ZPCOL[z.z]||z.col;var frac=z.frac||0;var tm=z.dur.match(/(\d+):(\d{2}):(\d{2})/);var tMain=tm?(tm[1]+':'+tm[2]):z.dur,tSec=tm?(':'+tm[3]):'';
+ var zHTML=o.zones.map(function(z,i){var accent=z.col;var frac=z.frac||0;var tm=z.dur.match(/(\d+):(\d{2}):(\d{2})/);var tMain=tm?(tm[1]+':'+tm[2]):z.dur,tSec=tm?(':'+tm[3]):'';
   return '<div class="fle-zwrap" style="display:flex;align-items:stretch;transition:opacity .2s ease">'
-   +'<div class="fle-zrow" data-lo="'+z.lo+'" data-hi="'+z.hi+'" style="flex:1;display:flex;align-items:center;gap:12px;background:#fff;border-radius:15px;padding:13px 15px 13px 11px;cursor:pointer;box-shadow:inset 0 0 0 1px rgba(20,17,15,0.05);transition:box-shadow .2s ease,background .2s ease">'
+   +'<div class="fle-zrow" data-lo="'+z.lo+'" data-hi="'+z.hi+'" style="flex:1;display:flex;align-items:center;gap:12px;background:#fff;border-radius:15px;padding:13px 15px 13px 11px;cursor:pointer;box-shadow:inset 0 0 0 1px rgba(20,17,15,0.045);transition:box-shadow .2s ease,background .2s ease">'
     +'<div style="width:5px;flex-shrink:0;align-self:stretch;border-radius:100px;background:'+accent+'"></div>'
     +'<div style="width:92px;flex-shrink:0"><div style="font-family:-apple-system,system-ui,sans-serif;font-size:14.5px;font-weight:600;color:#14110f">'+z.lab+'</div><div style="font-family:-apple-system,system-ui,sans-serif;font-size:11px;font-weight:500;color:#9a938a;margin-top:2px">'+z.range+'</div></div>'
     +'<div style="width:40px;flex-shrink:0;font-family:-apple-system,system-ui,sans-serif;font-size:13.5px;font-weight:600;color:'+accent+'">'+z.pct+'</div>'
@@ -11458,7 +11460,7 @@ function flEffWire(doc,el,o,M){
  /* surlignage de zone */
  var curZ=null;
  function zClear(){hi.textContent='';[line,area].forEach(function(e){if(e)e.style.opacity='1';});
-  [].slice.call(el.querySelectorAll('[data-fl-zsel]')).forEach(function(r){r.style.boxShadow='inset 0 0 0 1px rgba(20,17,15,0.05)';r.removeAttribute('data-fl-zsel');});
+  [].slice.call(el.querySelectorAll('[data-fl-zsel]')).forEach(function(r){r.style.boxShadow='inset 0 0 0 1px rgba(20,17,15,0.045)';r.removeAttribute('data-fl-zsel');});
   [].slice.call(el.querySelectorAll('.fle-zwrap')).forEach(function(w){w.style.opacity='1';});curZ=null;}
  function zShow(row){var lo=+row.getAttribute('data-lo'),hi2=+row.getAttribute('data-hi');
   if(curZ===row){zClear();return;}zClear();curZ=row;
@@ -12223,7 +12225,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v574';
+const APP_VERSION='flint-v575';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
