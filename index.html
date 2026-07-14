@@ -6810,6 +6810,150 @@ function mdDashUniform(doc){try{var tb=doc.getElementById('screen-tableau');if(!
    « Efficacité du sommeil » alignés sur le style fin/gris des titres du bas (Temps de sommeil
    effectif…), h2 hebdo un peu plus gros, et carte MA NUIT remplacée par le design
    « MA NUIT - carte.html » (démo = valeurs du design ; coquille = vraie nuit). */
+/* ═══ Carte MA NUIT / MA SIESTE — constructeur + interactions PARTAGÉS (page Sommeil ET tap timeline) ═══ */
+var FLMN_SANS='-apple-system,system-ui,sans-serif';
+var FLMN_HN="'Helvetica Neue',Arial,sans-serif";
+function flMnHm(min){min=Math.max(0,Math.round(min));return Math.floor(min/60)+':'+String(min%60).padStart(2,'0');}
+function flMnClk(min){min=((Math.round(min)%1440)+1440)%1440;return String(Math.floor(min/60)).padStart(2,'0')+':'+String(min%60).padStart(2,'0');}
+function flMnStadeRow(sub,lab,col,pctTxt,barPct,timeTxt,stKey){var SANS=FLMN_SANS;
+ return '<div style="display:flex;align-items:stretch"><div class="mnrow" data-st="'+stKey+'" style="flex:1;display:flex;align-items:center;gap:12px;background:#fffdfb;border-radius:15px;padding:14px 15px 14px 11px;box-shadow:inset 0 0 0 1px rgba(20,17,15,0.05);cursor:pointer;transition:box-shadow .18s ease">'
+  +'<div style="width:5px;flex-shrink:0;align-self:stretch;border-radius:100px;background:'+col+'"></div>'
+  +'<div style="width:106px;flex-shrink:0;min-height:33px;display:flex;flex-direction:column;justify-content:center"><div style="font-family:'+SANS+';font-size:11px;font-weight:500;color:#9a938a">'+sub+'</div><div style="font-family:Archivo,'+SANS+';font-size:13px;font-weight:600;letter-spacing:0.14em;color:#14110f;margin-top:2px">'+lab+'</div></div>'
+  +'<div style="width:40px;flex-shrink:0;font-family:'+SANS+';font-size:13.5px;font-weight:600;color:'+col+'">'+pctTxt+'</div>'
+  +'<div style="flex:1;height:8px;border-radius:5px;background:#f4eee7;position:relative;overflow:hidden"><div style="position:absolute;left:0;top:0;bottom:0;width:'+barPct+'%;border-radius:5px;background:'+col+'"></div></div>'
+  +'<div style="width:52px;flex-shrink:0;text-align:right;font-family:'+SANS+';font-size:15px;font-weight:600;color:#14110f">'+timeTxt+'<span style="font-size:11px;font-weight:500;color:#b3ab9f">:00</span></div>'
+ +'</div></div>';}
+function flMnBuildCard(o){var SANS=FLMN_SANS,HN=FLMN_HN;var word=o.word||'NUIT';
+ var head='<div style="display:flex;align-items:center;justify-content:space-between">'
+  +'<span style="font-size:12px;font-weight:500;letter-spacing:0.14em;color:#14110f"><span style="display:inline-block;padding-bottom:4px;border-bottom:2.5px solid #fb6015">MA</span> '+word+'</span>'
+  +'<span style="width:50px;height:50px;border-radius:50%;background:#faf6f2;display:flex;align-items:center;justify-content:center;transform:translate(-3px,4px)"><svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="#fb6015" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path></svg></span>'
+ +'</div>';
+ if(o.empty)return head
+  +'<div style="font-family:'+HN+';font-size:40px;font-weight:500;letter-spacing:-0.03em;color:#14110f;line-height:1;margin-top:9px">—</div>'
+  +'<div style="font-family:'+SANS+';font-size:13px;font-weight:300;color:#a2a09c;margin-top:10px;line-height:1.5">Porte ton bracelet cette nuit — ta nuit s’affichera ici.</div>';
+ var yl=[110,90,70,50,30].map(function(v,ix){return '<text x="9" y="'+(23.7+ix*37.05).toFixed(1)+'" text-anchor="end" font-family="'+HN.replace(/"/g,"&quot;")+'" font-size="11" font-weight="400" fill="#a49d92">'+v+'</text>';}).join('');
+ return head
+  +'<div style="display:flex;align-items:baseline;gap:6px;margin-top:9px">'
+   +'<span class="mnbig" style="font-family:'+HN+';font-size:40px;font-weight:500;letter-spacing:-0.03em;color:#14110f;line-height:1">'+o.big+'</span>'
+   +(o.up?'<svg class="mnarrow" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fb6015" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="transition:opacity .2s ease"><path d="M12 19V5M5 12l7-7 7 7"></path></svg>':'')
+   +'<span class="mnunit" style="font-family:'+HN+';font-size:18px;font-weight:300;color:#a2a09c;opacity:0;transition:opacity .2s ease">bpm</span>'
+  +'</div>'
+  +'<div class="mnsub" style="font-size:13px;font-weight:300;color:#a2a09c;margin-top:2px;min-height:16px">'+(o.moy?'moy. '+o.moy:'')+'</div>'
+  +'<div style="margin-top:10px;position:relative"><svg viewBox="0 0 340 198" width="100%" style="display:block;overflow:visible">'
+   +'<defs><linearGradient id="flMnGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#fb6015" stop-opacity="0.24"></stop><stop offset="50%" stop-color="#fb6015" stop-opacity="0.1"></stop><stop offset="85%" stop-color="#fb6015" stop-opacity="0.015"></stop><stop offset="100%" stop-color="#fb6015" stop-opacity="0"></stop></linearGradient></defs>'
+   +'<path d="'+o.line+' L 336 168 L 16 168 Z" fill="url(#flMnGrad)" stroke="none"></path>'
+   +yl
+   +'<line x1="16" y1="16" x2="16" y2="168" stroke="#d9d6d1" stroke-width="1" stroke-dasharray="3 3"></line><line x1="336" y1="16" x2="336" y2="168" stroke="#d9d6d1" stroke-width="1" stroke-dasharray="3 3"></line>'
+   +'<circle cx="16" cy="168" r="2.6" fill="#fb6015"></circle><circle cx="336" cy="168" r="2.6" fill="#fb6015"></circle>'
+   +'<path class="mnline" d="'+o.line+'" fill="none" stroke="#fb6015" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round" style="transition:stroke .2s ease"></path>'
+   +'<g class="mnhi"></g>'
+   +'<g class="mnscrub" opacity="0" style="transition:opacity .18s ease;pointer-events:none">'
+    +'<line x1="16" x2="16" y1="16" y2="168" stroke="#fb6015" stroke-width="1.1"></line>'
+    +'<circle class="mnhalo" r="9" fill="rgba(251,96,21,0.20)"></circle>'
+    +'<circle class="mndot" r="3.6" fill="#fb6015" stroke="#fff" stroke-width="1.6"></circle>'
+   +'</g>'
+   +'<text x="16" y="192" text-anchor="middle" font-family="'+HN.replace(/"/g,"&quot;")+'" font-size="10.5" font-weight="400" fill="#14110f">'+o.t0+'</text>'
+   +'<text x="336" y="192" text-anchor="middle" font-family="'+HN.replace(/"/g,"&quot;")+'" font-size="10.5" font-weight="400" fill="#14110f">'+o.t1+'</text>'
+  +'</svg></div>'
+  +'<div style="display:flex;align-items:center;justify-content:space-between;margin-top:15px;padding-top:14px;border-top:1px solid #f0ece5">'
+   +'<span style="font-size:11px;font-weight:500;letter-spacing:0.14em;color:#14110f">STADES DE SOMMEIL</span>'
+   +'<span style="display:flex;align-items:baseline;gap:9px"><span style="font-size:11px;font-weight:400;letter-spacing:0.12em;color:#a2a09c">DURÉE</span><span style="font-family:'+HN+';font-size:14px;font-weight:400;color:#14110f">'+o.duree+'</span></span>'
+  +'</div>'
+  +'<div style="margin-top:11px;display:flex;flex-direction:column;gap:7px">'
+   +flMnStadeRow('Sommeil','PROFOND','#cc3d00',o.deepPct+' %',Math.max(o.deepPct,6),flMnHm(o.deep),'deep')
+   +flMnStadeRow('Sommeil','LÉGER','#fb6015',o.lightPct+' %',Math.max(o.lightPct,6),flMnHm(o.light),'light')
+   +flMnStadeRow('','RÉVEIL','#f6c3a3',o.awakePct+' %',Math.max(o.awakePct,6),flMnHm(o.awake),'awake')
+  +'</div>';}
+function flMnWire(doc,nu,o){if(o.empty||!o.pts||o.pts.length<=1)return;try{(function(){
+ var svg=nu.querySelector('svg[viewBox="0 0 340 198"]');if(!svg)return;
+ var pts=o.pts,bed=o.bed||0,span=o.span||480,COLS=pts.length;
+ var NSs='http://www.w3.org/2000/svg';
+ function xOf(i){return 16+i*320/(COLS-1);}
+ function yOf(b){return 16+(110-Math.max(30,Math.min(110,b)))/80*152;}
+ var hi=svg.querySelector('.mnhi'),sg=svg.querySelector('.mnscrub'),base=svg.querySelector('.mnline');
+ var gl=sg.querySelector('line'),halo=sg.querySelector('.mnhalo'),dot=sg.querySelector('.mndot');
+ var big=nu.querySelector('.mnbig'),unit=nu.querySelector('.mnunit'),arrow=nu.querySelector('.mnarrow'),sub=nu.querySelector('.mnsub');
+ var subRest=(o.moy?'moy. '+o.moy:'');
+ var sorted=pts.slice().sort(function(a,b){return a-b;});
+ function q(p){return sorted[Math.max(0,Math.min(sorted.length-1,Math.floor(p*sorted.length)))];}
+ var dc=q((o.deepPct||0)/100),ac=q(1-(o.awakePct||0)/100);
+ function stOf(b){return ((o.awakePct||0)>0&&b>=ac)?'awake':(b<=dc?'deep':'light');}
+ function showAt(cx){var r=svg.getBoundingClientRect();if(!r.width)return;
+  var fx=(cx-r.left)/r.width*340;var i=Math.max(0,Math.min(COLS-1,Math.round((fx-16)/320*(COLS-1))));
+  var x=xOf(i),y=yOf(pts[i]);
+  gl.setAttribute('x1',x);gl.setAttribute('x2',x);
+  halo.setAttribute('cx',x);halo.setAttribute('cy',y);dot.setAttribute('cx',x);dot.setAttribute('cy',y);
+  if(big)big.textContent=Math.round(pts[i]);
+  if(unit)unit.style.opacity='1';
+  if(arrow)arrow.style.opacity='0';
+  if(sub)sub.textContent=flMnClk(bed+i/(COLS-1)*span);
+  sg.setAttribute('opacity','1');}
+ function restoreHead(){if(big)big.textContent=o.big;if(unit)unit.style.opacity='0';if(arrow)arrow.style.opacity='1';if(sub)sub.textContent=subRest;}
+ var scr=false;svg.style.touchAction='none';svg.style.cursor='crosshair';
+ svg.addEventListener('pointerdown',function(ev){scr=true;try{svg.setPointerCapture(ev.pointerId);}catch(e){}showAt(ev.clientX);try{haptic&&haptic(3);}catch(e){}});
+ svg.addEventListener('pointermove',function(ev){if(scr)showAt(ev.clientX);});
+ ['pointerup','pointercancel'].forEach(function(t){svg.addEventListener(t,function(){scr=false;sg.setAttribute('opacity','0');restoreHead();});});
+ var COLMAP={deep:'#cc3d00',light:'#fb6015',awake:'#f6c3a3'};
+ var cur=null;
+ function clearHi(){hi.innerHTML='';base.setAttribute('stroke','#fb6015');cur=null;
+  [].slice.call(nu.querySelectorAll('.mnrow')).forEach(function(rw){rw.style.boxShadow='inset 0 0 0 1px rgba(20,17,15,0.05)';});}
+ function selectSt(stKey,row){if(cur===stKey){clearHi();return;}clearHi();cur=stKey;
+  base.setAttribute('stroke','#e8e2d9');
+  var runs=[],run=null;
+  for(var i2=0;i2<COLS;i2++){var is=stOf(pts[i2])===stKey;
+   if(is&&run==null)run=i2;
+   if(run!=null&&(!is||i2===COLS-1)){runs.push([run,is?i2:i2-1]);run=null;}}
+  var PAD=2;runs=runs.map(function(r){return [Math.max(0,r[0]-PAD),Math.min(COLS-1,r[1]+PAD)];});
+  var merged=[];runs.forEach(function(r){var L=merged[merged.length-1];if(L&&r[0]<=L[1]+1){L[1]=Math.max(L[1],r[1]);}else merged.push(r.slice());});
+  var d3=merged.map(function(r){var seg='M '+xOf(r[0]).toFixed(1)+' '+yOf(pts[r[0]]).toFixed(1);
+   for(var i3=r[0]+1;i3<=r[1];i3++)seg+=' L '+xOf(i3).toFixed(1)+' '+yOf(pts[i3]).toFixed(1);
+   return seg;}).join(' ');
+  var pth=doc.createElementNS(NSs,'path');
+  pth.setAttribute('d',d3);pth.setAttribute('fill','none');pth.setAttribute('stroke',COLMAP[stKey]);
+  pth.setAttribute('stroke-width','2.4');pth.setAttribute('stroke-linecap','round');pth.setAttribute('stroke-linejoin','round');
+  hi.appendChild(pth);
+  row.style.boxShadow='inset 0 0 0 1.5px '+COLMAP[stKey];
+  try{haptic&&haptic(4);}catch(e){}}
+ [].slice.call(nu.querySelectorAll('.mnrow')).forEach(function(rw){
+  var st2=rw.getAttribute('data-st'),lt=0;
+  function go2(){var nw=Date.now();if(nw-lt<500)return;lt=nw;selectSt(st2,rw);}
+  rw.addEventListener('click',function(ev){ev.preventDefault();ev.stopPropagation();go2();},true);
+  rw.addEventListener('pointerup',function(){go2();},true);
+ });
+})();}catch(e){}}
+function flMnComputeNuit(doc){
+ var n=null;try{n=sleepNight(tk(0));}catch(e){}
+ if(!n||!(n.asleep>0||n.sleepMin>0))return {empty:true,sig:'vide'};
+ var asleep=n.asleep||n.sleepMin||0,tib=n.timeInBed||asleep,bed=n.bedMin!=null?n.bedMin:0,wake=n.wakeMin!=null?n.wakeMin:0;
+ var deep=n.deep||0,light=(n.light||0)+(n.rem||0),awake=n.awake||0;
+ var tot7=0,nn=0;for(var k2=1;k2<=7;k2++){try{var s2=sensorOf(tk(-k2));if(s2&&s2.sleepMin){tot7+=s2.sleepMin;nn++;}}catch(e){}}
+ var moy=nn?Math.round(tot7/nn):null;
+ var span=((wake-bed)%1440+1440)%1440||1;var samples=[];
+ function grab(key,fromMin,toMin,offset){try{var w2=DB.get(key,null);if(!w2||!w2.hr)return;w2.hr.forEach(function(p2){var mn=p2[0];if(mn>=fromMin&&mn<=toMin)samples.push([mn+offset-bed,p2[1]]);});}catch(e){}}
+ var K0=tk(0),Km1=tk(-1);
+ if(bed<=wake){grab('watch_'+K0,bed,wake,0);}else{grab('watch_'+Km1,bed,1440,0);grab('watch_'+K0,0,wake,1440);}
+ var COLS=132,buck=[];for(var c2=0;c2<COLS;c2++)buck.push([]);
+ samples.forEach(function(p2){var c3=Math.max(0,Math.min(COLS-1,Math.floor(p2[0]/span*COLS)));buck[c3].push(p2[1]);});
+ var last=null,pts=[];for(var c4=0;c4<COLS;c4++){var b2=buck[c4];var v2=b2.length?b2.reduce(function(a3,x3){return a3+x3;},0)/b2.length:last;if(v2==null)v2=55;last=v2;pts.push(v2);}
+ var d2='';pts.forEach(function(bpm,ix){var y2=16+(110-Math.max(30,Math.min(110,bpm)))/80*152;d2+=(ix?' L ':'M ')+(16+ix*320/(COLS-1)).toFixed(1)+' '+y2.toFixed(1);});
+ var tot=Math.max(tib,deep+light+awake,1);
+ return {word:'NUIT',big:flMnHm(asleep),up:(moy!=null&&asleep>=moy),moy:moy!=null?flMnHm(moy):null,line:d2,t0:flMnClk(bed),t1:flMnClk(wake),duree:flMnHm(Math.max(tib,asleep+awake)),pts:pts,bed:bed,span:span,deep:deep,light:light,awake:awake,deepPct:Math.round(deep/tot*100),lightPct:Math.round(light/tot*100),awakePct:Math.round(awake/tot*100),sig:'n|'+asleep+'|'+tib+'|'+bed+'|'+wake+'|'+samples.length};
+}
+function flMnComputeSieste(doc,opts){
+ var dur=(opts&&opts.dur)||25;var startMin=(opts&&opts.startMin!=null)?opts.startMin:null;
+ var deep=Math.round(dur*0.25),light=Math.round(dur*0.6),awake=Math.max(0,dur-deep-light);
+ var tot=Math.max(dur,1);
+ var COLS=Math.max(24,Math.min(80,dur*2)),bed=startMin!=null?startMin:0,span=Math.max(dur,1);
+ var samples=[];
+ if(startMin!=null){try{var w=DB.get('watch_'+tk(0),null);if(w&&w.hr)w.hr.forEach(function(p2){if(p2[0]>=startMin&&p2[0]<=startMin+dur)samples.push([p2[0]-startMin,p2[1]]);});}catch(e){}}
+ var pts=[];
+ if(samples.length>=3){var buck=[];for(var c=0;c<COLS;c++)buck.push([]);
+  samples.forEach(function(p2){var c3=Math.max(0,Math.min(COLS-1,Math.floor(p2[0]/span*COLS)));buck[c3].push(p2[1]);});
+  var last=null;for(var c2=0;c2<COLS;c2++){var b2=buck[c2];var v2=b2.length?b2.reduce(function(a,x){return a+x;},0)/b2.length:last;if(v2==null)v2=58;last=v2;pts.push(v2);}}
+ else{for(var i=0;i<COLS;i++){var ph=i/(COLS-1);pts.push(Math.round(60-9*Math.sin(ph*Math.PI)+3*Math.sin(ph*13)));}}
+ var d='';pts.forEach(function(bpm,ix){var y=16+(110-Math.max(30,Math.min(110,bpm)))/80*152;d+=(ix?' L ':'M ')+(16+ix*320/(COLS-1)).toFixed(1)+' '+y.toFixed(1);});
+ return {word:'SIESTE',big:flMnHm(dur),up:false,moy:null,line:d,t0:flMnClk(bed),t1:flMnClk(bed+dur),duree:flMnHm(dur),pts:pts,bed:bed,span:span,deep:deep,light:light,awake:awake,deepPct:Math.round(deep/tot*100),lightPct:Math.round(light/tot*100),awakePct:Math.round(awake/tot*100)};
+}
 function mdSleepPolish(doc){try{var sc=doc.getElementById('screen-sommeil');if(!sc)return;
  /* — titres — */
  [].slice.call(sc.querySelectorAll('span,div,h2')).forEach(function(e){
@@ -6831,58 +6975,6 @@ function mdSleepPolish(doc){try{var sc=doc.getElementById('screen-sommeil');if(!
  if(card.getAttribute('data-fl-mnhid')!=='1'){card.setAttribute('data-fl-mnhid','1');card.style.display='none';}
  var nu=card.nextElementSibling;
  if(!(nu&&nu.getAttribute&&nu.getAttribute('data-fl-mn'))){nu=doc.createElement('div');nu.setAttribute('data-fl-mn','1');card.parentNode.insertBefore(nu,card.nextSibling);}
- var SANS='-apple-system,system-ui,sans-serif';var HN="'Helvetica Neue',Arial,sans-serif";
- function hm(min){min=Math.max(0,Math.round(min));return Math.floor(min/60)+':'+String(min%60).padStart(2,'0');}
- function clk(min){min=((Math.round(min)%1440)+1440)%1440;return String(Math.floor(min/60)).padStart(2,'0')+':'+String(min%60).padStart(2,'0');}
- function stadeRow(sub,lab,col,pctTxt,barPct,timeTxt,stKey){
-  return '<div style="display:flex;align-items:stretch"><div class="mnrow" data-st="'+stKey+'" style="flex:1;display:flex;align-items:center;gap:12px;background:#fffdfb;border-radius:15px;padding:14px 15px 14px 11px;box-shadow:inset 0 0 0 1px rgba(20,17,15,0.05);cursor:pointer;transition:box-shadow .18s ease">'
-   +'<div style="width:5px;flex-shrink:0;align-self:stretch;border-radius:100px;background:'+col+'"></div>'
-   +'<div style="width:106px;flex-shrink:0;min-height:33px;display:flex;flex-direction:column;justify-content:center"><div style="font-family:'+SANS+';font-size:11px;font-weight:500;color:#9a938a">'+sub+'</div><div style="font-family:Archivo,'+SANS+';font-size:13px;font-weight:600;letter-spacing:0.14em;color:#14110f;margin-top:2px">'+lab+'</div></div>'
-   +'<div style="width:40px;flex-shrink:0;font-family:'+SANS+';font-size:13.5px;font-weight:600;color:'+col+'">'+pctTxt+'</div>'
-   +'<div style="flex:1;height:8px;border-radius:5px;background:#f4eee7;position:relative;overflow:hidden"><div style="position:absolute;left:0;top:0;bottom:0;width:'+barPct+'%;border-radius:5px;background:'+col+'"></div></div>'
-   +'<div style="width:52px;flex-shrink:0;text-align:right;font-family:'+SANS+';font-size:15px;font-weight:600;color:#14110f">'+timeTxt+'<span style="font-size:11px;font-weight:500;color:#b3ab9f">:00</span></div>'
-  +'</div></div>';}
- function buildCard(o){
-  var head='<div style="display:flex;align-items:center;justify-content:space-between">'
-   +'<span style="font-size:12px;font-weight:500;letter-spacing:0.14em;color:#14110f"><span style="display:inline-block;padding-bottom:4px;border-bottom:2.5px solid #fb6015">MA</span> NUIT</span>'
-   +'<span style="width:50px;height:50px;border-radius:50%;background:#faf6f2;display:flex;align-items:center;justify-content:center;transform:translate(-3px,4px)"><svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="#fb6015" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path></svg></span>'
-  +'</div>';
-  if(o.empty)return head
-   +'<div style="font-family:'+HN+';font-size:40px;font-weight:500;letter-spacing:-0.03em;color:#14110f;line-height:1;margin-top:9px">\u2014</div>'
-   +'<div style="font-family:'+SANS+';font-size:13px;font-weight:300;color:#a2a09c;margin-top:10px;line-height:1.5">Porte ton bracelet cette nuit \u2014 ta nuit s\u2019affichera ici.</div>';
-  var yl=[110,90,70,50,30].map(function(v,ix){return '<text x="9" y="'+(23.7+ix*37.05).toFixed(1)+'" text-anchor="end" font-family="'+HN.replace(/"/g,"&quot;")+'" font-size="11" font-weight="400" fill="#a49d92">'+v+'</text>';}).join('');
-  return head
-   +'<div style="display:flex;align-items:baseline;gap:6px;margin-top:9px">'
-    +'<span class="mnbig" style="font-family:'+HN+';font-size:40px;font-weight:500;letter-spacing:-0.03em;color:#14110f;line-height:1">'+o.big+'</span>'
-    +(o.up?'<svg class="mnarrow" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fb6015" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="transition:opacity .2s ease"><path d="M12 19V5M5 12l7-7 7 7"></path></svg>':'')
-    +'<span class="mnunit" style="font-family:'+HN+';font-size:18px;font-weight:300;color:#a2a09c;opacity:0;transition:opacity .2s ease">bpm</span>'
-   +'</div>'
-   +'<div class="mnsub" style="font-size:13px;font-weight:300;color:#a2a09c;margin-top:2px;min-height:16px">'+(o.moy?'moy. '+o.moy:'')+'</div>'
-   +'<div style="margin-top:10px;position:relative"><svg viewBox="0 0 340 198" width="100%" style="display:block;overflow:visible">'
-    +'<defs><linearGradient id="flMnGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#fb6015" stop-opacity="0.24"></stop><stop offset="50%" stop-color="#fb6015" stop-opacity="0.1"></stop><stop offset="85%" stop-color="#fb6015" stop-opacity="0.015"></stop><stop offset="100%" stop-color="#fb6015" stop-opacity="0"></stop></linearGradient></defs>'
-    +'<path d="'+o.line+' L 336 168 L 16 168 Z" fill="url(#flMnGrad)" stroke="none"></path>'
-    +yl
-    +'<line x1="16" y1="16" x2="16" y2="168" stroke="#d9d6d1" stroke-width="1" stroke-dasharray="3 3"></line><line x1="336" y1="16" x2="336" y2="168" stroke="#d9d6d1" stroke-width="1" stroke-dasharray="3 3"></line>'
-    +'<circle cx="16" cy="168" r="2.6" fill="#fb6015"></circle><circle cx="336" cy="168" r="2.6" fill="#fb6015"></circle>'
-    +'<path class="mnline" d="'+o.line+'" fill="none" stroke="#fb6015" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round" style="transition:stroke .2s ease"></path>'
-    +'<g class="mnhi"></g>'
-    +'<g class="mnscrub" opacity="0" style="transition:opacity .18s ease;pointer-events:none">'
-     +'<line x1="16" x2="16" y1="16" y2="168" stroke="#fb6015" stroke-width="1.1"></line>'
-     +'<circle class="mnhalo" r="9" fill="rgba(251,96,21,0.20)"></circle>'
-     +'<circle class="mndot" r="3.6" fill="#fb6015" stroke="#fff" stroke-width="1.6"></circle>'
-    +'</g>'
-    +'<text x="16" y="192" text-anchor="middle" font-family="'+HN.replace(/"/g,"&quot;")+'" font-size="10.5" font-weight="400" fill="#14110f">'+o.t0+'</text>'
-    +'<text x="336" y="192" text-anchor="middle" font-family="'+HN.replace(/"/g,"&quot;")+'" font-size="10.5" font-weight="400" fill="#14110f">'+o.t1+'</text>'
-   +'</svg></div>'
-   +'<div style="display:flex;align-items:center;justify-content:space-between;margin-top:15px;padding-top:14px;border-top:1px solid #f0ece5">'
-    +'<span style="font-size:11px;font-weight:500;letter-spacing:0.14em;color:#14110f">STADES DE SOMMEIL</span>'
-    +'<span style="display:flex;align-items:baseline;gap:9px"><span style="font-size:11px;font-weight:400;letter-spacing:0.12em;color:#a2a09c">DUR\u00c9E</span><span style="font-family:'+HN+';font-size:14px;font-weight:400;color:#14110f">'+o.duree+'</span></span>'
-   +'</div>'
-   +'<div style="margin-top:11px;display:flex;flex-direction:column;gap:7px">'
-    +stadeRow('Sommeil','PROFOND','#cc3d00',o.deepPct+' %',Math.max(o.deepPct,6),hm(o.deep),'deep')
-    +stadeRow('Sommeil','L\u00c9GER','#fb6015',o.lightPct+' %',Math.max(o.lightPct,6),hm(o.light),'light')
-    +stadeRow('','R\u00c9VEIL','#f6c3a3',o.awakePct+' %',Math.max(o.awakePct,6),hm(o.awake),'awake')
-   +'</div>';}
  var o=null,sig='';
  var SH=!!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)||(function(){try{return localStorage.getItem('flintForceShell')==='1';}catch(e){return false;}})();
  if(!SH){
@@ -6894,99 +6986,14 @@ function mdSleepPolish(doc){try{var sc=doc.getElementById('screen-sommeil');if(!
   var demoPts=demoY.map(function(y){return 110-(y-16)*80/152;});
   o={big:'7:42',up:true,moy:'7:03',line:d,t0:'00:46',t1:'08:50',duree:'7:54',deep:104,light:240,awake:12,deepPct:22,lightPct:51,awakePct:3,pts:demoPts,bed:46,span:484};
  }else{
-  var n=null;try{n=sleepNight(tk(0));}catch(e){}
-  if(!n||!(n.asleep>0||n.sleepMin>0)){sig='vide';if(nu.getAttribute('data-fl-sig')===sig)return;o={empty:true};}
-  else{
-   var asleep=n.asleep||n.sleepMin||0,tib=n.timeInBed||asleep,bed=n.bedMin!=null?n.bedMin:0,wake=n.wakeMin!=null?n.wakeMin:0;
-   var deep=n.deep||0,light=(n.light||0)+(n.rem||0),awake=n.awake||0;
-   /* moyenne 7 derniers jours */
-   var tot=0,nn=0;for(var k2=1;k2<=7;k2++){try{var s2=sensorOf(tk(-k2));if(s2&&s2.sleepMin){tot+=s2.sleepMin;nn++;}}catch(e){}}
-   var moy=nn?Math.round(tot/nn):null;
-   /* courbe : FC de la nuit depuis le store montre */
-   var span=((wake-bed)%1440+1440)%1440||1;var samples=[];
-   function grab(key,fromMin,toMin,offset){try{var w2=DB.get(key,null);if(!w2||!w2.hr)return;w2.hr.forEach(function(p2){var mn=p2[0];if(mn>=fromMin&&mn<=toMin)samples.push([mn+offset-bed,p2[1]]);});}catch(e){}}
-   var K0=tk(0),Km1=tk(-1);
-   if(bed<=wake){grab('watch_'+K0,bed,wake,0);}
-   else{grab('watch_'+Km1,bed,1440,0);grab('watch_'+K0,0,wake,1440);}
-   sig='n|'+asleep+'|'+tib+'|'+bed+'|'+wake+'|'+samples.length;
-   if(nu.getAttribute('data-fl-sig')===sig)return;
-   var COLS=132,buck=[];for(var c2=0;c2<COLS;c2++)buck.push([]);
-   samples.forEach(function(p2){var c3=Math.max(0,Math.min(COLS-1,Math.floor(p2[0]/span*COLS)));buck[c3].push(p2[1]);});
-   var last=null,pts=[];for(var c4=0;c4<COLS;c4++){var b2=buck[c4];var v2=b2.length?b2.reduce(function(a3,x3){return a3+x3;},0)/b2.length:last;if(v2==null)v2=55;last=v2;pts.push(v2);}
-   var d2='';pts.forEach(function(bpm,ix){var y2=16+(110-Math.max(30,Math.min(110,bpm)))/80*152;d2+=(ix?' L ':'M ')+(16+ix*320/(COLS-1)).toFixed(1)+' '+y2.toFixed(1);});
-   var tot=Math.max(tib,deep+light+awake,1);
-   o={big:hm(asleep),up:(moy!=null&&asleep>=moy),moy:moy!=null?hm(moy):null,line:d2,t0:clk(bed),t1:clk(wake),duree:hm(Math.max(tib,asleep+awake)),pts:pts,bed:bed,span:span,
-    deep:deep,light:light,awake:awake,
-    deepPct:Math.round(deep/tot*100),lightPct:Math.round(light/tot*100),awakePct:Math.round(awake/tot*100)};
-  }
+  var res=flMnComputeNuit(doc);sig=res.sig;
+  if(nu.getAttribute('data-fl-sig')===sig)return;
+  o=res.empty?{empty:true}:res;
  }
  nu.setAttribute('data-fl-sig',sig);
  nu.setAttribute('style','margin-top:40px;background:#ffffff;border-radius:24px;padding:18px 20px 18px;box-shadow:0 3px 16px rgba(150,118,72,0.06),inset 0 0 0 1px rgba(20,17,15,0.045);font-family:Archivo,-apple-system,system-ui,sans-serif;color:#14110f');
- nu.innerHTML=buildCard(o);
- /* ══ interactions de l'ancienne carte, recréées sur la nouvelle (founder 13/07) :
-    scrub au doigt (guide + point + bpm/heure) et tap sur un stade → segments colorés ══ */
- if(!o.empty&&o.pts&&o.pts.length>1){(function(){
-  var svg=nu.querySelector('svg[viewBox="0 0 340 198"]');if(!svg)return;
-  var pts=o.pts,bed=o.bed||0,span=o.span||480,COLS=pts.length;
-  var NSs='http://www.w3.org/2000/svg';
-  function xOf(i){return 16+i*320/(COLS-1);}
-  function yOf(b){return 16+(110-Math.max(30,Math.min(110,b)))/80*152;}
-  var hi=svg.querySelector('.mnhi'),sg=svg.querySelector('.mnscrub'),base=svg.querySelector('.mnline');
-  var gl=sg.querySelector('line'),halo=sg.querySelector('.mnhalo'),dot=sg.querySelector('.mndot');
-  var big=nu.querySelector('.mnbig'),unit=nu.querySelector('.mnunit'),arrow=nu.querySelector('.mnarrow'),sub=nu.querySelector('.mnsub');
-  var subRest=(o.moy?'moy. '+o.moy:'');
-  /* stades par colonne depuis la distribution (mêmes seuils que computeNight) */
-  var sorted=pts.slice().sort(function(a,b){return a-b;});
-  function q(p){return sorted[Math.max(0,Math.min(sorted.length-1,Math.floor(p*sorted.length)))];}
-  /* seuils calés sur les % AFFICHÉS : les segments colorés matchent les stats des lignes */
-  var dc=q((o.deepPct||0)/100),ac=q(1-(o.awakePct||0)/100);
-  function stOf(b){return ((o.awakePct||0)>0&&b>=ac)?'awake':(b<=dc?'deep':'light');}
-  /* — scrub — */
-  function showAt(cx){var r=svg.getBoundingClientRect();if(!r.width)return;
-   var fx=(cx-r.left)/r.width*340;var i=Math.max(0,Math.min(COLS-1,Math.round((fx-16)/320*(COLS-1))));
-   var x=xOf(i),y=yOf(pts[i]);
-   gl.setAttribute('x1',x);gl.setAttribute('x2',x);
-   halo.setAttribute('cx',x);halo.setAttribute('cy',y);dot.setAttribute('cx',x);dot.setAttribute('cy',y);
-   if(big)big.textContent=Math.round(pts[i]);
-   if(unit)unit.style.opacity='1';
-   if(arrow)arrow.style.opacity='0';
-   if(sub)sub.textContent=clk(bed+i/(COLS-1)*span);
-   sg.setAttribute('opacity','1');}
-  function restoreHead(){if(big)big.textContent=o.big;if(unit)unit.style.opacity='0';if(arrow)arrow.style.opacity='1';if(sub)sub.textContent=subRest;}
-  var sc=false;svg.style.touchAction='none';svg.style.cursor='crosshair';
-  svg.addEventListener('pointerdown',function(ev){sc=true;try{svg.setPointerCapture(ev.pointerId);}catch(e){}showAt(ev.clientX);try{haptic&&haptic(3);}catch(e){}});
-  svg.addEventListener('pointermove',function(ev){if(sc)showAt(ev.clientX);});
-  ['pointerup','pointercancel'].forEach(function(t){svg.addEventListener(t,function(){sc=false;sg.setAttribute('opacity','0');restoreHead();});});
-  /* — tap sur un stade → segments colorés sur la courbe — */
-  var COLMAP={deep:'#cc3d00',light:'#fb6015',awake:'#f6c3a3'};
-  var cur=null;
-  function clearHi(){hi.innerHTML='';base.setAttribute('stroke','#fb6015');cur=null;
-   [].slice.call(nu.querySelectorAll('.mnrow')).forEach(function(rw){rw.style.boxShadow='inset 0 0 0 1px rgba(20,17,15,0.05)';});}
-  function selectSt(stKey,row){if(cur===stKey){clearHi();return;}clearHi();cur=stKey;
-   base.setAttribute('stroke','#e8e2d9');
-   /* runs par colonne → élargis (±2) puis fusionnés : des LIGNES nettes, pas des points */
-   var runs=[],run=null;
-   for(var i2=0;i2<COLS;i2++){var is=stOf(pts[i2])===stKey;
-    if(is&&run==null)run=i2;
-    if(run!=null&&(!is||i2===COLS-1)){runs.push([run,is?i2:i2-1]);run=null;}}
-   var PAD=2;runs=runs.map(function(r){return [Math.max(0,r[0]-PAD),Math.min(COLS-1,r[1]+PAD)];});
-   var merged=[];runs.forEach(function(r){var L=merged[merged.length-1];if(L&&r[0]<=L[1]+1){L[1]=Math.max(L[1],r[1]);}else merged.push(r.slice());});
-   var d3=merged.map(function(r){var seg='M '+xOf(r[0]).toFixed(1)+' '+yOf(pts[r[0]]).toFixed(1);
-    for(var i3=r[0]+1;i3<=r[1];i3++)seg+=' L '+xOf(i3).toFixed(1)+' '+yOf(pts[i3]).toFixed(1);
-    return seg;}).join(' ');
-   var pth=doc.createElementNS(NSs,'path');
-   pth.setAttribute('d',d3);pth.setAttribute('fill','none');pth.setAttribute('stroke',COLMAP[stKey]);
-   pth.setAttribute('stroke-width','2.4');pth.setAttribute('stroke-linecap','round');pth.setAttribute('stroke-linejoin','round');
-   hi.appendChild(pth);
-   row.style.boxShadow='inset 0 0 0 1.5px '+COLMAP[stKey];
-   try{haptic&&haptic(4);}catch(e){}}
-  [].slice.call(nu.querySelectorAll('.mnrow')).forEach(function(rw){
-   var st2=rw.getAttribute('data-st'),lt=0;
-   function go2(){var nw=Date.now();if(nw-lt<500)return;lt=nw;selectSt(st2,rw);}
-   rw.addEventListener('click',function(ev){ev.preventDefault();ev.stopPropagation();go2();},true);
-   rw.addEventListener('pointerup',function(){go2();},true);
-  });
- })();}
+ nu.innerHTML=flMnBuildCard(o);
+ flMnWire(doc,nu,o);
 }catch(e){}}
 /* ═══ ÉCRAN RÉCUPÉRATION (design « Flint Aujourd\u2019hui - standalone », founder 13/07) :
    tap sur le gros cercle de l\u2019accueil → page plein écran (anneau %, verdict, VFC / FC repos /
@@ -12005,7 +12012,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v566';
+const APP_VERSION='flint-v567';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
@@ -12940,51 +12947,27 @@ window.flAddActivity=function(doc){flActSt=flActDefaults();flActAdd(doc);};
    if(HON_NUM.test(t)){x.setAttribute('data-fl-orig',t);x.textContent='—';}});}
  /* restaure les libellés d'origine (ré-arme les ancres des injecteurs) quand la vraie donnée arrive */
  function honRestore(el){[].slice.call(el.querySelectorAll('[data-fl-orig]')).forEach(function(x){x.textContent=x.getAttribute('data-fl-orig');x.removeAttribute('data-fl-orig');});}
- /* --- MA NUIT / MA SIESTE (tap sommeil dans la timeline) : stades + besoin + efficacité, DA pure --- */
+ /* --- MA NUIT / MA SIESTE (tap sommeil dans la timeline) : ouvre la MÊME carte que la page
+    Sommeil (courbe FC + stades + scrub + tap-stade), plein écran. « Ma sieste » = variante nap. --- */
  function flMyNight(doc,kind,opts){try{
   var isNap=kind==='sieste';
+  var o=isNap?flMnComputeSieste(doc,opts):flMnComputeNuit(doc);
   var el=doc.getElementById('screen-fl-manuit');
   if(!el){el=doc.createElement('section');el.id='screen-fl-manuit';doc.body.appendChild(el);}
-  el.style.cssText="font-family:'Archivo',-apple-system,system-ui,sans-serif;color:#14110f;position:fixed;top:0;bottom:0;left:50%;width:100%;max-width:464px;z-index:130;overflow-y:auto;-webkit-overflow-scrolling:touch;background:#fff;transition:transform .38s cubic-bezier(.32,.72,0,1);transform:translateX(-50%) translateY(100%);pointer-events:none";
-  var deep=0,light=0,rem=0,awake=0,asleep=0,eff=null,needPct=null,needTxt='';
-  if(isNap){var dm=(opts&&opts.dur)||25;
-   deep=Math.round(dm*0.25);light=Math.round(dm*0.6);rem=0;awake=Math.max(0,dm-deep-light);asleep=dm-awake;}
-  else{var n=null;try{n=sleepNight(tk(0));}catch(e){}
-   if(n){deep=n.deep||0;light=n.light||0;rem=n.rem||0;awake=n.awake||0;asleep=n.asleep||0;eff=n.efficiency;
-    var need=(function(){try{return (getProfile().need||8)*60;}catch(e){return 480;}})();
-    needPct=Math.min(100,Math.round(asleep/need*100));
-    function hf(m){return Math.floor(m/60)+':'+String(Math.round(m)%60).padStart(2,'0');}
-    needTxt=hf(asleep)+' / '+hf(need)+' · '+needPct+' % du besoin';}}
-  var tot=Math.max(1,deep+light+rem+awake);
-  function seg(v,col){return v>0?('<div style="width:'+(v/tot*100)+'%;background:'+col+'"></div>'):'';}
-  function row(lab,v,col){if(v<=0&&lab!=='Réveil')return '';
-   return '<div style="display:flex;align-items:center;gap:12px;padding:13px 0;border-top:1px solid #f2eee8"><span style="width:10px;height:10px;border-radius:50%;background:'+col+';flex:none"></span><span style="flex:1;font-size:15px;font-weight:300">'+lab+'</span><span style="font-family:Archivo,sans-serif;font-size:16px;font-weight:700">'+Math.floor(v/60)+':'+String(Math.round(v)%60).padStart(2,'0')+'</span><span style="font-size:13px;color:#a7a29a;width:44px;text-align:right">'+Math.round(v/tot*100)+' %</span></div>';}
-  var hasData=tot>1&&asleep>0;
-  var C={deep:'#fb6015',rem:'#ff9163',light:'#ffd9c2',awake:'#ece7df'};
-  el.innerHTML='<div style="min-height:100%;display:flex;flex-direction:column;padding:max(24px,calc(env(safe-area-inset-top,0px) + 16px)) 24px calc(env(safe-area-inset-bottom,0px) + 120px)">'
-   +'<button class="mn-back" aria-label="Retour" style="align-self:flex-start;width:52px;height:52px;border-radius:50%;border:none;background:#fff;color:#fb6015;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(20,17,15,.08);margin-bottom:22px"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></button>'
-   +'<h1 style="font-size:34px;font-weight:800;letter-spacing:-.03em;line-height:1;margin:0 0 8px">'+(isNap?'Ma sieste':'Ma nuit')+'<span style="color:#fb6015">.</span></h1>'
-   +'<div style="font-family:-apple-system,system-ui,sans-serif;font-size:14px;font-weight:300;color:#8a857c;margin-bottom:24px">'+(isNap?'Sommeil détecté · '+Math.round(tot)+' min':'Stades de sommeil de la nuit')+'</div>'
-   +(!hasData?'<div style="background:#fff;border-radius:22px;box-shadow:0 8px 26px rgba(20,17,15,.05);padding:30px 20px;text-align:center;font-size:15px;font-weight:300;color:#a29c92">Aucune donnée pour l\'instant — porte ton bracelet cette nuit.</div>'
-   :('<div style="background:#fff;border-radius:22px;box-shadow:0 8px 26px rgba(20,17,15,.05),inset 0 0 0 1px rgba(20,17,15,.035);padding:20px">'
-    +'<div style="display:flex;height:14px;border-radius:8px;overflow:hidden;margin-bottom:6px">'+seg(deep,C.deep)+seg(rem,C.rem)+seg(light,C.light)+seg(awake,C.awake)+'</div>'
-    +'<div style="height:8px"></div>'
-    +row('Profond',deep,C.deep)+(isNap?'':row('Paradoxal',rem,C.rem))+row('Léger',light,C.light)+row('Réveil',awake,C.awake)
-   +'</div>'
-   +(isNap?'':(
-    (needTxt?('<div style="margin-top:14px;background:#fff;border-radius:22px;box-shadow:0 8px 26px rgba(20,17,15,.05),inset 0 0 0 1px rgba(20,17,15,.035);padding:20px">'
-     +'<div style="font-family:-apple-system,system-ui,sans-serif;font-size:12px;font-weight:700;letter-spacing:.14em;color:#a29c92;margin-bottom:12px">HEURES VS BESOIN</div>'
-     +'<div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px"><span style="font-size:22px;font-weight:700;letter-spacing:-.01em">'+needTxt.split(' · ')[0]+'</span><span style="font-size:15px;font-weight:600;color:#fb6015">'+needTxt.split(' · ')[1]+'</span></div>'
-     +'<div style="height:8px;border-radius:6px;background:#f0ece4;overflow:hidden"><div style="width:'+needPct+'%;height:100%;border-radius:6px;background:#fb6015"></div></div></div>'):'')
-    +(eff!=null?('<div style="margin-top:14px;background:#fff;border-radius:22px;box-shadow:0 8px 26px rgba(20,17,15,.05),inset 0 0 0 1px rgba(20,17,15,.035);padding:20px">'
-     +'<div style="font-family:-apple-system,system-ui,sans-serif;font-size:12px;font-weight:700;letter-spacing:.14em;color:#a29c92;margin-bottom:12px">EFFICACITÉ DU SOMMEIL</div>'
-     +'<div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px"><span style="font-size:22px;font-weight:700;letter-spacing:-.01em">'+eff+' %</span><span style="font-size:13px;font-weight:300;color:#a7a29a">temps endormi / temps au lit</span></div>'
-     +'<div style="height:8px;border-radius:6px;background:#f0ece4;overflow:hidden"><div style="width:'+eff+'%;height:100%;border-radius:6px;background:#fb6015"></div></div></div>'):'')))
-  ))+'</div>';
-  el.querySelector('.mn-back').addEventListener('click',function(){el.style.transform='translateX(-50%) translateY(100%)';el.style.pointerEvents='none';});
+  el.style.cssText="font-family:'Archivo',-apple-system,system-ui,sans-serif;color:#14110f;position:fixed;top:0;bottom:0;left:50%;width:100%;max-width:464px;z-index:130;overflow-y:auto;-webkit-overflow-scrolling:touch;background:#f6f3ee;transition:transform .38s cubic-bezier(.32,.72,0,1);transform:translateX(-50%) translateY(100%);pointer-events:none";
+  el.innerHTML='<div style="min-height:100%;padding:max(20px,calc(env(safe-area-inset-top,0px) + 12px)) 20px calc(env(safe-area-inset-bottom,0px) + 40px)">'
+   +'<button class="mn-back" aria-label="Retour" style="width:52px;height:52px;border-radius:50%;border:none;background:#fff;color:#fb6015;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(20,17,15,.08);margin-bottom:18px"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></button>'
+   +'<div class="mn-card" style="background:#fff;border-radius:24px;padding:18px 20px 18px;box-shadow:0 3px 16px rgba(150,118,72,0.06),inset 0 0 0 1px rgba(20,17,15,0.045);font-family:Archivo,-apple-system,system-ui,sans-serif;color:#14110f">'+flMnBuildCard(o)+'</div>'
+  +'</div>';
+  var card=el.querySelector('.mn-card');
+  flMnWire(doc,card,o);
+  var bk=el.querySelector('.mn-back');
+  function closeMn(){el.style.transform='translateX(-50%) translateY(100%)';el.style.pointerEvents='none';}
+  bk.addEventListener('click',closeMn,true);bk.addEventListener('pointerup',closeMn,true);bk.addEventListener('touchend',closeMn,true);
   try{flLoad(doc);}catch(e){}
   el.style.pointerEvents='auto';el.scrollTop=0;
   setTimeout(function(){el.style.transform='translateX(-50%) translateY(0)';},20);
+  try{haptic&&haptic(6);}catch(e){}
  }catch(e){}}
  window.flMyNight=flMyNight;
  /* --- MA JOURNÉE RÉELLE : la timeline se construit depuis les vraies données.
