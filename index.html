@@ -6698,7 +6698,43 @@ function mdMarcheScrub(doc){try{var sc=doc.getElementById('screen-marche');if(!s
  function at(ev){var r=svg.getBoundingClientRect();var cx=ev.clientX!=null?ev.clientX:(ev.touches&&ev.touches[0]?ev.touches[0].clientX:0);var vx=(cx-r.left)/r.width*340;var best=N-1,bd=Infinity;for(var i2=0;i2<N;i2++){var dd=Math.abs(pts[i2].x-vx);if(dd<bd){bd=dd;best=i2;}}if(best!==idx){idx=best;try{navigator.vibrate&&navigator.vibrate(8);}catch(e){}}render();}
  svg.addEventListener('pointerdown',function(ev){ev.preventDefault();try{svg.setPointerCapture(ev.pointerId);}catch(e){}on=true;at(ev);},{passive:false});
  svg.addEventListener('pointermove',function(ev){if(!on)return;ev.preventDefault();at(ev);},{passive:false});
- ['pointerup','pointerleave','pointercancel'].forEach(function(t){svg.addEventListener(t,function(){if(!on)return;on=false;render();});});
+  ['pointerup','pointerleave','pointercancel'].forEach(function(t){svg.addEventListener(t,function(){if(!on)return;on=false;render();});});
+ /* ── surlignage de ZONE façon WHOOP : tap une zone → segments orange sur la courbe + traits
+    verticaux transparents jusqu'en bas ; les moments hors zone s'estompent ── */
+ if(!svg._flZoneWired){svg._flZoneWired=1;
+  var zHi=doc.createElementNS(NS,'g');zHi.style.pointerEvents='none';svg.appendChild(zHi);
+  var baseY=172,curZ=null;
+  function zClear(){zHi.textContent='';[pel,areaEl].forEach(function(e){if(e)e.style.opacity='1';});
+   [].slice.call(sc.querySelectorAll('[data-fl-zsel]')).forEach(function(r){r.style.boxShadow='';r.removeAttribute('data-fl-zsel');});curZ=null;}
+  function zShow(row){var t=(row.textContent||'').replace(/\s+/g,' ');var lo=0,hi=9999,mm;
+   if((mm=t.match(/[>+]\s*(?:DE )?(\d+)/i)))lo=+mm[1];
+   else if((mm=t.match(/[<\u2212-]\s*(?:DE )?(\d+)\s*BPM/i)))hi=+mm[1]-1;
+   else if((mm=t.match(/(\d+)\s*[\u00c0\u2013\u2014-]\s*(\d+)/i))){lo=+mm[1];hi=+mm[2];}
+   else return;
+   if(curZ===row){zClear();return;}
+   zClear();curZ=row;
+   [pel,areaEl].forEach(function(e){if(e)e.style.opacity='0.26';});
+   var frag='';
+   for(var i=0;i<N;i++){if(pts[i].v>=lo&&pts[i].v<=hi){frag+='<line x1="'+pts[i].x+'" x2="'+pts[i].x+'" y1="'+pts[i].y.toFixed(1)+'" y2="'+baseY+'" stroke="#fb6015" stroke-width="1.1" opacity="0.13"></line>';}}
+   var run=null;for(var i=0;i<N;i++){var inz=pts[i].v>=lo&&pts[i].v<=hi;
+    if(inz&&run==null)run=i;
+    if(run!=null&&(!inz||i===N-1)){var end=inz?i:i-1;var d='M '+pts[run].x+' '+pts[run].y;for(var j=run+1;j<=end;j++)d+=' L '+pts[j].x+' '+pts[j].y;if(end===run)d+=' L '+(pts[run].x+0.6).toFixed(1)+' '+pts[run].y;frag+='<path d="'+d+'" fill="none" stroke="#fb6015" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"></path>';run=null;}}
+   zHi.innerHTML=frag;
+   row.style.boxShadow='inset 0 0 0 1.5px rgba(251,96,21,0.85)';row.setAttribute('data-fl-zsel','1');
+   try{haptic&&haptic(4);}catch(e){}}
+  var _zx=0,_zy=0,_zt=0;
+  doc.addEventListener('pointerdown',function(ev){_zx=ev.clientX;_zy=ev.clientY;},true);
+  doc.addEventListener('touchstart',function(ev){var t=ev.touches&&ev.touches[0];if(t){_zx=t.clientX;_zy=t.clientY;}},{capture:true,passive:true});
+  var zRoute=function(ev){var smx=doc.getElementById('screen-marche');if(!smx||!/translateY\(0/.test(smx.style.transform||''))return;
+   var tt=(ev.changedTouches&&ev.changedTouches[0])||ev;
+   if(ev.type!=='click'&&(Math.abs((tt.clientX||_zx)-_zx)>12||Math.abs((tt.clientY||_zy)-_zy)>12))return;
+   var n=ev.target,g=0,zrow=null;
+   while(n&&n!==doc.body&&g++<8){if(n.nodeType===1){var tx=(n.textContent||'').replace(/\s+/g,' ');if(/ZONE \d/.test(tx)&&/BPM/.test(tx)&&tx.length<80){zrow=n;break;}}n=n.parentElement;}
+   if(!zrow)return;
+   var nw=Date.now();if(nw-_zt<400)return;_zt=nw;
+   try{ev.preventDefault();ev.stopPropagation();}catch(e){}
+   zShow(zrow);};
+  ['click','pointerup','touchend'].forEach(function(t){doc.addEventListener(t,zRoute,true);});}
 }catch(e){}}
 /* taps natifs (tuiles SOMMEIL/EFFORT/CALORIES, lignes Ma journée, Nuit…) : loader sans rien intercepter */
 function flLoadNativeTaps(doc){try{if(doc._flLoadTaps)return;doc._flLoadTaps=1;
@@ -12017,7 +12053,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v570';
+const APP_VERSION='flint-v571';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
