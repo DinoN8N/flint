@@ -6716,8 +6716,20 @@ function mdMarcheScrub(doc){try{var sc=doc.getElementById('screen-marche');if(!s
   /* marqueurs orange (lignes verticales PLAGE HABITUELLE + points d'extrémité) à griser aussi ; on exclut le guide/halo/point de scrub */
   var orangeMarks=[].slice.call(svg.querySelectorAll('line,circle')).filter(function(el){if(el===guide||el===halo||el===dot)return false;var s=(el.getAttribute('stroke')||'').toLowerCase(),f=(el.getAttribute('fill')||'').toLowerCase();return /^#(fb6015|fdb375|fd7e14)$/.test(s)||/^#(fb6015|fdb375|fd7e14)$/.test(f);}).map(function(el){var isS=/^#(fb6015|fdb375|fd7e14)$/.test((el.getAttribute('stroke')||'').toLowerCase());return {el:el,attr:isS?'stroke':'fill',s:el.getAttribute(isS?'stroke':'fill')};});
   function zCol(t){var m=t.match(/ZONE\s*(\d)/i);var n=m?+m[1]:1;return {5:'#ff3b30',4:'#ff8a1e',3:'#f5c518',2:'#2b7fff',1:'#34c759',0:'#3a3532'}[n]||'#fb6015';}
-  function zClear(){zHi.textContent='';curvePaths.forEach(function(o){o.p.style.opacity='1';o.p.setAttribute('stroke',o.s);if(o.w!=null)o.p.setAttribute('stroke-width',o.w);else o.p.removeAttribute('stroke-width');});orangeMarks.forEach(function(o){o.el.setAttribute(o.attr,o.s);});if(areaEl){areaEl.style.opacity='1';if(areaFill0!=null)areaEl.setAttribute('fill',areaFill0);}
-   [].slice.call(sc.querySelectorAll('[data-fl-zsel]')).forEach(function(r){r.style.removeProperty('box-shadow');r.style.removeProperty('background');if(r._flBs)r.style.setProperty('box-shadow',r._flBs);if(r._flBg)r.style.setProperty('background',r._flBg);r._flBs=null;r._flBg=null;r.removeAttribute('data-fl-zsel');});curZ=null;}
+  /* grise FRAIS : requête directe à chaque appel → attrape aussi les courbes redessinées par mdMarchePrecise (vraies données) APRÈS coup */
+  function grayFresh(){
+   [].slice.call(svg.querySelectorAll('path')).forEach(function(p){if(zHi.contains(p))return;var st=p.getAttribute('stroke');if(!st||st==='none'||st==='#cbc6bd')return;var fl=p.getAttribute('fill');if(fl&&fl!=='none'&&!/^url|rgba/.test(fl))return;if(p.getAttribute('data-flgs')==null){p.setAttribute('data-flgs',st);p.setAttribute('data-flgw',p.getAttribute('stroke-width')||'');}p.setAttribute('stroke','#cbc6bd');p.setAttribute('stroke-width','1');p.style.opacity='1';});
+   [].slice.call(svg.querySelectorAll('line,circle')).forEach(function(el){if(el===guide||el===halo||el===dot||zHi.contains(el))return;var s=(el.getAttribute('stroke')||'').toLowerCase();if(/^#(fb6015|fdb375|fd7e14)$/.test(s)){if(el.getAttribute('data-flgs')==null)el.setAttribute('data-flgs',el.getAttribute('stroke'));el.setAttribute('stroke','#cbc6bd');}});
+   if(areaEl){areaEl.setAttribute('fill','rgba(150,145,136,0.09)');areaEl.style.opacity='1';}
+  }
+  function ungrayFresh(){
+   [].slice.call(svg.querySelectorAll('[data-flgs]')).forEach(function(p){p.setAttribute('stroke',p.getAttribute('data-flgs'));var w=p.getAttribute('data-flgw');if(w)p.setAttribute('stroke-width',w);else p.removeAttribute('stroke-width');p.removeAttribute('data-flgs');p.removeAttribute('data-flgw');});
+   if(areaEl){areaEl.style.opacity='1';if(areaFill0!=null)areaEl.setAttribute('fill',areaFill0);}
+  }
+  /* applique le style de sélection de carte (contour + halo + neutralise le contour orange de la maquette), en !important pour battre la maquette */
+  function _cardApply(card,col){card.style.setProperty('background',tintOf(col,0.12),'important');card.style.setProperty('box-shadow','inset 0 0 0 1.6px '+col,'important');card.style.setProperty('border-color',col,'important');card.style.setProperty('outline','none','important');card.setAttribute('data-fl-zsel','1');}
+  function zClear(){zHi.textContent='';if(sc._flZoneTick){clearInterval(sc._flZoneTick);sc._flZoneTick=0;}ungrayFresh();orangeMarks.forEach(function(o){o.el.setAttribute(o.attr,o.s);});
+   [].slice.call(sc.querySelectorAll('[data-fl-zsel]')).forEach(function(r){r.style.removeProperty('box-shadow');r.style.removeProperty('background');r.style.removeProperty('border-color');r.style.removeProperty('outline');if(r._flBs)r.style.setProperty('box-shadow',r._flBs);if(r._flBg)r.style.setProperty('background',r._flBg);r._flBs=null;r._flBg=null;r.removeAttribute('data-fl-zsel');});curZ=null;}
   function zShow(row){var t=(row.textContent||'').replace(/\s+/g,' ');var lo=0,hi=9999,mm;
    if((mm=t.match(/[>+]\s*(?:DE )?(\d+)/i)))lo=+mm[1];
    else if((mm=t.match(/[<\u2212-]\s*(?:DE )?(\d+)\s*BPM/i)))hi=+mm[1]-1;
@@ -6726,10 +6738,8 @@ function mdMarcheScrub(doc){try{var sc=doc.getElementById('screen-marche');if(!s
    if(curZ===row){zClear();return;}
    zClear();curZ=row;
    var col=zCol(t);
-   /* toutes les courbes (base + pics orange) + l'aire deviennent GRISES ; seuls les segments de la zone gardent la couleur */
-   curvePaths.forEach(function(o){o.p.setAttribute('stroke','#cbc6bd');o.p.setAttribute('stroke-width','1');o.p.style.opacity='1';});
-   orangeMarks.forEach(function(o){o.el.setAttribute(o.attr,'#cbc6bd');});
-   if(areaEl){areaEl.setAttribute('fill','rgba(150,145,136,0.09)');areaEl.style.opacity='1';}
+   /* toutes les courbes (base + pics orange, y compris redessinées) + l'aire deviennent GRISES ; seuls les segments de la zone gardent la couleur */
+   grayFresh();
    var frag='';
    /* dégradé vertical des colonnes : dense au pic → se fond vers le bas (façon WHOOP) */
    var _d2=svg.querySelector('defs');if(!_d2){_d2=doc.createElementNS(NS,'defs');svg.insertBefore(_d2,svg.firstChild);}
@@ -6744,7 +6754,10 @@ function mdMarcheScrub(doc){try{var sc=doc.getElementById('screen-marche');if(!s
    var card=row;for(var cc=0;cc<7&&card&&card!==sc;cc++){var br=0;try{br=parseFloat((doc.defaultView||window).getComputedStyle(card).borderRadius)||0;}catch(e){}if(br>=12&&card.getBoundingClientRect().width>250)break;card=card.parentElement;}
    if(!card||card===sc)card=row;
    if(card._flBg==null)card._flBg=card.style.background||'';if(card._flBs==null)card._flBs=card.style.boxShadow||'';
-   card.style.setProperty('background',tintOf(col,0.12),'important');card.style.setProperty('box-shadow','inset 0 0 0 1.6px '+col,'important');card.setAttribute('data-fl-zsel','1');
+   _cardApply(card,col);
+   /* la maquette redessine la courbe + réécrit le contour de la carte APRÈS nous → on ré-applique en boucle courte tant que la zone est sélectionnée */
+   if(sc._flZoneTick)clearInterval(sc._flZoneTick);
+   sc._flZoneTick=setInterval(function(){if(!curZ||!/translateY\(0/.test(sc.style.transform||'')){clearInterval(sc._flZoneTick);sc._flZoneTick=0;return;}try{grayFresh();if(card.getAttribute('data-fl-zsel'))_cardApply(card,col);}catch(e){}},160);
    try{haptic&&haptic(4);}catch(e){}}
   var _zx=0,_zy=0,_zt=0;
   doc.addEventListener('pointerdown',function(ev){_zx=ev.clientX;_zy=ev.clientY;},true);
@@ -12278,7 +12291,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v587';
+const APP_VERSION='flint-v588';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
