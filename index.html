@@ -6701,6 +6701,13 @@ function mdMarcheScrub(doc){try{var sc=doc.getElementById('screen-marche');if(!s
  /* ── surlignage de ZONE façon WHOOP : tap une zone → segments orange sur la courbe + traits
     verticaux transparents jusqu'en bas ; les moments hors zone s'estompent ── */
  if(!svg._flZoneWired){svg._flZoneWired=1;
+  /* marqueurs verticaux façon WHOOP : tiret en dégradé (clair en haut → dense en bas) au lieu d'orange plein + points d'extrémité gris */
+  try{
+   var _defs=svg.querySelector('defs');if(!_defs){_defs=doc.createElementNS(NS,'defs');svg.insertBefore(_defs,svg.firstChild);}
+   if(!svg.querySelector('#flMarkFade')){var _lg=doc.createElementNS(NS,'linearGradient');_lg.setAttribute('id','flMarkFade');_lg.setAttribute('x1','0');_lg.setAttribute('y1','14');_lg.setAttribute('x2','0');_lg.setAttribute('y2','166.5');_lg.setAttribute('gradientUnits','userSpaceOnUse');_lg.innerHTML='<stop offset="0" stop-color="#14110f" stop-opacity="0.03"></stop><stop offset="1" stop-color="#14110f" stop-opacity="0.30"></stop>';_defs.appendChild(_lg);}
+   [].slice.call(svg.querySelectorAll('line')).forEach(function(l){if(l===guide)return;var s=(l.getAttribute('stroke')||'').toLowerCase();if(l.getAttribute('stroke-dasharray')==='3 3'&&(s==='#fb6015'||s==='#d9d3ca'||s==='#d9d6d1'||s==='#fdb375')){l.setAttribute('stroke','url(#flMarkFade)');}});
+   [].slice.call(svg.querySelectorAll('circle')).forEach(function(c){if(c===dot||c===halo)return;var f=(c.getAttribute('fill')||'').toLowerCase();if((f==='#fb6015'||f==='#14110f')&&Math.abs((+c.getAttribute('cy'))-166.5)<3){c.setAttribute('fill','#8a857c');}});
+  }catch(e){}
   var zHi=doc.createElementNS(NS,'g');zHi.style.pointerEvents='none';svg.appendChild(zHi);
   var baseY=172,curZ=null,areaFill0=(areaEl&&areaEl.getAttribute('fill'))||null;
   function tintOf(hex,a){hex=(hex||'').replace('#','');if(hex.length===3)hex=hex.replace(/./g,'$&$&');var nn=parseInt(hex,16)||0;var R=(nn>>16)&255,G=(nn>>8)&255,B=nn&255;function mix(c){return Math.round(255*(1-a)+c*a);}return 'rgb('+mix(R)+','+mix(G)+','+mix(B)+')';}
@@ -11436,14 +11443,14 @@ function flEffOpen(doc){try{var o=flEffData(doc);
   +'<div style="background:#fff;border-radius:24px;padding:22px 18px;margin-top:16px;box-shadow:0 3px 12px rgba(150,118,72,0.05),inset 0 0 0 1px rgba(20,17,15,0.04)">'
    +'<div style="display:flex;align-items:center;justify-content:space-between;padding:0 4px"><div style="display:flex;align-items:center;gap:12px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fb6015" stroke-width="2"><path d="M12 20.5C12 20.5 3.5 15 3.5 8.8C3.5 6 5.7 4 8.2 4C9.9 4 11.3 4.9 12 6.2C12.7 4.9 14.1 4 15.8 4C18.3 4 20.5 6 20.5 8.8C20.5 15 12 20.5 12 20.5Z"></path></svg><span style="font-family:-apple-system,system-ui,sans-serif;font-size:13px;font-weight:700;letter-spacing:0.03em;color:#14110f">FRÉQUENCE CARDIAQUE (BPM)</span></div><span style="width:26px;height:26px;border-radius:50%;border:1.5px solid #d9d3ca;color:#a8a29a;display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-style:italic;font-size:15px">i</span></div>'
    +'<div style="margin-top:18px"><svg class="fle-svg" viewBox="0 0 340 186" width="100%" style="display:block;touch-action:none;cursor:crosshair">'
-    +'<defs><linearGradient id="fleFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fb6015" stop-opacity="0.20"></stop><stop offset="1" stop-color="#fb6015" stop-opacity="0.02"></stop></linearGradient></defs>'
+    +'<defs><linearGradient id="fleFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fb6015" stop-opacity="0.20"></stop><stop offset="1" stop-color="#fb6015" stop-opacity="0.02"></stop></linearGradient><linearGradient id="flMarkFade" x1="0" y1="14" x2="0" y2="166.5" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#14110f" stop-opacity="0.03"></stop><stop offset="1" stop-color="#14110f" stop-opacity="0.30"></stop></linearGradient></defs>'
     +'<g stroke="#efe9e1" stroke-width="1" stroke-dasharray="1 5" stroke-linecap="round"><line x1="34" y1="14" x2="328" y2="14"></line><line x1="34" y1="52.1" x2="328" y2="52.1"></line><line x1="34" y1="90.25" x2="328" y2="90.25"></line><line x1="34" y1="128.4" x2="328" y2="128.4"></line><line x1="34" y1="166.5" x2="328" y2="166.5"></line></g>'
     +'<g font-family="-apple-system,system-ui,sans-serif" font-size="10" font-weight="300" fill="#b3ab9f" text-anchor="end"><text x="27" y="17.5">175</text><text x="27" y="55.6">150</text><text x="27" y="93.75">125</text><text x="27" y="131.9">100</text><text x="27" y="170">75</text></g>'
-    +'<line x1="34" y1="14" x2="34" y2="166.5" stroke="#d9d3ca" stroke-width="1" stroke-dasharray="3 3"></line><line x1="328" y1="14" x2="328" y2="166.5" stroke="#d9d3ca" stroke-width="1" stroke-dasharray="3 3"></line>'
+    +'<line x1="34" y1="14" x2="34" y2="166.5" stroke="url(#flMarkFade)" stroke-width="1" stroke-dasharray="3 3"></line><line x1="328" y1="14" x2="328" y2="166.5" stroke="url(#flMarkFade)" stroke-width="1" stroke-dasharray="3 3"></line>'
     +'<path class="fle-area" d="'+areaD+'" fill="url(#fleFill)" style="transition:opacity .2s ease"></path>'
     +'<path class="fle-line" d="'+lineD+'" fill="none" stroke="#fb6015" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round" style="transition:opacity .2s ease,stroke .2s ease"></path>'
     +'<g class="fle-hi"></g>'
-    +'<circle cx="34" cy="166.5" r="2.5" fill="#14110f"></circle><circle cx="328" cy="166.5" r="2.5" fill="#14110f"></circle>'
+    +'<circle cx="34" cy="166.5" r="2.5" fill="#8a857c"></circle><circle cx="328" cy="166.5" r="2.5" fill="#8a857c"></circle>'
     +'<text x="34" y="184" text-anchor="middle" font-family="Archivo,sans-serif" font-size="8.5" font-weight="700" fill="#0b0906">'+o.t0+'</text><text x="328" y="184" text-anchor="middle" font-family="Archivo,sans-serif" font-size="8.5" font-weight="700" fill="#0b0906">'+o.t1+'</text>'
     +'<g class="fle-scrub" opacity="0" style="transition:opacity .18s ease;pointer-events:none">'
      +'<line class="fle-guide" x1="34" y1="14" x2="34" y2="166.5" stroke="#fb6015" stroke-width="1.2"></line>'
@@ -12264,7 +12271,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v582';
+const APP_VERSION='flint-v583';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
