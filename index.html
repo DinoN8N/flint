@@ -7458,7 +7458,9 @@ function flRecupOpen(doc){try{
  var ringCol=D.score==null?'#9a968f':(D.score>=67?_RC.g:(D.score>=34?_RC.a:_RC.r));
  D.dot=ringCol;
  var _rvC=null;try{var _rvx=recovery();_rvC=_rvx&&_rvx.c;}catch(e){}
- function _mcol(key){if(SH&&_rvC){var idx={hrv:0,rhr:1,sleep:2,resp:3}[key];var z=(idx!=null&&_rvC[idx])?_rvC[idx][2]:null;return z==null?_RC.a:(z>=0.3?_RC.g:(z<=-0.3?_RC.r:_RC.a));}return {hrv:_RC.g,rhr:_RC.g,resp:_RC.g,sleep:_RC.a}[key]||_RC.a;}
+ /* z = écart à TA base (positif = mieux que ta normale). À/au-dessus de la base = tu vas bien = VERT ;
+    notablement en-dessous = MOYEN = orange ; bien en-dessous = PAS BIEN = rouge. */
+ function _mcol(key){if(SH&&_rvC){var idx={hrv:0,rhr:1,sleep:2,resp:3}[key];var z=(idx!=null&&_rvC[idx])?_rvC[idx][2]:null;return z==null?_RC.a:(z>=-0.35?_RC.g:(z>=-1.1?_RC.a:_RC.r));}return {hrv:_RC.g,rhr:_RC.g,resp:_RC.g,sleep:_RC.a}[key]||_RC.a;}
  D.rows.forEach(function(r){r.col=_mcol(r.key);});
  var el=doc.getElementById('screen-fl-recup');
  if(!el){el=doc.createElement('section');el.id='screen-fl-recup';doc.body.appendChild(el);}
@@ -12527,7 +12529,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v628';
+const APP_VERSION='flint-v629';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
