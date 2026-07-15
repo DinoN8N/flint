@@ -6368,7 +6368,7 @@ function flCalOpen(){var ex=document.getElementById('flCalSheet');if(ex){ex.remo
  requestAnimationFrame(function(){document.getElementById('flCalBk').style.opacity='1';document.getElementById('flCalCard').style.transform='translateX(-50%) translateY(0)';});
  if(typeof haptic==='function')haptic();}
 function flSnapLoop(){try{var f=document.getElementById('frToday');var doc=f&&f.contentDocument;if(doc&&doc.body){var win=doc.defaultView,he=doc.documentElement;var y=win.pageYOffset;if(doc._flPrevY!==y){doc._flPrevY=y;doc._lastScrollTs=performance.now();}if(he.style.scrollSnapType!=='none')he.style.scrollSnapType='none';/* founder : plus de snap, scroll continu */
- var gb=doc.getElementById('flBackBtn');if(gb){var openScr=flBackScreens(doc).length>0;var want2=openScr?'1':'0';if(gb.style.opacity!==want2){gb.style.opacity=want2;gb.style.pointerEvents=openScr?'auto':'none';}}
+ var gb=doc.getElementById('flBackBtn');if(gb){var openScr=flBackScreens(doc).some(function(s){return !(s.id==='screen-marche'&&s.querySelector('[data-fl-effhdr]'));});var want2=openScr?'1':'0';if(gb.style.opacity!==want2){gb.style.opacity=want2;gb.style.pointerEvents=openScr?'auto':'none';}}
  var fab=doc.getElementById('flnFab');
  if(!fab){fab=doc.createElement('button');fab.id='flnFab';fab.setAttribute('aria-label','Ajouter un repas');
   fab.style.cssText='position:fixed;right:18px;left:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 84px);width:60px;height:60px;border-radius:50%;border:none;background:rgb(251,96,21);color:#fff;box-shadow:rgba(251,96,21,.4) 0 10px 26px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:110;opacity:0;pointer-events:none;transform:translateY(10px);transition:opacity .22s,transform .22s;padding:0';
@@ -9920,9 +9920,9 @@ function mdEffortHeader(doc){try{
  else if(window._mdAct&&window._mdAct.iconHTML){ICON='<svg width="24" height="24" viewBox="'+(window._mdAct.iconVB||'0 0 24 24')+'" fill="none" stroke="#fb6015" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+window._mdAct.iconHTML+'</svg>';}
  var sig=[NAME,TIME,SUB,EFFORT,STEPLBL,STEPS].join('|');
  var neu=common.querySelector('[data-fl-effhdr]');
- if(!neu){neu=doc.createElement('div');neu.setAttribute('data-fl-effhdr','1');neu.style.cssText='font-family:Archivo,-apple-system,system-ui,sans-serif;display:flex;flex-direction:column';common.insertBefore(neu,graph);}
+ if(!neu){neu=doc.createElement('div');neu.setAttribute('data-fl-effhdr','1');neu.style.cssText='font-family:Archivo,-apple-system,system-ui,sans-serif;display:flex;flex-direction:column;padding-top:max(14px,calc(env(safe-area-inset-top,0px) + 10px))';common.insertBefore(neu,graph);}
  if(neu.getAttribute('data-sig')!==sig){neu.setAttribute('data-sig',sig);neu.innerHTML=flEffHdrHTML(NAME,TIME,SUB,EFFORT,EFFPCT,STEPLBL,STEPS,STEPPCT,ICON);
-  var bk=neu.querySelector('.fleh-back');if(bk)bk.onclick=function(ev){ev.preventDefault();ev.stopPropagation();var mb=kid0.querySelector('[data-fl-back]')||kid0.querySelector('button');if(mb)(doc.defaultView||window).setTimeout(function(){['pointerdown','pointerup','click'].forEach(function(t){try{mb.dispatchEvent(new (doc.defaultView.MouseEvent)(t,{bubbles:true,cancelable:true}));}catch(e){}});},0);};}
+  var bk=neu.querySelector('.fleh-back');if(bk)bk.onclick=function(ev){ev.preventDefault();ev.stopPropagation();try{doc.defaultView.parent.flBackClose();}catch(e){}var mb=kid0.querySelector('[data-fl-back]')||kid0.querySelector('button');if(mb&&!(doc.defaultView.parent&&doc.defaultView.parent.flBackClose))(doc.defaultView||window).setTimeout(function(){['pointerdown','pointerup','click'].forEach(function(t){try{mb.dispatchEvent(new (doc.defaultView.MouseEvent)(t,{bubbles:true,cancelable:true}));}catch(e){}});},0);};}
  hdrKids.forEach(function(k){if(k.style.display!=='none')k.style.setProperty('display','none','important');});
 }catch(e){}}
 function actMeta(name){var n=(name||'').toLowerCase();
@@ -12580,7 +12580,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v632';
+const APP_VERSION='flint-v633';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
