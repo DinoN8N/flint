@@ -9880,8 +9880,8 @@ function mdInjectActivity(name,doc,row){var el=doc.getElementById('screen-marche
    progression). Lit les vraies valeurs affichées, s'adapte au sport, garde le graphe FC + zones. ═══ */
 function flEffHdrHTML(NAME,TIME,SUB,EFFORT,EFFPCT,STEPLBL,STEPS,STEPPCT,ICON){
  var SANS="-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif";
- return '<button class="fleh-back" style="flex-shrink:0;width:44px;height:44px;border-radius:16px;background:#fff;border:none;padding:0;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(20,17,15,.05)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#14110f" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg></button>'
-  +'<div style="display:flex;align-items:center;gap:12px">'
+ return '<div style="display:flex;align-items:center;gap:12px">'
+   +'<button class="fleh-back" style="flex-shrink:0;width:44px;height:44px;border-radius:16px;background:#fff;border:none;padding:0;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(20,17,15,.05)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#14110f" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg></button>'
    +'<div style="width:44px;height:44px;border-radius:16px;background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 4px 16px rgba(20,17,15,.05)">'+ICON+'</div>'
    +'<div style="flex:1;min-width:0"><div style="font-family:-apple-system,system-ui,sans-serif;font-size:15px;font-weight:500;letter-spacing:0.05em;color:#14110f">'+NAME+'</div><div style="font-family:-apple-system,system-ui,sans-serif;font-size:12px;font-weight:300;color:#a8a29a;margin-top:2px">'+TIME+'</div></div>'
    +'<span style="flex-shrink:0;display:flex;gap:3.5px;padding:8px"><span style="width:4px;height:4px;border-radius:50%;background:#14110f"></span><span style="width:4px;height:4px;border-radius:50%;background:#14110f"></span><span style="width:4px;height:4px;border-radius:50%;background:#14110f"></span></span>'
@@ -12580,7 +12580,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v631';
+const APP_VERSION='flint-v632';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
