@@ -7331,14 +7331,17 @@ function flRcSparkPath(vals){var ok=vals.filter(function(v){return v!=null;});if
  var pts=[],last=null;vals.forEach(function(v){if(v==null)v=last;if(v==null)v=mn;last=v;pts.push(v);});
  var d='';pts.forEach(function(v,i){var x=4+i*96/(pts.length-1);var y=7.8+(mx-v)/(mx-mn)*27.9;d+=(i?' L ':'M ')+x.toFixed(1)+' '+y.toFixed(1);});
  return d;}
-function flRcRow(key,lab,val,unit,dir,sparkD,gid){
- var tri=dir===0?'':('<svg width="9" height="9" viewBox="0 0 12 12" fill="#fb6015" style="display:block"><path d="'+(dir>0?'M6 2.5L10 8.5H2z':'M6 9.5L2 3.5h8z')+'"></path></svg>');
+function flRcRow(key,lab,val,unit,dir,sparkD,gid,col){
+ col=col||'#fb6015';
+ function _hxA(h,a){h=(h||'').replace('#','');if(h.length===3)h=h.replace(/./g,'$&$&');var n=parseInt(h,16)||0;return 'rgba('+((n>>16)&255)+','+((n>>8)&255)+','+(n&255)+','+a+')';}
+ var ic=(FLRC_IC[key]||'').replace(/#fb6015/gi,col);
+ var tri=dir===0?'':('<svg width="9" height="9" viewBox="0 0 12 12" fill="'+col+'" style="display:block"><path d="'+(dir>0?'M6 2.5L10 8.5H2z':'M6 9.5L2 3.5h8z')+'"></path></svg>');
  var spark=sparkD?('<svg viewBox="0 0 104 46" width="104" height="46" style="display:block;overflow:visible">'
-  +'<defs><linearGradient id="'+gid+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fb6015" stop-opacity="0.16"></stop><stop offset="1" stop-color="#fb6015" stop-opacity="0"></stop></linearGradient></defs>'
+  +'<defs><linearGradient id="'+gid+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+col+'" stop-opacity="0.16"></stop><stop offset="1" stop-color="'+col+'" stop-opacity="0"></stop></linearGradient></defs>'
   +'<path d="'+sparkD+' L 100 42 L 4 42 Z" fill="url(#'+gid+')" stroke="none"></path>'
-  +'<path d="'+sparkD+'" fill="none" stroke="#fb6015" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"></path></svg>'):'';
+  +'<path d="'+sparkD+'" fill="none" stroke="'+col+'" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"></path></svg>'):'';
  return '<div style="display:flex;align-items:center;gap:14px;padding:20px 0;'+(key!=='hrv'?'border-top:1px solid #efeae2':'')+'">'
-  +'<span style="flex-shrink:0;width:52px;height:52px;border-radius:50%;background:#fef8f4;display:flex;align-items:center;justify-content:center">'+FLRC_IC[key]+'</span>'
+  +'<span style="flex-shrink:0;width:52px;height:52px;border-radius:50%;background:'+_hxA(col,0.11)+';display:flex;align-items:center;justify-content:center">'+ic+'</span>'
   +'<div style="flex:1;min-width:0"><div style="font-family:-apple-system,system-ui,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.09em;line-height:1.3;color:#14110f">'+lab+'</div></div>'
   +'<div style="flex-shrink:0;width:78px;display:flex;flex-direction:column;align-items:flex-start;margin-right:4px">'
    +'<div style="display:flex;align-items:flex-start;gap:5px">'
@@ -7450,6 +7453,13 @@ function flRecupOpen(doc){try{
     {key:'rhr',lab:'FR\u00c9QUENCE CARDIAQUE<br>AU REPOS',val:(s0&&s0.rhr!=null)?''+Math.round(s0.rhr):'\u2014',unit:'',dir:flRcDir(s0&&s0.rhr,hRhr),spark:flRcSparkPath(hRhr)},
     {key:'resp',lab:'FR\u00c9QUENCE<br>RESPIRATOIRE',val:'\u2014',unit:'',dir:0,spark:null},
     {key:'sleep',lab:'SOMMEIL',val:slPct!=null?''+slPct:'\u2014',unit:slPct!=null?'%':'',dir:flRcDir(slPct,hSl),spark:flRcSparkPath(hSl)}]};}
+ /* code couleur récup (inspiration WHOOP) : anneau + métriques en vert/orange/rouge selon la qualité */
+ var _RC={g:'#3FB57A',a:'#F2A93B',r:'#FF3B30'};
+ var ringCol=D.score==null?'#9a968f':(D.score>=67?_RC.g:(D.score>=34?_RC.a:_RC.r));
+ D.dot=ringCol;
+ var _rvC=null;try{var _rvx=recovery();_rvC=_rvx&&_rvx.c;}catch(e){}
+ function _mcol(key){if(SH&&_rvC){var idx={hrv:0,rhr:1,sleep:2,resp:3}[key];var z=(idx!=null&&_rvC[idx])?_rvC[idx][2]:null;return z==null?_RC.a:(z>=0.3?_RC.g:(z<=-0.3?_RC.r:_RC.a));}return {hrv:_RC.g,rhr:_RC.g,resp:_RC.g,sleep:_RC.a}[key]||_RC.a;}
+ D.rows.forEach(function(r){r.col=_mcol(r.key);});
  var el=doc.getElementById('screen-fl-recup');
  if(!el){el=doc.createElement('section');el.id='screen-fl-recup';doc.body.appendChild(el);}
  el.style.cssText="font-family:'Archivo',-apple-system,system-ui,sans-serif;color:#14110f;position:fixed;top:0;bottom:0;left:50%;width:100%;max-width:464px;transform:translateX(-50%) translateY(100%);pointer-events:none;background:#fff;z-index:100;transition:transform .42s cubic-bezier(.22,1,.36,1);display:flex;flex-direction:column";
@@ -7471,7 +7481,7 @@ function flRecupOpen(doc){try{
   +'<div style="position:relative;width:260px;height:260px;margin:10px auto 0">'
    +'<svg viewBox="0 0 240 240" width="260" height="260" style="display:block;transform:rotate(-90deg)">'
     +'<circle cx="120" cy="120" r="104" fill="none" stroke="#EAE8E4" stroke-width="7"></circle>'
-    +'<circle cx="120" cy="120" r="104" fill="none" stroke="#fb6015" stroke-width="7" stroke-linecap="round" stroke-dasharray="'+(frac*CIRC).toFixed(1)+' '+CIRC+'" stroke-dashoffset="0"></circle>'
+    +'<circle cx="120" cy="120" r="104" fill="none" stroke="'+ringCol+'" stroke-width="7" stroke-linecap="round" stroke-dasharray="'+(frac*CIRC).toFixed(1)+' '+CIRC+'" stroke-dashoffset="0"></circle>'
    +'</svg>'
    +'<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">'
     +'<div style="display:flex;justify-content:center;align-items:flex-end">'
@@ -7486,7 +7496,7 @@ function flRecupOpen(doc){try{
     +'<span style="width:7px;height:7px;border-radius:50%;background:'+D.dot+'"></span>'+D.verdict
    +'</span></div>'):'')
   +'<div style="margin-top:26px">'
-   +D.rows.map(function(r2,i3){return flRcRow(r2.key,r2.lab,r2.val,r2.unit,r2.dir,r2.spark,'flrcg'+i3);}).join('')
+   +D.rows.map(function(r2,i3){return flRcRow(r2.key,r2.lab,r2.val,r2.unit,r2.dir,r2.spark,'flrcg'+i3,r2.col);}).join('')
   +'</div>'
   +flRcTrendsHTML()
  +'</div>'
@@ -12517,7 +12527,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v627';
+const APP_VERSION='flint-v628';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
