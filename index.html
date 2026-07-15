@@ -6803,24 +6803,29 @@ function mdMarcheZones(doc){try{
    var fill=[].slice.call(row.querySelectorAll('div')).filter(function(el){return el.style.position==='absolute'&&/%/.test(el.style.width);})[0];
    var pctEl=[].slice.call(row.querySelectorAll('div,span')).filter(function(el){return el.children.length===0&&/\d\s*%$/.test((el.textContent||'').trim())&&(el.textContent||'').trim().length<8;})[0];
    tick.style.background=col;if(fill)fill.style.background=col;if(pctEl)pctEl.style.color=col;
-   var target=fill?fill.style.width:'0%',origPct=pctEl?pctEl.textContent:'',tgt=parseInt((target||'').replace(/[^\d]/g,''))||0;
-   function play(){if(fill){fill.style.transition='none';fill.style.width='0%';void fill.offsetWidth;fill.style.transition='width .9s cubic-bezier(.22,.9,.3,1)';fill.style.width=target;}
-    if(pctEl){var t0=performance.now();(function tk(t){var p=Math.min(1,(t-t0)/900),e=1-Math.pow(1-p,3);pctEl.textContent=Math.round(tgt*e)+' %';if(p<1)requestAnimationFrame(tk);else pctEl.textContent=origPct;})(performance.now());}}
+   /* on lit la cible AU MOMENT de jouer (données chargées), pas au câblage → plus de restauration à "0 %" qui replie tout */
+   function play(){var target=fill?fill.style.width:'0%',finalPct=pctEl?pctEl.textContent:'',tgt=parseInt((finalPct||'').replace(/[^\d]/g,''))||0;
+    if(/^0\s*%$/.test((finalPct||'').trim()))return; /* zone vide : pas d'animation */
+    if(fill){fill.style.transition='none';fill.style.width='0%';void fill.offsetWidth;fill.style.transition='width .9s cubic-bezier(.22,.9,.3,1)';fill.style.width=target;}
+    if(pctEl){var t0=performance.now();(function tk(t){var p=Math.min(1,(t-t0)/900),e=1-Math.pow(1-p,3);pctEl.textContent=Math.round(tgt*e)+' %';if(p<1)requestAnimationFrame(tk);else pctEl.textContent=finalPct;})(performance.now());}}
    row._flFill=play;row._flCol=col;sc._flZoneFills.push(play);
   });
  }
  /* zones à 0% (jamais atteintes) : grisées, rétractées (sans barre) et non-cliquables — façon WHOOP. Ré-évalué à chaque passe (les vraies données arrivent en async). */
+ var _anim=sc._flAnimUntil&&Date.now()<sc._flAnimUntil; /* pendant l'anim, le % compte de 0 → ne pas replier une zone non-vide au frame "0 %" */
  [].slice.call(sc.querySelectorAll('div')).filter(function(el){return el.style.width==='5px'&&el.style.alignSelf==='stretch';}).forEach(function(tick){
   var row=tick.parentElement;if(!row)return;
   var pctEl=[].slice.call(row.querySelectorAll('div,span')).filter(function(el){return el.children.length===0&&/%$/.test((el.textContent||'').trim())&&(el.textContent||'').trim().length<8;})[0];
   var fill=[].slice.call(row.querySelectorAll('div')).filter(function(el){return el.style.position==='absolute';})[0];
   var track=fill?fill.parentElement:null;
   var empty=pctEl&&/^0\s*%$/.test((pctEl.textContent||'').trim());
-  if(empty&&row.getAttribute('data-fl-empty')!=='1'){
-   row.setAttribute('data-fl-empty','1');
-   if(track)track.style.display='none';
-   row.style.opacity='0.5';row.style.paddingTop='7px';row.style.paddingBottom='7px';row.style.pointerEvents='none';
-   tick.style.background='#c9c3ba';if(pctEl)pctEl.style.color='#9a938a';
+  if(empty&&!_anim){
+   if(row.getAttribute('data-fl-empty')!=='1'){row.setAttribute('data-fl-empty','1');
+    if(track)track.style.display='none';
+    row.style.opacity='0.5';row.style.paddingTop='7px';row.style.paddingBottom='7px';row.style.pointerEvents='none';
+    tick.style.background='#c9c3ba';if(pctEl)pctEl.style.color='#9a938a';}
+   /* nettoie tout contour coloré résiduel → les zones vides sont grisées de façon IDENTIQUE */
+   var _rbs=row.style.boxShadow||'';if(_rbs&&_rbs.indexOf('20, 17, 15')<0)row.style.removeProperty('box-shadow');row.style.removeProperty('border-color');
   }else if(!empty&&row.getAttribute('data-fl-empty')==='1'){
    row.removeAttribute('data-fl-empty');
    if(track)track.style.display='';
@@ -6830,13 +6835,23 @@ function mdMarcheZones(doc){try{
  });
  /* la maquette applique son propre contour ORANGE au tap → on le retire de toute carte NON-sélectionnée (fix : re-clic qui vire orange au lieu de désélectionner + zones grises non-cliquables qui viraient orange) */
  if(!sc._flZoneStripObs&&typeof MutationObserver!=='undefined'){
-  var _strip=function(c){if(!c||!c.getAttribute)return;var bs=(c.style.boxShadow||'')+' '+(c.style.border||'')+' '+(c.style.borderColor||'');if(!/251,\s*96,\s*21|fb6015|255,\s*74,\s*28|ff4a1c|fb7e00|fc6503|204,\s*61/i.test(bs))return;if(c.getAttribute('data-fl-zsel')){c.style.setProperty('box-shadow','inset 0 0 0 1.6px '+(c._flSelCol||'#2b7fff'),'important');}else{c.style.removeProperty('box-shadow');c.style.removeProperty('border');c.style.removeProperty('border-color');}};
+  var _rgbOf=function(hex){hex=(hex||'').replace('#','');if(hex.length===3)hex=hex.replace(/./g,'$&$&');var n=parseInt(hex,16)||0;return ((n>>16)&255)+', '+((n>>8)&255)+', '+(n&255);};
+  var _strip=function(c){if(!c||!c.getAttribute)return;var bs=c.style.boxShadow||'';
+   if(c.getAttribute('data-fl-zsel')){var col=c._flSelCol||'#2b7fff';if(bs.indexOf(_rgbOf(col))<0){c.style.setProperty('box-shadow','inset 0 0 0 1.6px '+col,'important');}return;}
+   /* carte NON-sélectionnée : la maquette y met un contour coloré (rouge/orange/… selon la zone) → on le retire ; on garde l'ombre par défaut faible (sur 20,17,15) */
+   if((bs&&bs.indexOf('20, 17, 15')<0)||c.style.borderColor||(c.style.border&&/rgb|#/.test(c.style.border))){c.style.removeProperty('box-shadow');c.style.removeProperty('border');c.style.removeProperty('border-color');}};
   var _obs=new MutationObserver(function(ms){for(var i=0;i<ms.length;i++)_strip(ms[i].target);});
   [].slice.call(sc.querySelectorAll('div')).filter(function(el){return el.style.width==='5px'&&el.style.alignSelf==='stretch';}).forEach(function(tk){if(tk.parentElement)_obs.observe(tk.parentElement,{attributes:true,attributeFilter:['style']});});
   sc._flZoneStripObs=_obs;
  }
+ /* dès que le % d'une zone change (les vraies données arrivent en async) → re-calcule la rétraction IMMÉDIATEMENT (pas d'attente 500ms), pour que les zones vides soient grises directement sans flash rouge/orange */
+ if(!sc._flZoneTxtObs&&typeof MutationObserver!=='undefined'){
+  var _tobs=new MutationObserver(function(){if(sc._flReRAF)return;sc._flReRAF=requestAnimationFrame(function(){sc._flReRAF=0;try{window.mdMarcheZones&&window.mdMarcheZones(doc);}catch(e){}});});
+  [].slice.call(sc.querySelectorAll('div')).filter(function(el){return el.style.width==='5px'&&el.style.alignSelf==='stretch';}).forEach(function(tk){if(tk.parentElement)_tobs.observe(tk.parentElement,{childList:true,subtree:true,characterData:true});});
+  sc._flZoneTxtObs=_tobs;
+ }
  var vis=/translateY\(0(?:px|%)?\)/.test(sc.style.transform||'');
- if(vis&&!sc._flZoneShown){sc._flZoneShown=1;(sc._flZoneFills||[]).forEach(function(fn,i){setTimeout(fn,140+i*90);});}
+ if(vis&&!sc._flZoneShown){sc._flZoneShown=1;var _fills=sc._flZoneFills||[];sc._flAnimUntil=Date.now()+140+_fills.length*90+950;_fills.forEach(function(fn,i){setTimeout(fn,140+i*90);});}
  if(!vis)sc._flZoneShown=0;
 }catch(e){}}
 /* taps natifs (tuiles SOMMEIL/EFFORT/CALORIES, lignes Ma journée, Nuit…) : loader sans rien intercepter */
@@ -12333,7 +12348,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v594';
+const APP_VERSION='flint-v595';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
