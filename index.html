@@ -6669,16 +6669,16 @@ function mdMarcheScrub(doc){try{var sc=doc.getElementById('screen-marche');if(!s
  for(var i=0;i<N;i++){var xt=xmin+(xmax-xmin)*i/(N-1);var lo=0,hi=PL;for(var k=0;k<18;k++){var mid=(lo+hi)/2;if(pel.getPointAtLength(mid).x<xt)lo=mid;else hi=mid;}var pp=pel.getPointAtLength((lo+hi)/2);
   var v=Math.round(bpmAt(pp.y));v=Math.max(30,Math.min(230,v));
   pts.push({x:+pp.x.toFixed(1),y:+pp.y.toFixed(1),v:v,t:timeAt(pp.x)});}
- /* fusion des 2 stats → bulle unique */
- var effEl=lv.filter(function(e){return /EFFORT ACTIVIT/i.test(e.textContent);})[0];if(!effEl)return;
- var pasEl=lv.filter(function(e){var t=(e.textContent||'').trim();return (/DE PAS/i.test(t)||/^DUR[ÉE]E$/i.test(t))&&t.length<22;})[0];
- var statRow=null,anc=effEl;for(var u=0;u<6&&anc;u++,anc=anc.parentElement){if(pasEl&&anc.contains(pasEl)&&anc!==effEl){statRow=anc;break;}}
- if(!statRow)statRow=effEl.parentElement&&effEl.parentElement.parentElement;if(!statRow)return;
- statRow.style.position='relative';
- var kids=[].slice.call(statRow.children);kids.forEach(function(c){c.style.transition='opacity .16s ease';});
- var bub=doc.createElement('div');bub.style.cssText='position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;opacity:0;pointer-events:none;transition:opacity .16s ease;z-index:6';
- bub.innerHTML='<div style="display:flex;align-items:baseline;gap:6px"><span class="mbV" style="font-family:Archivo,Arial,sans-serif;font-size:46px;font-weight:800;letter-spacing:-.04em;line-height:1;color:#57534c">--</span><span class="mbU" style="font-family:Archivo,Arial,sans-serif;font-size:17px;font-weight:700;color:#8a857c">bpm</span></div><div class="mbT" style="font-family:-apple-system,system-ui,sans-serif;font-size:13px;font-weight:600;letter-spacing:.02em;color:#8a857c">--:--</div>';
- statRow.appendChild(bub);var bV=bub.querySelector('.mbV'),bT=bub.querySelector('.mbT');
+ /* readout BPM : positionné juste au-dessus du graphe, à gauche, en police FINE (au lieu du haut de l'écran) ; l'en-tête FC s'efface pendant le scrub */
+ var fcCard=svg.parentElement;for(var _fc=0;_fc<6&&fcCard&&fcCard!==sc;_fc++){var _br=0;try{_br=parseFloat((doc.defaultView||window).getComputedStyle(fcCard).borderRadius)||0;}catch(e){}if(_br>=18)break;fcCard=fcCard.parentElement;}
+ if(!fcCard||fcCard===sc)fcCard=svg.parentElement;
+ fcCard.style.position='relative';
+ var _fhl=[].slice.call(fcCard.querySelectorAll('div,span')).filter(function(e){return e.children.length===0&&/FR[ÉE]QUENCE CARDIAQUE/i.test(e.textContent||'');})[0];
+ var fcHeader=_fhl;for(var _fh=0;_fh<5&&fcHeader&&fcHeader!==fcCard;_fh++){if(fcHeader.parentElement===fcCard)break;fcHeader=fcHeader.parentElement;}
+ var kids=(fcHeader&&fcHeader!==fcCard)?[fcHeader]:[];kids.forEach(function(c){c.style.transition='opacity .16s ease';});
+ var bub=doc.createElement('div');bub.style.cssText='position:absolute;top:16px;left:20px;display:flex;flex-direction:column;align-items:flex-start;gap:1px;opacity:0;pointer-events:none;transition:opacity .16s ease;z-index:6';
+ bub.innerHTML='<div style="display:flex;align-items:baseline;gap:5px"><span class="mbV" style="font-family:-apple-system,system-ui,sans-serif;font-size:25px;font-weight:300;letter-spacing:-.01em;line-height:1;color:#57534c">--</span><span class="mbU" style="font-family:-apple-system,system-ui,sans-serif;font-size:13px;font-weight:400;color:#8a857c">bpm</span></div><div class="mbT" style="font-family:-apple-system,system-ui,sans-serif;font-size:11px;font-weight:400;letter-spacing:.02em;color:#8a857c">--:--</div>';
+ fcCard.appendChild(bub);var bV=bub.querySelector('.mbV'),bT=bub.querySelector('.mbT');
  /* overlay SVG */
  var NS='http://www.w3.org/2000/svg';
  function mk(tag,at){var e=doc.createElementNS(NS,tag);for(var q in at)e.setAttribute(q,at[q]);e.style.transition='opacity .16s ease';e.setAttribute('opacity','0');e.style.pointerEvents='none';svg.appendChild(e);return e;}
@@ -6745,7 +6745,7 @@ function mdMarcheScrub(doc){try{var sc=doc.getElementById('screen-marche');if(!s
    var run=null;for(var i=0;i<=n;i++){var inz=sv[i]>=lo&&sv[i]<=hi;if(inz&&run==null)run=i;if(run!=null&&(!inz||i===n)){var end=inz?i:i-1;var d='M '+sx[run]+' '+sy[run];for(var j=run+1;j<=end;j++)d+=' L '+sx[j]+' '+sy[j];if(end===run)d+=' L '+(sx[run]+0.35).toFixed(2)+' '+sy[run];frag+='<path d="'+d+'" fill="none" stroke="'+col+'" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"></path>';run=null;}}
    zHi.innerHTML=frag;try{svg.appendChild(zHi);}catch(e){}return L;}
   function zClear(){zHi.textContent='';_flZoneSel=null;if(sc._flZoneTick){clearInterval(sc._flZoneTick);sc._flZoneTick=0;}ungrayFresh();orangeMarks.forEach(function(o){o.el.setAttribute(o.attr,o.s);});
-   [].slice.call(sc.querySelectorAll('[data-fl-zsel]')).forEach(function(r){r.style.removeProperty('box-shadow');r.style.removeProperty('background');r.style.removeProperty('border-color');r.style.removeProperty('outline');if(r._flBs)r.style.setProperty('box-shadow',r._flBs);if(r._flBg)r.style.setProperty('background',r._flBg);r._flBs=null;r._flBg=null;r.removeAttribute('data-fl-zsel');});curZ=null;}
+   [].slice.call(sc.querySelectorAll('[data-fl-zsel]')).forEach(function(r){r.style.removeProperty('box-shadow');r.style.removeProperty('background');r.style.removeProperty('border-color');r.style.removeProperty('outline');r._flBs=null;r._flBg=null;r.removeAttribute('data-fl-zsel');});curZ=null;}
   function zShow(row){var t=(row.textContent||'').replace(/\s+/g,' ');var lo=0,hi=9999,mm;
    if((mm=t.match(/[>+]\s*(?:DE )?(\d+)/i)))lo=+mm[1];
    else if((mm=t.match(/[<\u2212-]\s*(?:DE )?(\d+)\s*BPM/i)))hi=+mm[1]-1;
@@ -6826,6 +6826,13 @@ function mdMarcheZones(doc){try{
    if(row._flCol){tick.style.background=row._flCol;if(pctEl)pctEl.style.color=row._flCol;}
   }
  });
+ /* la maquette applique son propre contour ORANGE au tap → on le retire de toute carte NON-sélectionnée (fix : re-clic qui vire orange au lieu de désélectionner + zones grises non-cliquables qui viraient orange) */
+ if(!sc._flZoneStripObs&&typeof MutationObserver!=='undefined'){
+  var _strip=function(c){if(!c||!c.getAttribute||c.getAttribute('data-fl-zsel'))return;var bs=(c.style.boxShadow||'')+' '+(c.style.border||'')+' '+(c.style.borderColor||'');if(/251,\s*96,\s*21|fb6015|255,\s*74,\s*28|ff4a1c|fb7e00|fc6503|204,\s*61/i.test(bs)){c.style.removeProperty('box-shadow');c.style.removeProperty('border');c.style.removeProperty('border-color');}};
+  var _obs=new MutationObserver(function(ms){for(var i=0;i<ms.length;i++)_strip(ms[i].target);});
+  [].slice.call(sc.querySelectorAll('div')).filter(function(el){return el.style.width==='5px'&&el.style.alignSelf==='stretch';}).forEach(function(tk){if(tk.parentElement)_obs.observe(tk.parentElement,{attributes:true,attributeFilter:['style']});});
+  sc._flZoneStripObs=_obs;
+ }
  var vis=/translateY\(0(?:px|%)?\)/.test(sc.style.transform||'');
  if(vis&&!sc._flZoneShown){sc._flZoneShown=1;(sc._flZoneFills||[]).forEach(function(fn,i){setTimeout(fn,140+i*90);});}
  if(!vis)sc._flZoneShown=0;
@@ -12324,7 +12331,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v592';
+const APP_VERSION='flint-v593';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
