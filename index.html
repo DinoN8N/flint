@@ -6245,7 +6245,7 @@ function mdHomeTrio(doc){try{
  if(!neu){
   var html='<div data-fl-trio="1" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;font-family:-apple-system,BlinkMacSystemFont,\'SF Pro Text\',\'Segoe UI\',sans-serif">';
   ORDER.forEach(function(l){var s=SPEC[l];
-   html+='<div style="background:#fff;border:1px solid #f0eff2;border-radius:20px;padding:16px 6px 14px;display:flex;flex-direction:column;align-items:center;gap:11px;box-shadow:0 4px 14px rgba(20,17,15,.04)">'
+   html+='<div data-fl-card="'+l+'" style="cursor:pointer;background:#fff;border:1px solid #f0eff2;border-radius:20px;padding:16px 6px 14px;display:flex;flex-direction:column;align-items:center;gap:11px;box-shadow:0 4px 14px rgba(20,17,15,.04)">'
     +'<div style="font-size:11px;font-weight:600;letter-spacing:.16em;color:'+s.col+'">'+l+'</div>'
     +'<div style="width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:'+s.pb+'">'+ICON[l]+'</div>'
     +'<div style="position:relative;width:104px;height:104px"><svg viewBox="0 0 132 132" width="104" height="104" style="display:block">'
@@ -6262,6 +6262,20 @@ function mdHomeTrio(doc){try{
   html+='</div>';
   old.insertAdjacentHTML('afterend',html);
   neu=acc.querySelector('[data-fl-trio]');
+  /* nav : rediriger le tap d'une carte vers l'ancienne tuile correspondante (réutilise la nav native de flint-today qui ouvre l'écran sommeil/effort/calories) */
+  neu.addEventListener('click',function(ev){
+   var card=ev.target;while(card&&card!==neu&&!(card.getAttribute&&card.getAttribute('data-fl-card')))card=card.parentElement;
+   var lab=card&&card.getAttribute&&card.getAttribute('data-fl-card');if(!lab)return;
+   /* couper le clic original : sinon il atteint les autres handlers de flint-today qui annulent la nav */
+   ev.preventDefault();ev.stopPropagation();ev.stopImmediatePropagation();
+   /* DIFFÉRER le dispatch : la nav de flint-today refuse d'être ré-entrée pendant le clic original (sync = ne s'ouvre pas) */
+   (doc.defaultView||window).setTimeout(function(){
+    var oldC=acc.querySelector('[data-fl-trio-old]');if(!oldC)return;
+    var tile=[].slice.call(oldC.children).filter(function(c){return (c.textContent||'').indexOf(lab)>=0;})[0];if(!tile)return;
+    var tgt=tile.querySelector('*')||tile;
+    ['pointerdown','pointerup','click'].forEach(function(t){try{tgt.dispatchEvent(new (doc.defaultView.MouseEvent)(t,{bubbles:true,cancelable:true}));}catch(e){}});
+   },0);
+  },true);
  }
  /* peupler à chaque cycle */
  ORDER.forEach(function(l){var d=readTile(byLabel[l]);
@@ -12503,7 +12517,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v622';
+const APP_VERSION='flint-v625';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
