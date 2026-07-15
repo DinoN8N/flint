@@ -6605,8 +6605,7 @@ function mdMarchePrecise(doc){try{var sm=doc.getElementById('screen-marche');if(
     D'ORIGINE de la maquette (douce) et seulement les CALCULS exacts (zones, stats, durée). */
  [].slice.call(svg.querySelectorAll('.fl-prec')).forEach(function(p2){p2.remove();});
  [].slice.call(svg.querySelectorAll('path')).forEach(function(p2){if(p2.style&&p2.style.opacity==='0')p2.style.removeProperty('opacity');});
- if(svg._flMarche){delete svg._flMarche;
-  [].slice.call(svg.querySelectorAll('circle,line')).forEach(function(el2){var st3=el2.getAttribute('style')||'';if(st3.indexOf('opacity .16s')>=0||st3.indexOf('opacity 0.16s')>=0)el2.remove();});}
+ /* NE PLUS réinitialiser le scrub ici (delete _flMarche) : on garde la courbe d'origine, donc le scrub reste valide. Ce reset provoquait un re-câblage qui orphelinait les observateurs (curZ périmé) et créait un scrub parasite. */
  var pts=base.map(function(b,c){return [XMIN+(XMAX-XMIN)*c/(COLS-1),b,b];});
  /* zones exactes */
  var mids=pts.map(function(P){return (P[1]+P[2])/2;});
@@ -6700,13 +6699,14 @@ function mdMarcheScrub(doc){try{var sc=doc.getElementById('screen-marche');if(!s
   if(!zc){[pel,areaEl].forEach(function(e){if(e)e.style.opacity=on?'0.35':'1';});}
   kids.forEach(function(c){if(c!==bub)c.style.opacity=on?'0':'1';});
   bub.style.opacity=on?'1':'0';if(on){bV.textContent=''+p.v;bT.textContent=p.t;bV.style.color=zc||'#57534c';var _u=bub.querySelector('.mbU');if(_u)_u.style.color=zc||'#8a857c';}}
- function at(ev){var r=svg.getBoundingClientRect();var cx=ev.clientX!=null?ev.clientX:(ev.touches&&ev.touches[0]?ev.touches[0].clientX:0);var vx=(cx-r.left)/r.width*340;
+ var _srect=null; /* rect caché pendant le geste → pas de reflow à chaque déplacement du doigt */
+ function at(ev){var r=_srect||(_srect=svg.getBoundingClientRect());if(!r.width)return;var cx=ev.clientX!=null?ev.clientX:(ev.touches&&ev.touches[0]?ev.touches[0].clientX:0);var vx=(cx-r.left)/r.width*340;
   var zOn=_flZoneSel&&isFinite(_flZoneSel.lo);var best=-1,bd=Infinity;
   for(var i2=0;i2<N;i2++){if(zOn&&!(pts[i2].v>=_flZoneSel.lo&&pts[i2].v<=_flZoneSel.hi))continue;var dd=Math.abs(pts[i2].x-vx);if(dd<bd){bd=dd;best=i2;}}
   if(best<0)best=idx;if(best!==idx){idx=best;try{navigator.vibrate&&navigator.vibrate(8);}catch(e){}}render();}
- svg.addEventListener('pointerdown',function(ev){ev.preventDefault();try{svg.setPointerCapture(ev.pointerId);}catch(e){}on=true;at(ev);},{passive:false});
+ svg.addEventListener('pointerdown',function(ev){ev.preventDefault();try{svg.setPointerCapture(ev.pointerId);}catch(e){}_srect=svg.getBoundingClientRect();on=true;at(ev);},{passive:false});
  svg.addEventListener('pointermove',function(ev){if(!on)return;ev.preventDefault();at(ev);},{passive:false});
-  ['pointerup','pointerleave','pointercancel'].forEach(function(t){svg.addEventListener(t,function(){if(!on)return;on=false;render();});});
+  ['pointerup','pointerleave','pointercancel'].forEach(function(t){svg.addEventListener(t,function(){if(!on)return;on=false;_srect=null;render();});});
  /* ── surlignage de ZONE façon WHOOP : tap une zone → segments orange sur la courbe + traits
     verticaux transparents jusqu'en bas ; les moments hors zone s'estompent ── */
  if(!svg._flZoneWired){svg._flZoneWired=1;
@@ -6738,12 +6738,12 @@ function mdMarcheScrub(doc){try{var sc=doc.getElementById('screen-marche');if(!s
   /* applique le style de sélection de carte (contour + halo + neutralise le contour orange de la maquette), en !important pour battre la maquette */
   function _cardApply(card,col){card._flSelCol=col;card.style.setProperty('transition','none','important');card.style.setProperty('background',tintOf(col,0.12),'important');card.style.setProperty('box-shadow','inset 0 0 0 1.6px '+col,'important');card.style.setProperty('border-color',col,'important');card.style.setProperty('outline','none','important');card.setAttribute('data-fl-zsel','1');}
   /* observateur du GRAPHE : dès que la courbe orange est (re)dessinée, on re-grise INSTANTANÉMENT tant qu'une zone est sélectionnée */
-  if(!svg._flGrayObs&&typeof MutationObserver!=='undefined'){var _gobs=new MutationObserver(function(){if(!curZ)return;if(svg._flGrayRAF)return;svg._flGrayRAF=requestAnimationFrame(function(){svg._flGrayRAF=0;if(curZ)try{grayFresh();}catch(e){}});});_gobs.observe(svg,{childList:true,subtree:true,attributes:true,attributeFilter:['stroke','d','fill','points']});svg._flGrayObs=_gobs;}
+  /* observateur du graphe DÉSACTIVÉ : redondant avec l'intervalle 250ms (closure fraîche) + il générait de l'overhead à chaque mutation de stroke. */
   /* la vraie courbe FC affichée (la plus longue path tracée) — celle que mdMarchePrecise redessine au pixel */
   function curveOf(){var c=[].slice.call(svg.querySelectorAll('path')).filter(function(p){if(zHi.contains(p))return false;var st=p.getAttribute('stroke');if(!st||st==='none')return false;var fl=p.getAttribute('fill');if(fl&&fl!=='none'&&!/^url|rgba/.test(fl))return false;var L=0;try{L=p.getTotalLength();}catch(e){}return L>150;});c.sort(function(a,b){var la=0,lb=0;try{la=a.getTotalLength();lb=b.getTotalLength();}catch(e){}return lb-la;});return c[0]||null;}
   /* surlignage tracé EXACTEMENT sur la courbe affichée : on l'échantillonne au pixel, on colore les segments dans la zone + colonnes, pile sur la ligne grise */
   function buildHighlight(col,lo,hi){var curve=curveOf();if(!curve){zHi.innerHTML='';return 0;}var L=0;try{L=curve.getTotalLength();}catch(e){}if(!L){zHi.innerHTML='';return 0;}
-   var n=Math.max(2,Math.min(1400,Math.round(L/1.1)));var sx=new Array(n+1),sy=new Array(n+1),sv=new Array(n+1);
+   var n=Math.max(2,Math.min(900,Math.round(L/1.5)));var sx=new Array(n+1),sy=new Array(n+1),sv=new Array(n+1);
    for(var k=0;k<=n;k++){var q;try{q=curve.getPointAtLength(L*k/n);}catch(e){q={x:0,y:0};}sx[k]=+q.x.toFixed(2);sy[k]=+q.y.toFixed(2);sv[k]=bpmAt(q.y);}
    var frag='',lastCol=-99;
    for(var i=0;i<=n;i++){if(sv[i]>=lo&&sv[i]<=hi&&sx[i]-lastCol>=1.8){frag+='<line x1="'+sx[i]+'" x2="'+sx[i]+'" y1="'+sy[i]+'" y2="'+baseY+'" stroke="url(#flZoneDrop)" stroke-width="1"></line>';lastCol=sx[i];}}
@@ -6773,9 +6773,10 @@ function mdMarcheScrub(doc){try{var sc=doc.getElementById('screen-marche');if(!s
    if(!card||card===sc)card=row;
    if(card._flBg==null)card._flBg=card.style.background||'';if(card._flBs==null)card._flBs=card.style.boxShadow||'';
    _cardApply(card,col);
-   /* la maquette redessine la courbe + réécrit le contour de la carte APRÈS nous → on ré-applique en boucle courte tant que la zone est sélectionnée */
+   sc._flHiCol=col;sc._flHiLo=lo;sc._flHiHi=hi;sc._flCard=card;
+   /* filet léger (250ms, closure FRAÎCHE = curZ/col/card toujours à jour) : la maquette est bloquée (v597) donc redessine rarement ; grayFresh peu coûteux, buildHighlight SEULEMENT si la courbe change */
    if(sc._flZoneTick)clearInterval(sc._flZoneTick);
-   sc._flZoneTick=setInterval(function(){if(!curZ||!/translateY\(0/.test(sc.style.transform||'')){clearInterval(sc._flZoneTick);sc._flZoneTick=0;return;}try{grayFresh();var _c=curveOf(),_L=0;if(_c){try{_L=_c.getTotalLength();}catch(e){}}if(Math.abs(_L-(sc._flHiSig||0))>0.5){sc._flHiSig=buildHighlight(col,lo,hi);}if(card.getAttribute('data-fl-zsel'))_cardApply(card,col);}catch(e){}},160);
+   sc._flZoneTick=setInterval(function(){if(!curZ||!/translateY\(0/.test(sc.style.transform||'')){clearInterval(sc._flZoneTick);sc._flZoneTick=0;return;}try{grayFresh();var _c=curveOf(),_L=0;if(_c){try{_L=_c.getTotalLength();}catch(e){}}if(Math.abs(_L-(sc._flHiSig||0))>0.5)sc._flHiSig=buildHighlight(col,lo,hi);if(card.getAttribute('data-fl-zsel'))_cardApply(card,col);}catch(e){}},250);
    try{haptic&&haptic(4);}catch(e){}}
   var _zx=0,_zy=0,_zt=0;
   doc.addEventListener('pointerdown',function(ev){_zx=ev.clientX;_zy=ev.clientY;},true);
@@ -6855,7 +6856,7 @@ function mdMarcheZones(doc){try{
  }
  /* dès que le % d'une zone change (les vraies données arrivent en async) → re-calcule la rétraction IMMÉDIATEMENT (pas d'attente 500ms), pour que les zones vides soient grises directement sans flash rouge/orange */
  if(!sc._flZoneTxtObs&&typeof MutationObserver!=='undefined'){
-  var _tobs=new MutationObserver(function(){if(sc._flReRAF)return;sc._flReRAF=requestAnimationFrame(function(){sc._flReRAF=0;try{window.mdMarcheZones&&window.mdMarcheZones(doc);}catch(e){}});});
+  var _tobs=new MutationObserver(function(){if(sc._flReT)return;sc._flReT=setTimeout(function(){sc._flReT=0;try{window.mdMarcheZones&&window.mdMarcheZones(doc);}catch(e){}},120);});
   [].slice.call(sc.querySelectorAll('div')).filter(function(el){return el.style.width==='5px'&&el.style.alignSelf==='stretch';}).forEach(function(tk){if(tk.parentElement)_tobs.observe(tk.parentElement,{childList:true,subtree:true,characterData:true});});
   sc._flZoneTxtObs=_tobs;
  }
@@ -12357,7 +12358,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v600';
+const APP_VERSION='flint-v601';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
