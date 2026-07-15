@@ -1,8 +1,8 @@
-/* flint-v595 — service worker RÉSEAU UNIQUEMENT (fin des versions périmées).
+/* flint-v596 — service worker RÉSEAU UNIQUEMENT (fin des versions périmées).
    Ne met plus rien en cache. À l'activation : efface TOUT ancien cache, prend le
    contrôle et force le rechargement de toutes les fenêtres pour éliminer le vieux
    service worker cache-first qui servait des versions périmées en boucle. */
-const CACHE = 'flint-v595';
+const CACHE = 'flint-v596';
 self.addEventListener('install', e => { self.skipWaiting(); });
 self.addEventListener('activate', e => {
   e.waitUntil((async () => {
