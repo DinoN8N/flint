@@ -6733,7 +6733,9 @@ function mdMarcheScrub(doc){try{var sc=doc.getElementById('screen-marche');if(!s
    if(areaEl){areaEl.style.opacity='1';if(areaFill0!=null)areaEl.setAttribute('fill',areaFill0);}
   }
   /* applique le style de sélection de carte (contour + halo + neutralise le contour orange de la maquette), en !important pour battre la maquette */
-  function _cardApply(card,col){card.style.setProperty('background',tintOf(col,0.12),'important');card.style.setProperty('box-shadow','inset 0 0 0 1.6px '+col,'important');card.style.setProperty('border-color',col,'important');card.style.setProperty('outline','none','important');card.setAttribute('data-fl-zsel','1');}
+  function _cardApply(card,col){card._flSelCol=col;card.style.setProperty('transition','none','important');card.style.setProperty('background',tintOf(col,0.12),'important');card.style.setProperty('box-shadow','inset 0 0 0 1.6px '+col,'important');card.style.setProperty('border-color',col,'important');card.style.setProperty('outline','none','important');card.setAttribute('data-fl-zsel','1');}
+  /* observateur du GRAPHE : dès que la courbe orange est (re)dessinée, on re-grise INSTANTANÉMENT tant qu'une zone est sélectionnée */
+  if(!svg._flGrayObs&&typeof MutationObserver!=='undefined'){var _gobs=new MutationObserver(function(muts){if(!curZ)return;for(var i=0;i<muts.length;i++){if(muts[i].type==='childList'&&muts[i].addedNodes&&muts[i].addedNodes.length){try{grayFresh();}catch(e){}return;}}});_gobs.observe(svg,{childList:true});svg._flGrayObs=_gobs;}
   /* la vraie courbe FC affichée (la plus longue path tracée) — celle que mdMarchePrecise redessine au pixel */
   function curveOf(){var c=[].slice.call(svg.querySelectorAll('path')).filter(function(p){if(zHi.contains(p))return false;var st=p.getAttribute('stroke');if(!st||st==='none')return false;var fl=p.getAttribute('fill');if(fl&&fl!=='none'&&!/^url|rgba/.test(fl))return false;var L=0;try{L=p.getTotalLength();}catch(e){}return L>150;});c.sort(function(a,b){var la=0,lb=0;try{la=a.getTotalLength();lb=b.getTotalLength();}catch(e){}return lb-la;});return c[0]||null;}
   /* surlignage tracé EXACTEMENT sur la courbe affichée : on l'échantillonne au pixel, on colore les segments dans la zone + colonnes, pile sur la ligne grise */
@@ -6745,7 +6747,7 @@ function mdMarcheScrub(doc){try{var sc=doc.getElementById('screen-marche');if(!s
    var run=null;for(var i=0;i<=n;i++){var inz=sv[i]>=lo&&sv[i]<=hi;if(inz&&run==null)run=i;if(run!=null&&(!inz||i===n)){var end=inz?i:i-1;var d='M '+sx[run]+' '+sy[run];for(var j=run+1;j<=end;j++)d+=' L '+sx[j]+' '+sy[j];if(end===run)d+=' L '+(sx[run]+0.35).toFixed(2)+' '+sy[run];frag+='<path d="'+d+'" fill="none" stroke="'+col+'" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"></path>';run=null;}}
    zHi.innerHTML=frag;try{svg.appendChild(zHi);}catch(e){}return L;}
   function zClear(){zHi.textContent='';_flZoneSel=null;if(sc._flZoneTick){clearInterval(sc._flZoneTick);sc._flZoneTick=0;}ungrayFresh();orangeMarks.forEach(function(o){o.el.setAttribute(o.attr,o.s);});
-   [].slice.call(sc.querySelectorAll('[data-fl-zsel]')).forEach(function(r){r.style.removeProperty('box-shadow');r.style.removeProperty('background');r.style.removeProperty('border-color');r.style.removeProperty('outline');r._flBs=null;r._flBg=null;r.removeAttribute('data-fl-zsel');});curZ=null;}
+   [].slice.call(sc.querySelectorAll('[data-fl-zsel]')).forEach(function(r){r.style.removeProperty('box-shadow');r.style.removeProperty('background');r.style.removeProperty('border-color');r.style.removeProperty('outline');r.style.removeProperty('transition');r._flBs=null;r._flBg=null;r.removeAttribute('data-fl-zsel');});curZ=null;}
   function zShow(row){var t=(row.textContent||'').replace(/\s+/g,' ');var lo=0,hi=9999,mm;
    if((mm=t.match(/[>+]\s*(?:DE )?(\d+)/i)))lo=+mm[1];
    else if((mm=t.match(/[<\u2212-]\s*(?:DE )?(\d+)\s*BPM/i)))hi=+mm[1]-1;
@@ -6782,7 +6784,7 @@ function mdMarcheScrub(doc){try{var sc=doc.getElementById('screen-marche');if(!s
    while(n&&n!==doc.body&&g++<8){if(n.nodeType===1){var tx=(n.textContent||'').replace(/\s+/g,' ');if(/ZONE \d/.test(tx)&&/BPM/.test(tx)&&tx.length<80){zrow=n;break;}}n=n.parentElement;}
    if(!zrow)return;
    var _em=zrow;for(var _q3=0;_q3<5&&_em;_q3++){if(_em.getAttribute&&_em.getAttribute('data-fl-empty')==='1')return;_em=_em.parentElement;}
-   var nw=Date.now();if(nw-_zt<400)return;_zt=nw;
+   var nw=Date.now();if(nw-_zt<130)return;_zt=nw;
    try{ev.preventDefault();ev.stopPropagation();}catch(e){}
    zShow(zrow);try{var _fr=zrow;for(var _q=0;_q<6&&_fr;_q++){if(_fr._flFill){_fr._flFill();break;}_fr=_fr.parentElement;}}catch(e){}};
   ['click','pointerup','touchend'].forEach(function(t){doc.addEventListener(t,zRoute,true);});}
@@ -6828,7 +6830,7 @@ function mdMarcheZones(doc){try{
  });
  /* la maquette applique son propre contour ORANGE au tap → on le retire de toute carte NON-sélectionnée (fix : re-clic qui vire orange au lieu de désélectionner + zones grises non-cliquables qui viraient orange) */
  if(!sc._flZoneStripObs&&typeof MutationObserver!=='undefined'){
-  var _strip=function(c){if(!c||!c.getAttribute||c.getAttribute('data-fl-zsel'))return;var bs=(c.style.boxShadow||'')+' '+(c.style.border||'')+' '+(c.style.borderColor||'');if(/251,\s*96,\s*21|fb6015|255,\s*74,\s*28|ff4a1c|fb7e00|fc6503|204,\s*61/i.test(bs)){c.style.removeProperty('box-shadow');c.style.removeProperty('border');c.style.removeProperty('border-color');}};
+  var _strip=function(c){if(!c||!c.getAttribute)return;var bs=(c.style.boxShadow||'')+' '+(c.style.border||'')+' '+(c.style.borderColor||'');if(!/251,\s*96,\s*21|fb6015|255,\s*74,\s*28|ff4a1c|fb7e00|fc6503|204,\s*61/i.test(bs))return;if(c.getAttribute('data-fl-zsel')){c.style.setProperty('box-shadow','inset 0 0 0 1.6px '+(c._flSelCol||'#2b7fff'),'important');}else{c.style.removeProperty('box-shadow');c.style.removeProperty('border');c.style.removeProperty('border-color');}};
   var _obs=new MutationObserver(function(ms){for(var i=0;i<ms.length;i++)_strip(ms[i].target);});
   [].slice.call(sc.querySelectorAll('div')).filter(function(el){return el.style.width==='5px'&&el.style.alignSelf==='stretch';}).forEach(function(tk){if(tk.parentElement)_obs.observe(tk.parentElement,{attributes:true,attributeFilter:['style']});});
   sc._flZoneStripObs=_obs;
@@ -12331,7 +12333,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v593';
+const APP_VERSION='flint-v594';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
