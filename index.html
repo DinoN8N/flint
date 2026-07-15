@@ -6306,8 +6306,10 @@ var el=ev.target;var a=el;for(var d1=0;d1<7&&a;d1++,a=a.parentElement){if(!a.que
  }return false;}
  try{
   var K=tk(flDayOff),rv=(typeof recovery==='function'?recovery(flDayOff):null),sc=rv&&rv.s!=null?Math.round(rv.s):null;
-  (function(){var sp=doc.querySelectorAll('span');for(var i=0;i<sp.length;i++){var e=sp[i];if(e.children.length===0&&/^(\d{1,3}|—)$/.test((e.textContent||'').trim())&&parseFloat(getComputedStyle(e).fontSize)>120){var v=(sc==null?'—':''+sc);if(e.textContent!==v)e.textContent=v;break;}}})();
-  var vd=sc==null?'—':sc>=80?'PRÊT':sc>=20?'MODÉRÉ':'REPOS';
+  /* code couleur accueil (founder 15/07) : bon=vert / moyen=orange / mauvais=rouge, paliers alignés sur recovery() (67/34) */
+  var RCOL={g:'#3FB57A',a:'#F2A93B',r:'#FF3B30'};var rcol=sc==null?null:(sc>=67?RCOL.g:sc>=34?RCOL.a:RCOL.r);
+  (function(){var sp=doc.querySelectorAll('span');for(var i=0;i<sp.length;i++){var e=sp[i];if(e.children.length===0&&/^(\d{1,3}|—)$/.test((e.textContent||'').trim())&&parseFloat(getComputedStyle(e).fontSize)>120){var v=(sc==null?'—':''+sc);if(e.textContent!==v)e.textContent=v;try{e.setAttribute('data-fl-a','recnum');}catch(_e){}break;}}})();
+  var vd=sc==null?'—':sc>=67?'PRÊT':sc>=34?'MODÉRÉ':'REPOS';
   (function(){/* verdict : ancre structurelle unique (leaf >=40px du set) — les littéraux génériques ('—') volaient l'ancre de la tuile SOMMEIL */
    var va=doc.querySelector('[data-fl-a="verdict"]');
    if(!va){var L=doc.querySelectorAll('span,div,h1,h2,p');for(var i=0;i<L.length;i++){var x=L[i];
@@ -6316,7 +6318,20 @@ var el=ev.target;var a=el;for(var d1=0;d1<7&&a;d1++,a=a.parentElement){if(!a.que
    if(va){var tn=va.childNodes[0];if(tn&&tn.nodeType===3){if(tn.nodeValue.trim()!==vd)tn.nodeValue=vd;}else if(va.textContent!==vd)va.textContent=vd;}
    ['PRÊT','MODÉRÉ','REPOS','—','7h42','15,7','3 078'].forEach(function(o){var p=doc.querySelector('[data-fl-a="'+o.replace(/"/g,'')+'"]');if(p)p.removeAttribute('data-fl-a');});
   })();
-  function setTile(lab,val){try{
+  /* jauge de récup : arc + halo + point à la couleur du tier (scopé à l'accueil visible) */
+  if(rcol){try{var _acc=doc.getElementById('screen-accueil');var _g=_acc&&[].slice.call(_acc.querySelectorAll('svg')).filter(function(s){return s.getAttribute('viewBox')==='0 0 320 320';})[0];
+   if(_g){
+    var _gb=_g.querySelector('#gBig');
+    if(_gb&&_gb.getAttribute('data-flc')!==rcol){_gb.setAttribute('data-flc',rcol);_gb.innerHTML='<stop offset="0" stop-color="'+rcol+'" stop-opacity="0.12"></stop><stop offset="0.45" stop-color="'+rcol+'" stop-opacity="0.5"></stop><stop offset="1" stop-color="'+rcol+'"></stop>';}
+    [].slice.call(_g.querySelectorAll('path')).forEach(function(p){var st=p.getAttribute('stroke');if(st&&/#ff8a52/i.test(st)){p.setAttribute('stroke',rcol);p.setAttribute('stroke-opacity','0.34');}});
+    ['dotGrad','dotGlow'].forEach(function(id){var d=_g.querySelector('#'+id);if(d)[].slice.call(d.querySelectorAll('stop')).forEach(function(s){s.setAttribute('stop-color',rcol);});});
+    [].slice.call(_g.querySelectorAll('circle,path')).forEach(function(e){var fl=e.getAttribute('fill');if(fl&&/#fb6015|#ff7a4d/i.test(fl))e.setAttribute('fill',rcol);});
+   }
+   /* chiffre + verdict : cibler EXACTEMENT les éléments que la boucle vient de mettre à jour (data-fl-a) → pas de doublon caché ni d'élément statique */
+   var _rn=doc.querySelector('[data-fl-a="recnum"]');if(_rn)_rn.style.setProperty('color',rcol,'important');
+   var _vv=doc.querySelector('[data-fl-a="verdict"]');if(_vv)_vv.style.setProperty('color',rcol,'important');
+  }catch(e){}}
+  function setTile(lab,val,col){try{
    var acc=doc.getElementById('screen-accueil')||doc,L=acc.querySelectorAll('span,div,p'),lf=null;
    for(var i=0;i<L.length;i++){var x=L[i];if(x.children.length===0&&(x.textContent||'').trim()===lab){lf=x;break;}}
    if(!lf)return;
@@ -6332,12 +6347,17 @@ var el=ev.target;var a=el;for(var d1=0;d1<7&&a;d1++,a=a.parentElement){if(!a.que
     var fs=parseFloat(getComputedStyle(x).fontSize)||0;if(fs>bs){bs=fs;best=x;}});
    if(!best||bs<18)return;
    var tn=best.childNodes[0];if(tn&&tn.nodeType===3){if(tn.nodeValue.trim()!==''+val)tn.nodeValue=val;}else if(best.textContent!==''+val)best.textContent=val;
+   if(col)best.style.setProperty('color',col,'important');else best.style.removeProperty('color');
   }catch(e){}}
   var nm=((getProfile().name||'').trim().split(' ')[0])||'Dino';if(nm==='Arthur')nm='Dino';
   if(!setText('Bonjour Dino','Bonjour '+nm))setText('Dino',nm);
   var t=sensorOf(K),slMin=(t&&t.sleepMin)||0;
-  setTile('SOMMEIL',slMin?(Math.floor(slMin/60)+'h'+String(slMin%60).padStart(2,'0')):'—');
-  var str=loadStrain(K);setTile('EFFORT',(Math.round(str*10)/10+'').replace('.',','));
+  /* SOMMEIL : % du besoin — ≥90% vert / ≥70% orange / <70% rouge */
+  var _need=(getProfile().need||8)*60,_slp=(slMin&&_need)?slMin/_need:0,_slCol=slMin?(_slp>=0.9?RCOL.g:_slp>=0.7?RCOL.a:RCOL.r):null;
+  setTile('SOMMEIL',slMin?(Math.floor(slMin/60)+'h'+String(slMin%60).padStart(2,'0')):'—',_slCol);
+  /* EFFORT : vs cible du jour strainTarget() — dans la cible vert / en-dessous orange / au-dessus rouge */
+  var str=loadStrain(K);var _tg=(typeof strainTarget==='function'?strainTarget():[10,14]),_efCol=str>0?(str<_tg[0]?RCOL.a:str<=_tg[1]?RCOL.g:RCOL.r):null;
+  setTile('EFFORT',(Math.round(str*10)/10+'').replace('.',','),_efCol);
   var kc=(typeof caloriesBurned==='function'?caloriesBurned(K):0);setTile('CALORIES',(''+Math.round(kc)).replace(/\B(?=(\d{3})+(?!\d))/g,' '));
   mdBalance(doc);mdSleep(doc);mdFonts(doc);mdStickyBacks(doc);mdSleepScrub(doc);mdWeekBarsScrub(doc);mdDualScrub(doc);mdCalDualScrub(doc);mdMarchePrecise(doc);mdMarcheScrub(doc);mdMarcheZones(doc);mdDashChevrons(doc);mdNavNoCoach(doc);mdProfil(doc);mdJourneeTune(doc);mdCalReadoutPurge(doc);mdNutritionPolish(doc);mdMarcheStats(doc);mdDashUniform(doc);mdSleepPolish(doc);mdRecupTap(doc);flLoadNativeTaps(doc);if(typeof flShellHonest==='function')flShellHonest(doc);mdRings(doc);mdTrioRings(doc);mdHebTrend(doc);mdNutrition(doc);mdObjectifs(doc);
  }catch(e){}
@@ -12366,7 +12386,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v605';
+const APP_VERSION='flint-v609';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
