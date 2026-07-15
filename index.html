@@ -6649,7 +6649,10 @@ function mdMarchePrecise(doc){try{var sm=doc.getElementById('screen-marche');if(
 /* scrub façon Whoop sur le détail activité (screen-marche) : glisser la courbe FC → les 2 stats fusionnent en une bulle « bpm / heure » vivante + courbe estompée + point */
 function mdMarcheScrub(doc){try{var sc=doc.getElementById('screen-marche');if(!sc)return;
  var svg=[].slice.call(sc.querySelectorAll('svg')).filter(function(g){return (g.getAttribute('viewBox')||'')==='0 0 340 186';})[0];
- if(!svg||svg._flMarche)return;
+ if(!svg)return;
+ /* purge tout scrub PARASITE (halo orange + readout SVG « bpm ») laissé par une autre passe/le churn — le mien est gris + bulle HTML, jamais concerné. Fait à chaque appel. */
+ try{[].slice.call(svg.querySelectorAll('circle,line')).forEach(function(el){if(el.getAttribute('data-fl-ms'))return;var col2=(el.getAttribute('fill')||'')+' '+(el.getAttribute('stroke')||'');var st5=el.getAttribute('style')||'';var isScrub=st5.indexOf('pointer-events: none')>=0&&st5.indexOf('opacity')>=0;if(/251,\s*96,\s*21/.test(col2)||isScrub)el.remove();});[].slice.call(svg.querySelectorAll('g')).forEach(function(g){if(/\bbpm\b/i.test(g.textContent||''))g.remove();});[].slice.call(svg.querySelectorAll('text,tspan')).forEach(function(t){if(/bpm/i.test(t.textContent||''))t.remove();});}catch(ePurge){}
+ if(svg._flMarche)return;
  var paths=[].slice.call(svg.querySelectorAll('path'));
  var curve=paths.filter(function(p){var st=p.getAttribute('stroke');return st&&st!=='none'&&(!p.getAttribute('fill')||p.getAttribute('fill')==='none');}).map(function(p){var L=0;try{L=p.getTotalLength();}catch(e){}return{p:p,L:L};}).sort(function(a,b){return b.L-a.L;})[0];
  if(!curve||curve.L<200)return;
@@ -6685,9 +6688,9 @@ function mdMarcheScrub(doc){try{var sc=doc.getElementById('screen-marche');if(!s
  var hit=doc.createElementNS(NS,'rect');hit.setAttribute('x','0');hit.setAttribute('y','0');hit.setAttribute('width','340');hit.setAttribute('height','186');hit.setAttribute('fill','transparent');svg.insertBefore(hit,svg.firstChild);
  var _flZoneSel=null;
  function hexA(h,a){h=(h||'').replace('#','');if(h.length===3)h=h.replace(/./g,'$&$&');var n=parseInt(h,16)||0;return 'rgba('+((n>>16)&255)+','+((n>>8)&255)+','+(n&255)+','+a+')';}
- var guide=mk('line',{stroke:'#8a857c','stroke-width':'1','stroke-dasharray':'3 3',y1:'12',y2:'172'});
- var halo=mk('circle',{r:'9',fill:'rgba(138,133,129,0.16)'});
- var dot=mk('circle',{r:'3.8',fill:'#8a857c',stroke:'#fff','stroke-width':'1.7'});
+ var guide=mk('line',{stroke:'#8a857c','stroke-width':'1','stroke-dasharray':'3 3',y1:'12',y2:'172','data-fl-ms':'1'});
+ var halo=mk('circle',{r:'9',fill:'rgba(138,133,129,0.16)','data-fl-ms':'1'});
+ var dot=mk('circle',{r:'3.8',fill:'#8a857c',stroke:'#fff','stroke-width':'1.7','data-fl-ms':'1'});
  [pel,areaEl].forEach(function(e){if(e)e.style.transition='opacity .16s ease';});svg.style.touchAction='none';
  var idx=N-1, on=false;
  function render(){var p=pts[idx];var zc=(_flZoneSel&&_flZoneSel.col)?_flZoneSel.col:null;
@@ -12354,7 +12357,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v599';
+const APP_VERSION='flint-v600';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
