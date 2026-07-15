@@ -6784,10 +6784,11 @@ function mdMarcheScrub(doc){try{var sc=doc.getElementById('screen-marche');if(!s
    while(n&&n!==doc.body&&g++<8){if(n.nodeType===1){var tx=(n.textContent||'').replace(/\s+/g,' ');if(/ZONE \d/.test(tx)&&/BPM/.test(tx)&&tx.length<80){zrow=n;break;}}n=n.parentElement;}
    if(!zrow)return;
    var _em=zrow;for(var _q3=0;_q3<5&&_em;_q3++){if(_em.getAttribute&&_em.getAttribute('data-fl-empty')==='1')return;_em=_em.parentElement;}
+   /* on coupe la propagation AVANT que la maquette n'applique sa propre sélection (contour + estompage laggy) → sélection 100% à nous, instantanée */
+   try{ev.preventDefault();ev.stopImmediatePropagation();}catch(e){}
    var nw=Date.now();if(nw-_zt<130)return;_zt=nw;
-   try{ev.preventDefault();ev.stopPropagation();}catch(e){}
    zShow(zrow);try{var _fr=zrow;for(var _q=0;_q<6&&_fr;_q++){if(_fr._flFill){_fr._flFill();break;}_fr=_fr.parentElement;}}catch(e){}};
-  ['click','pointerup','touchend'].forEach(function(t){doc.addEventListener(t,zRoute,true);});}
+  var _zwin=doc.defaultView||window;['pointerup','touchend','click'].forEach(function(t){_zwin.addEventListener(t,zRoute,true);});}
 }catch(e){}}
 /* screen-marche : recolore les 6 lignes de zone avec la VRAIE palette + anime le remplissage (barre 0→valeur ~900ms + % qui compte), cascade à l'ouverture, rejeu au tap */
 function mdMarcheZones(doc){try{
@@ -12352,7 +12353,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v596';
+const APP_VERSION='flint-v597';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
