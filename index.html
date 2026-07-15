@@ -6420,7 +6420,7 @@ if(_pt){var TABL2K={'VFC':'hrv','FC au repos':'rhr','Récupération':'recovery',
  return;}
 var _p=ev.target;while(_p&&_p.id!=='screen-nutrition'&&_p.id!=='screen-balance')_p=_p.parentElement;
 if(_p){var sb=ev.target;for(var ds=0;ds<6&&sb&&sb!==_p;ds++,sb=sb.parentElement){var stx=(sb.textContent||'').trim();if(stx==='Scanner un repas'||(stx.length<28&&/Scanner un repas/.test(stx))){ev.preventDefault();ev.stopPropagation();flScanChoice();return;}}return;}
-var el=ev.target;var a=el;for(var d1=0;d1<7&&a;d1++,a=a.parentElement){if(!a.querySelector)continue;var nmEl=a.querySelector?a.querySelector('div[style*="font-size: 25px"]'):null;var svgEl=a.querySelector?a.querySelector('svg'):null;if(nmEl&&svgEl&&(a.textContent||'').trim().length<300){var nm=(nmEl.textContent||'').trim();if(nm&&nm.indexOf('Ajouter')!==0&&!/^(Nuit|Sommeil|Sieste|Repas|Petit|D[ée]jeuner|D[îi]ner|Collation|Snack)$/i.test(nm)){ev.preventDefault();ev.stopPropagation();mdInjectActivity(nm,doc,a);return;}}}if(_L2K)for(var dd=0;dd<7&&el;dd++,el=el.parentElement){var txt=(el.textContent||'').trim();for(var lab in _L2K){if(txt.indexOf(lab)===0&&txt.length<lab.length+14){ev.preventDefault();ev.stopPropagation();openMetricDetail(_L2K[lab]);return;}}}},true);}catch(e){}}
+var el=ev.target;var a=el;for(var d1=0;d1<7&&a;d1++,a=a.parentElement){if(!a.querySelector)continue;var nmEl=a.querySelector?a.querySelector('div[style*="font-size: 25px"]'):null;var svgEl=a.querySelector?a.querySelector('svg'):null;if(nmEl&&svgEl&&(a.textContent||'').trim().length<300){var nm=(nmEl.textContent||'').trim();if(/^Nuit$/i.test(nm)){ev.preventDefault();ev.stopPropagation();if(typeof flMyNight==='function')flMyNight(doc,'nuit');return;}if(/^Sieste$/i.test(nm)){ev.preventDefault();ev.stopPropagation();if(typeof flMyNight==='function')flMyNight(doc,'sieste');return;}if(nm&&nm.indexOf('Ajouter')!==0&&!/^(Nuit|Sommeil|Sieste|Repas|Petit|D[ée]jeuner|D[îi]ner|Collation|Snack)$/i.test(nm)){ev.preventDefault();ev.stopPropagation();mdInjectActivity(nm,doc,a);return;}}}if(_L2K)for(var dd=0;dd<7&&el;dd++,el=el.parentElement){var txt=(el.textContent||'').trim();for(var lab in _L2K){if(txt.indexOf(lab)===0&&txt.length<lab.length+14){ev.preventDefault();ev.stopPropagation();openMetricDetail(_L2K[lab]);return;}}}},true);}catch(e){}}
  function setText(oldT,val){var aKey=oldT.replace(/"/g,'');
  try{var pv=doc.querySelector('[data-fl-a="'+aKey+'"]');if(pv){var tn=pv.childNodes[0];if(tn&&tn.nodeType===3){if(tn.nodeValue.trim()!==''+val)tn.nodeValue=val;}else if(pv.textContent!==''+val)pv.textContent=val;return true;}}catch(e){}
  var e=doc.querySelectorAll('span,div,p,h1,button');for(var i=0;i<e.length;i++){var x=e[i];
@@ -12517,7 +12517,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v625';
+const APP_VERSION='flint-v627';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
@@ -13454,14 +13454,25 @@ window.flAddActivity=function(doc){flActSt=flActDefaults();flActAdd(doc);};
  function honRestore(el){[].slice.call(el.querySelectorAll('[data-fl-orig]')).forEach(function(x){x.textContent=x.getAttribute('data-fl-orig');x.removeAttribute('data-fl-orig');});}
  /* --- MA NUIT / MA SIESTE (tap sommeil dans la timeline) : ouvre la MÊME carte que la page
     Sommeil (courbe FC + stades + scrub + tap-stade), plein écran. « Ma sieste » = variante nap. --- */
+ /* données démo (mode navigateur sans capteur) pour que le détail MA NUIT/SIESTE ait le graphe */
+ function flMnDemo(kind,opts){
+  var DY=[121.7,123.5,127.2,119.8,123.5,121.7,118,123.5,114.2,110.5,119.8,114.2,116.1,108.7,110.5,108.7,116.1,118,34.5,17.9,119.8,123.5,116.1,118,125.4,121.7,119.8,129.1,127.2,123.5,132.8,43.8,132.8,127.2,136.5,125.4,132.8,127.2,127.2,132.8,136.5,129.1,51.2,49.4,130.9,136.5,130.9,21.6,130.9,121.7,125.4,130.9,127.2,125.4,49.4,129.1,47.5,123.5,123.5,114.2,123.5,119.8,116.1,114.2,116.1,114.2,108.7,116.1,118,110.5,114.2,118,119.8,116.1,121.7,121.7,125.4,116.1,116.1,125.4,127.2,125.4,127.2,130.9,132.8,43.8,132.8,125.4,132.8,129.1,132.8,132.8,127.2,136.5,138.3,132.8,127.2,92,125.4,125.4,129.1,125.4,125.4,86.4,121.7,125.4,130.9,129.1,119.8,127.2,47.5,125.4,123.5,121.7,118,121.7,119.8,56.8,118,118,114.2,114.2,116.1,110.5,118,110.5,119.8,118,116.1,114.2,118,118];
+  var Y=(kind==='sieste')?DY.slice(44,86):DY;
+  var d='';Y.forEach(function(y,ix){d+=(ix?' L ':'M ')+(16+ix*320/(Y.length-1)).toFixed(1)+' '+y;});
+  var pts=Y.map(function(y){return 110-(y-16)*80/152;});
+  if(kind==='sieste'){var dur=(opts&&opts.dur)||62;var sm=(opts&&opts.startMin!=null)?opts.startMin:862;function hm(m){m=Math.round(m);return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');}var hmDur=Math.floor(dur/60)+':'+String(dur%60).padStart(2,'0');
+   return {word:'SIESTE',big:hmDur,up:false,moy:'',line:d,t0:hm(sm),t1:hm(sm+dur),duree:hmDur,deep:Math.round(dur*0.24),light:Math.round(dur*0.7),awake:Math.round(dur*0.06),deepPct:24,lightPct:70,awakePct:6,pts:pts,bed:sm,span:dur};}
+  return {big:'7:42',up:true,moy:'7:03',line:d,t0:'00:46',t1:'08:50',duree:'7:54',deep:104,light:240,awake:12,deepPct:22,lightPct:51,awakePct:3,pts:pts,bed:46,span:484};
+ }
  function flMyNight(doc,kind,opts){try{
   var isNap=kind==='sieste';
   var o=isNap?flMnComputeSieste(doc,opts):flMnComputeNuit(doc);
+  if((!o||o.empty)&&!(typeof SHELL!=='undefined'&&SHELL))o=flMnDemo(kind,opts);
   var el=doc.getElementById('screen-fl-manuit');
   if(!el){el=doc.createElement('section');el.id='screen-fl-manuit';doc.body.appendChild(el);}
   el.style.cssText="font-family:'Archivo',-apple-system,system-ui,sans-serif;color:#14110f;position:fixed;top:0;bottom:0;left:50%;width:100%;max-width:464px;z-index:130;overflow-y:auto;-webkit-overflow-scrolling:touch;background:#f6f3ee;transition:transform .38s cubic-bezier(.32,.72,0,1);transform:translateX(-50%) translateY(100%);pointer-events:none";
   el.innerHTML='<div style="min-height:100%;padding:max(20px,calc(env(safe-area-inset-top,0px) + 12px)) 20px calc(env(safe-area-inset-bottom,0px) + 40px)">'
-   +'<button class="mn-back" aria-label="Retour" style="width:52px;height:52px;border-radius:50%;border:none;background:#fff;color:#fb6015;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(20,17,15,.08);margin-bottom:18px"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></button>'
+   +'<button class="mn-back" aria-label="Retour" style="width:52px;height:52px;border-radius:50%;border:none;background:#fff;color:#6c4ff0;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(20,17,15,.08);margin-bottom:18px"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></button>'
    +'<div class="mn-card" style="background:#fff;border-radius:24px;padding:18px 20px 18px;box-shadow:0 3px 16px rgba(150,118,72,0.06),inset 0 0 0 1px rgba(20,17,15,0.045);font-family:Archivo,-apple-system,system-ui,sans-serif;color:#14110f">'+flMnBuildCard(o)+'</div>'
   +'</div>';
   var card=el.querySelector('.mn-card');
