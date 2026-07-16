@@ -2627,10 +2627,12 @@ header.home-hdr .av:active,header.home-hdr .wbatt:active,header.home-hdr .hdmenu
   body:has(#v-today.on) header.home-hdr{display:none}
   body:has(#v-today.on) #updBanner{display:none}
   body:has(#v-today.on) #nav{display:none}
-  #v-today.on{height:100dvh;overflow:hidden;background:#fff}
-  #frToday{width:100%;height:100%;border:0;display:block;opacity:0;transition:opacity .28s ease}
+  #v-today.on{height:100dvh;overflow:hidden;background:#fff;position:relative}
+  #frToday{width:100%;height:100%;border:0;display:block;opacity:0;transition:opacity .3s ease}
+  #flSplash{position:absolute;inset:0;z-index:6;background:#fff;display:flex;align-items:center;justify-content:center;transition:opacity .38s ease}
   </style>
   <iframe id="frToday" src="flint-today.html?v=17" title="Aujourd'hui" allow="camera;microphone" onload="injectTodayLoop()"></iframe>
+  <div id="flSplash"><img src="logo-wordmark.png" alt="FLINT" style="height:26px;width:auto;opacity:.92"></div>
 </section>
 
 
@@ -6197,7 +6199,8 @@ function tabToggle2(key){var body=document.getElementById('tabbody_'+key),head=d
 function tabRenderBody(key){var body=document.getElementById('tabbody_'+key);if(!body)return;var vs=body.querySelectorAll('[data-tv]');(TAB_KEYS[key]||[]).forEach(function(k,i){var v=vs[i];if(!v)return;var m=DASH[k];if(!m)return;var p=tabValParts(m.v());v.textContent=p[0];var u=v.parentElement.querySelector('[data-tu]');if(u)u.textContent=p[1];var row=v.closest('div');if(row){row.style.cursor='pointer';row.onclick=function(){tabBoardBack();dashOpen(k);};}});}
 function tabRenderVals(){Object.keys(TAB_KEYS).forEach(function(key){tabRenderBody(key);});}
 /* ===== Iframe maquette intacte : on injecte seulement les vraies valeurs ===== */
-function injectTodayLoop(){var n=0;injectToday();var iv=setInterval(function(){injectToday();if(++n>18){clearInterval(iv);setInterval(injectToday,3000);}},350);setTimeout(function(){var f=document.getElementById('frToday');if(f&&!f._flRevealed){f._flRevealed=true;f.style.opacity='1';}},2200);}
+function flReveal(){var f=document.getElementById('frToday');if(!f||f._flRevealed)return;f._flRevealed=true;f.style.opacity='1';var sp=document.getElementById('flSplash');if(sp){sp.style.opacity='0';setTimeout(function(){try{sp.style.display='none';}catch(e){}},420);}}
+function injectTodayLoop(){var n=0;injectToday();var iv=setInterval(function(){injectToday();if(++n>18){clearInterval(iv);setInterval(injectToday,3000);}},350);setTimeout(flReveal,4000);}
 /* ===== NOUVEAU trio d'accueil (maquette founder 15/07) : SOMMEIL/EFFORT/CALORIES en cartes
    icône-pastille + jauge 270° + statut. Couleurs FIXES par carte (violet/bleu/orange).
    L'ancien trio de flint-today.html est placé hors-écran (source de données live via injectToday)
@@ -6268,13 +6271,16 @@ function mdHomeTrio(doc){try{
    var lab=card&&card.getAttribute&&card.getAttribute('data-fl-card');if(!lab)return;
    /* couper le clic original : sinon il atteint les autres handlers de flint-today qui annulent la nav */
    ev.preventDefault();ev.stopPropagation();ev.stopImmediatePropagation();
-   /* DIFFÉRER le dispatch : la nav de flint-today refuse d'être ré-entrée pendant le clic original (sync = ne s'ouvre pas) */
-   (doc.defaultView||window).setTimeout(function(){
-    var oldC=acc.querySelector('[data-fl-trio-old]');if(!oldC)return;
-    var tile=[].slice.call(oldC.children).filter(function(c){return (c.textContent||'').indexOf(lab)>=0;})[0];if(!tile)return;
-    var tgt=tile.querySelector('*')||tile;
-    ['pointerdown','pointerup','click'].forEach(function(t){try{tgt.dispatchEvent(new (doc.defaultView.MouseEvent)(t,{bubbles:true,cancelable:true}));}catch(e){}});
-   },0);
+   /* OUVERTURE DIRECTE (v639) : le dispatch synthétique vers l'ancienne tuile provoquait un toggle
+      « une fois sur deux » (ouvre puis referme). On ouvre l'écran par transform, comme flOpenNutrition. */
+   try{
+    if(lab==='CALORIES'){if(typeof flOpenCalHebdo==='function')flOpenCalHebdo();return;}
+    if(lab==='SOMMEIL'){var ss=doc.getElementById('screen-sommeil');if(!ss)return;
+     ss.style.setProperty('transform','translateX(-50%) translateX(0px)','important');ss.style.pointerEvents='auto';ss.scrollTop=0;
+     try{mdSleep(doc);mdSleepPolish(doc);mdSleepViolet(doc);mdSleepHebdoBig(doc);mdFonts(doc);}catch(e){}
+     if(typeof haptic==='function')try{haptic();}catch(e){}return;}
+    /* EFFORT : pas d'écran dédié dans la maquette → no-op (inchangé) */
+   }catch(e){}
   },true);
  }
  /* peupler à chaque cycle */
@@ -6413,6 +6419,13 @@ function injectToday(){
    if(hdr){hdr.style.position='relative';fsp.style.position='absolute';fsp.style.left='50%';fsp.style.top='50%';fsp.style.transform='translate(-50%,-50%)';}}}}catch(e){}
 
  if(!doc._mdWired){doc._mdWired=true;var _L2K=(typeof MD_LABEL2KEY!=='undefined'&&MD_LABEL2KEY)?MD_LABEL2KEY:null;try{doc.addEventListener('click',function(ev){if(window._mdOpening)return;
+/* NAV TRIO (v640) : capter le tap sur une carte du trio ICI (handler doc capture = s'exécute AVANT
+   tout le reste), sinon la détection d'activité/métrique plus bas volait l'event quand le tap
+   tombait sur un enfant profond (svg de l'anneau) → « une fois sur deux ça n'ouvre pas / repart ». */
+var _fc=ev.target;for(var _z=0;_z<7&&_fc;_z++,_fc=_fc.parentElement){if(_fc.getAttribute&&_fc.getAttribute('data-fl-card')){var _lab=_fc.getAttribute('data-fl-card');ev.preventDefault();ev.stopPropagation();
+ if(_lab==='CALORIES'){flOpenCalHebdo();}
+ else if(_lab==='SOMMEIL'){var _ss=doc.getElementById('screen-sommeil');if(_ss){_ss.style.setProperty('transform','translateX(-50%) translateX(0px)','important');_ss.style.pointerEvents='auto';_ss.scrollTop=0;try{mdSleep(doc);mdSleepPolish(doc);mdSleepViolet(doc);mdSleepHebdoBig(doc);mdFonts(doc);}catch(e){}}}
+ return;}}
 var _tc=ev.target;for(var _i5=0;_i5<5&&_tc;_i5++,_tc=_tc.parentElement){var _tt=(_tc.textContent||'').replace(/\s+/g,' ').trim();if(/^CALORIES\b/.test(_tt)&&_tt.length<40){var _sa=_tc;while(_sa&&_sa.id!=='screen-accueil')_sa=_sa.parentElement;if(_sa){ev.preventDefault();ev.stopPropagation();flOpenCalHebdo();return;}}}
 var _pt=ev.target;while(_pt&&_pt.id!=='screen-tableau')_pt=_pt.parentElement;
 if(_pt){var TABL2K={'VFC':'hrv','FC au repos':'rhr','Récupération':'recovery','Sommeil réparateur':'sleepresto','Dette de sommeil':'sleepdebt','Efficacité du sommeil':'sleepeff','Temps passé au lit':'timeinbed','Durée de sommeil':'sleep','Pas':'steps','Calories':'calories','Effort et récupération':'effortrecup','VO₂ max':'vo2','FC moyenne':'fcavg','Fréquence respiratoire':'resp','Zones de FC (hebdo)':'hrzall','Poids':'weight','Masse corporelle maigre':'leanmass'};
@@ -6486,8 +6499,13 @@ var el=ev.target;var a=el;for(var d1=0;d1<7&&a;d1++,a=a.parentElement){if(!a.que
   /* NOUVEAU trio d'accueil (maquette founder 15/07) : layout icônes + jauge 270°, couleurs fixes par carte */
   mdHomeTrio(doc);
   mdBalance(doc);mdSleep(doc);mdFonts(doc);mdStickyBacks(doc);mdSleepScrub(doc);mdWeekBarsScrub(doc);mdDualScrub(doc);mdCalDualScrub(doc);mdMarchePrecise(doc);mdMarcheScrub(doc);mdMarcheZones(doc);mdDashChevrons(doc);mdNavNoCoach(doc);mdProfil(doc);mdJourneeTune(doc);mdCalReadoutPurge(doc);mdNutritionPolish(doc);mdMarcheStats(doc);mdDashUniform(doc);mdSleepPolish(doc);mdSleepViolet(doc);mdRecupTap(doc);flLoadNativeTaps(doc);if(typeof flShellHonest==='function')flShellHonest(doc);mdRings(doc);mdTrioRings(doc);mdHebTrend(doc);mdNutrition(doc);mdObjectifs(doc);
-  /* anti-flash orange : ne révéler l'iframe qu'une fois le reskin (trio/couleurs) peint (filet 1.6s) */
-  if(!f._flRevealed){if(!f._flFirstInjTs)f._flFirstInjTs=performance.now();if(doc.querySelector('[data-fl-trio]')||performance.now()-f._flFirstInjTs>1600){f._flRevealed=true;f.style.opacity='1';}}
+  /* anti-flash orange : garder le splash FLINT opaque jusqu'à ce que le reskin soit VRAIMENT peint —
+     trio construit ET peuplé, plusieurs passes faites (~1s), sinon on révélait un état mi-orange sur
+     téléphone lent. Filet dur à 4s dans injectTodayLoop pour ne jamais rester bloqué. */
+  if(!f._flRevealed){f._flPasses=(f._flPasses||0)+1;if(!f._flFirstInjTs)f._flFirstInjTs=performance.now();
+   var _trioReady=!!(doc.querySelector('[data-fl-trio] .fltn-val')&&(doc.querySelector('[data-fl-trio] .fltn-val').textContent||'').trim());
+   var _elapsed=performance.now()-f._flFirstInjTs;
+   if((_trioReady&&f._flPasses>=3&&_elapsed>800)||_elapsed>3800)flReveal();}
  }catch(e){}
  if(!doc._navWired){doc._navWired=true;try{doc.addEventListener('click',function(ev){var el=ev.target;for(var i=0;i<6&&el;i++,el=el.parentElement){if(el.getAttribute&&el.getAttribute('role')==='button'){var t=(el.textContent||'').trim().toLowerCase();if(t==='coach'){ev.preventDefault();ev.stopPropagation();go('coach');return;}if(t==='profil'){try{flPfCloseAll(doc);flLoad(doc);}catch(e){}return;}if(t==='nutrition'){try{flPfCloseAll(doc);flLoad(doc);}catch(e){}setTimeout(function(){try{flOpenNutrition(doc);}catch(e){}},20);setTimeout(function(){try{mdNutrition(doc);}catch(e){}},400);return;}if(t==="aujourd'hui"||t==='aujourd’hui'){try{flPfCloseAll(doc);flLoad(doc);
     var _nu=doc.getElementById('screen-nutrition');if(_nu){_nu.style.setProperty('transform','translateX(-50%) translateX(100vw)','important');_nu.style.pointerEvents='none';}
@@ -12670,7 +12688,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v638';
+const APP_VERSION='flint-v640';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
