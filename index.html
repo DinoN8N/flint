@@ -6207,9 +6207,10 @@ function flReveal(){var f=document.getElementById('frToday');if(!f||f._flReveale
    seul au 1er lancement de chaque journée (dès que l'app s'ouvre / repasse au premier plan), on
    câble Non/Oui + croix + Sauvegarder, et on mémorise par jour (localStorage) pour ne pas le
    rouvrir après remplissage ou fermeture. Croix = passer sans remplir. */
-function flJrnlKey(){return 'fljrnl_'+tk(0);}
+function flJrnlKey(){return 'fljrnl_'+tk(window._fljOff||0);}
 function flJrnlPromptKey(){return 'fljrnlPrompt_'+tk(0);}
 function flJrnlData(){try{return DB.get(flJrnlKey(),{})||{};}catch(e){return {};}}
+function flJrnlDayData(off){try{return DB.get('fljrnl_'+tk(off),{})||{};}catch(e){return {};}}
 function flJournalScreen(){var f=document.getElementById('frToday');var doc=f&&f.contentDocument;return doc&&doc.getElementById('screen-journal');}
 function mdJournalWire(doc){try{var jr=doc.getElementById('screen-journal');if(!jr)return;if(jr._fljWired){flJrnlKeep(doc);return;}jr._fljWired=true;
  var QORDER=['avion','alcool','cafeine','diner'];
@@ -6228,7 +6229,7 @@ function mdJournalWire(doc){try{var jr=doc.getElementById('screen-journal');if(!
  /* bouton Sauvegarder */
  var sv=[].slice.call(jr.querySelectorAll('button')).filter(function(b){return /Sauvegarder le journal/i.test(b.textContent||'');})[0];
  if(sv)sv.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();flJrnlSave(doc);},true);
- flJrnlPaint(doc);flJrnlKeep(doc);
+ flJrnlPaint(doc);flJrnlCalBuild(doc);flJrnlCalPaint(doc);flJrnlKeep(doc);
 }catch(e){}}
 function flJrnlSet(doc,q,val){try{var d=flJrnlData();d[q]=val;DB.set(flJrnlKey(),d);if(typeof haptic==='function')haptic(6);flJrnlPaint(doc);}catch(e){}}
 function flJrnlPaint(doc){try{var jr=doc.getElementById('screen-journal');if(!jr||!jr._fljPairs)return;var d=flJrnlData();
@@ -6239,13 +6240,50 @@ function flJrnlPaint(doc){try{var jr=doc.getElementById('screen-journal');if(!jr
   sty(p.non,v===0);sty(p.oui,v===1);
  });
 }catch(e){}}
-function flJrnlSave(doc){try{var d=flJrnlData();d._saved=true;DB.set(flJrnlKey(),d);try{localStorage.setItem(flJrnlPromptKey(),'1');}catch(e){}if(typeof haptic==='function')haptic(12);if(typeof toast==='function')toast('Journal enregistré ✓');flJournalClose(false);}catch(e){}}
-function flJrnlDate(doc){try{var jr=doc.getElementById('screen-journal');var now=new Date();var ds=now.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});ds=ds.charAt(0).toUpperCase()+ds.slice(1);
+function flJrnlSave(doc){try{var d=flJrnlData();d._saved=true;DB.set(flJrnlKey(),d);if((window._fljOff||0)===0){try{localStorage.setItem(flJrnlPromptKey(),'1');}catch(e){}}if(typeof haptic==='function')haptic(12);if(typeof toast==='function')toast('Journal enregistré ✓');flJrnlCalPaint(doc);setTimeout(function(){flJournalClose(false);},700);}catch(e){}}
+function flJrnlDate(doc){try{var jr=doc.getElementById('screen-journal');var now=new Date();now.setDate(now.getDate()+(window._fljOff||0));var ds=now.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});ds=ds.charAt(0).toUpperCase()+ds.slice(1);
  var leaf=[].slice.call(jr.querySelectorAll('*')).filter(function(e){return e.children.length===0&&/\b20\d\d\b/.test(e.textContent||'')&&/(lun|mar|mer|jeu|ven|sam|dim|janv|f[ée]vr|mars|avril|mai|juin|juil|ao[ûu]t|sept|oct|nov|d[ée]c)/i.test(e.textContent||'');})[0];
  if(leaf&&leaf.textContent!==ds)leaf.textContent=ds;
 }catch(e){}}
 function flJrnlKeep(doc){try{if(!window._fljOpen)return;var jr=doc.getElementById('screen-journal');if(!jr)return;if(!/translateY\(\s*0/.test(jr.style.transform||''))jr.style.setProperty('transform','translateX(-50%) translateY(0%)','important');}catch(e){}}
-function flJournalOpen(){window._fljOpen=true;
+/* ═══ Calendrier horizontal du journal (founder 16/07, logique WHOOP, DA claire Flint) :
+   rangée de capsules jour scrollable ; état complété (pastille orange + check) / aujourd'hui
+   (contour orange) / passé non complété (pastille grise vide) / futur (atténué, non cliquable).
+   Alimenté par les vraies données (fljrnl_<date>._saved). Tap un jour passé/aujourd'hui → ouvre
+   son journal (window._fljOff). ═══ */
+function flJrnlWk(off){var d=new Date();d.setDate(d.getDate()+off);return {wk:['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'][d.getDay()],num:d.getDate()};}
+function flJrnlCalBuild(doc){try{var jr=doc.getElementById('screen-journal');if(!jr||jr.querySelector('[data-flcal]'))return;
+ var p=[].slice.call(jr.querySelectorAll('p,div,span')).filter(function(e){return e.children.length===0&&/4\s*questions/i.test(e.textContent||'');})[0];
+ var anchor=p;if(anchor){while(anchor.parentElement&&anchor.parentElement!==jr)anchor=anchor.parentElement;}
+ var CAL=doc.createElement('div');CAL.setAttribute('data-flcal','1');
+ CAL.setAttribute('style','display:flex;gap:8px;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:8px 20px 6px;margin:16px 0 4px;scroll-snap-type:x proximity;');
+ var html='';for(var o=-27;o<=2;o++){var w=flJrnlWk(o);
+  html+='<button data-flcd="'+o+'" style="flex:0 0 auto;scroll-snap-align:center;width:48px;height:76px;border-radius:18px;border:1.5px solid #eeece7;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:9px 0 8px;cursor:pointer;font-family:-apple-system,BlinkMacSystemFont,sans-serif;-webkit-tap-highlight-color:transparent;">'
+   +'<span class="flcd-wk" style="font-size:10px;font-weight:600;letter-spacing:.04em;color:#a2a09c">'+w.wk+'</span>'
+   +'<span class="flcd-num" style="font-size:17px;font-weight:700;color:#14110f;line-height:1">'+w.num+'</span>'
+   +'<span class="flcd-dot" style="width:17px;height:17px;border-radius:50%;border:1.6px solid #ddd9d2;background:#fff;display:flex;align-items:center;justify-content:center;margin-top:1px"></span>'
+   +'</button>';}
+ CAL.innerHTML=html;
+ if(anchor&&anchor.parentNode)anchor.parentNode.insertBefore(CAL,anchor.nextSibling);else jr.insertBefore(CAL,jr.children[4]||null);
+ CAL.addEventListener('click',function(ev){var b=ev.target;while(b&&b!==CAL&&!(b.getAttribute&&b.getAttribute('data-flcd')))b=b.parentElement;if(!b||!b.getAttribute)return;var o=parseInt(b.getAttribute('data-flcd'),10);if(isNaN(o)||o>0)return;ev.preventDefault();ev.stopPropagation();flJrnlSelect(doc,o);},true);
+ window._fljRecenter=true; /* le centrage est ré-essayé dans flJrnlCalPaint jusqu'à ce que le layout soit prêt (setTimeout mesurait trop tôt) */
+}catch(e){}}
+function flJrnlCalPaint(doc){try{var jr=doc.getElementById('screen-journal');var CAL=jr&&jr.querySelector('[data-flcal]');if(!CAL)return;var sel=window._fljOff||0;
+ [].slice.call(CAL.querySelectorAll('[data-flcd]')).forEach(function(b){var o=parseInt(b.getAttribute('data-flcd'),10);
+  var completed=!!flJrnlDayData(o)._saved,isToday=o===0,isFuture=o>0,isSel=o===sel,dot=b.querySelector('.flcd-dot');
+  b.style.opacity=isFuture?'0.4':'1';b.style.pointerEvents=isFuture?'none':'auto';
+  b.style.borderStyle=isFuture?'dashed':'solid';
+  b.style.borderColor=(isSel||isToday)?'#fb6015':'#eeece7';b.style.borderWidth=(isSel||isToday)?'1.8px':'1.5px';
+  b.style.background=(isSel&&!isToday)?'#fff6f0':'#fff';
+  b.querySelector('.flcd-num').style.color=isFuture?'#c9c5bd':'#14110f';
+  if(completed){dot.style.background='#fb6015';dot.style.borderColor='#fb6015';if(!dot.firstChild)dot.innerHTML='<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg>';}
+  else{dot.style.background='#fff';dot.style.borderColor='#ddd9d2';if(dot.firstChild)dot.innerHTML='';}
+ });
+ /* centrer aujourd'hui — ré-essayé à chaque passe jusqu'à ce que le layout soit prêt */
+ if(window._fljRecenter){var td=CAL.querySelector('[data-flcd="0"]');if(CAL.clientWidth>0&&td&&td.offsetLeft>0){CAL.scrollLeft=Math.max(0,td.offsetLeft-CAL.clientWidth/2+td.offsetWidth/2);window._fljRecenter=false;}}
+}catch(e){}}
+function flJrnlSelect(doc,off){try{window._fljOff=off;flJrnlDate(doc);flJrnlPaint(doc);flJrnlCalPaint(doc);var jr=doc.getElementById('screen-journal');if(jr)jr.scrollTop=0;if(typeof haptic==='function')haptic(6);}catch(e){}}
+function flJournalOpen(){window._fljOpen=true;window._fljOff=0;window._fljRecenter=true;
  /* ouverture COLLANTE : _fljOpen posé d'abord (l'écran peut être momentanément absent pendant la
     tempête de re-rendus flint-today, 350ms les ~6 premières s). On ré-applique l'ouverture + le
     wiring toutes les 150ms pendant ~7s ; flJrnlKeep (boucle d'injection) prend le relais ensuite. */
@@ -6254,7 +6292,7 @@ function flJournalOpen(){window._fljOpen=true;
  if(window._fljAssert)clearInterval(window._fljAssert);var n=0;window._fljAssert=setInterval(function(){apply();if(++n>46||!window._fljOpen){clearInterval(window._fljAssert);window._fljAssert=null;}},150);
  if(typeof haptic==='function')try{haptic();}catch(e){}}
 function flJournalClose(dismissed){window._fljOpen=false;if(window._fljAssert){clearInterval(window._fljAssert);window._fljAssert=null;}var jr=flJournalScreen();if(jr){jr.style.setProperty('transform','translateX(-50%) translateY(100%)','important');jr.style.pointerEvents='none';}if(dismissed){try{localStorage.setItem(flJrnlPromptKey(),'1');}catch(e){}}}
-function flJournalMaybeAutoOpen(){try{if(flJrnlData()._saved)return;var done;try{done=localStorage.getItem(flJrnlPromptKey());}catch(e){}if(done)return;if(window._fljAutoSession)return;window._fljAutoSession=true;flJournalOpen();
+function flJournalMaybeAutoOpen(){try{if(flJrnlDayData(0)._saved)return;var done;try{done=localStorage.getItem(flJrnlPromptKey());}catch(e){}if(done)return;if(window._fljAutoSession)return;window._fljAutoSession=true;flJournalOpen();
  /* poser le flag « déjà proposé » APRÈS 2.5s : le service worker recharge la page à chaque
     mise à jour (activate→navigate) ; s'il le posait tout de suite, le rechargement « mangerait »
     l'ouverture (flag posé → skip après reload). Différé → survit au rechargement SW. */
@@ -12749,7 +12787,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v650';
+const APP_VERSION='flint-v652';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
