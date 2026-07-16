@@ -8086,7 +8086,8 @@ function flBackClose(){try{var fr=document.getElementById('frToday');var doc=fr&
  else{scn.style.transform='translateX(-50%) translateY(100%)';scn.style.pointerEvents='none';}
  if(typeof haptic==='function')haptic(6);
 }catch(e){}}
-function flOpenCalHebdo(){try{var fr=document.getElementById('frToday');var doc=fr&&fr.contentDocument;if(!doc)return;
+function flOpenCalHebdo(){try{if(window.FL_HEBDO&&FL_HEBDO.calories)return flOpenHebdo('calories');/* route vers le moteur générique (S/M fonctionnel, data-driven) au lieu du clone maquette statique */
+ var fr=document.getElementById('frToday');var doc=fr&&fr.contentDocument;if(!doc)return;
  var cl=doc.getElementById('flCalClone');
  if(!cl){var src=doc.getElementById('screen-cal-hebdo');if(!src)return;
   cl=src.cloneNode(true);cl.id='flCalClone';
@@ -8153,6 +8154,7 @@ var FL_HEBDO={
  timeinbed:{title:'Temps passé au lit',lab:'VOTRE TEMPS AU LIT',unit:'',kind:'bars',fmt:flhHM,tickSteps:[0.5,1,2,3,4,6],tickFmt:function(t){return t===0?'0:00':(t%1===0?t+'h':flhHM(t));}},
  sleep:{title:'Durée de sommeil',lab:'VOTRE SOMMEIL',unit:'',kind:'bars',fmt:flhHM,tickSteps:[0.5,1,2,3,4,6],tickFmt:function(t){return t===0?'0:00':(t%1===0?t+'h':flhHM(t));}},
  steps:{title:'Pas',lab:'VOS PAS',unit:'pas',kind:'bars',fmt:flhInt,mask:true,tickFmt:function(t){return t>=1000?(t/1000)+'k':''+t;}},
+ calories:{title:'Calories',lab:'CALORIES BRÛLÉES',heroLab:'MOYENNE / JOUR',unit:'kcal',kind:'bars',fmt:flhInt,tickFmt:function(t){return t>=1000?(Math.round(t/100)/10).toString().replace('.',',')+'k':''+Math.round(t);}},
  effortrecup:{title:'Effort et récupération',lab:'VOTRE EFFORT',unit:'/21',kind:'bars',fmt:flhDec,mask:true,ticks:[21,14,7,0],tickFmt:function(t){return ''+t;}},
  vo2:{title:'VO₂ max',lab:'VOTRE VO₂ MAX',unit:'',kind:'line',fmt:flhInt},
  fcavg:{title:'FC moyenne',lab:'VOTRE FC MOYENNE',unit:'bpm',kind:'line',fmt:flhInt},
@@ -12808,7 +12810,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v658';
+const APP_VERSION='flint-v660';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
