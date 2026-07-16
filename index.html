@@ -8281,6 +8281,8 @@ function flhRender(cl,st){try{
  st.mn=out.mn;st.mx=out.mx;
  old.parentNode.replaceChild(nsvg,old);
  flhScrub(nsvg,st);
+ var bd=cl.querySelector('.flh-breakdown');
+ if(bd){if(cfg.zoneColor&&vals.length){bd.style.display='block';bd.innerHTML=flhRecBreakdownHTML(vals);}else{bd.style.display='none';bd.innerHTML='';}}
 }catch(e){}}
 /* markup auto-généré, copie pixel-exacte du template screen-sommeil-hebdo de la maquette —
    AUCUNE dépendance au DOM maquette (les data-dc-tpl changent d'une version à l'autre : piège v488 device) */
@@ -8319,7 +8321,23 @@ function flhMarkup(){
     '<span class="flh-chartlab" style="font-family: -apple-system, system-ui, sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.1em; color: rgb(138, 131, 120);"></span>'+
     '<span style="display: flex; align-items: center; gap: 7px; font-family: -apple-system, system-ui, sans-serif; font-size: 12px; font-weight: 400; color: rgb(162, 160, 156);"><span style="width: 18px; border-top: 1.5px dashed rgb(185, 179, 168);"></span><span class="flh-legtxt"></span></span></div>'+
    '<svg viewBox="0 0 600 372" width="100%" style="display:block;overflow:visible;touch-action:none;cursor:crosshair;user-select:none;-webkit-user-select:none"></svg></div>'+
+  '<div class="flh-breakdown"></div>'+
  '</div>';}
+/* Répartition « ANALYSE DE LA RÉCUPÉRATION (JOURS) » sous le graphe hebdo récup (façon WHOOP,
+   DA claire Flint) : barre segmentée vert/orange/rouge + comptes par zone. */
+function flhRecBreakdownHTML(vals){
+ var high=vals.filter(function(v){return v>=67;}).length,med=vals.filter(function(v){return v>=34&&v<67;}).length,low=vals.filter(function(v){return v<34;}).length;
+ function seg(c,fr){return fr>0?'<div style="flex:'+fr+' 1 0;background:'+c+';height:100%"></div>':'';}
+ function row(c,cnt,label,rng){return '<div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid #f1ebe3;"><span style="width:13px;height:13px;border-radius:4px;background:'+c+';flex:none"></span><span style="font-family:Archivo,-apple-system,sans-serif;font-size:18px;font-weight:800;color:#14110f;min-width:30px">'+cnt+'<span style="font-size:12px;font-weight:600;color:#a2a09c">&#8202;j</span></span><span style="flex:1;font-size:14.5px;font-weight:600;color:#37372f">'+label+'</span><span style="font-size:13px;font-weight:600;color:#a8a29a;white-space:nowrap">'+rng+'</span></div>';}
+ var card='background:#fff;border-radius:24px;box-shadow:rgba(150,118,72,0.06) 0px 3px 16px,rgba(20,17,15,0.04) 0px 0px 0px 1px inset;';
+ return '<div style="'+card+'padding:20px 18px 8px;margin-top:14px;">'
+  +'<div style="font-family:-apple-system,system-ui,sans-serif;font-size:11px;font-weight:600;letter-spacing:.1em;color:#8a8378;margin-bottom:13px;">ANALYSE DE LA RÉCUPÉRATION <span style="color:#bdbbb7;letter-spacing:.06em">(JOURS)</span></div>'
+  +'<div style="display:flex;height:12px;border-radius:6px;overflow:hidden;background:#f1ebe3;margin-bottom:4px;gap:2px;">'+seg('#2FAE67',high)+seg('#fb6015',med)+seg('#E14434',low)+'</div>'
+  +row('#2FAE67',high,'Bonne récupération','67-100&#8239;%')
+  +row('#fb6015',med,'Récupération moyenne','34-66&#8239;%')
+  +row('#E14434',low,'Récupération faible','0-33&#8239;%')
+  +'</div>';
+}
 /* recolore un overlay hebdo sommeil en violet IMMÉDIATEMENT après un rendu (flhRender
    a un return anticipé qui saute son appel interne) — synchro + rAF anti-flash. */
 function flhSleepTint(cl){try{var k=cl&&cl._flhState&&cl._flhState.key;if(['sleep','sleepresto','sleepdebt','sleepeff','timeinbed'].indexOf(k)<0)return;var doc=cl.ownerDocument;mdSleepViolet(doc);(doc.defaultView||window).requestAnimationFrame(function(){try{mdSleepViolet(doc);}catch(e){}});}catch(e){}}
@@ -12790,7 +12808,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v657';
+const APP_VERSION='flint-v658';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
