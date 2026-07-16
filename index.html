@@ -6199,7 +6199,67 @@ function tabToggle2(key){var body=document.getElementById('tabbody_'+key),head=d
 function tabRenderBody(key){var body=document.getElementById('tabbody_'+key);if(!body)return;var vs=body.querySelectorAll('[data-tv]');(TAB_KEYS[key]||[]).forEach(function(k,i){var v=vs[i];if(!v)return;var m=DASH[k];if(!m)return;var p=tabValParts(m.v());v.textContent=p[0];var u=v.parentElement.querySelector('[data-tu]');if(u)u.textContent=p[1];var row=v.closest('div');if(row){row.style.cursor='pointer';row.onclick=function(){tabBoardBack();dashOpen(k);};}});}
 function tabRenderVals(){Object.keys(TAB_KEYS).forEach(function(key){tabRenderBody(key);});}
 /* ===== Iframe maquette intacte : on injecte seulement les vraies valeurs ===== */
-function flReveal(){var f=document.getElementById('frToday');if(!f||f._flRevealed)return;f._flRevealed=true;f.style.opacity='1';var sp=document.getElementById('flSplash');if(sp){sp.style.opacity='0';setTimeout(function(){try{sp.style.display='none';}catch(e){}},420);}}
+function flReveal(){var f=document.getElementById('frToday');if(!f||f._flRevealed)return;f._flRevealed=true;f.style.opacity='1';var sp=document.getElementById('flSplash');if(sp){sp.style.opacity='0';setTimeout(function(){try{sp.style.display='none';}catch(e){}},420);}try{flJournalMaybeAutoOpen();}catch(e){}}
+
+/* ═══ Journal de bord matinal (auto-ouverture façon WHOOP, founder 16/07) ═══
+   Le bottom-sheet screen-journal existe dans la maquette (4 questions avion/alcool/caféine/dîner
+   + « Sauvegarder le journal ») mais était STATIQUE (boutons non câblés). Ici : on l'ouvre tout
+   seul au 1er lancement de chaque journée (dès que l'app s'ouvre / repasse au premier plan), on
+   câble Non/Oui + croix + Sauvegarder, et on mémorise par jour (localStorage) pour ne pas le
+   rouvrir après remplissage ou fermeture. Croix = passer sans remplir. */
+function flJrnlKey(){return 'fljrnl_'+tk(0);}
+function flJrnlPromptKey(){return 'fljrnlPrompt_'+tk(0);}
+function flJrnlData(){try{return DB.get(flJrnlKey(),{})||{};}catch(e){return {};}}
+function flJournalScreen(){var f=document.getElementById('frToday');var doc=f&&f.contentDocument;return doc&&doc.getElementById('screen-journal');}
+function mdJournalWire(doc){try{var jr=doc.getElementById('screen-journal');if(!jr)return;if(jr._fljWired){flJrnlKeep(doc);return;}jr._fljWired=true;
+ var QORDER=['avion','alcool','cafeine','diner'];
+ /* regrouper les paires Non/Oui par ligne (même top) */
+ var byTop={};[].slice.call(jr.querySelectorAll('button')).forEach(function(b){var t=(b.textContent||'').trim();if(t==='Non'||t==='Oui'){var top=Math.round(b.getBoundingClientRect().top);(byTop[top]=byTop[top]||{})[t]=b;}});
+ var tops=Object.keys(byTop).map(Number).sort(function(a,b){return a-b;});
+ jr._fljPairs=[];
+ tops.forEach(function(tp,i){var q=QORDER[i];if(!q)return;var non=byTop[tp]['Non'],oui=byTop[tp]['Oui'];if(!non||!oui)return;
+  [[non,0],[oui,1]].forEach(function(pv){var btn=pv[0],val=pv[1];if(!btn._o)btn._o=btn.getAttribute('style')||'';
+   btn.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();flJrnlSet(doc,q,val);},true);});
+  jr._fljPairs.push({q:q,non:non,oui:oui});
+ });
+ /* croix de fermeture = bouton vide en haut du sheet */
+ var xb=[].slice.call(jr.querySelectorAll('button')).filter(function(b){return (b.textContent||'').trim()===''&&(b.getBoundingClientRect().top-jr.getBoundingClientRect().top)<110;})[0];
+ if(xb)xb.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();flJournalClose(true);},true);
+ /* bouton Sauvegarder */
+ var sv=[].slice.call(jr.querySelectorAll('button')).filter(function(b){return /Sauvegarder le journal/i.test(b.textContent||'');})[0];
+ if(sv)sv.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();flJrnlSave(doc);},true);
+ flJrnlPaint(doc);flJrnlKeep(doc);
+}catch(e){}}
+function flJrnlSet(doc,q,val){try{var d=flJrnlData();d[q]=val;DB.set(flJrnlKey(),d);if(typeof haptic==='function')haptic(6);flJrnlPaint(doc);}catch(e){}}
+function flJrnlPaint(doc){try{var jr=doc.getElementById('screen-journal');if(!jr||!jr._fljPairs)return;var d=flJrnlData();
+ jr._fljPairs.forEach(function(p){var v=d[p.q];
+  function sty(btn,on){btn.style.setProperty('box-shadow','none','important');btn.style.setProperty('border-style','solid','important');btn.style.setProperty('border-width','1.6px','important');btn.style.setProperty('border-radius','999px','important');
+   if(on){btn.style.setProperty('background','#14110f','important');btn.style.setProperty('color','#fff','important');btn.style.setProperty('border-color','#14110f','important');}
+   else{btn.style.setProperty('background','#fff','important');btn.style.setProperty('color','#46464a','important');btn.style.setProperty('border-color','#e6dfd1','important');}}
+  sty(p.non,v===0);sty(p.oui,v===1);
+ });
+}catch(e){}}
+function flJrnlSave(doc){try{var d=flJrnlData();d._saved=true;DB.set(flJrnlKey(),d);try{localStorage.setItem(flJrnlPromptKey(),'1');}catch(e){}if(typeof haptic==='function')haptic(12);if(typeof toast==='function')toast('Journal enregistré ✓');flJournalClose(false);}catch(e){}}
+function flJrnlDate(doc){try{var jr=doc.getElementById('screen-journal');var now=new Date();var ds=now.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});ds=ds.charAt(0).toUpperCase()+ds.slice(1);
+ var leaf=[].slice.call(jr.querySelectorAll('*')).filter(function(e){return e.children.length===0&&/\b20\d\d\b/.test(e.textContent||'')&&/(lun|mar|mer|jeu|ven|sam|dim|janv|f[ée]vr|mars|avril|mai|juin|juil|ao[ûu]t|sept|oct|nov|d[ée]c)/i.test(e.textContent||'');})[0];
+ if(leaf&&leaf.textContent!==ds)leaf.textContent=ds;
+}catch(e){}}
+function flJrnlKeep(doc){try{if(!window._fljOpen)return;var jr=doc.getElementById('screen-journal');if(!jr)return;if(!/translateY\(\s*0/.test(jr.style.transform||''))jr.style.setProperty('transform','translateX(-50%) translateY(0%)','important');}catch(e){}}
+function flJournalOpen(){window._fljOpen=true;
+ /* ouverture COLLANTE : _fljOpen posé d'abord (l'écran peut être momentanément absent pendant la
+    tempête de re-rendus flint-today, 350ms les ~6 premières s). On ré-applique l'ouverture + le
+    wiring toutes les 150ms pendant ~7s ; flJrnlKeep (boucle d'injection) prend le relais ensuite. */
+ function apply(){var j=flJournalScreen();if(!j||!window._fljOpen)return;mdJournalWire(j.ownerDocument);flJrnlDate(j.ownerDocument);j.style.setProperty('transform','translateX(-50%) translateY(0%)','important');j.style.pointerEvents='auto';}
+ apply();
+ if(window._fljAssert)clearInterval(window._fljAssert);var n=0;window._fljAssert=setInterval(function(){apply();if(++n>46||!window._fljOpen){clearInterval(window._fljAssert);window._fljAssert=null;}},150);
+ if(typeof haptic==='function')try{haptic();}catch(e){}}
+function flJournalClose(dismissed){window._fljOpen=false;if(window._fljAssert){clearInterval(window._fljAssert);window._fljAssert=null;}var jr=flJournalScreen();if(jr){jr.style.setProperty('transform','translateX(-50%) translateY(100%)','important');jr.style.pointerEvents='none';}if(dismissed){try{localStorage.setItem(flJrnlPromptKey(),'1');}catch(e){}}}
+function flJournalMaybeAutoOpen(){try{if(flJrnlData()._saved)return;var done;try{done=localStorage.getItem(flJrnlPromptKey());}catch(e){}if(done)return;if(window._fljAutoSession)return;window._fljAutoSession=true;flJournalOpen();
+ /* poser le flag « déjà proposé » APRÈS 2.5s : le service worker recharge la page à chaque
+    mise à jour (activate→navigate) ; s'il le posait tout de suite, le rechargement « mangerait »
+    l'ouverture (flag posé → skip après reload). Différé → survit au rechargement SW. */
+ setTimeout(function(){try{localStorage.setItem(flJrnlPromptKey(),'1');}catch(e){}},2500);
+}catch(e){}}
 function injectTodayLoop(){var n=0;injectToday();var iv=setInterval(function(){injectToday();if(++n>18){clearInterval(iv);setInterval(injectToday,3000);}},350);setTimeout(flReveal,4000);}
 /* ===== NOUVEAU trio d'accueil (maquette founder 15/07) : SOMMEIL/EFFORT/CALORIES en cartes
    icône-pastille + jauge 270° + statut. Couleurs FIXES par carte (violet/bleu/orange).
@@ -6498,7 +6558,7 @@ var el=ev.target;var a=el;for(var d1=0;d1<7&&a;d1++,a=a.parentElement){if(!a.que
   var kc=(typeof caloriesBurned==='function'?caloriesBurned(K):0);setTile('CALORIES',(''+Math.round(kc)).replace(/\B(?=(\d{3})+(?!\d))/g,' '));
   /* NOUVEAU trio d'accueil (maquette founder 15/07) : layout icônes + jauge 270°, couleurs fixes par carte */
   mdHomeTrio(doc);
-  mdBalance(doc);mdSleep(doc);mdFonts(doc);mdStickyBacks(doc);mdSleepScrub(doc);mdWeekBarsScrub(doc);mdDualScrub(doc);mdCalDualScrub(doc);mdMarchePrecise(doc);mdMarcheScrub(doc);mdMarcheZones(doc);mdDashChevrons(doc);mdNavNoCoach(doc);mdProfil(doc);mdJourneeTune(doc);mdCalReadoutPurge(doc);mdNutritionPolish(doc);mdMarcheStats(doc);mdDashUniform(doc);mdSleepPolish(doc);mdSleepViolet(doc);mdRecupTap(doc);flLoadNativeTaps(doc);if(typeof flShellHonest==='function')flShellHonest(doc);mdRings(doc);mdTrioRings(doc);mdHebTrend(doc);mdNutrition(doc);mdObjectifs(doc);
+  mdBalance(doc);mdSleep(doc);mdFonts(doc);mdStickyBacks(doc);mdSleepScrub(doc);mdWeekBarsScrub(doc);mdDualScrub(doc);mdCalDualScrub(doc);mdMarchePrecise(doc);mdMarcheScrub(doc);mdMarcheZones(doc);mdDashChevrons(doc);mdNavNoCoach(doc);mdProfil(doc);mdJourneeTune(doc);mdCalReadoutPurge(doc);mdNutritionPolish(doc);mdMarcheStats(doc);mdDashUniform(doc);mdSleepPolish(doc);mdSleepViolet(doc);mdRecupTap(doc);flLoadNativeTaps(doc);if(typeof flShellHonest==='function')flShellHonest(doc);mdRings(doc);mdTrioRings(doc);mdHebTrend(doc);mdNutrition(doc);mdObjectifs(doc);mdJournalWire(doc);
   /* anti-flash orange : garder le splash FLINT opaque jusqu'à ce que le reskin soit VRAIMENT peint —
      trio construit ET peuplé, plusieurs passes faites (~1s), sinon on révélait un état mi-orange sur
      téléphone lent. Filet dur à 4s dans injectTodayLoop pour ne jamais rester bloqué. */
@@ -12689,7 +12749,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v641';
+const APP_VERSION='flint-v650';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
@@ -12853,7 +12913,7 @@ document.addEventListener('visibilitychange',function(){if(document.hidden)retur
     if(typeof toast==='function')toast('Bracelet retiré — remets-le');
   };
   window.setWatchWorn=function(worn){worn=!!worn;var was=window._watchWorn!==false;window._watchWorn=worn;try{DB.set('watchWorn',worn?1:0)}catch(e){}var bn=document.getElementById('flintWatchBanner');if(bn)bn.classList.toggle('on',!worn);var pl=document.getElementById('pfWatchLbl');if(pl)pl.textContent=worn?'Simuler : retirer le bracelet':'Simuler : remettre le bracelet';if(!worn&&was)window.notifyWatchOff();};
-  function _flBoot(){addFab();addWatchBanner();if(typeof injectTodayLoop==="function")injectTodayLoop();}
+  function _flBoot(){addFab();addWatchBanner();if(typeof injectTodayLoop==="function")injectTodayLoop();try{document.addEventListener('visibilitychange',function(){if(!document.hidden)try{flJournalMaybeAutoOpen();}catch(e){}});}catch(e){}}
   if(document.readyState!=='loading')_flBoot();else document.addEventListener('DOMContentLoaded',_flBoot);
 })();
 /* ===== Swipe-to-back : la page suit le doigt (gauche→droite) puis revient en arrière ===== */
