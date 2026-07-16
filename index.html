@@ -7274,7 +7274,26 @@ function flMnComputeSieste(doc,opts){
  var d='';pts.forEach(function(bpm,ix){var y=16+(110-Math.max(30,Math.min(110,bpm)))/80*152;d+=(ix?' L ':'M ')+(16+ix*320/(COLS-1)).toFixed(1)+' '+y.toFixed(1);});
  return {word:'SIESTE',big:flMnHm(dur),up:false,moy:null,line:d,t0:flMnClk(bed),t1:flMnClk(bed+dur),duree:flMnHm(dur),pts:pts,bed:bed,span:span,deep:deep,light:light,awake:awake,deepPct:Math.round(deep/tot*100),lightPct:Math.round(light/tot*100),awakePct:Math.round(awake/tot*100)};
 }
+/* Agrandir les 3 graphes hebdo de la page sommeil (founder 16/07 : « faut glisser les yeux,
+   agrandis un peu tout ») : QUALITÉ, TEMPS effectif/nécessaire, DETTE. Ce sont des SVG
+   largeur:100% / hauteur auto avec texte SVG interne → on étire la HAUTEUR de rendu (~1.25×)
+   de façon responsive (recalcul si la largeur change) : barres/courbes/labels plus hauts,
+   aucune déformation horizontale, rien de rogné (preserveAspectRatio=none + overflow visible). */
+function mdSleepHebdoBig(doc){try{var sc=doc.getElementById('screen-sommeil');if(!sc)return;
+ var K=1.25;
+ [].slice.call(sc.querySelectorAll('svg')).forEach(function(s){
+  var vb=s.getAttribute('viewBox');if(!vb)return;var p=vb.split(/\s+/).map(parseFloat);if(p.length<4)return;
+  if(Math.round(p[3])!==372||p[2]<400)return; /* uniquement les 3 gros graphes hebdo (viewBox h=372, large) */
+  var w=s.getBoundingClientRect().width;if(!w)return;
+  if(s.getAttribute('preserveAspectRatio')!=='none')s.setAttribute('preserveAspectRatio','none');
+  var wKey=Math.round(w);if(s._flBigW===wKey)return;s._flBigW=wKey;
+  var hh=w*(p[3]/p[2])*K;
+  s.style.setProperty('height',hh.toFixed(1)+'px','important');
+  s.style.setProperty('overflow','visible');
+ });
+}catch(e){}}
 function mdSleepPolish(doc){try{var sc=doc.getElementById('screen-sommeil');if(!sc)return;
+ mdSleepHebdoBig(doc);
  /* — titres — */
  [].slice.call(sc.querySelectorAll('span,div,h2')).forEach(function(e){
   if(e.children.length)return;var t=(e.textContent||'').trim();
@@ -12651,7 +12670,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v637';
+const APP_VERSION='flint-v638';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
