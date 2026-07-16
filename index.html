@@ -5651,14 +5651,14 @@ const TREND={
   sent:function(av,a30,r){return 'Vous avez brûlé en moyenne '+fmtN(av)+' calories '+(r==='M'?'ce mois-ci':r==='S'?'cette semaine':'sur cette période')+', '+(a30!=null?(av>=a30?'soit plus que':'soit moins que')+' votre moyenne des 30 derniers jours.':'selon votre profil.')},
   explT:'Les calories, qu\'est-ce que c\'est ?',
   explP:'Les calories mesurent l\'énergie que vous dépensez dans la journée. Ce total est estimé à partir de votre métabolisme basal (taille, poids, âge) et de votre fréquence cardiaque tout au long de la journée. Plus vous êtes actif, plus vous en brûlez.'},
- recovery:{label:'Récupération',unit:'%',icon:'ti-bolt',short:'récupération',chart:'bar',moy:true,
+ recovery:{label:'Récupération',unit:'%',icon:'ti-bolt',short:'récupération',chart:'bar',moy:true,yticks:[0,34,67,100],zoneTicks:true,valueLabels:true,
   val:function(k){var r=DB.get('recov_'+k,null);return r!=null?r:null},
-  barFn:function(v){return v>=67?'#2FAE67':v>=34?'#F5A623':'#E14434'},
+  barFn:function(v){return getRecoveryColor(v)},
   verdict:function(v){return v>=67?{t:'Prêt',c:'#2FAE67'}:v>=34?{t:'Modéré',c:'#C8901A'}:{t:'Repos',c:'#C0492C'}},
-  bd:{title:'Analyse de la récupération',bands:[{l:'Verte (67-100 %)',f:function(v){return v>=67},c:'#2FAE67'},{l:'Jaune (34-66 %)',f:function(v){return v>=34},c:'#F5A623'},{l:'Rouge (1-33 %)',f:function(v){return true},c:'#E14434'}]},
+  bd:{title:'Répartition de la récupération',bands:[{l:'Bonne récupération (67-100 %)',f:function(v){return v>=67},c:'#2FAE67'},{l:'Récupération moyenne (34-66 %)',f:function(v){return v>=34},c:'#fb6015'},{l:'Récupération faible (1-33 %)',f:function(v){return true},c:'#E14434'}]},
   sent:function(av,a30,r){return 'Votre récupération moyenne '+(r==='M'?'ce mois-ci':r==='S'?'sur 7 jours':'sur cette période')+' ('+av+' %) '+(a30!=null?(av>=a30?'est supérieure':'est inférieure')+' à votre moyenne de '+a30+' % des 30 derniers jours.':'.')},
   explT:'La récupération, qu\'est-ce que c\'est ?',
-  explP:'La récupération mesure la capacité de votre corps à performer aujourd\'hui. Elle est calculée chaque nuit à partir de votre VFC, votre FC au repos, votre respiration et votre sommeil. Vert : prêt à charger. Jaune : dosez l\'effort. Rouge : priorisez le repos. Un bon sommeil ne garantit pas une récup verte — l\'effort et le stress de la veille comptent aussi.'},
+  explP:'La récupération mesure la capacité de votre corps à performer aujourd\'hui. Elle est calculée chaque nuit à partir de votre VFC, votre FC au repos, votre respiration et votre sommeil. Vert : prêt à charger. Orange : dosez l\'effort. Rouge : priorisez le repos. Un bon sommeil ne garantit pas une récup verte — l\'effort et le stress de la veille comptent aussi.'},
  sleepeff:{label:'Efficacité du sommeil',unit:'%',icon:'ti-chart-bar',short:'efficacité du sommeil',chart:'line',color:'#2FA86A',
   val:function(k){var n=sleepNight(k);return n&&n.efficiency!=null?n.efficiency:null},
   verdict:function(v){return v>=90?{t:'Optimal',c:'#2FAE67'}:v>=80?{t:'Suffisant',c:'#8A8580'}:{t:'À améliorer',c:'#C8901A'}},
@@ -5743,6 +5743,9 @@ const TREND={
 function tk2off(key,off){var p=key.split('-'),d=new Date(+p[0],+p[1]-1,+p[2]);d.setDate(d.getDate()+off);return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()}
 function trend30(M){var s=0,c=0;for(var i=1;i<=30;i++){var v=M.val(tk(-i));if(v!=null){s+=v;c++}}return c?((M&&(M.timefmt||M.dec))?Math.round(s/c*100)/100:Math.round(s/c)):null}
 function hHM(h){var m=Math.round(h*60);return Math.floor(m/60)+':'+String(m%60).padStart(2,'0')}
+/* Zones de récupération centralisées (founder 16/07) : faible=rouge / moyenne=ORANGE Flint (pas de jaune) / bonne=vert */
+function getRecoveryZone(s){s=Math.min(100,Math.max(0,s||0));return s<=33?'low':s<=66?'medium':'high';}
+function getRecoveryColor(s){return {low:'#E14434',medium:'#fb6015',high:'#2FAE67'}[getRecoveryZone(s)];}
 function tFmtV(M,v){if(v==null)return '—';if(M&&M.timefmt)return hHM(v);if(M&&M.dec)return (Math.round(v*10)/10).toString().replace('.',',');if(M&&M.fmt)return fmtN(Math.round(v));return Math.round(v)}
 function bkCardHTML(title,items,tot){tot=tot||items.reduce(function(a,b){return a+b.c},0)||1;
  var bar=items.map(function(it){return it.c>0?'<i style="width:'+(it.c/tot*100).toFixed(1)+'%;background:'+it.col+'"></i>':''}).join('');
@@ -5751,7 +5754,7 @@ function bkCardHTML(title,items,tot){tot=tot||items.reduce(function(a,b){return 
 function trendBreakdownHTML(pts,bd){var c=bd.bands.map(function(){return 0}),tot=0;pts.forEach(function(p){if(p.v==null)return;for(var i=0;i<bd.bands.length;i++){if(bd.bands[i].f(p.v)){c[i]++;tot++;break}}});
  return bkCardHTML(bd.title,bd.bands.map(function(b,i){return {c:c[i],l:b.l,col:b.c}}),tot)}
 var _tMetric='hrv',_tRange='M',_tOff=0,_tSel=null,_tDaySel=null;
-function openMetricTrend(k){_tMetric=k;_tRange='M';_tOff=0;_tSel=null;_tDaySel=null;go('metrend')}
+function openMetricTrend(k){_tMetric=k;_tRange=(k==='recovery')?'S':'M';_tOff=0;_tSel=null;_tDaySel=null;go('metrend')}
 var TREND_PICK=[{g:'Sommeil',keys:['sleepperf','sleepresto','sleeprestoh','sleepeff','sleepreg','sleepdebt','timeinbed']},{g:'Cœur & souffle',keys:['hrv','rhr','fcavg','resp','vo2']},{g:'Activité & récup',keys:['recovery','effort','steps','calories','strengthtime']},{g:'Corps',keys:['weight','leanmass']}];
 function openMetricPicker(){haptic();var ex=document.getElementById('mpick');if(ex)ex.remove();var d=document.createElement('div');d.id='mpick';d.className='mpick';
  var rows=TREND_PICK.map(function(grp){var items=grp.keys.filter(function(k){return TREND[k]}).map(function(k){var M=TREND[k],on=k===_tMetric;return '<button type="button" class="mpr'+(on?' on':'')+'" onclick="pickMetric(\''+k+'\')"><span class="mpic"><i class="ti '+M.icon+'"></i></span><span class="mpl">'+M.label+'</span>'+(on?'<i class="ti ti-check mpck"></i>':'')+'</button>'}).join('');return '<div class="mpg">'+grp.g+'</div>'+items}).join('');
@@ -5787,6 +5790,7 @@ function renderMetrend(){var M=TREND[_tMetric];if(!M)return;var bar=M.chart==='b
  var selK=_tDaySel;_tSel=null;if(selK){for(var i=0;i<pts.length;i++){if(dkey(pts[i].date)===selK){_tSel=i;break}}}
  set('tAvgL','Moyenne '+(_tRange==='S'?'7 jours':_tRange==='M'?'30 jours':'6 mois'));
  set('tAvgV',avg!=null?tFmtV(M,avg):'—');
+ (function(){var av=document.getElementById('tAvgV'),au=document.getElementById('tAvgU');var c=(M.zoneTicks&&avg!=null)?getRecoveryColor(avg):'';if(av)av.style.color=c;if(au)au.style.color=c;})();
  var prev=trendAvg(trendPts(M,_tRange,_tOff-1)),de=document.getElementById('tDelta');
  if(de){if(avg!=null&&prev!=null&&prev>0){var pct=Math.round((avg-prev)/prev*100),ar=pct>0?'ti-arrow-up-right':pct<0?'ti-arrow-down-right':'ti-minus';de.style.display='flex';de.className='mt2delta';de.innerHTML='<span class="mt2dtop"><b>'+(pct>0?'+':'')+pct+'%</b><i class="ti '+ar+'"></i></span><span class="mt2dsub">vs '+(_tRange==='S'?'sem. préc.':_tRange==='M'?'mois préc.':'6 mois préc.')+'</span>'}else de.style.display='none'}
  if(avg==null){set('tChart','<div class="tempty"><i class="ti '+(M.addData?'ti-ruler-2':'ti-chart-dots')+'"></i><b>Aucune donnée</b><span>'+(M.addData?'Ajoute ta première mesure pour suivre ta tendance.':'Les données apparaîtront ici dès qu\'elles seront disponibles.')+'</span></div>');}
@@ -5843,8 +5847,9 @@ function trendBarSVG(pts,avg,range,M){var W=330,H=215,padL=36,padR=12,padT=20,pa
  var mx=pct?100:Math.max.apply(null,vals),hi=M.yMax||(pct?100:niceMax(mx));
  function X(i){return padL+(i+0.5)*(W-padL-padR)/n}function Y(v){return padT+(1-v/hi)*(H-padT-padB)}
  var bw=Math.max(2,(W-padL-padR)/n*0.6);
- var ticks=M.yticks||(pct?[0,50,100]:[0,hi/2,hi]),grid='',ylab='';ticks.forEach(function(tv){var y=Y(tv);grid+='<line x1="'+padL+'" y1="'+y.toFixed(1)+'" x2="'+(W-padR)+'" y2="'+y.toFixed(1)+'" stroke="#ECE6DD" stroke-width="1"/>';ylab+='<text x="'+(padL-6)+'" y="'+(y+3).toFixed(1)+'" text-anchor="end" font-size="9" fill="#9A988F">'+(M.timefmt?hHM(tv):(M.fmt?fmtN(Math.round(tv)):Math.round(tv)))+(pct?'%':'')+'</text>'});
- var bars='',taps='';data.forEach(function(p,i){if(p.v==null)return;var x=X(i),y=Y(p.v),h=Math.max(1,Y(0)-y),seld=(!agg&&_tSel===i);bars+='<rect x="'+(x-bw/2).toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+h.toFixed(1)+'" rx="'+Math.min(3,bw/2).toFixed(1)+'" fill="'+(M.barFn?M.barFn(p.v):col)+'" opacity="'+(seld?1:(_tSel!=null&&!agg?.4:.9))+'"/>';if(!agg)taps+='<rect x="'+(x-(W-padL-padR)/n/2).toFixed(1)+'" y="'+padT+'" width="'+((W-padL-padR)/n).toFixed(1)+'" height="'+(H-padT-padB)+'" fill="transparent" style="cursor:pointer" onclick="trendSelect('+i+')"/>'});
+ var ticks=M.yticks||(pct?[0,50,100]:[0,hi/2,hi]),grid='',ylab='';ticks.forEach(function(tv){var y=Y(tv);grid+='<line x1="'+padL+'" y1="'+y.toFixed(1)+'" x2="'+(W-padR)+'" y2="'+y.toFixed(1)+'" stroke="#ECE6DD" stroke-width="1"/>';ylab+='<text x="'+(padL-6)+'" y="'+(y+3).toFixed(1)+'" text-anchor="end" font-size="9" font-weight="'+(M.zoneTicks?'700':'400')+'" fill="'+(M.zoneTicks?getRecoveryColor(tv):'#9A988F')+'">'+(M.timefmt?hHM(tv):(M.fmt?fmtN(Math.round(tv)):Math.round(tv)))+(pct?'%':'')+'</text>'});
+ var showVal=M.valueLabels&&!agg&&n<=7;
+ var bars='',taps='';data.forEach(function(p,i){if(p.v==null)return;var x=X(i),y=Y(p.v),h=Math.max(1,Y(0)-y),seld=(!agg&&_tSel===i),bcol=(M.barFn?M.barFn(p.v):col),bop=(M.valueLabels?(seld?1:.92):(seld?1:(_tSel!=null&&!agg?.4:.9)));bars+='<rect x="'+(x-bw/2).toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+h.toFixed(1)+'" rx="'+Math.min(3,bw/2).toFixed(1)+'" fill="'+bcol+'" opacity="'+bop+'"/>';if(showVal)bars+='<text x="'+x.toFixed(1)+'" y="'+Math.max(10,y-6).toFixed(1)+'" text-anchor="middle" font-size="11" font-weight="800" fill="'+bcol+'" opacity="'+(M.valueLabels?1:(seld||_tSel==null?1:.4))+'">'+Math.round(p.v)+(pct?'%':'')+'</text>';if(!agg)taps+='<rect x="'+(x-(W-padL-padR)/n/2).toFixed(1)+'" y="'+padT+'" width="'+((W-padL-padR)/n).toFixed(1)+'" height="'+(H-padT-padB)+'" fill="transparent" style="cursor:pointer" onclick="trendSelect('+i+')"/>'});
  var moy='';if(M.moy&&avg!=null){var my=Y(avg);moy='<line x1="'+padL+'" y1="'+my.toFixed(1)+'" x2="'+(W-padR)+'" y2="'+my.toFixed(1)+'" stroke="#161512" stroke-width="1.4" stroke-dasharray="4 4"/><rect x="'+(padL-2)+'" y="'+(my-9).toFixed(1)+'" width="34" height="18" rx="5" fill="#fff" stroke="#E6DFD5"/><text x="'+(padL+15)+'" y="'+(my+3.5).toFixed(1)+'" text-anchor="middle" font-size="9.5" font-weight="800" fill="#161512">MOY.</text>'}
  var xlab='',step=range==='S'?1:Math.ceil(n/5);for(var i=0;i<n;i+=step){var d=data[i].date;xlab+='<text x="'+X(i).toFixed(1)+'" y="'+(H-12)+'" text-anchor="middle" font-size="9" fill="#9A988F">'+T_MONL[d.getMonth()]+'</text><text x="'+X(i).toFixed(1)+'" y="'+(H-2)+'" text-anchor="middle" font-size="9" fill="#9A988F">'+d.getDate()+'</text>'}
  return '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto;display:block">'+grid+ylab+bars+moy+xlab+taps+'</svg>'}
@@ -12787,7 +12792,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v652';
+const APP_VERSION='flint-v655';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
