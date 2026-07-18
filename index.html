@@ -7496,12 +7496,19 @@ function flRcDir(cur,hist){if(cur==null)return 0;var ok=hist.filter(function(v){
  var prev=ok.slice(0,-1);var avg=prev.reduce(function(a,b){return a+b;},0)/prev.length;
  if(cur>avg+0.01)return 1;if(cur<avg-0.01)return -1;return 0;}
 /* — Tendances hebdomadaires (présentation WHOOP, DA FLINT) sous les métriques de la page Récup — */
+/* ic\u00f4nes d'en-t\u00eate (traits, 24x24) \u2014 m\u00eame langage que les cartes hebdo du sommeil */
+var FLRC_ICO={
+ recovery:'<polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline>',
+ hrv:'<path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>',
+ rhr:'<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path>',
+ resp:'<path d="M12 4v8"></path><path d="M12 12c-.6 3.8-2.2 6.4-4.4 7.4-1.3.6-2.4-.2-2.5-1.6-.2-2.4.3-5.6 1.7-7.6.8-1.2 2-1.6 3-1"></path><path d="M12 12c.6 3.8 2.2 6.4 4.4 7.4 1.3.6 2.4-.2 2.5-1.6.2-2.4-.3-5.6-1.7-7.6-.8-1.2-2-1.6-3-1"></path>',
+ sleeppct:'<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>'};
 var FLRC_TREND=[
- {key:'recovery',hb:'recovery',title:'R\u00c9CUP\u00c9RATION',kind:'bars',fmt:function(v){return Math.round(v)+'%';},scale:100},
- {key:'hrv',hb:'hrv',title:'VARIABILIT\u00c9 DE LA FR\u00c9QUENCE CARDIAQUE',kind:'line',fmt:function(v){return ''+Math.round(v);}},
- {key:'rhr',hb:'rhr',title:'FR\u00c9QUENCE CARDIAQUE AU REPOS',kind:'line',fmt:function(v){return ''+Math.round(v);}},
- {key:'resp',hb:'resp',title:'FR\u00c9QUENCE RESPIRATOIRE',kind:'line',fmt:function(v){return (''+(+v).toFixed(1)).replace('.',',');}},
- {key:'sleeppct',hb:'sleep',title:'VOTRE SOMMEIL',kind:'bars',fmt:function(v){return Math.round(v)+'%';},scale:100}];
+ {key:'recovery',hb:'recovery',title:'R\u00c9CUP\u00c9RATION',kind:'bars',fmt:function(v){return Math.round(v)+'%';},scale:100,tick:function(v){return Math.round(v)+'%';}},
+ {key:'hrv',hb:'hrv',title:'VARIABILIT\u00c9 DE LA FR\u00c9QUENCE CARDIAQUE',kind:'line',fmt:function(v){return ''+Math.round(v);},tick:function(v){return ''+Math.round(v);}},
+ {key:'rhr',hb:'rhr',title:'FR\u00c9QUENCE CARDIAQUE AU REPOS',kind:'line',fmt:function(v){return ''+Math.round(v);},tick:function(v){return ''+Math.round(v);}},
+ {key:'resp',hb:'resp',title:'FR\u00c9QUENCE RESPIRATOIRE',kind:'line',fmt:function(v){return (''+(+v).toFixed(1)).replace('.',',');},tick:function(v){return ''+Math.round(v);}},
+ {key:'sleeppct',hb:'sleep',title:'VOTRE SOMMEIL',kind:'bars',fmt:function(v){return Math.round(v)+'%';},scale:100,tick:function(v){return Math.round(v)+'%';}}];
 function flRcSeries(key){var out=[];var needH=8;try{needH=getProfile().need||8;}catch(e){}
  for(var i2=6;i2>=0;i2--){var v=null;
   try{
@@ -7513,55 +7520,66 @@ function flRcSeries(key){var out=[];var needH=8;try{needH=getProfile().need||8;}
  return out;}
 function flRcTrendCard(T){
  var pts=flRcSeries(T.key);var ok=pts.filter(function(p){return p.v!=null;});
- var W=340,L=16,R=16,cw=(W-L-R)/7;
- function cx(i2){return L+(i2+0.5)*cw;}
- var chartTop=26,chartBot=126,labY1=150,labY2=166,H=176;
+ var L=44,R=588,TOP=40,BOT=300,step=(R-L)/7,gid='flrct'+T.key;
+ function cx(i2){return L+(i2+0.5)*step;}
  var inner='';
- /* bande du jour (aujourd\u2019hui = derni\u00e8re colonne) */
- inner+='<rect x="'+(cx(6)-21).toFixed(1)+'" y="6" width="42" height="'+(H-12)+'" rx="10" fill="#f4f1ec"></rect>';
+ /* bande du jour (aujourd'hui = derniere colonne) */
+ inner+='<rect x="'+(cx(6)-34).toFixed(1)+'" y="14" width="68" height="348" rx="16" fill="#f6f2ec"></rect>';
+ /* grille + ligne de base : identiques aux cartes hebdo du sommeil */
+ inner+='<g stroke="#e7ded1" stroke-width="1.3" stroke-dasharray="4 5">';
+ [40,105,170,235].forEach(function(y){inner+='<line x1="'+L+'" y1="'+y+'" x2="'+R+'" y2="'+y+'"></line>';});
+ inner+='</g>';
+ inner+='<line x1="'+L+'" y1="'+BOT+'" x2="'+R+'" y2="'+BOT+'" stroke="#d9d0c4" stroke-width="1.5"></line>';
  if(!ok.length){
-  inner+='<text x="170" y="80" text-anchor="middle" font-family="-apple-system,system-ui,sans-serif" font-size="12.5" font-weight="300" fill="#a29c92">Pas encore de donn\u00e9es \u2014 porte ton bracelet.</text>';
+  inner+='<text x="316" y="178" text-anchor="middle" font-family="-apple-system,system-ui,sans-serif" font-size="17" font-weight="300" fill="#a29c92">Pas encore de donnees — porte ton bracelet.</text>';
  }else{
   var mn,mx;
   if(T.scale){mn=0;mx=T.scale;}
-  else{mn=Math.min.apply(null,ok.map(function(p){return p.v;}));mx=Math.max.apply(null,ok.map(function(p){return p.v;}));var pad=(mx-mn)*0.35||1;mn-=pad;mx+=pad;}
-  function cy(v){return chartBot-(v-mn)/(mx-mn)*(chartBot-chartTop);}
-  /* lignes de grille discr\u00e8tes */
-  [0.25,0.5,0.75].forEach(function(f){var gy=chartTop+(chartBot-chartTop)*f;inner+='<line x1="'+L+'" y1="'+gy.toFixed(1)+'" x2="'+(W-R)+'" y2="'+gy.toFixed(1)+'" stroke="#f0ece5" stroke-width="1"></line>';});
+  else{mn=Math.min.apply(null,ok.map(function(p){return p.v;}));mx=Math.max.apply(null,ok.map(function(p){return p.v;}));var pad=(mx-mn)*0.35||1;mn-=pad;mx+=pad;if(mn<0)mn=0;}
+  var cy=function(v){return BOT-(v-mn)/(mx-mn)*(BOT-TOP);};
+  inner+='<g font-family="-apple-system, system-ui, sans-serif" font-size="15" font-weight="300" fill="#a8a29a" text-anchor="end">';
+  [40,105,170,235,300].forEach(function(y){var v=mn+(BOT-y)/(BOT-TOP)*(mx-mn);inner+='<text x="32" y="'+(y+4)+'">'+T.tick(v)+'</text>';});
+  inner+='</g>';
   if(T.kind==='bars'){
-   pts.forEach(function(p,i2){if(p.v==null)return;var x=cx(i2),y=cy(p.v);
-    inner+='<rect x="'+(x-12).toFixed(1)+'" y="'+y.toFixed(1)+'" width="24" height="'+(chartBot-y).toFixed(1)+'" rx="7" fill="#fb6015"></rect>';
-    inner+='<text x="'+x.toFixed(1)+'" y="'+(y-8).toFixed(1)+'" text-anchor="middle" font-family="Archivo,-apple-system,sans-serif" font-size="12.5" font-weight="700" fill="#14110f">'+T.fmt(p.v)+'</text>';});
+   inner='<defs><linearGradient id="'+gid+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fb6015"></stop><stop offset="1" stop-color="#ffc191"></stop></linearGradient></defs>'+inner;
+   pts.forEach(function(p,i2){if(p.v==null)return;var x=cx(i2),y=cy(p.v);if(y>BOT-3)y=BOT-3;
+    inner+='<path d="M'+(x-13).toFixed(2)+' '+BOT+' L'+(x-13).toFixed(2)+' '+y.toFixed(2)+' A13 13 0 0 1 '+(x+13).toFixed(2)+' '+y.toFixed(2)+' L'+(x+13).toFixed(2)+' '+BOT+' Z" fill="url(#'+gid+')"></path>';});
+   inner+='<g font-family="Archivo,-apple-system,system-ui,sans-serif" font-size="18" font-weight="600" fill="#14110f" text-anchor="middle">';
+   pts.forEach(function(p,i2){if(p.v==null)return;inner+='<text x="'+cx(i2).toFixed(2)+'" y="'+Math.max(24,cy(p.v)-22).toFixed(1)+'">'+T.fmt(p.v)+'</text>';});
+   inner+='</g>';
   }else{
-   /* segments entre jours cons\u00e9cutifs non nuls + halo d\u00e9grad\u00e9 sous chaque segment */
-   var gid='flrct'+T.key;
-   inner='<defs><linearGradient id="'+gid+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fb6015" stop-opacity="0.16"></stop><stop offset="1" stop-color="#fb6015" stop-opacity="0"></stop></linearGradient></defs>'+inner;
-   var segs=[],curSeg=null;
-   pts.forEach(function(p,i2){if(p.v==null){curSeg=null;return;}if(!curSeg){curSeg=[];segs.push(curSeg);}curSeg.push([cx(i2),cy(p.v)]);});
+   inner='<defs><linearGradient id="'+gid+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fb6015" stop-opacity="0.18"></stop><stop offset="1" stop-color="#fb6015" stop-opacity="0"></stop></linearGradient></defs>'+inner;
+   var segs=[],cur=null;
+   pts.forEach(function(p,i2){if(p.v==null){cur=null;return;}if(!cur){cur=[];segs.push(cur);}cur.push([cx(i2),cy(p.v)]);});
    segs.forEach(function(sg){if(sg.length<2)return;
     var a='M '+sg[0][0].toFixed(1)+' '+sg[0][1].toFixed(1);
     for(var q=1;q<sg.length;q++)a+=' L '+sg[q][0].toFixed(1)+' '+sg[q][1].toFixed(1);
-    a+=' L '+sg[sg.length-1][0].toFixed(1)+' '+chartBot+' L '+sg[0][0].toFixed(1)+' '+chartBot+' Z';
+    a+=' L '+sg[sg.length-1][0].toFixed(1)+' '+BOT+' L '+sg[0][0].toFixed(1)+' '+BOT+' Z';
     inner+='<path d="'+a+'" fill="url(#'+gid+')" stroke="none"></path>';});
-   var d2='';var prev=null;
-   pts.forEach(function(p,i2){if(p.v==null){prev=null;return;}var x=cx(i2),y=cy(p.v);
-    d2+=(prev==null?' M ':' L ')+x.toFixed(1)+' '+y.toFixed(1);prev=p;});
-   inner+='<path d="'+d2.trim()+'" fill="none" stroke="#fb6015" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>';
-   pts.forEach(function(p,i2){if(p.v==null)return;var x=cx(i2),y=cy(p.v);
-    inner+='<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="4.4" fill="#fff" stroke="#fb6015" stroke-width="2"></circle>';
-    inner+='<text x="'+x.toFixed(1)+'" y="'+(y-11).toFixed(1)+'" text-anchor="middle" font-family="Archivo,-apple-system,sans-serif" font-size="12.5" font-weight="700" fill="#14110f">'+T.fmt(p.v)+'</text>';});
+   var d2='',prev=null;
+   pts.forEach(function(p,i2){if(p.v==null){prev=null;return;}d2+=(prev==null?' M ':' L ')+cx(i2).toFixed(1)+' '+cy(p.v).toFixed(1);prev=p;});
+   inner+='<path d="'+d2.trim()+'" fill="none" stroke="#fb6015" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"></path>';
+   pts.forEach(function(p,i2){if(p.v==null)return;inner+='<circle cx="'+cx(i2).toFixed(1)+'" cy="'+cy(p.v).toFixed(1)+'" r="6.2" fill="#fff" stroke="#fb6015" stroke-width="2.8"></circle>';});
+   inner+='<g font-family="Archivo,-apple-system,system-ui,sans-serif" font-size="18" font-weight="600" fill="#14110f" text-anchor="middle">';
+   pts.forEach(function(p,i2){if(p.v==null)return;inner+='<text x="'+cx(i2).toFixed(1)+'" y="'+Math.max(24,cy(p.v)-18).toFixed(1)+'">'+T.fmt(p.v)+'</text>';});
+   inner+='</g>';
   }
  }
- /* libell\u00e9s des jours */
- pts.forEach(function(p,i2){var x=cx(i2),td=(i2===6);
-  inner+='<text x="'+x.toFixed(1)+'" y="'+labY1+'" text-anchor="middle" font-family="-apple-system,system-ui,sans-serif" font-size="11.5" font-weight="'+(td?'600':'500')+'" fill="'+(td?'#14110f':'#8a8378')+'">'+p.day+'</text>';
-  inner+='<text x="'+x.toFixed(1)+'" y="'+labY2+'" text-anchor="middle" font-family="-apple-system,system-ui,sans-serif" font-size="11" font-weight="'+(td?'600':'400')+'" fill="'+(td?'#14110f':'#b3ab9f')+'">'+p.num+'</text>';});
+ /* libelles des jours : typo identique au sommeil */
+ inner+='<g text-anchor="middle" font-family="-apple-system, system-ui, sans-serif" font-size="15">';
+ pts.forEach(function(p,i2){var x=cx(i2).toFixed(2),td=(i2===6);
+  inner+='<text x="'+x+'" y="332" font-weight="'+(td?'600':'500')+'" fill="'+(td?'#14110f':'#57534c')+'">'+p.day+'</text>';
+  inner+='<text x="'+x+'" y="356" font-weight="'+(td?'600':'400')+'" fill="'+(td?'#14110f':'#a8a29a')+'">'+p.num+'</text>';});
+ inner+='</g>';
+ var ico=FLRC_ICO[T.key]||FLRC_ICO.recovery;
  return '<div class="rc-hebdo" data-key="'+T.hb+'" style="background:#fff;border-radius:24px;padding:20px 18px 14px;box-shadow:0 3px 16px rgba(150,118,72,0.06),inset 0 0 0 1px rgba(20,17,15,0.045);margin-top:14px;cursor:pointer">'
-  +'<div style="display:flex;align-items:flex-start;gap:13px;margin-bottom:10px;padding:0 4px">'
-   +'<h2 style="flex:1;font-family:-apple-system,system-ui,sans-serif;font-size:11px;font-weight:600;letter-spacing:0.08em;line-height:1.4;margin:0;color:#8a8378">'+T.title+'</h2>'
-   +'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fb6015" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M9 18l6-6-6-6"></path></svg>'
+  +'<div style="display:flex;align-items:center;gap:10px;cursor:pointer">'
+   +'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fb6015" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0">'+ico+'</svg>'
+   +'<span style="flex:1;font-family:-apple-system,system-ui,sans-serif;font-size:11px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;line-height:1.3;margin:0;color:#14110f">'+T.title+'</span>'
+   +'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fb6015" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg>'
   +'</div>'
-  +'<svg viewBox="0 0 340 176" width="100%" style="display:block">'+inner+'</svg>'
+  +'<div style="height:1px;background:#ece7df;margin:14px 0 2px"></div>'
+  +'<svg viewBox="0 0 600 372" width="100%" style="display:block;overflow:visible">'+inner+'</svg>'
  +'</div>';}
 function flRcTrendsHTML(){
  return '<h2 style="font-family:Archivo,-apple-system,system-ui,sans-serif;font-size:24px;font-weight:800;letter-spacing:-0.02em;color:#14110f;margin:34px 0 2px;display:flex;align-items:flex-end;gap:3px">Tendances hebdomadaires<span style="width:6px;height:6px;border-radius:50%;background:#fb6015;margin-bottom:5px"></span></h2>'
@@ -12810,7 +12828,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v667';
+const APP_VERSION='flint-v668';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
