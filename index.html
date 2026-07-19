@@ -7412,8 +7412,78 @@ function mdSleepHebdoBig(doc){try{var sc=doc.getElementById('screen-sommeil');if
   [].slice.call(s.querySelectorAll('text')).forEach(function(t){try{if(W.getComputedStyle(t).fill==='rgb(168, 162, 154)')t.style.fill='#8a857e';}catch(e){}});
  });
 }catch(e){}}
+/* ═══ Effet ZONES façon page effort sur le graphe MA NUIT (founder) : quand un stade est
+   sélectionné, des colonnes verticales dégradées descendent des segments colorés jusqu'à la
+   base du graphe (même rendu que buildHighlight/flZoneDrop de screen-marche).
+   On dérive tout du chemin surligné déjà rendu par le template (sleepHiPath) : pas besoin
+   de reproduire la logique de segments. Sélection active = présence de la ligne de base GRISE. ═══ */
+var FLSD_COLS=['#6c4ff0','#2f80ed','#22bccb','#f5c518'];
+function mdSleepZoneDrop(doc){try{var sc=doc.getElementById('screen-sommeil');if(!sc)return;
+ var svg=[].slice.call(sc.querySelectorAll('svg')).filter(function(g){return (g.getAttribute('viewBox')||'')==='0 0 340 198';})[0];
+ if(!svg)return;
+ var NS='http://www.w3.org/2000/svg',baseY=168;
+ var all=[].slice.call(svg.querySelectorAll('path'));
+ var selOn=all.some(function(p){return (p.getAttribute('stroke')||'').toLowerCase()==='#d7cec3';});
+ var g=svg.querySelector('g[data-flsd]');
+ var hi=!selOn?null:all.filter(function(p){var st=(p.getAttribute('stroke')||'').toLowerCase();if(FLSD_COLS.indexOf(st)<0)return false;var d=p.getAttribute('d')||'';return d.length>12&&d.indexOf('M 0 0')!==0;})[0];
+ if(!hi){if(g)g.parentNode&&g.parentNode.removeChild(g);svg._flsdSig='';return;}
+ var col=(hi.getAttribute('stroke')||'').toLowerCase(),d=hi.getAttribute('d')||'';
+ var sig=col+'|'+d.length+'|'+d.slice(0,48);
+ if(svg._flsdSig===sig&&g&&g.parentNode)return;
+ svg._flsdSig=sig;
+ var defs=svg.querySelector('defs');if(!defs){defs=doc.createElementNS(NS,'defs');svg.insertBefore(defs,svg.firstChild);}
+ var grad=svg.querySelector('#flSleepDrop');
+ if(!grad){grad=doc.createElementNS(NS,'linearGradient');grad.setAttribute('id','flSleepDrop');grad.setAttribute('gradientUnits','userSpaceOnUse');grad.setAttribute('x1','0');grad.setAttribute('x2','0');grad.setAttribute('y1','14');grad.setAttribute('y2',''+baseY);defs.appendChild(grad);}
+ grad.innerHTML='<stop offset="0" stop-color="'+col+'" stop-opacity="0.42"></stop><stop offset="0.55" stop-color="'+col+'" stop-opacity="0.20"></stop><stop offset="1" stop-color="'+col+'" stop-opacity="0"></stop>';
+ var nums=d.match(/-?\d+(?:\.\d+)?/g)||[],frag='',last=-99;
+ for(var i=0;i+1<nums.length;i+=2){var x=+nums[i],y=+nums[i+1];
+  if(!isFinite(x)||!isFinite(y)||y>=baseY-1)continue;
+  if(x-last<1.8)continue;last=x;
+  frag+='<line x1="'+x.toFixed(2)+'" x2="'+x.toFixed(2)+'" y1="'+y.toFixed(2)+'" y2="'+baseY+'" stroke="url(#flSleepDrop)" stroke-width="1"></line>';}
+ if(!g){g=doc.createElementNS(NS,'g');g.setAttribute('data-flsd','1');g.style.pointerEvents='none';}
+ g.innerHTML=frag;
+ try{hi.parentNode.insertBefore(g,hi);}catch(e){svg.appendChild(g);}
+}catch(e){}}
+/* ═══ SNAP du scrub sur la zone sélectionnée (façon page effort) : quand un stade est
+   sélectionné, le doigt ne peut se poser QUE sur les segments de ce stade — le point saute
+   de segment en segment. Le scrub du graphe MA NUIT appartient au template (onSleepDown/Move),
+   donc on intercepte le pointeur en CAPTURE, on recale x sur le point surligné le plus proche
+   et on re-dispatche un événement synthétique (marqué _flsnapped pour ne pas boucler). ═══ */
+function flSleepHiXs(svg){
+ var all=[].slice.call(svg.querySelectorAll('path'));
+ if(!all.some(function(p){return (p.getAttribute('stroke')||'').toLowerCase()==='#d7cec3';}))return null;
+ var hi=all.filter(function(p){var st=(p.getAttribute('stroke')||'').toLowerCase();if(FLSD_COLS.indexOf(st)<0)return false;var d=p.getAttribute('d')||'';return d.length>12&&d.indexOf('M 0 0')!==0;})[0];
+ if(!hi)return null;
+ var nums=(hi.getAttribute('d')||'').match(/-?\d+(?:\.\d+)?/g)||[],xs=[];
+ for(var i=0;i+1<nums.length;i+=2){var x=+nums[i];if(isFinite(x))xs.push(x);}
+ return xs.length?xs:null;
+}
+function mdSleepScrubSnap(doc){try{var sc=doc.getElementById('screen-sommeil');if(!sc)return;
+ var svg=[].slice.call(sc.querySelectorAll('svg')).filter(function(g){return (g.getAttribute('viewBox')||'')==='0 0 340 198';})[0];
+ if(!svg||svg._flSnapWired)return;svg._flSnapWired=1;
+ var W=doc.defaultView;
+ function snap(ev){
+  if(ev._flsnapped)return;
+  var xs=flSleepHiXs(svg);if(!xs)return;
+  var r=svg.getBoundingClientRect();if(!r.width)return;
+  var vx=(ev.clientX-r.left)/r.width*340;
+  var best=xs[0],bd=Math.abs(xs[0]-vx);
+  for(var i=1;i<xs.length;i++){var dd=Math.abs(xs[i]-vx);if(dd<bd){bd=dd;best=xs[i];}}
+  var tx=r.left+best/340*r.width;
+  if(Math.abs(tx-ev.clientX)<0.6)return;
+  /* on CONSTRUIT d'abord : si la construction échoue, l'événement original suit son cours
+     normal (jamais de scrub cassé). On ne snappe que le DÉPLACEMENT — le poser du doigt
+     reste natif (pointer capture du template intact). */
+  var C=W.PointerEvent||W.MouseEvent,ne;
+  try{ne=new C(ev.type,{bubbles:true,cancelable:true,clientX:tx,clientY:ev.clientY,pointerId:ev.pointerId,pointerType:ev.pointerType||'touch',isPrimary:true,buttons:ev.buttons});}catch(e){return;}
+  ne._flsnapped=true;
+  ev.stopImmediatePropagation();if(ev.cancelable)ev.preventDefault();
+  svg.dispatchEvent(ne);
+ }
+ svg.addEventListener('pointermove',snap,true);
+}catch(e){}}
 function mdSleepPolish(doc){try{var sc=doc.getElementById('screen-sommeil');if(!sc)return;
- mdSleepHebdoBig(doc);
+ mdSleepHebdoBig(doc);mdSleepZoneDrop(doc);mdSleepScrubSnap(doc);
  /* — titres — */
  [].slice.call(sc.querySelectorAll('span,div,h2')).forEach(function(e){
   if(e.children.length)return;var t=(e.textContent||'').trim();
@@ -12828,7 +12898,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v668';
+const APP_VERSION='flint-v671';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
