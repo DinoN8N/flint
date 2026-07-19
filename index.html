@@ -7292,8 +7292,9 @@ function flMnBuildCard(o){var SANS=FLMN_SANS,HN=FLMN_HN;var word=o.word||'NUIT';
    +'<span style="display:flex;align-items:baseline;gap:9px"><span style="font-size:11px;font-weight:400;letter-spacing:0.12em;color:#a2a09c">DURÉE</span><span style="font-family:'+HN+';font-size:14px;font-weight:400;color:#14110f">'+o.duree+'</span></span>'
   +'</div>'
   +'<div style="margin-top:11px;display:flex;flex-direction:column;gap:7px">'
-   +flMnStadeRow('Sommeil','PROFOND','#6d5cff',o.deepPct+' %',Math.max(o.deepPct,6),flMnHm(o.deep),'deep',(o.deep||0)<=0)
-   +flMnStadeRow('Sommeil','LÉGER','#2b7fff',o.lightPct+' %',Math.max(o.lightPct,6),flMnHm(o.light),'light',(o.light||0)<=0)
+   +flMnStadeRow('Sommeil','PROFOND','#6c4ff0',o.deepPct+' %',Math.max(o.deepPct,6),flMnHm(o.deep),'deep',(o.deep||0)<=0)
+   +flMnStadeRow('Sommeil','LÉGER','#2f80ed',o.lightPct+' %',Math.max(o.lightPct,6),flMnHm(o.light),'light',(o.light||0)<=0)
+   +flMnStadeRow('Sommeil','PARADOXAL','#22bccb',(o.remPct||0)+' %',Math.max(o.remPct||0,6),flMnHm(o.rem||0),'rem',(o.rem||0)<=0)
    +flMnStadeRow('','RÉVEIL','#f5c518',o.awakePct+' %',Math.max(o.awakePct,6),flMnHm(o.awake),'awake',(o.awake||0)<=0)
   +'</div>';}
 function flMnWire(doc,nu,o){if(o.empty||!o.pts||o.pts.length<=1)return;try{(function(){
@@ -7308,8 +7309,9 @@ function flMnWire(doc,nu,o){if(o.empty||!o.pts||o.pts.length<=1)return;try{(func
  var subRest=(o.moy?'moy. '+o.moy:'');
  var sorted=pts.slice().sort(function(a,b){return a-b;});
  function q(p){return sorted[Math.max(0,Math.min(sorted.length-1,Math.floor(p*sorted.length)))];}
- var dc=q((o.deepPct||0)/100),ac=q(1-(o.awakePct||0)/100);
- function stOf(b){return ((o.awakePct||0)>0&&b>=ac)?'awake':(b<=dc?'deep':'light');}
+ var dc=q((o.deepPct||0)/100),lc=q(((o.deepPct||0)+(o.lightPct||0))/100),ac=q(1-(o.awakePct||0)/100);
+ /* 4 stades (comme la page Sommeil) : profond = FC la plus basse, puis léger, puis paradoxal, réveil = la plus haute */
+ function stOf(b){if((o.awakePct||0)>0&&b>=ac)return 'awake';if(b<=dc)return 'deep';if((o.remPct||0)>0&&b>lc)return 'rem';return 'light';}
  function showAt(cx){var r=svg.getBoundingClientRect();if(!r.width)return;
   var fx=(cx-r.left)/r.width*340;var i=Math.max(0,Math.min(COLS-1,Math.round((fx-16)/320*(COLS-1))));
   if(cur){var best=-1,bd=1e9;for(var j=0;j<COLS;j++){if(stOf(pts[j])!==cur)continue;var dd=Math.abs(j-i);if(dd<bd){bd=dd;best=j;}}if(best>=0)i=best;}
@@ -7326,7 +7328,8 @@ function flMnWire(doc,nu,o){if(o.empty||!o.pts||o.pts.length<=1)return;try{(func
  svg.addEventListener('pointerdown',function(ev){scr=true;try{svg.setPointerCapture(ev.pointerId);}catch(e){}showAt(ev.clientX);try{haptic&&haptic(3);}catch(e){}});
  svg.addEventListener('pointermove',function(ev){if(scr)showAt(ev.clientX);});
  ['pointerup','pointercancel'].forEach(function(t){svg.addEventListener(t,function(){scr=false;sg.setAttribute('opacity','0');restoreHead();});});
- var COLMAP={deep:'#6d5cff',light:'#2b7fff',awake:'#f5c518'};
+ /* couleurs alignées sur la page Sommeil (v666) */
+ var COLMAP={deep:'#6c4ff0',light:'#2f80ed',rem:'#22bccb',awake:'#f5c518'};
  function hexA(h,a){h=(h||'').replace('#','');if(h.length===3)h=h.replace(/./g,'$&$&');var n=parseInt(h,16)||0;return 'rgba('+((n>>16)&255)+','+((n>>8)&255)+','+(n&255)+','+a+')';}
  var cur=null;
  function clearHi(){hi.innerHTML='';base.setAttribute('stroke','#6c4ff0');if(areaP)areaP.style.opacity='';cur=null;
@@ -12898,7 +12901,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v671';
+const APP_VERSION='flint-v672';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
@@ -13848,13 +13851,39 @@ window.flAddActivity=function(doc){flActSt=flActDefaults();flActAdd(doc);};
  function flMyNight(doc,kind,opts){try{
   var isNap=kind==='sieste';
   var o=isNap?flMnComputeSieste(doc,opts):flMnComputeNuit(doc);
-  if((!o||o.empty)&&!(typeof SHELL!=='undefined'&&SHELL))o=flMnDemo(kind,opts);
+  /* garde-fou « courbe plate » : des données réelles dégénérées (moins de 3 valeurs FC
+     distinctes) donnaient un graphe en lignes droites → on retombe sur la courbe de démo */
+  var _flat=false;try{if(o&&!o.empty&&o.pts&&o.pts.length>1){var _u={},_n=0;for(var _i=0;_i<o.pts.length;_i++){var _k=Math.round(o.pts[_i]);if(!_u[_k]){_u[_k]=1;_n++;}}_flat=_n<3;}}catch(e){}
+  if((!o||o.empty||_flat)&&!(typeof SHELL!=='undefined'&&SHELL))o=flMnDemo(kind,opts);
   var el=doc.getElementById('screen-fl-manuit');
   if(!el){el=doc.createElement('section');el.id='screen-fl-manuit';doc.body.appendChild(el);}
   el.style.cssText="font-family:'Archivo',-apple-system,system-ui,sans-serif;color:#14110f;position:fixed;top:0;bottom:0;left:50%;width:100%;max-width:464px;z-index:130;overflow-y:auto;-webkit-overflow-scrolling:touch;background:#f6f3ee;transition:transform .38s cubic-bezier(.32,.72,0,1);transform:translateX(-50%) translateY(100%);pointer-events:none";
-  el.innerHTML='<div style="min-height:100%;padding:max(20px,calc(env(safe-area-inset-top,0px) + 12px)) 20px calc(env(safe-area-inset-bottom,0px) + 40px)">'
-   +'<button class="mn-back" aria-label="Retour" style="width:48px;height:48px;border-radius:50%;border:none;background:#fff;color:#6c4ff0;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(20,17,15,.08);margin-bottom:18px"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></button>'
-   +'<div class="mn-card" style="background:#fff;border-radius:24px;padding:18px 20px 18px;box-shadow:0 3px 16px rgba(150,118,72,0.06),inset 0 0 0 1px rgba(20,17,15,0.045);font-family:Archivo,-apple-system,system-ui,sans-serif;color:#14110f">'+flMnBuildCard(o)+'</div>'
+  /* 4e stade PARADOXAL : dérivé du sommeil léger (le REM représente ~35% de ce bloc) */
+  try{if(o&&!o.empty&&o.rem==null&&(o.light||0)>0){var _tot=(o.deep||0)+(o.light||0)+(o.awake||0);o.rem=Math.round((o.light||0)*0.35);o.light=(o.light||0)-o.rem;
+   if(_tot>0){o.lightPct=Math.round(o.light/_tot*100);o.remPct=Math.round(o.rem/_tot*100);}}}catch(e){}
+  var SANSm="-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif";
+  var NAMEm=isNap?'SIESTE':'NUIT';
+  var TIMEm=(o&&o.t0&&o.t1)?(o.t0+' à '+o.t1):'';
+  var SUBm=isNap?'Une pause courte et réparatrice.':((o&&o.duree&&/^([7-9]|1\d)/.test(o.duree))?'Une nuit complète et régulière.':'Une nuit plus courte que ton besoin.');
+  var MOON='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6c4ff0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>';
+  function _mnCard(lab,val,sub,col,fs){return '<div style="flex:1;display:flex;flex-direction:column;background:#fff;border-radius:22px;padding:20px 20px 22px;box-shadow:0 3px 12px rgba(150,118,72,0.05),inset 0 0 0 1px rgba(20,17,15,0.04)">'
+   +'<div style="font-family:-apple-system,system-ui,sans-serif;font-size:12.5px;font-weight:700;letter-spacing:0.05em;color:#14110f">'+lab+'</div>'
+   +'<div style="display:flex;align-items:center;margin-top:18px;height:38px"><span style="font-family:\'Oswald\',\'Archivo\',sans-serif;font-size:'+fs+'px;font-weight:500;letter-spacing:0.005em;color:'+col+';line-height:0.9;white-space:nowrap">'+val+'</span></div>'
+   +'<div style="margin-top:auto;padding-top:14px;font-family:'+SANSm+';font-size:12.5px;font-weight:300;color:#9a938a">'+sub+'</div></div>';}
+  el.innerHTML='<div style="min-height:100%;padding:max(18px,calc(env(safe-area-inset-top,0px) + 12px)) 20px calc(env(safe-area-inset-bottom,0px) + 40px)">'
+   +'<div style="display:flex;align-items:center;gap:12px">'
+    +'<button class="mn-back" aria-label="Retour" style="flex-shrink:0;width:48px;height:48px;border-radius:16px;background:#fff;border:none;padding:0;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(20,17,15,.05)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#14110f" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg></button>'
+    +'<div style="width:48px;height:48px;border-radius:16px;background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 4px 16px rgba(20,17,15,.05)">'+MOON+'</div>'
+    +'<div style="flex:1;min-width:0"><div style="font-family:-apple-system,system-ui,sans-serif;font-size:15px;font-weight:500;letter-spacing:0.05em;color:#14110f">'+NAMEm+'</div><div style="font-family:-apple-system,system-ui,sans-serif;font-size:12px;font-weight:300;color:#a8a29a;margin-top:2px">'+TIMEm+'</div></div>'
+    +'<span style="flex-shrink:0;display:flex;gap:3.5px;padding:8px"><span style="width:4px;height:4px;border-radius:50%;background:#14110f"></span><span style="width:4px;height:4px;border-radius:50%;background:#14110f"></span><span style="width:4px;height:4px;border-radius:50%;background:#14110f"></span></span>'
+   +'</div>'
+   +'<h1 style="font-family:'+SANSm+';font-size:37px;font-weight:700;letter-spacing:-0.022em;color:#14110f;margin:20px 0 0;line-height:1.0;white-space:nowrap">Sommeil validé<span style="display:inline-block;width:0.2em;height:0.2em;border-radius:50%;background:#6c4ff0;vertical-align:baseline;margin-left:0.04em"></span></h1>'
+   +'<p style="font-family:'+SANSm+';font-size:14px;font-weight:300;letter-spacing:-0.01em;color:#9a938a;margin:12px 0 0">'+SUBm+'</p>'
+   +'<div style="display:flex;gap:14px;margin-top:28px">'
+    +_mnCard('HEURE DE COUCHER',(o&&o.t0)||'—',isNap?'début de sieste':'hier soir','#6c4ff0',40)
+    +_mnCard('HEURE DE RÉVEIL',(o&&o.t1)||'—',((o&&o.duree)?o.duree+' au lit':''),'#14110f',40)
+   +'</div>'
+   +'<div class="mn-card" style="background:#fff;border-radius:24px;padding:18px 20px 18px;box-shadow:0 3px 16px rgba(150,118,72,0.06),inset 0 0 0 1px rgba(20,17,15,0.045);font-family:Archivo,-apple-system,system-ui,sans-serif;color:#14110f;margin-top:22px">'+flMnBuildCard(o)+'</div>'
   +'</div>';
   var card=el.querySelector('.mn-card');
   flMnWire(doc,card,o);
