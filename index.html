@@ -7646,7 +7646,10 @@ function flRcSeries(key){var out=[];var needH=8;try{needH=getProfile().need||8;}
   out.push({v:v==null?null:+v,day:['dim','lun','mar','mer','jeu','ven','sam'][d.getDay()],num:d.getDate()});}
  return out;}
 function flRcTrendCard(T){
- var pts=flRcSeries(T.key);var ok=pts.filter(function(p){return p.v!=null;});
+ /* v680 : couleur paramétrable (T.col) — la page Effort réutilise ces cartes
+    en bleu. Sans T.col, l'orange d'origine de la page Récup est conservé. */
+ var C=T.col||'#fb6015',C2=T.col2||'#ffc191';
+ var pts=T.series?T.series():flRcSeries(T.key);var ok=pts.filter(function(p){return p.v!=null;});
  var L=44,R=588,TOP=40,BOT=300,step=(R-L)/7,gid='flrct'+T.key;
  function cx(i2){return L+(i2+0.5)*step;}
  var inner='';
@@ -7662,20 +7665,36 @@ function flRcTrendCard(T){
  }else{
   var mn,mx;
   if(T.scale){mn=0;mx=T.scale;}
-  else{mn=Math.min.apply(null,ok.map(function(p){return p.v;}));mx=Math.max.apply(null,ok.map(function(p){return p.v;}));var pad=(mx-mn)*0.35||1;mn-=pad;mx+=pad;if(mn<0)mn=0;}
+  else{mn=Math.min.apply(null,ok.map(function(p){return p.v;}));mx=Math.max.apply(null,ok.map(function(p){return p.v;}));
+   /* v680 : toutes les valeurs égales (ex. muscu à 0 toute la semaine) donnait
+      un axe absurde (0:01 / 0:01 / 0:00). On impose une amplitude minimale. */
+   if(mx-mn<1e-9){mn=0;mx=T.emptyMax||Math.max(1,mx*2)||1;}
+   else{var pad=(mx-mn)*0.35;mn-=pad;mx+=pad;}
+   if(mn<0)mn=0;}
   var cy=function(v){return BOT-(v-mn)/(mx-mn)*(BOT-TOP);};
   inner+='<g font-family="-apple-system, system-ui, sans-serif" font-size="15" font-weight="300" fill="#a8a29a" text-anchor="end">';
   [40,105,170,235,300].forEach(function(y){var v=mn+(BOT-y)/(BOT-TOP)*(mx-mn);inner+='<text x="32" y="'+(y+4)+'">'+T.tick(v)+'</text>';});
   inner+='</g>';
-  if(T.kind==='bars'){
-   inner='<defs><linearGradient id="'+gid+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fb6015"></stop><stop offset="1" stop-color="#ffc191"></stop></linearGradient></defs>'+inner;
+  if(T.kind==='stack'){
+   /* v680 : barres empilées (zones de FC) — un segment par zone, valeur totale
+      au-dessus. Reprend la géométrie des barres simples : demi-largeur 13. */
+   pts.forEach(function(p,i2){if(p.v==null)return;var x=cx(i2),base=BOT,tot=0;
+    (p.parts||[]).forEach(function(pv){tot+=pv;});
+    if(!tot){return;}
+    (p.parts||[]).forEach(function(pv,zi){if(!pv)return;
+     var h=(pv/(mx-mn))*(BOT-TOP),y=base-h;if(h<1.2)h=1.2,y=base-h;
+     inner+='<rect x="'+(x-13).toFixed(2)+'" y="'+y.toFixed(2)+'" width="26" height="'+h.toFixed(2)+'" fill="'+(T.parts[zi]||{})[0]+'"></rect>';
+     base=y;});
+    inner+='<text x="'+x.toFixed(2)+'" y="'+Math.max(24,base-14).toFixed(1)+'" font-family="Archivo,-apple-system,system-ui,sans-serif" font-size="18" font-weight="600" fill="#14110f" text-anchor="middle">'+T.fmt(p.v)+'</text>';});
+  }else if(T.kind==='bars'){
+   inner='<defs><linearGradient id="'+gid+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+C+'"></stop><stop offset="1" stop-color="'+C2+'"></stop></linearGradient></defs>'+inner;
    pts.forEach(function(p,i2){if(p.v==null)return;var x=cx(i2),y=cy(p.v);if(y>BOT-3)y=BOT-3;
     inner+='<path d="M'+(x-13).toFixed(2)+' '+BOT+' L'+(x-13).toFixed(2)+' '+y.toFixed(2)+' A13 13 0 0 1 '+(x+13).toFixed(2)+' '+y.toFixed(2)+' L'+(x+13).toFixed(2)+' '+BOT+' Z" fill="url(#'+gid+')"></path>';});
    inner+='<g font-family="Archivo,-apple-system,system-ui,sans-serif" font-size="18" font-weight="600" fill="#14110f" text-anchor="middle">';
    pts.forEach(function(p,i2){if(p.v==null)return;inner+='<text x="'+cx(i2).toFixed(2)+'" y="'+Math.max(24,cy(p.v)-22).toFixed(1)+'">'+T.fmt(p.v)+'</text>';});
    inner+='</g>';
   }else{
-   inner='<defs><linearGradient id="'+gid+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fb6015" stop-opacity="0.18"></stop><stop offset="1" stop-color="#fb6015" stop-opacity="0"></stop></linearGradient></defs>'+inner;
+   inner='<defs><linearGradient id="'+gid+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+C+'" stop-opacity="0.18"></stop><stop offset="1" stop-color="'+C+'" stop-opacity="0"></stop></linearGradient></defs>'+inner;
    var segs=[],cur=null;
    pts.forEach(function(p,i2){if(p.v==null){cur=null;return;}if(!cur){cur=[];segs.push(cur);}cur.push([cx(i2),cy(p.v)]);});
    segs.forEach(function(sg){if(sg.length<2)return;
@@ -7685,8 +7704,8 @@ function flRcTrendCard(T){
     inner+='<path d="'+a+'" fill="url(#'+gid+')" stroke="none"></path>';});
    var d2='',prev=null;
    pts.forEach(function(p,i2){if(p.v==null){prev=null;return;}d2+=(prev==null?' M ':' L ')+cx(i2).toFixed(1)+' '+cy(p.v).toFixed(1);prev=p;});
-   inner+='<path d="'+d2.trim()+'" fill="none" stroke="#fb6015" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"></path>';
-   pts.forEach(function(p,i2){if(p.v==null)return;inner+='<circle cx="'+cx(i2).toFixed(1)+'" cy="'+cy(p.v).toFixed(1)+'" r="6.2" fill="#fff" stroke="#fb6015" stroke-width="2.8"></circle>';});
+   inner+='<path d="'+d2.trim()+'" fill="none" stroke="'+C+'" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"></path>';
+   pts.forEach(function(p,i2){if(p.v==null)return;inner+='<circle cx="'+cx(i2).toFixed(1)+'" cy="'+cy(p.v).toFixed(1)+'" r="6.2" fill="#fff" stroke="'+C+'" stroke-width="2.8"></circle>';});
    inner+='<g font-family="Archivo,-apple-system,system-ui,sans-serif" font-size="18" font-weight="600" fill="#14110f" text-anchor="middle">';
    pts.forEach(function(p,i2){if(p.v==null)return;inner+='<text x="'+cx(i2).toFixed(1)+'" y="'+Math.max(24,cy(p.v)-18).toFixed(1)+'">'+T.fmt(p.v)+'</text>';});
    inner+='</g>';
@@ -7701,9 +7720,9 @@ function flRcTrendCard(T){
  var ico=FLRC_ICO[T.key]||FLRC_ICO.recovery;
  return '<div class="rc-hebdo" data-key="'+T.hb+'" style="background:#fff;border-radius:24px;padding:20px 18px 14px;box-shadow:0 3px 16px rgba(150,118,72,0.06),inset 0 0 0 1px rgba(20,17,15,0.045);margin-top:14px;cursor:pointer">'
   +'<div style="display:flex;align-items:center;gap:10px;cursor:pointer">'
-   +'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fb6015" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0">'+ico+'</svg>'
+   +'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="'+C+'" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0">'+ico+'</svg>'
    +'<span style="flex:1;font-family:-apple-system,system-ui,sans-serif;font-size:11px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;line-height:1.3;margin:0;color:#14110f">'+T.title+'</span>'
-   +'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fb6015" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg>'
+   +'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="'+C+'" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg>'
   +'</div>'
   +'<div style="height:1px;background:#ece7df;margin:14px 0 2px"></div>'
   +'<svg viewBox="0 0 600 372" width="100%" style="display:block;overflow:visible">'+inner+'</svg>'
@@ -7723,6 +7742,79 @@ var FLEF_IC={
  strength:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fb6015" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6M7 7v10M17 7v10M20 9v6M7 12h10"></path></svg>',
  steps:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fb6015" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 4.5a2.5 2.5 0 0 1 5 0c0 2-.6 3.2-.6 4.7 0 1 .3 1.8.3 2.6a2.2 2.2 0 0 1-4.4 0c0-1.6-.3-3-.3-4.4z"></path><path d="M13.2 15.5a2.2 2.2 0 0 0 4.3 1.2c.3-1.3.5-2 .5-2.6"></path><path d="M6 9.5a2.5 2.5 0 0 1 5 0c0 2-.6 3.2-.6 4.7"></path><path d="M6.2 17.5a2.2 2.2 0 0 0 4.3 1.2"></path></svg>'
 };
+/* ===== v680 — Tendances hebdomadaires de l'EFFORT ============================
+   Mêmes cartes que la page Récupération (flRcTrendCard), en bleu, avec les
+   6 métriques de la référence WHOOP. Chaque carte est cliquable. */
+var FLEF_TICO={
+ charge:'<path d="M13 2L4.5 13H11l-1 9 8.5-11H12z"></path>',
+ zones13:'<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path>',
+ zones45:'<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path><path d="M13 8l-3 5h3.5L12 17"></path>',
+ steps:'<path d="M13 4.5a2.5 2.5 0 0 1 5 0c0 2-.6 3.2-.6 4.7 0 1 .3 1.8.3 2.6a2.2 2.2 0 0 1-4.4 0c0-1.6-.3-3-.3-4.4z"></path><path d="M6 9.5a2.5 2.5 0 0 1 5 0c0 2-.6 3.2-.6 4.7"></path>',
+ calories:'<path d="M12 21.5c3.6 0 6.5-2.8 6.5-6.3 0-2.4-1.3-4.2-2.8-5.9-1.6-1.8-2.6-3.4-2.9-5.8-1.3 1.1-2.4 2.6-2.4 4.3 0 1.2.4 2 .4 2.8 0 1-.8 1.8-1.8 1.8-1 0-1.7-.7-1.9-1.8-1 1.3-1.6 2.9-1.6 4.6 0 3.5 2.9 6.3 6.5 6.3z"></path>',
+ strength:'<path d="M4 9v6M7 7v10M17 7v10M20 9v6M7 12h10"></path>'
+};
+/* Série sur 7 jours, calée sur le jour consulté (comme la page Récup). */
+function flEfSeries(fn2,partsFn){
+ var out=[],off=window.flDayOff||0;
+ for(var i=6;i>=0;i--){var k=tk(off-i),d=new Date();d.setDate(d.getDate()+off-i);
+  var v=null,parts=null;
+  try{v=fn2(k);if(partsFn)parts=partsFn(k);}catch(e){}
+  out.push({v:(v==null||isNaN(v))?null:+v,parts:parts,
+   day:['dim','lun','mar','mer','jeu','ven','sam'][d.getDay()],num:d.getDate()});}
+ return out;}
+function flEfZoneMin(k){
+ var ss=[];try{ss=(DB.get('sessions_'+k,[])||[]).filter(function(x){return x.type!=='nap';});}catch(e){}
+ var z=[0,0,0,0,0];try{z=zonesToday(ss).z;}catch(e){}
+ return z;}
+var FLEF_TREND=[
+ {key:'charge',hb:'charge',trend:'charge',title:'EFFORT',kind:'bars',col:FLEF_BLUE,col2:'#8FC7F2',scale:21,
+  fmt:function(v){return (Math.round(v*10)/10).toFixed(1).replace('.',',');},
+  tick:function(v){return ''+Math.round(v);},
+  series:function(){return flEfSeries(function(k){return loadStrain(k);});}},
+ {key:'zones13',hb:'zones13',trend:'zones13',title:'ZONES DE FC 1 À 3',emptyMax:60,kind:'stack',col:FLEF_BLUE,
+  parts:[['#B9CED8','Zone 1'],['#4A9CC1','Zone 2'],['#61B99A','Zone 3']],
+  fmt:function(v){return minToHM(v);},tick:function(v){return minToHM(Math.max(0,v));},
+  series:function(){return flEfSeries(function(k){var z=flEfZoneMin(k);return z[0]+z[1]+z[2];},
+                                      function(k){var z=flEfZoneMin(k);return [z[0],z[1],z[2]];});}},
+ {key:'zones45',hb:'zones45',trend:'zones45',title:'ZONES DE FC 4 ET 5',emptyMax:60,kind:'stack',col:FLEF_BLUE,
+  parts:[['#F5A85B','Zone 4'],['#F0492E','Zone 5']],
+  fmt:function(v){return minToHM(v);},tick:function(v){return minToHM(Math.max(0,v));},
+  series:function(){return flEfSeries(function(k){var z=flEfZoneMin(k);return z[3]+z[4];},
+                                      function(k){var z=flEfZoneMin(k);return [z[3],z[4]];});}},
+ {key:'steps',hb:'steps',trend:'steps',title:'PAS',kind:'bars',col:FLEF_BLUE,col2:'#8FC7F2',
+  fmt:function(v){return fmtNum(v);},tick:function(v){return fmtNum(Math.max(0,v));},
+  series:function(){return flEfSeries(function(k){return flStepsOf(k);});}},
+ {key:'calories',hb:'calories',trend:'calories',title:'CALORIES',kind:'bars',col:FLEF_BLUE,col2:'#8FC7F2',
+  fmt:function(v){return fmtNum(v);},tick:function(v){return fmtNum(Math.max(0,v));},
+  series:function(){return flEfSeries(function(k){return caloriesBurned(k);});}},
+ {key:'strength',hb:'strength',trend:'strength',title:'TEMPS DE MUSCULATION',emptyMax:60,kind:'bars',col:FLEF_BLUE,col2:'#8FC7F2',
+  fmt:function(v){return minToHM(v);},tick:function(v){return minToHM(Math.max(0,v));},
+  series:function(){return flEfSeries(function(k){var m=0;
+   try{(DB.get('sessions_'+k,[])||[]).forEach(function(x){if(x.type==='strength')m+=(x.dur||0);});}catch(e){}
+   return m;});}}
+];
+/* Légende des zones, comme sur la référence (carrés + libellés). */
+function flEfLegend(T){
+ if(!T.parts)return '';
+ return '<div style="display:flex;align-items:center;justify-content:center;gap:18px;margin:10px 0 2px;flex-wrap:wrap">'
+  +T.parts.map(function(p){return '<span style="display:inline-flex;align-items:center;gap:6px">'
+   +'<span style="width:9px;height:9px;border-radius:2px;background:'+p[0]+'"></span>'
+   +'<span style="font-family:-apple-system,system-ui,sans-serif;font-size:10.5px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:#8a857e">'+p[1]+'</span></span>';}).join('')
+ +'</div>';}
+function flEfTrendsHTML(){
+ var _oldIco={};
+ Object.keys(FLEF_TICO).forEach(function(k){_oldIco[k]=FLRC_ICO[k];FLRC_ICO[k]=FLEF_TICO[k];});
+ var html='<h2 style="font-family:Archivo,-apple-system,system-ui,sans-serif;font-size:24px;font-weight:800;letter-spacing:-0.02em;color:#14110f;margin:34px 0 2px;display:flex;align-items:flex-end;gap:3px">Tendances hebdomadaires<span style="width:6px;height:6px;border-radius:50%;background:'+FLEF_BLUE+';margin-bottom:5px"></span></h2>'
+  +FLEF_TREND.map(function(T){
+    var card=flRcTrendCard(T);
+    /* la carte porte la classe rc-hebdo : on la remplace par ef-hebdo pour que
+       le clic soit géré par la page Effort et non par celle de la Récup */
+    card=card.replace('class="rc-hebdo" data-key="'+T.hb+'"','class="ef-hebdo" data-trend="'+T.trend+'"');
+    if(T.parts)card=card.replace('<div style="height:1px;background:#ece7df;margin:14px 0 2px"></div>',
+      '<div style="height:1px;background:#ece7df;margin:14px 0 2px"></div>'+flEfLegend(T));
+    return card;}).join('');
+ Object.keys(_oldIco).forEach(function(k){if(_oldIco[k]===undefined)delete FLRC_ICO[k];else FLRC_ICO[k]=_oldIco[k];});
+ return html;}
 function flEffortOpen(doc){try{
  doc=doc||(document.getElementById('frToday')||{}).contentDocument;if(!doc||!doc.body)return;
  var off=window.flDayOff||0;
@@ -7785,6 +7877,7 @@ function flEffortOpen(doc){try{
     +'<span style="width:7px;height:7px;border-radius:50%;background:'+FLEF_BLUE+'"></span>'+verdict
    +'</span></div>'
   +'<div style="margin-top:26px">'+rowsHTML+'</div>'
+  +flEfTrendsHTML()
  +'</div>'
  +'<div style="flex-shrink:0;position:absolute;left:0;right:0;bottom:0;display:flex;padding:12px 26px calc(env(safe-area-inset-bottom,0px) + 16px);background:rgba(255,255,255,.92);backdrop-filter:blur(12px);box-shadow:0 -1px 0 #ececea">'
   +'<button class="ef-close" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;background:none;border:none;cursor:pointer">'
@@ -7809,7 +7902,7 @@ function flEffortOpen(doc){try{
    var n=ev.target,closeHit=false,trend=null;
    while(n&&n!==doc.body){if(n.classList){
     if(n.classList.contains('ef-close')){closeHit=true;break;}
-    if(n.classList.contains('ef-row')){trend=n.getAttribute('data-trend');break;}}
+    if(n.classList.contains('ef-row')||n.classList.contains('ef-hebdo')){trend=n.getAttribute('data-trend');break;}}
     n=n.parentElement;}
    if(!closeHit&&!trend)return;
    var nw=Date.now();if(nw-_efT<700)return;_efT=nw;
@@ -13070,7 +13163,14 @@ var TR={
 function trAnchor(cfg){return (cfg&&cfg.anchor)?new Date(cfg.anchor[0],cfg.anchor[1],cfg.anchor[2]):new Date(2025,10,26)}
 function trDlab(d){return ['DIM.','LUN.','MAR.','MER.','JEU.','VEN.','SAM.'][d.getDay()]+' '+d.getDate()+' '+CAL_MONTHS[d.getMonth()]}
 function trTotal(w){return Array.isArray(w[2])?w[2].reduce(function(a,b){return a+b},0):w[2]}
-function trSeed(s){var h=0;for(var i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))>>>0;return h}
+function trSeed(s){var h=0;for(var i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))>>>0;
+ /* v680 — étape de brassage. Sans elle, deux dates consécutives (« 2026-7-14 »,
+    « 2026-7-15 ») donnaient des graines voisines, donc des valeurs quasi
+    identiques : le graphique des pas affichait 8663, 8664, 8665… Le brassage
+    fait qu'un seul caractère de différence change tout le résultat. */
+ h=(h^(h>>>16))>>>0;h=Math.imul(h,2246822507)>>>0;
+ h=(h^(h>>>13))>>>0;h=Math.imul(h,3266489909)>>>0;
+ return (h^(h>>>16))>>>0;}
 function trRangeLabel(a,b){var y=String(b.getFullYear()).slice(2);
  if(a.getFullYear()!==b.getFullYear())return CAL_MONTHS[a.getMonth()]+' '+String(a.getFullYear()).slice(2)+' – '+CAL_MONTHS[b.getMonth()]+' '+y;
  if(a.getMonth()!==b.getMonth())return CAL_MONTHS[a.getMonth()]+' '+a.getDate()+' – '+CAL_MONTHS[b.getMonth()]+' '+b.getDate()+', '+y;
@@ -13462,7 +13562,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='v679';
+const APP_VERSION='v682';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
