@@ -7478,6 +7478,21 @@ function mdSleepHebdoBig(doc){try{var sc=doc.getElementById('screen-sommeil');if
    On dérive tout du chemin surligné déjà rendu par le template (sleepHiPath) : pas besoin
    de reproduire la logique de segments. Sélection active = présence de la ligne de base GRISE. ═══ */
 var FLSD_COLS=['#6c4ff0','#2f80ed','#22bccb','#f5c518'];
+/* v705 — Curseur du graphe sommeil : il était violet en dur, donc violet sur
+   jaune quand on sélectionnait RÉVEIL. Il prend désormais la couleur du stade
+   choisi (et redevient violet quand aucun stade n'est sélectionné). */
+function flSleepCursorTint(svg,col){try{
+ if(!svg)return;
+ var VIO='#6c4ff0';col=(col||VIO).toLowerCase();
+ function rgba(h,a){h=h.replace('#','');if(h.length===3)h=h.replace(/./g,'$&$&');
+  var n=parseInt(h,16)||0;return 'rgba('+((n>>16)&255)+','+((n>>8)&255)+','+(n&255)+','+a+')';}
+ [].slice.call(svg.querySelectorAll('circle')).forEach(function(c){
+  var r=parseFloat(c.getAttribute('r')||'0');
+  var f=(c.getAttribute('fill')||'').toLowerCase();
+  if(r>=7&&/rgba?\(/.test(f))c.setAttribute('fill',rgba(col,0.20));        /* halo */
+  else if(r>=3&&r<7&&/^#/.test(f))c.setAttribute('fill',col);              /* point + jalons */
+ });
+}catch(e){}}
 function mdSleepZoneDrop(doc){try{var sc=doc.getElementById('screen-sommeil');if(!sc)return;
  var svg=[].slice.call(sc.querySelectorAll('svg')).filter(function(g){return (g.getAttribute('viewBox')||'')==='0 0 340 198';})[0];
  if(!svg)return;
@@ -7486,8 +7501,10 @@ function mdSleepZoneDrop(doc){try{var sc=doc.getElementById('screen-sommeil');if
  var selOn=all.some(function(p){return (p.getAttribute('stroke')||'').toLowerCase()==='#d7cec3';});
  var g=svg.querySelector('g[data-flsd]');
  var hi=!selOn?null:all.filter(function(p){var st=(p.getAttribute('stroke')||'').toLowerCase();if(FLSD_COLS.indexOf(st)<0)return false;var d=p.getAttribute('d')||'';return d.length>12&&d.indexOf('M 0 0')!==0;})[0];
- if(!hi){if(g)g.parentNode&&g.parentNode.removeChild(g);svg._flsdSig='';return;}
+ if(!hi){if(g)g.parentNode&&g.parentNode.removeChild(g);svg._flsdSig='';
+  flSleepCursorTint(svg,null);return;}
  var col=(hi.getAttribute('stroke')||'').toLowerCase(),d=hi.getAttribute('d')||'';
+ flSleepCursorTint(svg,col);
  var sig=col+'|'+d.length+'|'+d.slice(0,48);
  if(svg._flsdSig===sig&&g&&g.parentNode)return;
  svg._flsdSig=sig;
@@ -7542,8 +7559,26 @@ function mdSleepScrubSnap(doc){try{var sc=doc.getElementById('screen-sommeil');i
  }
  svg.addEventListener('pointermove',snap,true);
 }catch(e){}}
+/* ===== v705 — Colonnes dégradées instantanées =================================
+   Founder : « les traits arrivent instantanément, les lignes dégradées non ».
+   Les traits viennent du gabarit (synchrone au clic) ; les colonnes, elles,
+   étaient redessinées par la passe d'injection lancée 500 ms APRÈS le clic.
+   On les redessine donc dès le clic, sur les toutes premières frames — le temps
+   que le gabarit ait mis à jour le tracé surligné dont elles dérivent. */
+function mdSleepFastDrop(doc){
+ if(!doc||doc._flSdFast)return;doc._flSdFast=1;
+ try{doc.addEventListener('click',function(ev){
+  var n=ev.target;
+  for(var i=0;i<10&&n;i++,n=n.parentElement){
+   if(n.id==='screen-sommeil'){
+    [0,16,40,90,180].forEach(function(ms){
+     setTimeout(function(){try{mdSleepZoneDrop(doc);}catch(e){}},ms);});
+    return;}
+  }
+ },true);}catch(e){}
+}
 function mdSleepPolish(doc){try{var sc=doc.getElementById('screen-sommeil');if(!sc)return;
- mdSleepHebdoBig(doc);mdSleepZoneDrop(doc);mdSleepScrubSnap(doc);
+ mdSleepHebdoBig(doc);mdSleepZoneDrop(doc);mdSleepScrubSnap(doc);mdSleepFastDrop(doc);
  /* — titres — */
  [].slice.call(sc.querySelectorAll('span,div,h2')).forEach(function(e){
   if(e.children.length)return;var t=(e.textContent||'').trim();
@@ -13902,7 +13937,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='v704';
+const APP_VERSION='v705';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
