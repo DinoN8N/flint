@@ -13850,7 +13850,10 @@ function flSeedDemoDays(n){
    ss.push({name:nm,icon:sportIcon(nm),
     start:(q?17:9)+Math.floor(r('st'+q)*3)+':'+(r('mn'+q)<0.5?'00':'30'),
     dur:(hard?55:30)+Math.round(r('du'+q)*45),
-    int:hard?3+Math.round(r('in'+q)):1+Math.round(r('in2'+q)*2),
+    /* v714 : répartition réaliste — 60 % léger, 25 % modéré, 12 % soutenu,
+       3 % maximal. La formule d'effort de la coquille est très raide : sans cette
+       pondération, la moitié des journées saturait à 20. */
+    int:(function(){var p=r('int'+q);return p<0.60?1:p<0.85?2:p<0.97?3:4;})(),
     auto:true,demo:true});
   }
   if(!rest&&r('nap')<0.15)ss.push({type:'nap',name:'Sieste',icon:'😴',start:'15:00',dur:20+Math.round(r('nd')*25),demo:true});
@@ -13867,7 +13870,12 @@ function flSeedDemoDays(n){
   var win=[];
   ss.forEach(function(x){if(x.type==='nap')return;
    var sp=(x.start||'08:00').split(':'),a0=(+sp[0])*60+(+sp[1]);
-   win.push([a0,a0+(x.dur||30),[0,10,18,28,38][Math.min(4,x.int||2)]]);});
+   /* v714 : élévations calées sur les VRAIS seuils de zones (Z1 107, Z2 135,
+      Z3 149, Z4 163, Z5 176 bpm). Avant, une séance « intense » culminait à
+      96 bpm : les zones 4-5 n'étaient jamais touchées alors que la séance était
+      étiquetée intensité 4 — données incohérentes, et le grisage des zones
+      paraissait cassé alors qu'il faisait son travail. */
+   win.push([a0,a0+(x.dur||30),[0,44,72,100,122][Math.min(4,x.int||2)]]);});
   for(var t=0;t<1440;t+=5){
    var up=0;win.forEach(function(w2){if(t>=w2[0]&&t<w2[1])up=Math.max(up,w2[2]);});
    var night=(t<wakeMin||t>wakeMin+16*60);
@@ -13992,7 +14000,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='v713';
+const APP_VERSION='v715';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
