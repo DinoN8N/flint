@@ -13023,6 +13023,10 @@ function flEffPolish(doc){try{
     l'autre écran de détail. */
  var GRIS='#8a857c';
  function tint(){
+  /* le groupe de scrub apparaît avec un fondu de 180 ms : on le supprime, le
+     curseur doit se poser sous le doigt sans latence. */
+  var grp=svg.querySelector('.fle-scrub');
+  if(grp&&grp.style)grp.style.setProperty('transition','none','important');
   ['.fle-dot','.fle-halo','.fle-guide'].forEach(function(sel){
    var e2=svg.querySelector(sel);if(!e2)return;
    if(sel==='.fle-halo')e2.setAttribute('fill','rgba(138,133,129,0.16)');
@@ -13037,7 +13041,7 @@ function flEffPolish(doc){try{
   hdr.parentElement&&(hdr.style.display=on?'none':'');
   var ic=hdr.previousElementSibling;if(ic&&ic.tagName==='svg')ic.style.display=on?'none':'';
  }
- function readAt(ev){
+ function readAt(){
   try{
    var v=svg.querySelector('.fle-val'),t2=svg.querySelector('.fle-time');
    var bpm=v?(v.textContent||'').replace(/[^\d]/g,''):'';
@@ -13045,10 +13049,21 @@ function flEffPolish(doc){try{
    if(bpm){hv.textContent=bpm;ht.textContent=hh;show(true);}
   }catch(e){}
  }
- ['pointerdown','pointermove','touchstart','touchmove'].forEach(function(t2){
-  svg.addEventListener(t2,function(ev){tint();setTimeout(function(){readAt(ev);},0);},true);});
+ /* v720 — lecture INSTANTANÉE.
+    Avant : écoute en capture (donc AVANT que l'app ait calculé la valeur), puis
+    lecture différée par un setTimeout. Résultat, il fallait au moins une image,
+    souvent deux, pour voir les BPM — le petit délai signalé.
+    Maintenant : la capture ne fait que la mise au gris (cosmétique), et la
+    lecture se fait en phase de REMONTÉE, donc une fois la valeur calculée, sans
+    aucun report. Un relais sur l'image suivante couvre le cas où un gestionnaire
+    intermédiaire stopperait la propagation. */
+ var PRESS=['pointerdown','pointermove','touchstart','touchmove'];
+ PRESS.forEach(function(t2){
+  svg.addEventListener(t2,function(){tint();readAt();
+   try{(doc.defaultView||window).requestAnimationFrame(readAt);}catch(e){}},true);});
+ PRESS.forEach(function(t2){svg.addEventListener(t2,readAt,false);});
  ['pointerup','pointerleave','pointercancel','touchend','touchcancel'].forEach(function(t2){
-  svg.addEventListener(t2,function(){setTimeout(function(){show(false);},60);},true);});
+  svg.addEventListener(t2,function(){show(false);},true);});
  tint();
 }catch(e){}}
 function flEffOpen(doc){try{var o=flEffData(doc);
@@ -14093,7 +14108,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='v719';
+const APP_VERSION='v720';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
