@@ -6655,7 +6655,7 @@ var el=ev.target;var a=el;for(var d1=0;d1<7&&a;d1++,a=a.parentElement){if(!a.que
   var kc=(typeof caloriesBurned==='function'?caloriesBurned(K):0);setTile('CALORIES',(''+Math.round(kc)).replace(/\B(?=(\d{3})+(?!\d))/g,' '));
   /* NOUVEAU trio d'accueil (maquette founder 15/07) : layout icônes + jauge 270°, couleurs fixes par carte */
   mdHomeTrio(doc);
-  mdBalance(doc);mdSleep(doc);mdFonts(doc);mdStickyBacks(doc);mdSleepScrub(doc);mdWeekBarsScrub(doc);mdDualScrub(doc);mdCalDualScrub(doc);mdMarchePrecise(doc);mdMarcheScrub(doc);mdMarcheZones(doc);mdDashChevrons(doc);mdNavNoCoach(doc);mdProfil(doc);mdJourneeTune(doc);mdCalReadoutPurge(doc);mdNutritionPolish(doc);mdMarcheStats(doc);mdDashUniform(doc);mdSleepPolish(doc);mdSleepViolet(doc);mdRecupTap(doc);flLoadNativeTaps(doc);if(typeof flShellHonest==='function')flShellHonest(doc);mdRings(doc);mdTrioRings(doc);mdHebTrend(doc);mdNutrition(doc);mdObjectifs(doc);mdJournalWire(doc);flNavWatch(doc);mdNavBottom(doc);mdJournalBottom(doc);mdDayStamp(doc);mdJrnlHour(doc);
+  mdBalance(doc);mdSleep(doc);mdFonts(doc);mdStickyBacks(doc);mdSleepScrub(doc);mdWeekBarsScrub(doc);mdDualScrub(doc);mdCalDualScrub(doc);mdMarchePrecise(doc);mdMarcheScrub(doc);mdMarcheZones(doc);mdDashChevrons(doc);mdNavNoCoach(doc);mdProfil(doc);mdJourneeTune(doc);mdCalReadoutPurge(doc);mdNutritionPolish(doc);mdMarcheStats(doc);mdDashUniform(doc);mdSleepPolish(doc);mdSleepViolet(doc);mdRecupTap(doc);flLoadNativeTaps(doc);if(typeof flShellHonest==='function')flShellHonest(doc);mdRings(doc);mdTrioRings(doc);mdHebTrend(doc);mdNutrition(doc);mdObjectifs(doc);mdJournalWire(doc);flNavWatch(doc);mdSwipeTabs(doc);mdNavBottom(doc);mdJournalBottom(doc);mdDayStamp(doc);mdJrnlHour(doc);
   /* anti-flash orange : garder le splash FLINT opaque jusqu'à ce que le reskin soit VRAIMENT peint —
      trio construit ET peuplé, plusieurs passes faites (~1s), sinon on révélait un état mi-orange sur
      téléphone lent. Filet dur à 4s dans injectTodayLoop pour ne jamais rester bloqué. */
@@ -7638,7 +7638,9 @@ var FLRC_TREND=[
  {key:'hrv',hb:'hrv',title:'VARIABILIT\u00c9 DE LA FR\u00c9QUENCE CARDIAQUE',kind:'line',fmt:function(v){return ''+Math.round(v);},tick:function(v){return ''+Math.round(v);}},
  {key:'rhr',hb:'rhr',title:'FR\u00c9QUENCE CARDIAQUE AU REPOS',kind:'line',fmt:function(v){return ''+Math.round(v);},tick:function(v){return ''+Math.round(v);}},
  {key:'resp',hb:'resp',title:'FR\u00c9QUENCE RESPIRATOIRE',kind:'line',fmt:function(v){return (''+(+v).toFixed(1)).replace('.',',');},tick:function(v){return ''+Math.round(v);}},
- {key:'sleeppct',hb:'sleep',title:'VOTRE SOMMEIL',kind:'bars',fmt:function(v){return Math.round(v)+'%';},scale:100,tick:function(v){return Math.round(v)+'%';}}];
+ /* v691 : tout ce qui touche au sommeil est violet — cette carte restait
+    orange alors que la page qu'elle ouvre est violette. */
+ {key:'sleeppct',hb:'sleep',title:'VOTRE SOMMEIL',col:'#7357f1',col2:'#bdaff9',kind:'bars',fmt:function(v){return Math.round(v)+'%';},scale:100,tick:function(v){return Math.round(v)+'%';}}];
 function flRcSeries(key){var out=[];var needH=8;try{needH=getProfile().need||8;}catch(e){}
  for(var i2=6;i2>=0;i2--){var v=null;
   try{
@@ -7818,6 +7820,73 @@ function flEfTrendsHTML(){
     return card;}).join('');
  Object.keys(_oldIco).forEach(function(k){if(_oldIco[k]===undefined)delete FLRC_ICO[k];else FLRC_ICO[k]=_oldIco[k];});
  return html;}
+/* ===== v691 — Navigation au doigt entre les onglets =========================
+   Founder : « sur Instagram, si je swipe vers la gauche depuis messages,
+   j'arrive dans les réels ». On glisse horizontalement pour passer d'un onglet
+   au suivant.
+   Choix d'implémentation : on ne réimplémente PAS l'ouverture de chaque onglet —
+   on simule un tap sur le bouton de la barre du bas. Toute la logique existante
+   (fermeture des overlays, injecteurs, animations) est donc réutilisée telle
+   quelle, sans risque de divergence entre le tap et le swipe. */
+function flTabButtons(doc){
+ var nav=doc.querySelector('nav');if(!nav)return [];
+ return [].slice.call(nav.querySelectorAll('[role="button"]'));
+}
+/* Un swipe ne doit pas voler le geste à un élément qui défile horizontalement,
+   ni à un graphique qu'on parcourt au doigt (scrub). */
+function flSwipeBlocked(doc,el){
+ for(var i=0;i<8&&el&&el!==doc.body;i++,el=el.parentElement){
+  if(el.tagName==='SVG'||el.tagName==='svg')return true;
+  if(el.getAttribute&&(el.getAttribute('data-flh-i')!=null))return true;
+  try{var cs=doc.defaultView.getComputedStyle(el);
+   if(/auto|scroll/.test(cs.overflowX)&&el.scrollWidth>el.clientWidth+4)return true;}catch(e){}
+ }
+ return false;
+}
+function mdSwipeTabs(doc){
+ if(!doc||!doc.body||doc._flSwipeWired)return;doc._flSwipeWired=1;
+ try{
+  /* on suit l'onglet courant en observant les taps sur la barre */
+  doc.addEventListener('click',function(ev){
+   var n=ev.target;
+   for(var i=0;i<6&&n;i++,n=n.parentElement){
+    if(n.getAttribute&&n.getAttribute('role')==='button'){
+     var bs=flTabButtons(doc),ix=bs.indexOf(n);
+     if(ix>=0)doc._flTabIx=ix;
+     return;}}
+  },true);
+
+  var x0=0,y0=0,t0=0,tracking=false;
+  doc.addEventListener('touchstart',function(ev){
+   if(!ev.touches||ev.touches.length!==1){tracking=false;return;}
+   /* Pas de swipe quand une page de DÉTAIL est ouverte (le retour s'y fait par
+      son bouton, et le geste sert au graphique). Mais un écran d'ONGLET ouvert
+      ne doit pas bloquer : sinon on ne peut plus revenir depuis Nutrition. */
+   try{if(typeof flNavStack!=='undefined'&&flNavStack.filter(function(e2){
+    return !/^screen-(nutrition|fl-profil)/.test(e2.id||'');}).length){tracking=false;return;}}catch(e){}
+   if(flSwipeBlocked(doc,ev.target)){tracking=false;return;}
+   var t=ev.touches[0];x0=t.clientX;y0=t.clientY;t0=Date.now();tracking=true;
+  },{capture:true,passive:true});
+
+  doc.addEventListener('touchend',function(ev){
+   if(!tracking)return;tracking=false;
+   var t=(ev.changedTouches&&ev.changedTouches[0]);if(!t)return;
+   var dx=t.clientX-x0,dy=t.clientY-y0,dt=Date.now()-t0;
+   /* horizontal franc, assez ample, et pas un geste interminable */
+   /* 1000 ms : un swipe franc dure 150-400 ms, mais un geste lent et délibéré
+      doit passer aussi. Au-delà, c'est un appui long, pas un swipe. */
+   if(dt>1000||Math.abs(dx)<64||Math.abs(dx)<Math.abs(dy)*2)return;
+   var bs=flTabButtons(doc);if(bs.length<2)return;
+   var cur=doc._flTabIx||0;
+   var next=cur+(dx<0?1:-1);          /* vers la gauche = onglet suivant */
+   if(next<0||next>=bs.length)return; /* pas de bouclage : on sent le bord */
+   doc._flTabIx=next;
+   if(typeof haptic==='function')haptic(5);
+   ['pointerdown','pointerup','click'].forEach(function(k){
+    try{bs[next].dispatchEvent(new MouseEvent(k,{bubbles:true,cancelable:true}));}catch(e){}});
+  },{capture:true,passive:true});
+ }catch(e){}
+}
 function flEffortOpen(doc){try{
  doc=doc||(document.getElementById('frToday')||{}).contentDocument;if(!doc||!doc.body)return;
  var off=window.flDayOff||0;
@@ -13625,7 +13694,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='v690';
+const APP_VERSION='v693';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
