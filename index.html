@@ -7330,6 +7330,13 @@ function mdDashUniform(doc){try{var tb=doc.getElementById('screen-tableau');if(!
     else if((mm=t.match(/^(\d+)h(\d{2})$/))){num=mm[1]+':'+mm[2];un='h';}
     else if((mm=t.match(/^(-?[\d\s\u00a0\u202f]+(?:[,.:]\d+)?)(h|%|kg|ms|bpm|kcal|min|pas|r\/m)$/))){num=mm[1].trim();un=mm[2];}
     if(!un)un=extra.map(function(k){return (k.textContent||'').trim();}).join('')||(slot?(slot.textContent||'').trim():'');
+     /* v731 — l'unite ne doit JAMAIS rester dans la valeur : elle vit dans la
+        fente grise. Sans ce nettoyage, une valeur portant deja son unite
+        (« 37 % », « 0h36 », « 83 ms ») s'affichait doublee des que la fente
+        portait la meme unite. On retire toute unite en fin de valeur. */
+     if(un){var _e=un.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+      num=num.replace(new RegExp('\\s*'+_e+'\\s*$'),'').trim();
+      if(!num)num=t;}
     if(lab==='VO₂ max'&&!un)un='ml/kg/min';
     extra.forEach(function(k){k.remove();});
     if(!slot){slot=doc.createElement('span');blk.appendChild(slot);}
@@ -14354,7 +14361,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='v730';
+const APP_VERSION='v731';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
