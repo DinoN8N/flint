@@ -4439,7 +4439,7 @@ body.stepsview header{display:none}
 
   <section class="card elx-card">
     <div class="elx-ct">Comprendre ta charge</div>
-    <p class="elx-p">Une note de <b>0 à 21</b> qui résume la <b>charge cardiovasculaire</b> de ta journée : plus tes séances sont <b>intenses et longues</b>, plus la note monte.</p>
+    <p class="elx-p">Une note de <b>0 à 20</b> qui résume la <b>charge cardiovasculaire</b> de ta journée : plus tes séances sont <b>intenses et longues</b>, plus la note monte.</p>
     <div class="elx-scale"><div class="elx-scmark" id="effScaleMark"><span class="bub" id="effScaleBub">—</span></div></div>
     <div class="elx-zlabs" id="effZlabs"><span style="flex:10" data-z="0"><b>Légère</b><i>0–10</i></span><span style="flex:4" data-z="1"><b>Modérée</b><i>10–14</i></span><span style="flex:4" data-z="2"><b>Soutenue</b><i>14–18</i></span><span style="flex:3" data-z="3"><b>Élevée</b><i>18+</i></span></div>
   </section>
@@ -5427,7 +5427,7 @@ function baseStat(field){const a=[];const d=new Date();d.setDate(d.getDate()-1);
 function loadOf(k){const ss=DB.get('sessions_'+k,[]);let L=0;ss.forEach(s=>{if(s.type==='nap')return;L+=Math.round((s.dur||0)*(s.int||2)*1.7)});const sen=sensorOf(k);if(sen&&sen.load)L=Math.max(L,sen.load);return L}
 function loadAvg(n,off){let t=0,c=0;const d=new Date();d.setDate(d.getDate()-(off||0));for(let i=0;i<n;i++){const k=d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();t+=loadOf(k);c++;d.setDate(d.getDate()-1)}return c?t/c:0}
 function recovery(off){const t=sensorOf(tk(off||0));if(!t||t.hrv==null)return null;const bH=baseStat('hrv'),bR=baseStat('rhr'),bP=baseStat('resp');if(!bH)return null;const z=(v,b)=>(b&&v!=null)?(v-b.m)/b.sd:0;const zH=z(t.hrv,bH),zR=z(t.rhr,bR),zP=z(t.resp,bP);const need=(getProfile().need||8)*60;const sp=t.sleepMin!=null?t.sleepMin/need:0.85;const zS=Math.max(-2,Math.min(1.5,(sp-1)*3));const pR=Math.max(0,zP);const Z=0.55*zH-0.22*zR+0.18*zS-0.10*pR;const s=Math.max(1,Math.min(100,Math.round(100/(1+Math.exp(-1.05*Z)))));const zone=s>=67?['HAUTE','var(--green)','Ton corps est bien récupéré. Conditions optimales pour performer.','PRÊT']:s>=34?['MODÉRÉE','var(--amber)','Récupération correcte. Vise une charge modérée aujourd\'hui.','OK']:['BASSE','var(--accent)','Récupération basse. Priorise le repos et le sommeil.','REPOS'];return {s,zone:zone[0],color:zone[1],reco:zone[2],state:zone[3],today:t,c:[['HRV',t.hrv+' ms',zH],['FC repos',(t.rhr||'—')+' bpm',-zR],['Sommeil',(t.sleepMin/60).toFixed(1)+'h',zS],['Respiration',(t.resp||'—')+'/min',-pR]],bH,bR,bP}}
-/* v688 — l'effort est noté sur 20 dans toute l'app (était sur 21). Une seule
+/* v688 — l'effort est noté sur 20 dans toute l'app (était sur 20). Une seule
    constante pour éviter que l'échelle se redisperse dans le code. */
 var STRAIN_MAX=20;
 function loadStrain(k){const L=loadOf(k||tk());return Math.max(0,Math.min(STRAIN_MAX,+(STRAIN_MAX*(1-Math.exp(-L/520))).toFixed(1)))}
@@ -5714,7 +5714,7 @@ const TREND={
   bd:{title:'Analyse de l\'effort',bands:[{l:'Léger (<10)',f:function(v){return v<10},c:'#6C7BD6'},{l:'Modéré (10-14)',f:function(v){return v<=14},c:'#3FA0E0'},{l:'Vigoureux (14-18)',f:function(v){return v<=18},c:'#F5A623'},{l:'Très intense (>18)',f:function(v){return true},c:'#F0492E'}]},
   sent:function(av,a30,r){return 'Votre effort moyen '+(r==='M'?'ce mois-ci':r==='S'?'cette semaine':'sur cette période')+' ('+(Math.round(av*10)/10).toString().replace('.',',')+') '+(a30!=null?(av<a30?'est inférieur':'est supérieur')+' à votre moyenne de '+(Math.round(a30*10)/10).toString().replace('.',',')+' des 30 derniers jours.':'.')},
   explT:'L\'effort du jour, qu\'est-ce que c\'est ?',
-  explP:'L\'effort mesure la charge totale imposée à votre corps sur la journée, cardio et musculaire, sur une échelle de 0 à 21 inspirée de l\'échelle de Borg. Léger (0-9) : récupération active. Modéré (10-13) : bon équilibre. Élevé (14-17) : progrès mais récup plus lente. Intense (18-21) : gains maximaux, mais risque accru — à alterner avec du repos.'},
+  explP:'L\'effort mesure la charge totale imposée à votre corps sur la journée, cardio et musculaire, sur une échelle de 0 à 20 inspirée de l\'échelle de Borg. Léger (0-9) : récupération active. Modéré (10-13) : bon équilibre. Élevé (14-17) : progrès mais récup plus lente. Intense (18-21) : gains maximaux, mais risque accru — à alterner avec du repos.'},
  resp:{label:'Fréquence respiratoire',unit:'r/m',icon:'ti-lungs',field:'resp',short:'fréquence respiratoire',chart:'line',color:'#3FA0E0',dec:true,lowerIsBetter:true,
   val:function(k){var s=DB.get('sensor_'+k,null);return s&&s.resp!=null?s.resp:null},
   explT:'La fréquence respiratoire, qu\'est-ce que c\'est ?',
@@ -12168,13 +12168,13 @@ function flInfo(title,html){var b=document.getElementById('flInfoBody');if(b)b.i
 function flInfoClose(){var s=document.getElementById('flInfoSheet');if(s)s.classList.remove('on');}
 var FL_INFO={
  recup:['Ta récupération','<p>Un score de <b>0 à 100</b> qui dit à quel point ton corps est <b>prêt à performer</b> aujourd\'hui. Il combine ta <b>VFC</b>, ta <b>FC de repos</b>, ton <b>sommeil</b> et ta <b>respiration</b>, comparés à ta normale perso.</p><p><span class="fli-tag"><i class="ti ti-flame"></i>Haute → pousse</span><span class="fli-tag"><i class="ti ti-adjustments"></i>Modérée → dose</span><span class="fli-tag"><i class="ti ti-zzz"></i>Basse → repos</span></p>'],
- effort:['Ton effort du jour','<p>Une note de <b>0 à 21</b> qui résume la <b>charge cardiovasculaire</b> de ta journée : plus tes séances sont <b>intenses et longues</b> (mesuré via ta FC), plus la note monte.</p><p>Vise une charge alignée sur ta récup : pousser quand tu es frais, lever le pied quand tu es bas.</p>'],
+ effort:['Ton effort du jour','<p>Une note de <b>0 à 20</b> qui résume la <b>charge cardiovasculaire</b> de ta journée : plus tes séances sont <b>intenses et longues</b> (mesuré via ta FC), plus la note monte.</p><p>Vise une charge alignée sur ta récup : pousser quand tu es frais, lever le pied quand tu es bas.</p>'],
  sommeil:['Ton sommeil','<p>La <b>durée</b> et la <b>qualité</b> de ta nuit : sommeil profond et paradoxal (réparateurs), régularité des horaires, et FC nocturne. Comparés à ton <b>besoin</b> perso.</p><p>Le sommeil est le <b>premier moteur</b> de ta récupération.</p>'],
  fc:['Ta fréquence cardiaque','<p>Tes battements par minute. Au <b>repos</b>, plus c\'est bas, mieux ton cœur récupère. Les <b>zones</b> (1 à 5) montrent l\'intensité de tes efforts.</p>'],
  calories:['Tes calories','<p>L\'énergie que tu <b>dépenses</b> dans la journée : métabolisme de base + mouvements + entraînements (estimé via ta FC et ton activité).</p>'],
  balance:['Le solde calorique','<p>La différence entre ce que tu as <b>consommé</b> (repas) et <b>dépensé</b> (bracelet). Positif = surplus, négatif = déficit. On le compare à la <b>cible</b> de ton objectif (sèche / maintien / muscle).</p>'],
  pas:['Tes pas','<p>Ton activité quotidienne <b>hors entraînement</b>. Un bon volume de pas soutient ta dépense et ta santé sans entamer ta récup.</p>'],
- cible:['Ta cible d\'effort','<p>La fourchette de charge (sur 21) à viser <b>aujourd\'hui</b>. Elle s\'adapte à ta <b>récupération</b> : récup haute → cible plus ambitieuse, récup basse → cible allégée.</p><p>Rester dans ta cible, c\'est <b>progresser sans te cramer</b>.</p>'],
+ cible:['Ta cible d\'effort','<p>La fourchette de charge (sur 20) à viser <b>aujourd\'hui</b>. Elle s\'adapte à ta <b>récupération</b> : récup haute → cible plus ambitieuse, récup basse → cible allégée.</p><p>Rester dans ta cible, c\'est <b>progresser sans te cramer</b>.</p>'],
  equilibre:['Équilibre de charge','<p>On compare ta charge des <b>7 derniers jours</b> à ton habitude des <b>4 dernières semaines</b>.</p><p><b>Optimal</b> : tu progresses sainement. <b>Trop haut</b> : risque de surmenage/blessure. <b>Trop bas</b> : tu te désentraînes. C\'est le meilleur garde-fou contre le surentraînement.</p>']
 };
 function flInfoKey(k){var d=FL_INFO[k];if(d)flInfo(d[0],d[1]);}
@@ -13610,6 +13610,149 @@ function seedTodayShowcase(){const sleepMin=462,deep=104,rem=118,awake=12,light=
  DB.set('meals_'+tk(),[{name:'Petit-déj — flocons & œufs',kcal:520,prot:32,carb:60,fat:16,time:'08:05'},{name:'Déjeuner — poulet riz',kcal:760,prot:55,carb:80,fat:18,time:'12:45'},{name:'Collation — skyr & banane',kcal:280,prot:22,carb:38,fat:4,time:'16:10'},{name:'Snack — amandes',kcal:290,prot:10,carb:10,fat:24,time:'18:30'}]);
  persistRecov()}
 /* ---- Seed de TEST (demande founder 2026-07-07) : données variées sur 5 semaines pour tester tous les graphiques ---- */
+/* ===== v694 — Jeu de démonstration pour la coquille iOS ======================
+   Founder : « mets des fausses données sur les 20 jours précédents, et
+   diversifie — il y a des jours où la montre n'est pas portée ».
+   La coquille purge normalement toute donnée de démo (flShellPurged) pour ne
+   jamais présenter de l'inventé comme du mesuré. Ce semeur-ci est donc explicite
+   et réversible : il ne s'active qu'avec le drapeau `flintDemoData`, et marque
+   chaque journée d'un `demo:true` pour qu'on puisse la distinguer plus tard.
+   Déterministe : la même journée donne toujours les mêmes valeurs, sinon les
+   graphiques changeraient à chaque ouverture. */
+function flDemoRnd(k,salt){var h=trSeed(salt+'|'+k);return (h%10000)/10000;}
+function flSeedDemoDays(n){
+ n=n||40;
+ var XN=['Course','Natation','Vélo','Padel','Football','Muscu','Yoga','Marche','Rameur','Boxe'];
+ var PD=[['Flocons, œufs & fruits',520,32,60,16],['Pain complet & fromage blanc',430,26,55,10],
+         ['Pancakes protéinés',480,34,52,14],['Skyr, granola & miel',390,28,50,8]];
+ var DJ=[['Poulet riz légumes',760,55,80,18],['Saumon patate douce',690,42,58,28],
+         ['Pâtes bolognaise',820,38,105,22],['Bowl quinoa thon',640,40,66,20]];
+ var DN=[['Omelette & salade',450,30,12,30],['Soupe & pain, jambon',520,28,58,16],
+         ['Riz sauté crevettes',610,34,72,18],['Poisson blanc purée',540,38,52,16]];
+ var SN=[['Amandes',290,10,10,24],['Skyr & banane',280,22,38,4],['Barre céréales',210,6,32,7]];
+
+ /* i=0 inclus : sans lui, la journée en cours reste vide (« — » partout) et on
+    ne peut pas tester l'écran d'accueil, qui est le plus consulté. */
+ for(var i=0;i<=n;i++){
+  var k=tk(-i),r=function(salt){return flDemoRnd(k,salt);};
+  var d=new Date();d.setDate(d.getDate()-i);
+  var we=(d.getDay()===0||d.getDay()===6);
+
+  /* --- Montre non portée : ~1 jour sur 7, plus 2 jours consécutifs vers J-12.
+     Ces jours-là, AUCUNE donnée capteur : l'app doit afficher « — » partout. */
+  /* Les jours récents sont ceux qu'on consulte le plus : on les garde bien
+     remplis (la montre vient d'être portée assidûment), et on place les trous
+     plus loin — dont deux jours consécutifs, cas typique d'un week-end sans. */
+  var noWatch = i>=5 && ((r('watch')<0.15) || (i===12||i===13));
+  if(noWatch){
+   DB.set('sensor_'+k,null);DB.set('recov_'+k,null);
+   /* la vie continue : quelques repas saisis à la main */
+   if(r('meal')<0.6){
+    var mm=[];
+    mm.push({name:PD[Math.floor(r('p')*PD.length)][0],kcal:PD[0][1],prot:PD[0][2],carb:PD[0][3],fat:PD[0][4],time:'08:10',demo:true});
+    mm.push({name:DJ[Math.floor(r('j')*DJ.length)][0],kcal:DJ[0][1],prot:DJ[0][2],carb:DJ[0][3],fat:DJ[0][4],time:'12:40',demo:true});
+    DB.set('meals_'+k,mm);
+   } else DB.set('meals_'+k,[]);
+   DB.set('sessions_'+k,[]);
+   continue;
+  }
+
+  /* --- Nuit : durée, structure et qualité variables --- */
+  var bad = r('bad')<0.18;                 /* mauvaise nuit */
+  var good = !bad && r('good')<0.30;       /* très bonne nuit */
+  var sleepMin = bad ? 300+Math.round(r('s1')*60)
+               : good ? 470+Math.round(r('s2')*70)
+                      : 390+Math.round(r('s3')*80);
+  if(we)sleepMin+=Math.round(r('we')*45);  /* on dort plus le week-end */
+  var deep  = Math.round(sleepMin*(0.16+r('d')*0.08));
+  var rem   = Math.round(sleepMin*(0.19+r('r')*0.07));
+  var awake = Math.round(6+r('a')*(bad?34:16));
+  var light = Math.max(30,sleepMin-deep-rem);
+  var timeInBed = sleepMin+awake+Math.round(r('b')*18);
+  var wakeMin = 6*60+Math.round(r('w')*95)+(we?40:0);
+  var bedMin  = ((wakeMin-timeInBed)%1440+1440)%1440;
+
+  /* VFC et FC repos corrélées à la qualité de nuit + une dérive lente */
+  var drift = Math.sin(i/9)*5;
+  var hrv = Math.round((bad?58:good?92:74)+r('h')*14+drift);
+  var rhr = Math.round((bad?56:good?45:49)+r('c')*5-drift/2);
+  var resp= Math.round(((bad?15.4:13.1)+r('rs')*1.6)*10)/10;
+
+  DB.set('sensor_'+k,{hrv:hrv,rhr:rhr,resp:resp,skinTemp:Math.round((36.3+r('t')*0.6)*10)/10,
+   spo2:95+Math.round(r('o')*3),deep:deep,rem:rem,light:light,awake:awake,sleepMin:sleepMin,
+   timeInBed:timeInBed,latency:6+Math.round(r('l')*18),wakeEvents:4+Math.round(r('e')*12),
+   lowestHr:rhr-2-Math.round(r('lo')*4),bedMin:bedMin,wakeMin:wakeMin,
+   stages:flStageSegs({deep:deep,rem:rem,light:light,awake:awake,sleepMin:sleepMin}),
+   hrSamples:flHrSamples(rhr,rhr-3,timeInBed),source:'demo',demo:true});
+
+  /* --- Séances : jours de repos, jours légers, grosses journées --- */
+  var ss=[],nb;
+  var rest = i>0 && r('rest')<0.22;        /* jour de repos (jamais aujourd'hui) */
+  if(rest)nb=0; else nb = r('nb')<0.25?2:1;
+  for(var q=0;q<nb;q++){
+   var nm=XN[Math.floor(r('n'+q)*XN.length)];
+   var hard = r('hard'+q)<0.3;
+   ss.push({name:nm,icon:sportIcon(nm),
+    start:(q?17:9)+Math.floor(r('st'+q)*3)+':'+(r('mn'+q)<0.5?'00':'30'),
+    dur:(hard?55:30)+Math.round(r('du'+q)*45),
+    int:hard?3+Math.round(r('in'+q)):1+Math.round(r('in2'+q)*2),
+    auto:true,demo:true});
+  }
+  if(!rest&&r('nap')<0.15)ss.push({type:'nap',name:'Sieste',icon:'😴',start:'15:00',dur:20+Math.round(r('nd')*25),demo:true});
+  DB.set('sessions_'+k,ss);
+
+  /* En COQUILLE, sensorOf/loadStrain/caloriesBurned sont remplacés pour ne lire
+     QUE la montre (couche d'honnêteté). On sème donc le magasin `watch_`, et la
+     donnée de démo traverse exactement le même pipeline qu'un vrai bracelet.
+     La courbe de FC doit couvrir la JOURNÉE, avec des pics pendant les séances :
+     l'effort s'y calcule, et une série plate donnait toujours 0. */
+  var rr=[],hrDay=[];
+  /* RR : dispersion x2.45 car rmssd() renvoie ~0,65 x la dispersion */
+  for(var g=0;g<40;g++)rr.push(Math.round(60000/(rhr+2)+(r('rr'+g)-0.5)*hrv*2.45));
+  var win=[];
+  ss.forEach(function(x){if(x.type==='nap')return;
+   var sp=(x.start||'08:00').split(':'),a0=(+sp[0])*60+(+sp[1]);
+   win.push([a0,a0+(x.dur||30),[0,10,18,28,38][Math.min(4,x.int||2)]]);});
+  for(var t=0;t<1440;t+=5){
+   var up=0;win.forEach(function(w2){if(t>=w2[0]&&t<w2[1])up=Math.max(up,w2[2]);});
+   var night=(t<wakeMin||t>wakeMin+16*60);
+   var bpm=rhr+(night?-2:8)+Math.round(r('hd'+t)*7)+up+(up?Math.round(r('hp'+t)*7):0);
+   hrDay.push([t,Math.max(38,Math.min(190,bpm))]);}
+  DB.set('watch_'+k,{hr:hrDay,rr:rr,
+   steps:2500+Math.round(r('sp')*11000)+(rest?0:1500),
+   kcal:180+Math.round(r('kc')*520)+(rest?0:260),
+   night:{sleepMin:sleepMin,deep:deep,rem:rem,light:light,awake:awake,
+    bedMin:bedMin,wakeMin:wakeMin,timeInBed:timeInBed,lowestHr:rhr-3},
+   demo:true});
+
+  /* --- Repas : journées complètes, partielles, ou rien --- */
+  var meals=[],mr=r('mcount');
+  function push(tab,salt,time){var x=tab[Math.floor(r(salt)*tab.length)];
+   meals.push({name:x[0],kcal:x[1],prot:x[2],carb:x[3],fat:x[4],time:time,demo:true});}
+  if(mr>0.12){
+   push(PD,'m1','08:'+(5+Math.floor(r('t1')*40)));
+   push(DJ,'m2','12:'+(20+Math.floor(r('t2')*35)));
+   if(mr>0.4)push(SN,'m3','16:'+(5+Math.floor(r('t3')*45)));
+   if(mr>0.3)push(DN,'m4','19:'+(30+Math.floor(r('t4')*25)));
+  }
+  DB.set('meals_'+k,meals);
+
+  /* --- Journal du soir : rempli 3 jours sur 5 --- */
+  if(r('jr')<0.6){
+   DB.set('fljrnl_'+k,{avion:r('av')<0.06?1:0,alcool:r('al')<0.25?1:0,
+    cafeine:r('cf')<0.35?1:0,diner:r('dn')<0.3?1:0,_saved:true,demo:true});
+  }
+ }
+ try{for(var z=1;z<=n;z++)persistRecovFor(tk(-z));}catch(e){}
+ try{persistRecov();}catch(e){}
+}
+/* Efface tout ce que le semeur a écrit (retour à l'état réel). */
+function flPurgeDemoDays(n){
+ n=n||60;
+ for(var i=1;i<=n;i++){var k=tk(-i);
+  ['sensor_','recov_','sessions_','meals_','fljrnl_','watch_'].forEach(function(p){
+   try{DB.set(p+k,p==='sessions_'||p==='meals_'?[]:null);}catch(e){}});}
+}
 function flSeedTest(){try{
  simulateData(true);          /* capteur + séances + journal variés (185 j) + recov 28 j */
  seedTodayShowcase();         /* aujourd'hui = vitrine stable (PRÊT, padel/foot, 4 repas) */
@@ -13694,11 +13837,20 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='v693';
+const APP_VERSION='v701';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
 if(DB.get('flseedtest')!==494&&!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})()){flSeedTest();DB.set('flseedtest',494);}
+/* v694 — Données de démonstration dans la COQUILLE (iOS), sur demande explicite.
+   Activation : localStorage.flintDemoData = '1'  (désactivation : '0' + relance).
+   Le marqueur de version force un nouveau semis quand on fait évoluer le jeu. */
+try{
+ var _demoOn=(function(){try{return localStorage.getItem('flintDemoData')==='1';}catch(e){return false;}})();
+ if(_demoOn&&DB.get('flDemoSeed')!==694){flSeedDemoDays(40);DB.set('flDemoSeed',694);}  /* seedTodayShowcase() retiré : il réécrivait les séances du jour APRÈS coup,
+     alors que la courbe de FC (donc l'effort) est construite à partir d'elles. */
+ if(!_demoOn&&DB.get('flDemoSeed')===694){flPurgeDemoDays(60);DB.set('flDemoSeed',0);}
+}catch(e){}
 if(DB.get('demo')&&!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})()&&!sensorOf(tk()))seedTodayShowcase();
 persistRecov();
 renderToday();
@@ -14911,7 +15063,11 @@ window.flAddActivity=function(doc){flActSt=flActDefaults();flActAdd(doc);};
     déjà présentes dans le localStorage du téléphone. Préserve : watch_*, repas réels du jour,
     profil, objectifs. --- */
  if(SHELL){try{
-  if(DB.get('flShellPurged')!==3){
+  /* v694 : la purge existe pour retirer les données de démo de la coquille.
+     Quand le mode démo est EXPLICITEMENT demandé, elle n'a pas lieu d'être —
+     sinon elle efface le jeu qu'on vient de semer quelques lignes plus haut. */
+  var _demoWanted=(function(){try{return localStorage.getItem('flintDemoData')==='1';}catch(e){return false;}})();
+  if(!_demoWanted&&DB.get('flShellPurged')!==3){
    var SHOWCASE=['Petit-déj — flocons & œufs','Déjeuner — poulet riz','Collation — skyr & banane','Snack — amandes'];
    var today=tk(0);
    for(var pd=0;pd<220;pd++){
