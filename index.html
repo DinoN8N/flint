@@ -8053,7 +8053,7 @@ function flEffortOpen(doc){try{
  if(!el){el=doc.createElement('section');el.id='screen-fl-effort';doc.body.appendChild(el);}
  el.style.cssText="font-family:'Archivo',-apple-system,system-ui,sans-serif;color:#14110f;position:fixed;top:0;bottom:0;left:50%;width:100%;max-width:464px;transform:translateX(-50%) translateY(100%);pointer-events:none;background:#fff;z-index:100;transition:transform .42s cubic-bezier(.22,1,.36,1);display:flex;flex-direction:column";
  var CIRC=653.5,frac=Math.max(0,Math.min(1,str/STRAIN_MAX));
- /* les icônes de FLEF_IC portent #fb6015 : flRcRow le remplace par la couleur passée */
+ /* les icônes de FLEF_IC portent '+FLEF_BLUE+' : flRcRow le remplace par la couleur passée */
  var _oldIc={};Object.keys(FLEF_IC).forEach(function(k){_oldIc[k]=FLRC_IC[k];FLRC_IC[k]=FLEF_IC[k];});
  var rowsHTML=rows.map(function(r,i){
   return '<div class="ef-row" data-trend="'+r.trend+'" style="cursor:pointer">'
@@ -8062,17 +8062,17 @@ function flEffortOpen(doc){try{
  el.innerHTML='<div style="flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:max(20px,calc(env(safe-area-inset-top,0px) + 12px)) 22px 120px">'
   +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">'
    +'<span style="display:flex;align-items:center;gap:12px">'
-   +'<button class="ef-close" aria-label="Retour" style="width:48px;height:48px;border-radius:50%;background:#fff;border:none;box-shadow:0 1px 2px rgba(20,17,15,.06),0 8px 20px rgba(20,17,15,.06);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fb6015" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></button>'
+   +'<button class="ef-close" aria-label="Retour" style="width:48px;height:48px;border-radius:50%;background:#fff;border:none;box-shadow:0 1px 2px rgba(20,17,15,.06),0 8px 20px rgba(20,17,15,.06);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="'+FLEF_BLUE+'" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></button>'
    +'<button class="ef-close" style="display:flex;align-items:center;gap:7px;background:none;border:none;padding:0;cursor:pointer">'
     +'<span style="font-size:13px;font-weight:500;letter-spacing:0.18em;color:#14110f">'+(off===0?'AUJOURD’HUI':flDayLabelFull(off))+'</span>'
-    +'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fb6015" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg>'
+    +'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="'+FLEF_BLUE+'" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg>'
    +'</button>'
    +'</span>'
    +'<button class="ef-close" aria-label="Tendances" style="width:44px;height:44px;border-radius:50%;background:#fff;border:1px solid #ececea;box-shadow:0 2px 10px rgba(0,0,0,.05);display:flex;align-items:center;justify-content:center;cursor:pointer">'
     +'<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#14110f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"></path><path d="M17 7h4v4"></path></svg>'
    +'</button>'
   +'</div>'
-  +'<h1 style="text-align:center;font-family:\u0027Arial Black\u0027,Arial,sans-serif;font-size:46px;font-weight:900;letter-spacing:-0.03em;line-height:0.95;margin:0 0 4px;color:#14110f">EFFORT<span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#fb6015;margin-left:4px;vertical-align:baseline"></span></h1>'
+  +'<h1 style="text-align:center;font-family:\u0027Arial Black\u0027,Arial,sans-serif;font-size:46px;font-weight:900;letter-spacing:-0.03em;line-height:0.95;margin:0 0 4px;color:#14110f">EFFORT<span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:'+FLEF_BLUE+';margin-left:4px;vertical-align:baseline"></span></h1>'
   +'<div style="position:relative;width:260px;height:260px;margin:10px auto 0">'
    +'<svg viewBox="0 0 240 240" width="260" height="260" style="display:block;transform:rotate(-90deg)">'
     +'<circle cx="120" cy="120" r="104" fill="none" stroke="#EAE8E4" stroke-width="7"></circle>'
@@ -12965,6 +12965,66 @@ function flEffData(doc){
    `flEffOpen` — un écran DIFFÉRENT. Les injecteurs ne trouvaient donc rien et
    sortaient en silence : d'où l'écart constaté entre Vercel et l'iPhone.
    On applique ici la même logique à cet écran-là. */
+/* ===== v721 — Menu « ⋯ » du détail d'activité : Modifier / Supprimer ========
+   Le gestionnaire existant visait `screen-marche` et ne proposait que la
+   modification. En coquille l'écran est `screen-fl-effort` : rien ne se passait.
+   On ouvre ici une petite feuille d'actions, et la suppression retire vraiment
+   la séance du jour avant de refermer l'écran. */
+function flActMenu(doc){try{
+ var old=doc.getElementById('flActMenu');if(old)old.remove();
+ var ov=doc.createElement('div');ov.id='flActMenu';
+ ov.style.cssText='position:fixed;inset:0;z-index:200;background:rgba(20,17,15,.32);'
+  +'display:flex;align-items:flex-end;justify-content:center;opacity:0;transition:opacity .18s ease';
+ function btn(lab,col,act){
+  return '<button data-act="'+act+'" style="width:100%;background:#fff;border:none;'
+   +'padding:17px 0;font-family:-apple-system,system-ui,sans-serif;font-size:17px;font-weight:500;'
+   +'color:'+col+';cursor:pointer">'+lab+'</button>';}
+ ov.innerHTML='<div style="width:100%;max-width:440px;padding:0 10px calc(env(safe-area-inset-bottom,0px) + 12px)">'
+  +'<div style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 -8px 30px rgba(20,17,15,.14)">'
+   +btn('Modifier l’activité','#14110f','edit')
+   +'<div style="height:1px;background:#efeae2"></div>'
+   +btn('Supprimer l’activité','#E14434','del')
+  +'</div>'
+  +'<div style="margin-top:8px;background:#fff;border-radius:16px;overflow:hidden">'
+   +btn('Annuler','#8a857c','cancel')+'</div></div>';
+ doc.body.appendChild(ov);
+ setTimeout(function(){ov.style.opacity='1';},10);
+ function close(){ov.style.opacity='0';setTimeout(function(){try{ov.remove();}catch(e){}},200);}
+ ov.addEventListener('click',function(ev){
+  var n=ev.target,act=null;
+  for(var i2=0;i2<4&&n;i2++,n=n.parentElement){if(n.getAttribute&&n.getAttribute('data-act')){act=n.getAttribute('data-act');break;}}
+  ev.preventDefault();ev.stopPropagation();
+  if(!act){if(ev.target===ov)close();return;}
+  if(act==='cancel'){close();return;}
+  if(act==='edit'){close();try{flActSheet(doc,'edit',window._flCurSess||null);}catch(e){}return;}
+  if(act==='del'){close();try{flActDelete(doc);}catch(e){}return;}
+ },true);
+}catch(e){}}
+/* Retire la séance affichée du jour, puis referme l'écran. */
+function flActDelete(doc){try{
+ var cs=window._flCurSess;if(!cs)return;
+ var K=cs.K||tk(0),arr=DB.get('sessions_'+K,[])||[];
+ /* On retire UNE seule séance : filtrer par heure supprimerait aussi celles qui
+    commencent au même moment. On choisit la meilleure correspondance (heure de
+    début, puis nom) et on ne retire que celle-là. */
+ var best=-1,bestScore=1e9;
+ arr.forEach(function(x,ix){
+  if(x.type==='nap')return;
+  var sp=(x.start||'0:0').split(':'),m=(+sp[0])*60+(+sp[1]);
+  var d=Math.abs(m-(cs.startMin==null?-999:cs.startMin));
+  if(d>2)return;
+  var sc=d+((cs.title&&(x.name||'')===cs.title)?0:10);
+  if(sc<bestScore){bestScore=sc;best=ix;}});
+ if(best<0)return;
+ var reste=arr.slice();reste.splice(best,1);
+ DB.set('sessions_'+K,reste);
+ var el=doc.getElementById('screen-fl-effort');
+ if(el){el.style.setProperty('transform','translateX(-50%) translateY(100%)','important');
+  el.style.pointerEvents='none';}
+ window._flCurSess=null;
+ if(typeof haptic==='function')haptic(10);
+ try{injectToday();setTimeout(injectToday,150);setTimeout(injectToday,500);}catch(e){}
+}catch(e){}}
 function flEffPolish(doc){try{
  var el=doc.getElementById('screen-fl-effort');if(!el)return;
  /* --- 1. zones à 0:00 : grisées, non cliquables (comme sur screen-marche) --- */
@@ -13000,6 +13060,17 @@ function flEffPolish(doc){try{
    row.style.removeProperty('pointer-events');row.style.removeProperty('cursor');
   }
  });
+
+ /* --- 1 bis. les trois points ouvrent Modifier / Supprimer --- */
+ if(!el._flDotsWired){
+  var dots=el.querySelector('.fle-dots');
+  if(dots){el._flDotsWired=1;
+   ['click','pointerup'].forEach(function(t2){
+    dots.addEventListener(t2,function(ev){
+     ev.preventDefault();ev.stopPropagation();
+     var nw=Date.now();if(el._flDotsT&&nw-el._flDotsT<600)return;el._flDotsT=nw;
+     flActMenu(doc);},true);});}
+ }
 
  /* --- 2. lecture BPM + heure DANS L'EN-TÊTE, curseur gris --- */
  var svg=el.querySelector('svg .fle-scrub');svg=svg&&svg.ownerSVGElement;
@@ -13956,7 +14027,9 @@ function flSeedDemoDays(n){
    var nm=XN[Math.floor(r('n'+q)*XN.length)];
    var hard = r('hard'+q)<0.3;
    ss.push({name:nm,icon:sportIcon(nm),
-    start:(q?17:9)+Math.floor(r('st'+q)*3)+':'+(r('mn'+q)<0.5?'00':'30'),
+    /* v722 : créneaux disjoints (matin / fin d'après-midi) et minutes variées,
+       pour que deux séances du même jour ne commencent jamais à la même heure. */
+    start:(q?16:8)+Math.floor(r('st'+q)*4)+':'+String(Math.floor(r('mn'+q)*4)*15).padStart(2,'0'),
     dur:(hard?55:30)+Math.round(r('du'+q)*45),
     /* v714 : répartition réaliste — 60 % léger, 25 % modéré, 12 % soutenu,
        3 % maximal. La formule d'effort de la coquille est très raide : sans cette
@@ -14108,7 +14181,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='v720';
+const APP_VERSION='v723';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
