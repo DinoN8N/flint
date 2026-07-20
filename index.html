@@ -7204,6 +7204,14 @@ function flLoadNativeTaps(doc){try{if(doc._flLoadTaps)return;doc._flLoadTaps=1;
      ressemble à une tuile). Un chargeur qui ne mène à rien est pire que rien. */
   for(var g=el,z=0;z<10&&g;z++,g=g.parentElement){
    if(g.id==='screen-fl-recup'||g.id==='screen-fl-effort')return;}
+  /* un en-tête du tableau de bord déplie une section : rien ne navigue, donc
+     aucun chargeur (celui-ci se déclenchait sur « SOMMEIL »). */
+  for(var g2=el,z2=0;z2<6&&g2;z2++,g2=g2.parentElement){
+   if(!g2.querySelectorAll)continue;
+   var t2=(g2.textContent||'').replace(/\s+/g,' ').trim();
+   if(t2.length<40&&/^(RÉCUPÉRATION|SOMMEIL|ACTIVITÉ|CARDIO|CORPS)\b/.test(t2)){
+    var inTb=false;for(var g3=g2;g3;g3=g3.parentElement){if(g3.id==='screen-tableau'){inTb=true;break;}}
+    if(inTb)return;}}
   for(var i=0;i<7&&el;i++,el=el.parentElement){
    if(!el.querySelectorAll)continue;
    var lv=[].slice.call(el.querySelectorAll('div,span')).filter(function(x){return x.children.length===0;});
@@ -7336,10 +7344,18 @@ function mdDashUniform(doc){try{var tb=doc.getElementById('screen-tableau');if(!
   /* chevron : structure de la référence (span ml16 + svg 18×18) — mdDashChevrons le voit
      comme natif (path M9 6L15 12L9 18) et retire son ancien .fl-chev */
   var hasRef=[].slice.call(row.querySelectorAll('svg path')).some(function(p2){return /^M9 6L15 12L9 18/i.test((p2.getAttribute('d')||'').trim());});
+  /* les chevrons déjà présents dans la maquette passent aussi en encre */
+  [].slice.call(row.querySelectorAll('svg path')).forEach(function(p3){
+   if(!/^M9 6L15 12L9 18/i.test((p3.getAttribute('d')||'').trim()))return;
+   var sv=p3.ownerSVGElement,host=sv&&sv.parentElement;
+   if(host&&host.style)host.style.setProperty('color','#14110f','important');
+   if(sv&&(sv.getAttribute('stroke')||'')!=='currentColor')sv.setAttribute('stroke','#14110f');});
   if(!hasRef){
    var oldChev=row.querySelector('svg.fl-chev');if(oldChev)oldChev.remove();
    var sp=doc.createElement('span');
-   sp.setAttribute('style','margin-left: 16px; display: flex; color: rgb(201, 194, 182);');
+   /* v730 : chevrons d'accès aux métriques en encre, pas en gris clair —
+      ils indiquent une action, ils doivent se voir. */
+   sp.setAttribute('style','margin-left: 16px; display: flex; color: #14110f;');
    sp.innerHTML='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6L15 12L9 18"></path></svg>';
    row.appendChild(sp);}
  });
@@ -8801,6 +8817,14 @@ function mdDashFeel(doc){try{
  tb.addEventListener('click',function(ev){
   if(!entete(ev.target))return;
   if(typeof haptic==='function')haptic(6);
+  /* v730 : le contenu du menu déroulant s'affichait D'ABORD dans sa version
+     maquette (sans icône, valeurs différentes), puis la version injectée
+     arrivait au passage suivant de la boucle — jusqu'à 3 s plus tard. D'où
+     l'impression de deux versions et de décalages. On polit sur les premières
+     images, le temps que le contenu soit dans le DOM. */
+  [0,16,40,90,180,320].forEach(function(ms){setTimeout(function(){try{
+   mdDashUniform(doc);mdDashChevrons(doc);
+  }catch(e){}},ms);});
  },true);
 }catch(e){}}
 function mdSectionGaps(doc){try{
@@ -14330,7 +14354,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='v729';
+const APP_VERSION='v730';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
