@@ -6662,7 +6662,7 @@ var el=ev.target;var a=el;for(var d1=0;d1<7&&a;d1++,a=a.parentElement){if(!a.que
   var kc=(typeof caloriesBurned==='function'?caloriesBurned(K):0);setTile('CALORIES',(''+Math.round(kc)).replace(/\B(?=(\d{3})+(?!\d))/g,' '));
   /* NOUVEAU trio d'accueil (maquette founder 15/07) : layout icônes + jauge 270°, couleurs fixes par carte */
   mdHomeTrio(doc);
-  mdBalance(doc);mdSleep(doc);mdFonts(doc);mdStickyBacks(doc);mdSleepScrub(doc);mdWeekBarsScrub(doc);mdDualScrub(doc);mdCalDualScrub(doc);mdMarchePrecise(doc);mdMarcheScrub(doc);mdMarcheZones(doc);mdDashChevrons(doc);mdNavNoCoach(doc);mdProfil(doc);mdJourneeTune(doc);mdCalReadoutPurge(doc);mdNutritionPolish(doc);mdMarcheStats(doc);mdDashUniform(doc);mdSleepPolish(doc);mdSleepViolet(doc);mdRecupTap(doc);flLoadNativeTaps(doc);if(typeof flShellHonest==='function')flShellHonest(doc);mdRings(doc);mdTrioRings(doc);mdHebTrend(doc);mdNutrition(doc);mdObjectifs(doc);mdJournalWire(doc);flNavWatch(doc);mdSwipeTabs(doc);mdNavSync(doc);mdNavBottom(doc);mdNavReserve(doc);flEffPolish(doc);mdJournalBottom(doc);mdDayStamp(doc);mdJrnlHour(doc);
+  mdBalance(doc);mdSleep(doc);mdFonts(doc);mdStickyBacks(doc);mdSleepScrub(doc);mdWeekBarsScrub(doc);mdDualScrub(doc);mdCalDualScrub(doc);mdMarchePrecise(doc);mdMarcheScrub(doc);mdMarcheZones(doc);mdDashChevrons(doc);mdNavNoCoach(doc);mdProfil(doc);mdJourneeTune(doc);mdCalReadoutPurge(doc);mdNutritionPolish(doc);mdMarcheStats(doc);mdDashUniform(doc);mdSleepPolish(doc);mdSleepViolet(doc);mdRecupTap(doc);flLoadNativeTaps(doc);if(typeof flShellHonest==='function')flShellHonest(doc);mdRings(doc);mdTrioRings(doc);mdHebTrend(doc);mdNutrition(doc);mdObjectifs(doc);mdJournalWire(doc);flNavWatch(doc);mdSwipeTabs(doc);mdNavSync(doc);mdNavBottom(doc);mdNavReserve(doc);mdSectionGaps(doc);flEffPolish(doc);mdJournalBottom(doc);mdDayStamp(doc);mdJrnlHour(doc);
   /* anti-flash orange : garder le splash FLINT opaque jusqu'à ce que le reskin soit VRAIMENT peint —
      trio construit ET peuplé, plusieurs passes faites (~1s), sinon on révélait un état mi-orange sur
      téléphone lent. Filet dur à 4s dans injectTodayLoop pour ne jamais rester bloqué. */
@@ -7199,6 +7199,11 @@ function mdMarcheZones(doc){try{
 function flLoadNativeTaps(doc){try{if(doc._flLoadTaps)return;doc._flLoadTaps=1;
  doc.addEventListener('click',function(ev){try{
   var el=ev.target;
+  /* v725 : les lignes de métriques des pages Récupération et Effort ne sont pas
+     cliquables ; elles déclenchaient pourtant le chargeur (la ligne « SOMMEIL »
+     ressemble à une tuile). Un chargeur qui ne mène à rien est pire que rien. */
+  for(var g=el,z=0;z<10&&g;z++,g=g.parentElement){
+   if(g.id==='screen-fl-recup'||g.id==='screen-fl-effort')return;}
   for(var i=0;i<7&&el;i++,el=el.parentElement){
    if(!el.querySelectorAll)continue;
    var lv=[].slice.call(el.querySelectorAll('div,span')).filter(function(x){return x.children.length===0;});
@@ -8156,9 +8161,9 @@ function flRecupOpen(doc){try{
  if(!SH){D={score:scNow!=null?scNow:72,
   verdict:scNow==null?'Bonne':(scNow>=67?'Bonne':(scNow>=34?'Modérée':'Faible')),
   dot:scNow==null||scNow>=67?'#fb6015':(scNow>=34?'#9a968f':'#cc3d00'),rows:[
-   {key:'hrv',lab:'VARIABILIT\u00c9 DE LA<br>FR\u00c9QUENCE CARDIAQUE',val:'71',unit:'',dir:1,spark:FLRC_SPARK.hrv[0]},
-   {key:'rhr',lab:'FR\u00c9QUENCE CARDIAQUE<br>AU REPOS',val:'48',unit:'',dir:-1,spark:FLRC_SPARK.rhr[0]},
-   {key:'resp',lab:'FR\u00c9QUENCE<br>RESPIRATOIRE',val:'13,9',unit:'',dir:1,spark:FLRC_SPARK.resp[0]},
+   {key:'hrv',lab:'VARIABILIT\u00c9 DE LA<br>FR\u00c9QUENCE CARDIAQUE',val:'71',unit:' ms',dir:1,spark:FLRC_SPARK.hrv[0]},
+   {key:'rhr',lab:'FR\u00c9QUENCE CARDIAQUE<br>AU REPOS',val:'48',unit:' bpm',dir:-1,spark:FLRC_SPARK.rhr[0]},
+   {key:'resp',lab:'FR\u00c9QUENCE<br>RESPIRATOIRE',val:'13,9',unit:' /min',dir:1,spark:FLRC_SPARK.resp[0]},
    {key:'sleep',lab:'SOMMEIL',val:'76',unit:'%',dir:1,spark:FLRC_SPARK.sleep[0]}]};}
  else{
   var sc=null;try{var rv=recovery();sc=rv&&rv.s!=null?Math.round(rv.s):null;}catch(e){}
@@ -8173,8 +8178,8 @@ function flRecupOpen(doc){try{
    verdict:sc==null?null:(sc>=67?'Bonne':(sc>=34?'Mod\u00e9r\u00e9e':'Faible')),
    dot:sc==null?'#9a968f':(sc>=67?'#fb6015':(sc>=34?'#9a968f':'#cc3d00')),
    rows:[
-    {key:'hrv',lab:'VARIABILIT\u00c9 DE LA<br>FR\u00c9QUENCE CARDIAQUE',val:(s0&&s0.hrv!=null)?''+Math.round(s0.hrv):'\u2014',unit:'',dir:flRcDir(s0&&s0.hrv,hHrv),spark:flRcSparkPath(hHrv)},
-    {key:'rhr',lab:'FR\u00c9QUENCE CARDIAQUE<br>AU REPOS',val:(s0&&s0.rhr!=null)?''+Math.round(s0.rhr):'\u2014',unit:'',dir:flRcDir(s0&&s0.rhr,hRhr),spark:flRcSparkPath(hRhr)},
+    {key:'hrv',lab:'VARIABILIT\u00c9 DE LA<br>FR\u00c9QUENCE CARDIAQUE',val:(s0&&s0.hrv!=null)?''+Math.round(s0.hrv):'\u2014',unit:(s0&&s0.hrv!=null)?' ms':'',dir:flRcDir(s0&&s0.hrv,hHrv),spark:flRcSparkPath(hHrv)},
+    {key:'rhr',lab:'FR\u00c9QUENCE CARDIAQUE<br>AU REPOS',val:(s0&&s0.rhr!=null)?''+Math.round(s0.rhr):'\u2014',unit:(s0&&s0.rhr!=null)?' bpm':'',dir:flRcDir(s0&&s0.rhr,hRhr),spark:flRcSparkPath(hRhr)},
     {key:'resp',lab:'FR\u00c9QUENCE<br>RESPIRATOIRE',val:'\u2014',unit:'',dir:0,spark:null},
     {key:'sleep',lab:'SOMMEIL',val:slPct!=null?''+slPct:'\u2014',unit:slPct!=null?'%':'',dir:flRcDir(slPct,hSl),spark:flRcSparkPath(hSl)}]};}
  /* code couleur récup (inspiration WHOOP) : anneau + métriques en vert/orange/rouge selon la qualité */
@@ -8765,6 +8770,25 @@ function mdDayStamp(doc){try{
    Après : barre pleine largeur collée au bord. Le rembourrage bas devient la
    safe-area SEULE — on la garde, sinon le trait d'accueil iOS passe sur les
    libellés ; ce n'est pas une marge décorative. */
+/* ===== v725 — Écarts entre sections =========================================
+   Les sections empilées (Accueil, Ma journée, Tableau de bord) portent un
+   min-height d'une hauteur d'écran. Quand leur contenu est plus court, le reste
+   est du vide : 365 px sous Ma journée, 484 px sous le Tableau de bord. On les
+   laisse s'ajuster à leur contenu, avec un espace de respiration constant. */
+function mdSectionGaps(doc){try{
+ var sc=doc.getElementById('flint-scroller');if(!sc)return;
+ var sections=[].slice.call(sc.children).filter(function(e){
+  if(!e.id||e.id.indexOf('screen-')!==0)return false;
+  try{return doc.defaultView.getComputedStyle(e).position==='static';}catch(err){return false;}});
+ if(!sections.length)return;
+ sections.forEach(function(e,ix){
+  e.style.setProperty('min-height','0','important');
+  var last=(ix===sections.length-1);
+  /* la dernière garde de quoi passer sous la barre du bas */
+  e.style.setProperty('padding-bottom',
+   last?'calc(env(safe-area-inset-bottom, 0px) + 112px)':'30px','important');
+ });
+}catch(e){}}
 function mdNavReserve(doc){try{
  /* Ces écrans réservaient la place de LEUR barre. Celle-ci ayant disparu, on
     garde le dégagement pour que le contenu ne passe pas sous le menu unique. */
@@ -14196,7 +14220,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='v724';
+const APP_VERSION='v725';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
