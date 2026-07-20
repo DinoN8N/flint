@@ -13133,8 +13133,15 @@ function flEffPolish(doc){try{
   svg.addEventListener(t2,function(){tint();readAt();
    try{(doc.defaultView||window).requestAnimationFrame(readAt);}catch(e){}},true);});
  PRESS.forEach(function(t2){svg.addEventListener(t2,readAt,false);});
- ['pointerup','pointerleave','pointercancel','touchend','touchcancel'].forEach(function(t2){
-  svg.addEventListener(t2,function(){show(false);},true);});
+ /* Le relâchement est écouté sur le DOCUMENT, pas seulement sur le graphique :
+    en glissant vers la gauche ou la droite le doigt sort de la zone du svg (ou le
+    scrub capture le pointeur), et le svg ne recevait alors jamais l'événement —
+    la lecture restait affichée jusqu'au toucher suivant. */
+ var RELEASE=['pointerup','pointercancel','touchend','touchcancel','mouseup'];
+ RELEASE.forEach(function(t2){
+  svg.addEventListener(t2,function(){show(false);},true);
+  doc.addEventListener(t2,function(){show(false);},true);});
+ svg.addEventListener('pointerleave',function(){show(false);},true);
  tint();
 }catch(e){}}
 function flEffOpen(doc){try{var o=flEffData(doc);
@@ -13277,6 +13284,14 @@ function flEffWire(doc,el,o,M){
   r.addEventListener('click',go,true);r.addEventListener('pointerup',go,true);r.addEventListener('touchend',go,true);});
 }
 window.flEffOpen=flEffOpen;
+/* v724 : le grisage des zones et la lecture d'en-tête n'étaient appliqués que par
+   la boucle d'injection, jusqu'à 3 s après l'ouverture — d'où les zones vides
+   cliquables et les BPM affichés sur le graphique pendant quelques secondes. On
+   polit dès l'ouverture, sur les premières images, le temps que le rendu soit là. */
+(function(){var _open=window.flEffOpen;
+ window.flEffOpen=function(doc){var r=_open.apply(this,arguments);
+  [0,20,60,140,300].forEach(function(ms){setTimeout(function(){try{flEffPolish(doc);}catch(e){}},ms);});
+  return r;};})();
 function actBuild(s){
  if(!s||/foot/i.test(s.name||''))return {name:'Football',start:'15:55',end:'16:46',dur:'0:50:58',effort:'6,8',effortCmp:'11,7',steps:'3 005',stepsCmp:'6 146',kcal:261,kcalCmp:'703 cal',avg:110,avgCmp:'121 bpm',max:163,maxCmp:'166 bpm',updated:'07/04/2026',mile:{cur:130,tgt:150,rem:20},zones:footballZones(),hr:actHRSeries(),coach:'Dino ⚽ le 15 avril, ton foot est resté bien maîtrisé du début à la fin. 50 min d\'effort constant, surtout en zone 1.'};
  const dur=s.dur||50,totSec=dur*60,sc=[0.84,0.92,1.0,1.07][(s.int||2)-1]||1;
@@ -14181,7 +14196,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='v723';
+const APP_VERSION='v724';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
