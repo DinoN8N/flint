@@ -4295,6 +4295,7 @@ body.stepsview header{display:none}
 <!-- ===================== CHARGE ===================== -->
 <section class="view" id="v-load">
 <style>
+#v-load{--eff-blue:#0E7FE1}   /* bleu de l'effort (le vert reste à la récup) */
 .elx-hd{display:flex;align-items:center;gap:12px;padding:4px 0 16px}
 .elx-bk{width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:#fff;color:#15140F;font-size:20px;display:grid;place-items:center;cursor:pointer;flex:none;box-shadow:0 5px 14px rgba(20,18,12,.06);transition:transform .15s ease}
 .elx-bk:active{transform:scale(.88)}
@@ -4305,10 +4306,28 @@ body.stepsview header{display:none}
 .elx-rec .rl{font-size:9.5px;font-weight:800;letter-spacing:.5px;color:#8A857D;text-transform:uppercase}
 .elx-rec b{font-family:'Geist',sans-serif;font-weight:400;font-size:21px;color:#2FA86A;line-height:1}
 .elx-hero{display:flex;align-items:center;gap:16px;width:100%;background:#fff;border:1px solid var(--line);border-radius:28px;padding:18px 20px;box-shadow:var(--shadow);cursor:pointer;font-family:inherit;text-align:left;margin-bottom:14px}
+/* ===== v677 — Cartes de référence EFFORT (structure des cartes Récupération,
+   en bleu). Chaque carte est cliquable et ouvre l'historique de sa métrique. */
+.effc-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin:0 0 14px}
+.effc-card{background:#fff;border:1px solid #F1EBE3;border-radius:22px;padding:16px 15px;box-shadow:0 1px 2px rgba(20,18,12,.03),0 8px 22px rgba(20,18,12,.04);text-align:left;font-family:inherit;cursor:pointer;transition:transform .14s ease;display:flex;flex-direction:column}
+.effc-card:active{transform:scale(.97)}
+.effc-top{display:flex;align-items:center;gap:8px;margin-bottom:12px;min-height:32px}
+.effc-ic{font-size:19px;color:var(--eff-blue);flex:none;display:grid;place-items:center}
+.effc-name{font-family:'Geist',sans-serif;text-transform:uppercase;font-size:11.5px;font-weight:600;letter-spacing:.04em;color:#37372F;line-height:1.25}
+.effc-mid{display:flex;align-items:baseline;justify-content:space-between;gap:6px}
+.effc-val{font-family:'Geist',sans-serif;font-weight:700;font-size:32px;line-height:1;color:#15140F;white-space:nowrap;letter-spacing:-.02em}
+.effc-val small{font-size:.42em;font-weight:700;margin-left:2px;color:#9A948A}
+.effc-arw{font-size:12px;font-weight:800;flex:none;letter-spacing:-.02em}
+.effc-cmp{font-size:12px;font-weight:600;color:#9A948A;margin-top:9px}
+.effc-gauge{position:relative;height:8px;border-radius:6px;background:#ECE7DD;margin-top:12px}
+.effc-fill{position:absolute;left:0;top:0;bottom:0;border-radius:6px;background:var(--eff-blue);transition:width .5s cubic-bezier(.2,.8,.2,1)}
+.effc-tick{position:absolute;top:-3px;bottom:-3px;width:2px;border-radius:2px;background:#15140F;opacity:.5}
+.effc-foot{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:11px}
+.effc-cc{color:#C3BDB2;font-size:15px;flex:none}
 .elx-heror{flex:1;min-width:0}
-.elx-hero .el2{font-family:'Geist',sans-serif;font-weight:400;letter-spacing:-.3px;font-size:23px;text-transform:uppercase;color:var(--accent);line-height:1}
+.elx-hero .el2{font-family:'Geist',sans-serif;font-weight:400;letter-spacing:-.3px;font-size:23px;text-transform:uppercase;color:var(--eff-blue);line-height:1}
 .elx-meaning{font-size:13.5px;font-weight:600;color:#56514B;line-height:1.35;margin-top:7px}
-.elx-more{display:inline-flex;align-items:center;gap:3px;font-size:12.5px;font-weight:800;color:var(--accent);margin-top:9px}
+.elx-more{display:inline-flex;align-items:center;gap:3px;font-size:12.5px;font-weight:800;color:var(--eff-blue);margin-top:9px}
 .elx-card{padding:18px!important;margin-bottom:14px}
 .elx-ct{font-family:'Geist',sans-serif;font-weight:400;letter-spacing:.2px;font-size:17px;text-transform:uppercase;color:#15140F}
 .elx-p{font-size:14px;line-height:1.5;color:#4F4A44;margin:9px 0 2px}
@@ -4413,6 +4432,10 @@ body.stepsview header{display:none}
       <span class="elx-more">Voir l'évolution <i class="ti ti-chevron-right"></i></span>
     </div>
   </button>
+
+  <!-- v677 : 4 métriques de référence de l'effort, sur le modèle des cartes
+       de la page Récupération. Rempli par renderEffCards(). -->
+  <div class="effc-grid" id="effCards"></div>
 
   <section class="card elx-card">
     <div class="elx-ct">Comprendre ta charge</div>
@@ -6239,13 +6262,32 @@ function mdJournalWire(doc){try{var jr=doc.getElementById('screen-journal');if(!
 function flJrnlSet(doc,q,val){try{var d=flJrnlData();d[q]=val;DB.set(flJrnlKey(),d);if(typeof haptic==='function')haptic(6);flJrnlPaint(doc);}catch(e){}}
 function flJrnlPaint(doc){try{var jr=doc.getElementById('screen-journal');if(!jr||!jr._fljPairs)return;var d=flJrnlData();
  jr._fljPairs.forEach(function(p){var v=d[p.q];
-  function sty(btn,on){btn.style.setProperty('border-style','solid','important');btn.style.setProperty('border-radius','999px','important');
-   if(on){/* sélectionné = halo orange (pas de noir) */btn.style.setProperty('background','#fff','important');btn.style.setProperty('color','#fb6015','important');btn.style.setProperty('border-color','#fb6015','important');btn.style.setProperty('border-width','2px','important');btn.style.setProperty('box-shadow','0 0 0 4px rgba(251,96,21,.16)','important');}
-   else{btn.style.setProperty('background','#fff','important');btn.style.setProperty('color','#46464a','important');btn.style.setProperty('border-color','#e6dfd1','important');btn.style.setProperty('border-width','1.6px','important');btn.style.setProperty('box-shadow','none','important');}}
+  /* v675 — pastilles « Journal du soir » : sélection en ENCRE PLEINE (#14110f),
+     l'autre en filet gris. Remplace le halo orange précédent. Les cercles de
+     54px deviennent des pilules 9px/20px, conformes à la maquette fournie. */
+  function sty(btn,on){
+   btn.style.setProperty('width','auto','important');btn.style.setProperty('height','auto','important');
+   btn.style.setProperty('padding','9px 20px','important');
+   btn.style.setProperty('border-radius','13px','important');
+   btn.style.setProperty('border-style','solid','important');
+   btn.style.setProperty('border-width','1px','important');
+   btn.style.setProperty('font-size','15px','important');
+   btn.style.setProperty('font-weight','500','important');
+   btn.style.setProperty('box-shadow','none','important');
+   btn.style.setProperty('transition','all .16s ease','important');
+   if(on){btn.style.setProperty('background','#14110f','important');
+    btn.style.setProperty('color','#fff','important');
+    btn.style.setProperty('border-color','#14110f','important');}
+   else{btn.style.setProperty('background','#fff','important');
+    btn.style.setProperty('color','#6b6b70','important');
+    btn.style.setProperty('border-color','#e0d9cb','important');}}
   sty(p.non,v===0);sty(p.oui,v===1);
  });
 }catch(e){}}
-function flJrnlSave(doc){try{var d=flJrnlData();d._saved=true;DB.set(flJrnlKey(),d);if((window._fljOff||0)===0){try{localStorage.setItem(flJrnlPromptKey(),'1');}catch(e){}}if(typeof haptic==='function')haptic(12);if(typeof toast==='function')toast('Journal enregistré ✓');flJrnlCalPaint(doc);setTimeout(function(){flJournalClose(false);},700);}catch(e){}}
+function flJrnlSave(doc){try{var d=flJrnlData();d._saved=true;DB.set(flJrnlKey(),d);if((window._fljOff||0)===0){try{localStorage.setItem(flJrnlPromptKey(),'1');}catch(e){}}if(typeof haptic==='function')haptic(12);
+ /* v675 : le toast est remplacé par l'écran de confirmation animé. On laisse la
+    séquence se dérouler (~2,2 s) avant de refermer le journal. */
+ flJrnlSaved(doc);flJrnlCalPaint(doc);setTimeout(function(){flJournalClose(false);},2200);}catch(e){}}
 function flJrnlDate(doc){try{var jr=doc.getElementById('screen-journal');var now=new Date();now.setDate(now.getDate()+(window._fljOff||0));var ds=now.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});ds=ds.charAt(0).toUpperCase()+ds.slice(1);
  var leaf=[].slice.call(jr.querySelectorAll('*')).filter(function(e){return e.children.length===0&&/\b20\d\d\b/.test(e.textContent||'')&&/(lun|mar|mer|jeu|ven|sam|dim|janv|f[ée]vr|mars|avril|mai|juin|juil|ao[ûu]t|sept|oct|nov|d[ée]c)/i.test(e.textContent||'');})[0];
  if(leaf&&leaf.textContent!==ds)leaf.textContent=ds;
@@ -6435,6 +6477,15 @@ var FL_MON=['JANV.','FÉVR.','MARS','AVR.','MAI','JUIN','JUIL.','AOÛT','SEPT.',
 var FL_MONFULL=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 function flDayLabel(){if(flDayOff===0)return "AUJOURD'HUI";if(flDayOff===-1)return 'HIER';var d=new Date();d.setDate(d.getDate()+flDayOff);return FL_DOW[d.getDay()]+' '+d.getDate()+' '+FL_MON[d.getMonth()];}
 function flSetDay(off){off=Math.min(0,off);if(off===window.flDayOff)return;window.flDayOff=off;if(typeof haptic==='function')haptic(6);
+ /* v674 — UN SEUL JOUR POUR TOUTE L'APP.
+    Il existait trois états de jour qui s'ignoraient : flDayOff (accueil/maquette),
+    gDay (renderSleep et les pages de détail) et _recDay (renderRecovery), plus les
+    décalages locaux du journal et de la nutrition. Cette fonction-ci écrasant
+    l'autre flSetDay (ligne ~5982, la seule qui touchait gDay), gDay n'était plus
+    JAMAIS mis à jour : on choisissait le 18 juin et la page récup reservait
+    aujourd'hui. On propage donc le jour choisi à tous les états. */
+ try{gDay=off;}catch(e){}
+ window._recDay=off;window._fljOff=off;window._nutOff=off;
  window._flForceTs=performance.now(); /* bypass des gardes pointer/scroll : mise à jour INSTANTANÉE au tap (lag 750ms sinon) */
  injectToday();setTimeout(injectToday,120);setTimeout(injectToday,420);}
 function flHasData(off){try{var sx=sensorOf(tk(off));return !!(sx&&sx.hrv!=null);}catch(e){return false;}}
@@ -6525,6 +6576,8 @@ function injectToday(){
    tombait sur un enfant profond (svg de l'anneau) → « une fois sur deux ça n'ouvre pas / repart ». */
 var _fc=ev.target;for(var _z=0;_z<7&&_fc;_z++,_fc=_fc.parentElement){if(_fc.getAttribute&&_fc.getAttribute('data-fl-card')){var _lab=_fc.getAttribute('data-fl-card');ev.preventDefault();ev.stopPropagation();
  if(_lab==='CALORIES'){flOpenCalHebdo();}
+ /* v678 : la carte EFFORT du trio ouvre la page Effort (jumelle de Récup) */
+ else if(_lab==='EFFORT'){try{flEffortOpen(doc);}catch(e){}}
  else if(_lab==='SOMMEIL'){var _ss=doc.getElementById('screen-sommeil');if(_ss){_ss.style.setProperty('transform','translateX(-50%) translateX(0px)','important');_ss.style.pointerEvents='auto';_ss.scrollTop=0;try{mdSleep(doc);mdSleepPolish(doc);mdSleepViolet(doc);mdSleepHebdoBig(doc);mdFonts(doc);}catch(e){}}}
  return;}}
 var _tc=ev.target;for(var _i5=0;_i5<5&&_tc;_i5++,_tc=_tc.parentElement){var _tt=(_tc.textContent||'').replace(/\s+/g,' ').trim();if(/^CALORIES\b/.test(_tt)&&_tt.length<40){var _sa=_tc;while(_sa&&_sa.id!=='screen-accueil')_sa=_sa.parentElement;if(_sa){ev.preventDefault();ev.stopPropagation();flOpenCalHebdo();return;}}}
@@ -6599,7 +6652,7 @@ var el=ev.target;var a=el;for(var d1=0;d1<7&&a;d1++,a=a.parentElement){if(!a.que
   var kc=(typeof caloriesBurned==='function'?caloriesBurned(K):0);setTile('CALORIES',(''+Math.round(kc)).replace(/\B(?=(\d{3})+(?!\d))/g,' '));
   /* NOUVEAU trio d'accueil (maquette founder 15/07) : layout icônes + jauge 270°, couleurs fixes par carte */
   mdHomeTrio(doc);
-  mdBalance(doc);mdSleep(doc);mdFonts(doc);mdStickyBacks(doc);mdSleepScrub(doc);mdWeekBarsScrub(doc);mdDualScrub(doc);mdCalDualScrub(doc);mdMarchePrecise(doc);mdMarcheScrub(doc);mdMarcheZones(doc);mdDashChevrons(doc);mdNavNoCoach(doc);mdProfil(doc);mdJourneeTune(doc);mdCalReadoutPurge(doc);mdNutritionPolish(doc);mdMarcheStats(doc);mdDashUniform(doc);mdSleepPolish(doc);mdSleepViolet(doc);mdRecupTap(doc);flLoadNativeTaps(doc);if(typeof flShellHonest==='function')flShellHonest(doc);mdRings(doc);mdTrioRings(doc);mdHebTrend(doc);mdNutrition(doc);mdObjectifs(doc);mdJournalWire(doc);
+  mdBalance(doc);mdSleep(doc);mdFonts(doc);mdStickyBacks(doc);mdSleepScrub(doc);mdWeekBarsScrub(doc);mdDualScrub(doc);mdCalDualScrub(doc);mdMarchePrecise(doc);mdMarcheScrub(doc);mdMarcheZones(doc);mdDashChevrons(doc);mdNavNoCoach(doc);mdProfil(doc);mdJourneeTune(doc);mdCalReadoutPurge(doc);mdNutritionPolish(doc);mdMarcheStats(doc);mdDashUniform(doc);mdSleepPolish(doc);mdSleepViolet(doc);mdRecupTap(doc);flLoadNativeTaps(doc);if(typeof flShellHonest==='function')flShellHonest(doc);mdRings(doc);mdTrioRings(doc);mdHebTrend(doc);mdNutrition(doc);mdObjectifs(doc);mdJournalWire(doc);flNavWatch(doc);mdNavBottom(doc);mdJournalBottom(doc);mdDayStamp(doc);mdJrnlHour(doc);
   /* anti-flash orange : garder le splash FLINT opaque jusqu'à ce que le reskin soit VRAIMENT peint —
      trio construit ET peuplé, plusieurs passes faites (~1s), sinon on révélait un état mi-orange sur
      téléphone lent. Filet dur à 4s dans injectTodayLoop pour ne jamais rester bloqué. */
@@ -6608,10 +6661,11 @@ var el=ev.target;var a=el;for(var d1=0;d1<7&&a;d1++,a=a.parentElement){if(!a.que
    var _elapsed=performance.now()-f._flFirstInjTs;
    if((_trioReady&&f._flPasses>=3&&_elapsed>800)||_elapsed>3800)flReveal();}
  }catch(e){}
- if(!doc._navWired){doc._navWired=true;try{doc.addEventListener('click',function(ev){var el=ev.target;for(var i=0;i<6&&el;i++,el=el.parentElement){if(el.getAttribute&&el.getAttribute('role')==='button'){var t=(el.textContent||'').trim().toLowerCase();if(t==='coach'){ev.preventDefault();ev.stopPropagation();go('coach');return;}if(t==='profil'){try{flPfCloseAll(doc);flLoad(doc);}catch(e){}return;}if(t==='nutrition'){try{flPfCloseAll(doc);flLoad(doc);}catch(e){}setTimeout(function(){try{flOpenNutrition(doc);}catch(e){}},20);setTimeout(function(){try{mdNutrition(doc);}catch(e){}},400);return;}if(t==="aujourd'hui"||t==='aujourd’hui'){try{flPfCloseAll(doc);flLoad(doc);
-    var _nu=doc.getElementById('screen-nutrition');if(_nu){_nu.style.setProperty('transform','translateX(-50%) translateX(100vw)','important');_nu.style.pointerEvents='none';}
+ if(!doc._navWired){doc._navWired=true;try{doc.addEventListener('click',function(ev){var el=ev.target;for(var i=0;i<6&&el;i++,el=el.parentElement){if(el.getAttribute&&el.getAttribute('role')==='button'){var t=(el.textContent||'').trim().toLowerCase();if(t==='coach'){ev.preventDefault();ev.stopPropagation();go('coach');return;}if(t==='profil'){try{flNavCloseAll(doc);flPfCloseAll(doc);flLoad(doc);}catch(e){}return;}if(t==='nutrition'){try{flNavCloseAll(doc);flPfCloseAll(doc);flLoad(doc);}catch(e){}setTimeout(function(){try{flOpenNutrition(doc);}catch(e){}},20);setTimeout(function(){try{mdNutrition(doc);}catch(e){}},400);return;}if(t==="aujourd'hui"||t==='aujourd’hui'){try{flPfCloseAll(doc);flLoad(doc);
+    /* v673 : une seule fermeture, qui n'oublie aucun écran (avant : liste codée
+       en dur qui ratait Sommeil, Ma nuit et les pages hebdo). */
+    flNavCloseAll(doc);
     if(typeof flNCloseAll==='function')flNCloseAll();
-    ['screen-fla-add','screen-fla-pick'].forEach(function(id2){var e3=doc.getElementById(id2);if(e3){e3.style.transform='translateX(-50%) translateY(100%)';e3.style.pointerEvents='none';}});
    }catch(e){}setTimeout(function(){try{var sn=doc.getElementById('screen-nutrition');if(sn){var r=sn.getBoundingClientRect();var w=doc.defaultView.innerWidth;if(Math.abs(r.left-(w-r.width)/2)<40){var bk=[].slice.call(sn.querySelectorAll('*')).filter(function(x){return x.children.length<3&&/Aujourd/.test((x.textContent||'').trim())&&x.getBoundingClientRect().top<80;})[0];if(bk){var rb2=bk;while(rb2&&rb2.getAttribute&&rb2.getAttribute('role')!=='button'&&rb2.tagName!=='BUTTON')rb2=rb2.parentElement;var tt=rb2||bk;['pointerdown','pointerup','click'].forEach(function(e2){tt.dispatchEvent(new MouseEvent(e2,{bubbles:true,cancelable:true}));});}}}}catch(e){}},0);return;}return;}}},true);}catch(e){}}
 }
 /* ===== Écran de détail métrique (dynamique, DA maquette VFC) ===== */
@@ -7545,7 +7599,7 @@ function flRcSparkPath(vals){var ok=vals.filter(function(v){return v!=null;});if
  var pts=[],last=null;vals.forEach(function(v){if(v==null)v=last;if(v==null)v=mn;last=v;pts.push(v);});
  var d='';pts.forEach(function(v,i){var x=4+i*96/(pts.length-1);var y=7.8+(mx-v)/(mx-mn)*27.9;d+=(i?' L ':'M ')+x.toFixed(1)+' '+y.toFixed(1);});
  return d;}
-function flRcRow(key,lab,val,unit,dir,sparkD,gid,col){
+function flRcRow(key,lab,val,unit,dir,sparkD,gid,col,noTop){
  col=col||'#fb6015';
  function _hxA(h,a){h=(h||'').replace('#','');if(h.length===3)h=h.replace(/./g,'$&$&');var n=parseInt(h,16)||0;return 'rgba('+((n>>16)&255)+','+((n>>8)&255)+','+(n&255)+','+a+')';}
  var ic=(FLRC_IC[key]||'').replace(/#fb6015/gi,col);
@@ -7554,7 +7608,7 @@ function flRcRow(key,lab,val,unit,dir,sparkD,gid,col){
   +'<defs><linearGradient id="'+gid+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+col+'" stop-opacity="0.16"></stop><stop offset="1" stop-color="'+col+'" stop-opacity="0"></stop></linearGradient></defs>'
   +'<path d="'+sparkD+' L 100 42 L 4 42 Z" fill="url(#'+gid+')" stroke="none"></path>'
   +'<path d="'+sparkD+'" fill="none" stroke="'+col+'" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"></path></svg>'):'';
- return '<div style="display:flex;align-items:center;gap:14px;padding:20px 0;'+(key!=='hrv'?'border-top:1px solid #efeae2':'')+'">'
+ return '<div style="display:flex;align-items:center;gap:14px;padding:20px 0;'+((noTop||key==='hrv')?'':'border-top:1px solid #efeae2')+'">'
   +'<span style="flex-shrink:0;width:52px;height:52px;border-radius:50%;background:'+_hxA(col,0.11)+';display:flex;align-items:center;justify-content:center">'+ic+'</span>'
   +'<div style="flex:1;min-width:0"><div style="font-family:-apple-system,system-ui,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.09em;line-height:1.3;color:#14110f">'+lab+'</div></div>'
   +'<div style="flex-shrink:0;width:78px;display:flex;flex-direction:column;align-items:flex-start;margin-right:4px">'
@@ -7657,6 +7711,126 @@ function flRcTrendCard(T){
 function flRcTrendsHTML(){
  return '<h2 style="font-family:Archivo,-apple-system,system-ui,sans-serif;font-size:24px;font-weight:800;letter-spacing:-0.02em;color:#14110f;margin:34px 0 2px;display:flex;align-items:flex-end;gap:3px">Tendances hebdomadaires<span style="width:6px;height:6px;border-radius:50%;background:#fb6015;margin-bottom:5px"></span></h2>'
   +FLRC_TREND.map(flRcTrendCard).join('');}
+/* ===== v678 — Page EFFORT, calquée sur la page RÉCUPÉRATION ==================
+   Même page que flRecupOpen (même titre géant, même anneau 260px, même pastille
+   de verdict, mêmes lignes icône+valeur+courbe via flRcRow), mais en BLEU et
+   avec les 4 métriques d'effort. On réutilise les mêmes fonctions de rendu :
+   toute retouche de la page Récup se répercute ici. */
+var FLEF_BLUE='#0E7FE1';
+var FLEF_IC={
+ zones13:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fb6015" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path><path d="M3.5 12.5h4L9 10l2 4.5 1.7-3.5 1.1 2h6.2"></path></svg>',
+ zones45:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fb6015" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"></path><path d="M13 7l-3.5 6h4L10 18"></path></svg>',
+ strength:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fb6015" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6M7 7v10M17 7v10M20 9v6M7 12h10"></path></svg>',
+ steps:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fb6015" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 4.5a2.5 2.5 0 0 1 5 0c0 2-.6 3.2-.6 4.7 0 1 .3 1.8.3 2.6a2.2 2.2 0 0 1-4.4 0c0-1.6-.3-3-.3-4.4z"></path><path d="M13.2 15.5a2.2 2.2 0 0 0 4.3 1.2c.3-1.3.5-2 .5-2.6"></path><path d="M6 9.5a2.5 2.5 0 0 1 5 0c0 2-.6 3.2-.6 4.7"></path><path d="M6.2 17.5a2.2 2.2 0 0 0 4.3 1.2"></path></svg>'
+};
+function flEffortOpen(doc){try{
+ doc=doc||(document.getElementById('frToday')||{}).contentDocument;if(!doc||!doc.body)return;
+ var off=window.flDayOff||0;
+ /* 22 jours d'historique pour les courbes, comme la page Récup */
+ function hist(f){var out=[];for(var i=21;i>=0;i--){var v=null;try{v=f(tk(off-i));}catch(e){}out.push(v==null?null:+v);}return out;}
+ var hZ13=hist(function(k){return effMetricsOf(k).zones13;});
+ var hZ45=hist(function(k){return effMetricsOf(k).zones45;});
+ var hStr=hist(function(k){return effMetricsOf(k).strength;});
+ var hStp=hist(function(k){return effMetricsOf(k).steps;});
+ var cur=effMetricsOf(tk(off)),str=loadStrain(tk(off));
+ var verdict=str<10?'Légère':str<14?'Modérée':str<18?'Soutenue':'Élevée';
+ var rows=[
+  {key:'zones13',lab:'ZONES DE FRÉQUENCE<br>CARDIAQUE 1 À 3',val:minToHM(cur.zones13),unit:'',
+   dir:flRcDir(cur.zones13,hZ13),spark:flRcSparkPath(hZ13),trend:'zones13'},
+  {key:'zones45',lab:'ZONES DE FRÉQUENCE<br>CARDIAQUE 4-5',val:minToHM(cur.zones45),unit:'',
+   dir:flRcDir(cur.zones45,hZ45),spark:flRcSparkPath(hZ45),trend:'zones45'},
+  {key:'strength',lab:'TEMPS DE<br>MUSCULATION',val:minToHM(cur.strength),unit:'',
+   dir:flRcDir(cur.strength,hStr),spark:flRcSparkPath(hStr),trend:'strength'},
+  {key:'steps',lab:'PAS',val:fmtNum(cur.steps),unit:'',
+   dir:flRcDir(cur.steps,hStp),spark:flRcSparkPath(hStp),trend:'steps'}
+ ];
+ var el=doc.getElementById('screen-fl-effort');
+ if(!el){el=doc.createElement('section');el.id='screen-fl-effort';doc.body.appendChild(el);}
+ el.style.cssText="font-family:'Archivo',-apple-system,system-ui,sans-serif;color:#14110f;position:fixed;top:0;bottom:0;left:50%;width:100%;max-width:464px;transform:translateX(-50%) translateY(100%);pointer-events:none;background:#fff;z-index:100;transition:transform .42s cubic-bezier(.22,1,.36,1);display:flex;flex-direction:column";
+ var CIRC=653.5,frac=Math.max(0,Math.min(1,str/21));
+ /* les icônes de FLEF_IC portent #fb6015 : flRcRow le remplace par la couleur passée */
+ var _oldIc={};Object.keys(FLEF_IC).forEach(function(k){_oldIc[k]=FLRC_IC[k];FLRC_IC[k]=FLEF_IC[k];});
+ var rowsHTML=rows.map(function(r,i){
+  return '<div class="ef-row" data-trend="'+r.trend+'" style="cursor:pointer">'
+   +flRcRow(r.key,r.lab,r.val,r.unit,r.dir,r.spark,'flefg'+i,FLEF_BLUE,i===0)+'</div>';}).join('');
+ Object.keys(_oldIc).forEach(function(k){if(_oldIc[k]===undefined)delete FLRC_IC[k];else FLRC_IC[k]=_oldIc[k];});
+ el.innerHTML='<div style="flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:max(20px,calc(env(safe-area-inset-top,0px) + 12px)) 22px 120px">'
+  +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">'
+   +'<span style="display:flex;align-items:center;gap:12px">'
+   +'<button class="ef-close" aria-label="Retour" style="width:48px;height:48px;border-radius:50%;background:#fff;border:none;box-shadow:0 1px 2px rgba(20,17,15,.06),0 8px 20px rgba(20,17,15,.06);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fb6015" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></button>'
+   +'<button class="ef-close" style="display:flex;align-items:center;gap:7px;background:none;border:none;padding:0;cursor:pointer">'
+    +'<span style="font-size:13px;font-weight:500;letter-spacing:0.18em;color:#14110f">'+(off===0?'AUJOURD’HUI':flDayLabelFull(off))+'</span>'
+    +'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fb6015" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg>'
+   +'</button>'
+   +'</span>'
+   +'<button class="ef-close" aria-label="Tendances" style="width:44px;height:44px;border-radius:50%;background:#fff;border:1px solid #ececea;box-shadow:0 2px 10px rgba(0,0,0,.05);display:flex;align-items:center;justify-content:center;cursor:pointer">'
+    +'<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#14110f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"></path><path d="M17 7h4v4"></path></svg>'
+   +'</button>'
+  +'</div>'
+  +'<h1 style="text-align:center;font-family:\u0027Arial Black\u0027,Arial,sans-serif;font-size:46px;font-weight:900;letter-spacing:-0.03em;line-height:0.95;margin:0 0 4px;color:#14110f">EFFORT<span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#fb6015;margin-left:4px;vertical-align:baseline"></span></h1>'
+  +'<div style="position:relative;width:260px;height:260px;margin:10px auto 0">'
+   +'<svg viewBox="0 0 240 240" width="260" height="260" style="display:block;transform:rotate(-90deg)">'
+    +'<circle cx="120" cy="120" r="104" fill="none" stroke="#EAE8E4" stroke-width="7"></circle>'
+    +'<circle cx="120" cy="120" r="104" fill="none" stroke="'+FLEF_BLUE+'" stroke-width="7" stroke-linecap="round" stroke-dasharray="'+(frac*CIRC).toFixed(1)+' '+CIRC+'" stroke-dashoffset="0"></circle>'
+   +'</svg>'
+   +'<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">'
+    +'<div style="display:flex;justify-content:center;align-items:flex-end">'
+     +'<span style="font-family:\u0027Archivo\u0027,\u0027Helvetica Neue\u0027,Arial,sans-serif;font-size:72px;font-weight:500;letter-spacing:-0.04em;line-height:0.8;color:#14110f">'+str.toFixed(1).replace('.',',')+'</span>'
+    +'</div>'
+    +'<div style="font-size:11px;font-weight:400;letter-spacing:0.2em;color:#14110f;margin-top:12px">EFFORT</div>'
+   +'</div>'
+  +'</div>'
+  +'<div style="display:flex;justify-content:center;margin-top:6px">'
+   +'<span style="display:inline-flex;align-items:center;gap:7px;padding:7px 15px;border-radius:100px;background:#f5f3f1;font-size:13px;font-weight:600;letter-spacing:-0.01em;color:#14110f">'
+    +'<span style="width:7px;height:7px;border-radius:50%;background:'+FLEF_BLUE+'"></span>'+verdict
+   +'</span></div>'
+  +'<div style="margin-top:26px">'+rowsHTML+'</div>'
+ +'</div>'
+ +'<div style="flex-shrink:0;position:absolute;left:0;right:0;bottom:0;display:flex;padding:12px 26px calc(env(safe-area-inset-bottom,0px) + 16px);background:rgba(255,255,255,.92);backdrop-filter:blur(12px);box-shadow:0 -1px 0 #ececea">'
+  +'<button class="ef-close" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;background:none;border:none;cursor:pointer">'
+   +'<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#9a968f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>'
+   +'<span style="font-family:-apple-system,system-ui,sans-serif;font-size:12px;font-weight:400;color:#9a968f">Aujourd’hui</span>'
+  +'</button>'
+  +'<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px">'
+   +'<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="'+FLEF_BLUE+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4.5 13H11l-1 9 8.5-11H12z"></path></svg>'
+   +'<span style="font-family:-apple-system,system-ui,sans-serif;font-size:12px;font-weight:700;color:'+FLEF_BLUE+'">Effort</span>'
+  +'</div>'
+ +'</div>';
+ /* Fermeture + clic sur une métrique. Même délégation doc-level capture que la
+    page Récup : un gestionnaire body de la maquette avale les événements avant
+    nos overlays, le doc les reçoit toujours. */
+ if(!doc._flEfClose){doc._flEfClose=1;var _efT=0,_efX=0,_efY=0;
+  doc.addEventListener('pointerdown',function(ev){_efX=ev.clientX;_efY=ev.clientY;},true);
+  doc.addEventListener('touchstart',function(ev){var t=ev.touches&&ev.touches[0];if(t){_efX=t.clientX;_efY=t.clientY;}},{capture:true,passive:true});
+  function efMoved(ev){if(ev.type==='click')return false;var t=(ev.changedTouches&&ev.changedTouches[0])||ev;return Math.abs((t.clientX||_efX)-_efX)>12||Math.abs((t.clientY||_efY)-_efY)>12;}
+  var efGo=function(ev){var sc=doc.getElementById('screen-fl-effort');
+   if(!sc||sc.style.pointerEvents!=='auto')return;
+   if(efMoved(ev))return;
+   var n=ev.target,closeHit=false,trend=null;
+   while(n&&n!==doc.body){if(n.classList){
+    if(n.classList.contains('ef-close')){closeHit=true;break;}
+    if(n.classList.contains('ef-row')){trend=n.getAttribute('data-trend');break;}}
+    n=n.parentElement;}
+   if(!closeHit&&!trend)return;
+   var nw=Date.now();if(nw-_efT<700)return;_efT=nw;
+   try{ev.preventDefault();ev.stopPropagation();}catch(e){}
+   if(closeHit){flEffortClose(doc);return;}
+   try{haptic&&haptic(5);}catch(e){}
+   try{openTrend(trend);}catch(e){}};
+  ['click','pointerup','touchend'].forEach(function(t){doc.addEventListener(t,efGo,true);});}
+ /* setTimeout et non requestAnimationFrame : comme la page Récup. rAF ne se
+    déclenche pas de façon fiable quand l'iframe n'est pas rendue. */
+ setTimeout(function(){
+  el.style.setProperty('transform','translateX(-50%) translateY(0px)','important');
+  el.style.pointerEvents='auto';},20);
+ try{haptic&&haptic(5);}catch(e){}
+}catch(e){}}
+function flEffortClose(doc){try{
+ doc=doc||(document.getElementById('frToday')||{}).contentDocument;
+ var el=doc&&doc.getElementById('screen-fl-effort');if(!el)return;
+ el.style.setProperty('transform','translateX(-50%) translateY(100%)','important');
+ el.style.pointerEvents='none';
+ try{haptic&&haptic(6);}catch(e){}}catch(e){}}
 function flRecupOpen(doc){try{
  var SH=!!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)||(function(){try{return localStorage.getItem('flintForceShell')==='1';}catch(e){return false;}})();
  var D;
@@ -8168,14 +8342,247 @@ function flBackScreens(doc){var out=[];[].slice.call(doc.querySelectorAll('[id^=
  if(cs.position!=='fixed'||+(cs.zIndex||0)<60)return;
  var r=scn.getBoundingClientRect();var w=doc.defaultView.innerWidth;
  if(r.width>200&&Math.abs(r.top)<40&&r.left<w*0.5&&r.right>w*0.5)out.push(scn);});return out;}
-function flBackClose(){try{var fr=document.getElementById('frToday');var doc=fr&&fr.contentDocument;if(!doc)return;
- var open=flBackScreens(doc);if(!open.length)return;
- var scn=open[open.length-1];
- if(scn.id==='flCalClone'){flCloseCalHebdo();if(typeof haptic==='function')haptic(6);return;}
- var bk=scn.querySelector('[data-fl-back]')||scn.querySelector('button');
- if(bk){['pointerdown','pointerup','click'].forEach(function(t){try{bk.dispatchEvent(new MouseEvent(t,{bubbles:true,cancelable:true}));}catch(e){}});}
- else{scn.style.transform='translateX(-50%) translateY(100%)';scn.style.pointerEvents='none';}
+/* ===== Pile de navigation unique (v673) =====================================
+   AVANT : chaque écran s'ouvrait en changeant son transform, sans qu'on note
+   nulle part ce qui était ouvert. Le retour DEVINAIT l'écran du dessus d'après
+   sa géométrie — et excluait screen-nutrition de sa recherche. D'où les deux
+   bugs signalés par le founder : le retour ne répondait pas (il visait un écran
+   resté ouvert dessous), et Sommeil restait empilé sous Nutrition, parce que
+   flPfCloseAll ne fermait que les 6 écrans de profil.
+   MAINTENANT : un observateur note l'ordre RÉEL d'ouverture, quel que soit le
+   code qui ouvre l'écran — donc rien à changer dans les dizaines de fonctions
+   d'ouverture existantes. Retour = dépile le sommet. Onglet = vide la pile. */
+var flNavStack=[];
+function flNavPanels(doc){var out=[].slice.call(doc.querySelectorAll('[id^="screen-"]'));
+ ['flCalClone','flPfSheet'].forEach(function(id){var e=doc.getElementById(id);if(e)out.push(e);});return out;}
+/* Ouvert ? On lit le transform EN LIGNE, jamais la géométrie : pendant la
+   transition CSS, getBoundingClientRect renvoie une position intermédiaire et
+   ment (piège déjà rencontré sur la nav Sommeil). Un écran sans transform en
+   ligne n'a jamais été ouvert par glissement : il ne rentre pas dans la pile. */
+function flNavIsOpen(el){try{
+ if(el.id==='flPfSheet')return true;            /* la feuille n'existe qu'ouverte */
+ var t=(el.style&&el.style.transform)||'';if(!t)return false;
+ if(/translateX\(0px\)|translateY\(0px\)/.test(t))return true;
+ return false;}catch(e){return false;}}
+function flNavSync(doc){try{
+ var open=flNavPanels(doc).filter(flNavIsOpen);
+ flNavStack=flNavStack.filter(function(el){return open.indexOf(el)>=0;});   /* refermés */
+ open.forEach(function(el){if(flNavStack.indexOf(el)<0)flNavStack.push(el);});/* nouveaux */
+}catch(e){}}
+function flNavWatch(doc){if(!doc||!doc.body||doc._flNavWired)return;doc._flNavWired=true;try{
+ var mo=new MutationObserver(function(muts){for(var i=0;i<muts.length;i++){
+  var tg=muts[i].target;if(tg&&tg.id&&(tg.id.indexOf('screen-')===0||tg.id==='flCalClone')){flNavSync(doc);return;}}
+  flNavSync(doc);});
+ mo.observe(doc.body,{subtree:true,childList:true,attributes:true,attributeFilter:['style','class']});
+ flNavSync(doc);}catch(e){}}
+function flNavCloseScreen(el){try{
+ if(el.id==='flCalClone'){flCloseCalHebdo();return;}
+ if(el.id==='flPfSheet'){el.remove();return;}
+ /* on conserve le centrage horizontal de la maquette, on ne bouge que l'offset */
+ var centered=/translateX\(-50%\)/.test((el.style&&el.style.transform)||'');
+ el.style.setProperty('transform',(centered?'translateX(-50%) ':'')+'translateY(100%)','important');
+ el.style.pointerEvents='none';}catch(e){}}
+/* Retour : dépile le sommet réel. On privilégie le bouton retour de l'écran
+   quand il existe — il peut avoir du ménage à faire au-delà du glissement. */
+function flNavBack(){try{
+ var fr=document.getElementById('frToday'),doc=fr&&fr.contentDocument;if(!doc)return false;
+ flNavSync(doc);
+ var top=flNavStack[flNavStack.length-1];if(!top)return false;
+ /* On déclenche le bouton retour de l'écran POUR SON MÉNAGE (état du gabarit,
+    écouteurs), mais on ferme TOUJOURS nous-mêmes derrière. Raison : les écrans
+    s'ouvrent en forçant un transform en ligne `!important`, qui gagne sur la
+    liaison du gabarit — le bouton s'exécutait donc sans rien changer à l'écran.
+    C'était ça, le « le retour ne marche pas » du founder. La fermeture doit
+    être forcée de la même façon que l'ouverture : symétrique, déterministe. */
+ var bk=top.querySelector('[data-fl-back]');
+ if(bk)['pointerdown','pointerup','click'].forEach(function(t){
+  try{bk.dispatchEvent(new MouseEvent(t,{bubbles:true,cancelable:true}));}catch(e){}});
+ flNavCloseScreen(top);
+ flNavStack.pop();
+ setTimeout(function(){flNavSync(doc);},420);
  if(typeof haptic==='function')haptic(6);
+ return true;}catch(e){return false;}}
+/* Vide la pile — appelé à chaque changement d'onglet, pour qu'un onglet ne
+   puisse JAMAIS s'afficher par-dessus l'écran d'un autre. */
+function flNavCloseAll(doc,exceptId){try{
+ flNavPanels(doc).forEach(function(el){
+  if(exceptId&&el.id===exceptId)return;
+  if(flNavIsOpen(el))flNavCloseScreen(el);});
+ flNavStack=exceptId?flNavStack.filter(function(e){return e.id===exceptId;}):[];
+}catch(e){}}
+function flBackClose(){flNavBack();}
+/* ===== Rappel du jour consulté (v674) =======================================
+   Founder : « si je clique sur le 18 juin, tout doit être lié à ça, et en haut
+   il faut virer AUJOURD'HUI et mettre 18 juin 2026 ».
+   Tant qu'on regarde le jour même, on ne touche à rien. Dès qu'un jour passé est
+   sélectionné, TOUS les libellés de date des écrans affichent cette date — un
+   seul injecteur plutôt qu'une retouche écran par écran, donc les écrans futurs
+   en héritent sans rien faire. */
+function flDayLabelFull(off){try{
+ var d=new Date();d.setDate(d.getDate()+(off==null?(window.flDayOff||0):off));
+ return d.getDate()+' '+FL_MON[d.getMonth()]+' '+d.getFullYear();}catch(e){return '';}}
+function mdDayStamp(doc){try{
+ var off=window.flDayOff||0,lab=flDayLabelFull();
+ [].slice.call(doc.querySelectorAll('div,span')).forEach(function(e){
+  if(e.children.length)return;
+  var t=(e.textContent||'').trim();
+  if(off===0){                                   /* retour sur aujourd'hui : on restaure */
+   if(e.getAttribute('data-fl-daystamp')){e.textContent="AUJOURD'HUI";e.removeAttribute('data-fl-daystamp');}
+   return;}
+  if(t==="AUJOURD'HUI"||t==='AUJOURD’HUI'){e.textContent=lab;e.setAttribute('data-fl-daystamp','1');}
+  else if(e.getAttribute('data-fl-daystamp')&&t!==lab)e.textContent=lab;   /* jour changé */
+ });}catch(e){}}
+/* ===== Barre du bas ancrée au bord (v673) ===================================
+   Founder : « il doit être vraiment tout en bas, il ne doit pas y avoir
+   d'espace entre le bas et le menu ». Avant : pilule flottante avec
+   padding 0 12px calc(safe-area + 12px) → un vide sous la barre, et elle
+   recouvrait la fin du journal (bouton Enregistrer inatteignable).
+   Après : barre pleine largeur collée au bord. Le rembourrage bas devient la
+   safe-area SEULE — on la garde, sinon le trait d'accueil iOS passe sur les
+   libellés ; ce n'est pas une marge décorative. */
+function mdNavBottom(doc){try{
+ var nav=null,navs=doc.getElementsByTagName('nav');
+ for(var i=0;i<navs.length;i++){var st=navs[i].getAttribute('style')||'';
+  if(/z-index:\s*90/.test(st)){nav=navs[i];break;}}
+ if(!nav)nav=navs[0];
+ if(!nav||nav._flBottom)return;nav._flBottom=1;
+ nav.style.setProperty('padding','0','important');
+ var bar=nav.firstElementChild;if(!bar)return;
+ bar.style.setProperty('border-radius','20px 20px 0 0','important');
+ bar.style.setProperty('padding','6px 8px calc(env(safe-area-inset-bottom, 0px) + 6px)','important');
+ bar.style.setProperty('border','none','important');
+ bar.style.setProperty('border-top','1px solid #f1ece5','important');
+ bar.style.setProperty('background','#fff','important');
+ bar.style.setProperty('box-shadow','0 -8px 28px rgba(20,17,15,.07)','important');
+}catch(e){}}
+/* ===== Journal : dégagement bas + confirmation d'enregistrement (v673) =====
+   Le journal ne réservait que 40px en bas, sous une barre de ~64px + safe-area :
+   le bouton Enregistrer passait dessous. On réserve de quoi le dégager, et on
+   confirme l'enregistrement par un écran épuré (demande du founder). */
+/* ===== Sélecteur d'heure à molette (v675) ===================================
+   Le champ « Si oui, à quelle heure ? » était relié à openPicker du gabarit, qui
+   ouvre en réalité un CALENDRIER. On le remplace par la roue heures/minutes de
+   la maquette « Journal du soir » : deux colonnes qui s'aimantent (scroll-snap),
+   bandeau central, et l'heure choisie est stockée dans les données du journal. */
+function mdJrnlHour(doc){try{
+ var jr=doc.getElementById('screen-journal');if(!jr)return;
+ /* Détection STRUCTURELLE : on part du libellé « Si oui, à quelle heure ? » et
+    on prend le frère suivant. La détection géométrique échouait — le champ n'est
+    pas une feuille (il a un enfant) et ses largeurs sont fausses tant que le
+    journal n'est pas déplié. */
+ if(!jr._flHourWired){
+  var lab=[].slice.call(jr.querySelectorAll('span,div')).filter(function(e){
+   return !e.children.length&&/Si oui/.test(e.textContent||'');})[0];
+  var fld=lab&&lab.parentElement?lab.parentElement.querySelector('div'):null;
+  if(!fld||fld===lab)return;
+  jr._flHourWired=true;jr._flHourFld=fld;
+  fld.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();flJrnlHourOpen(doc);},true);}
+ /* Réaffiché à CHAQUE passe : le gabarit repeint le champ à « --:-- », donc une
+    restauration unique à l'accrochage ne tenait pas. */
+ var d0=flJrnlData(),f2=jr._flHourFld;
+ if(f2&&d0&&d0.alcoolH&&f2.textContent.trim()!==d0.alcoolH){
+  f2.textContent=d0.alcoolH;f2.style.setProperty('color','#14110f','important');}
+}catch(e){}}
+function flJrnlHourOpen(doc){try{
+ var old=doc.getElementById('flHourPick');if(old)old.remove();
+ var ROW=44,ov=doc.createElement('div');ov.id='flHourPick';
+ ov.style.cssText='position:fixed;inset:0;z-index:210;background:rgba(20,17,15,.34);'
+  +'display:flex;align-items:flex-end;justify-content:center';
+ function col(n,align){var h='<div style="height:88px"></div>';
+  for(var i=0;i<n;i++)h+='<div class="wrow" style="height:44px;scroll-snap-align:center;display:flex;'
+   +'align-items:center;justify-content:'+align+';font-size:24px;color:#b8b1a4;'
+   +'font-variant-numeric:tabular-nums">'+(i<10?'0'+i:i)+'</div>';
+  return h+'<div style="height:88px"></div>';}
+ ov.innerHTML='<div style="width:100%;max-width:440px;background:#fff;border-radius:26px 26px 0 0;'
+  +'padding:18px 20px calc(20px + env(safe-area-inset-bottom,0px));box-shadow:0 -12px 40px rgba(0,0,0,.16)">'
+  +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">'
+   +'<button id="flHpCancel" style="font-size:16px;color:#9a9284;background:none;border:none;cursor:pointer;padding:6px 2px">Annuler</button>'
+   +'<span style="font-size:14px;font-weight:600;color:#14110f">Heure</span><span style="width:52px"></span></div>'
+  +'<div style="position:relative;height:220px;display:flex;justify-content:center;gap:4px">'
+   +'<div style="position:absolute;left:8px;right:8px;top:88px;height:44px;border-top:1px solid #e6dfd1;'
+    +'border-bottom:1px solid #e6dfd1;pointer-events:none"></div>'
+   +'<div style="position:absolute;left:50%;top:110px;transform:translate(-50%,-50%);font-size:24px;'
+    +'font-weight:700;color:#14110f;pointer-events:none">:</div>'
+   +'<div id="flHpH" style="width:96px;height:220px;overflow-y:scroll;scroll-snap-type:y mandatory;'
+    +'scrollbar-width:none;text-align:right;padding-right:16px">'+col(24,'flex-end')+'</div>'
+   +'<div id="flHpM" style="width:96px;height:220px;overflow-y:scroll;scroll-snap-type:y mandatory;'
+    +'scrollbar-width:none;text-align:left;padding-left:16px">'+col(60,'flex-start')+'</div></div>'
+  +'<button id="flHpOk" style="margin-top:14px;width:100%;background:#14110f;color:#e8e6e3;font-size:16px;'
+   +'font-weight:500;border:none;border-radius:16px;padding:15px 0;cursor:pointer">Enregistrer</button></div>';
+ doc.body.appendChild(ov);
+ var H=doc.getElementById('flHpH'),M=doc.getElementById('flHpM');
+ function paint(c){var mid=c.scrollTop+110;
+  [].slice.call(c.querySelectorAll('.wrow')).forEach(function(r){
+   var on=Math.abs(r.offsetTop+ROW/2-mid)<ROW/2;
+   r.style.fontWeight=on?'700':'400';r.style.color=on?'#14110f':'#b8b1a4';});}
+ function val(c){return Math.round(c.scrollTop/ROW);}
+ H.addEventListener('scroll',function(){paint(H);});M.addEventListener('scroll',function(){paint(M);});
+ var cur=(flJrnlData().alcoolH||'').match(/(\d{1,2})\D+(\d{1,2})/);
+ H.scrollTop=(cur?+cur[1]:22)*ROW;M.scrollTop=(cur?+cur[2]:30)*ROW;paint(H);paint(M);
+ /* Délégation sur l'overlay + pointerup ET click : dans cette iframe, un clic qui
+    vise directement un bouton peut ne jamais l'atteindre (déjà constaté sur le
+    scrub). En écoutant le conteneur sur deux types d'événements, le premier qui
+    passe fait le travail — `_done` empêche le double déclenchement. */
+ function hit(e,id){var t=e.target;for(var i=0;i<4&&t;i++,t=t.parentElement)if(t.id===id)return true;return false;}
+ function onEv(e){
+  if(ov._done)return;
+  if(hit(e,'flHpCancel')){ov._done=1;ov.remove();return;}
+  if(hit(e,'flHpOk')){ov._done=1;
+   var h=val(H),m=val(M),txt=(h<10?'0'+h:h)+' : '+(m<10?'0'+m:m);
+   try{var dd=flJrnlData();dd.alcoolH=txt;DB.set(flJrnlKey(),dd);}catch(e2){}
+   var jr=doc.getElementById('screen-journal');
+   if(jr&&jr._flHourFld){jr._flHourFld.textContent=txt;
+    jr._flHourFld.style.setProperty('color','#14110f','important');}
+   if(typeof haptic==='function')haptic(6);ov.remove();return;}
+  if(e.target===ov){ov._done=1;ov.remove();}}
+ ov.addEventListener('click',onEv,true);
+ ov.addEventListener('pointerup',onEv,true);
+}catch(e){}}
+/* Confirmation d'enregistrement (v675) — séquence de la maquette « Journal du
+   soir » : voile crème flouté, pastille orange qui pop, anneau fin qui se trace,
+   check blanc dessiné, puis le texte qui monte. Se referme seule à ~2,2 s. */
+function flJrnlSavedCss(doc){if(doc.getElementById('flJrnlSaveCss'))return;
+ var st=doc.createElement('style');st.id='flJrnlSaveCss';
+ st.textContent='@keyframes flintSaveIn{0%{opacity:0}100%{opacity:1}}'
+  +'@keyframes flintDiscPop{0%{transform:scale(.6);opacity:0}55%{transform:scale(1.04)}100%{transform:scale(1);opacity:1}}'
+  +'@keyframes flintCheckDraw{0%{stroke-dashoffset:34}100%{stroke-dashoffset:0}}'
+  +'@keyframes flintRingDraw{0%{stroke-dashoffset:176}100%{stroke-dashoffset:0}}'
+  +'@keyframes flintTextUp{0%{opacity:0;transform:translateY(8px)}100%{opacity:1;transform:translateY(0)}}';
+ (doc.head||doc.documentElement).appendChild(st);}
+function flJrnlSaved(doc){try{
+ flJrnlSavedCss(doc);
+ var old=doc.getElementById('flJrnlSaved');if(old)old.remove();   /* rejoue l'anim à neuf */
+ var ov=doc.createElement('div');ov.id='flJrnlSaved';
+ ov.style.cssText='position:fixed;inset:0;z-index:200;display:flex;flex-direction:column;'
+  +'align-items:center;justify-content:center;gap:26px;background:rgba(246,240,232,.86);'
+  +'backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);pointer-events:none;'
+  +'animation:flintSaveIn .28s ease both';
+ ov.innerHTML='<div style="position:relative;width:92px;height:92px;'
+   +'animation:flintDiscPop .5s cubic-bezier(.34,1.4,.5,1) both">'
+   +'<svg viewBox="0 0 92 92" width="92" height="92" fill="none" style="position:absolute;inset:0">'
+   +'<circle cx="46" cy="46" r="28" fill="#fb6015"></circle>'
+   +'<circle cx="46" cy="46" r="43" stroke="#fb6015" stroke-width="1.5" fill="none" stroke-linecap="round"'
+   +' stroke-dasharray="176" style="animation:flintRingDraw .7s cubic-bezier(.4,0,.2,1) .1s both;'
+   +'transform-origin:46px 46px;transform:rotate(-90deg);opacity:.35"></circle>'
+   +'<path d="M 36 46.5 L 43 53.5 L 57 39" stroke="#fff" stroke-width="3.4" stroke-linecap="round"'
+   +' stroke-linejoin="round" stroke-dasharray="34"'
+   +' style="animation:flintCheckDraw .4s cubic-bezier(.65,0,.35,1) .34s both"></path></svg></div>'
+  +'<div style="text-align:center;animation:flintTextUp .5s ease .3s both">'
+   +'<div style="font-family:Archivo,-apple-system,system-ui,sans-serif;font-size:26px;font-weight:600;'
+   +'letter-spacing:-.02em;color:#14110f">Enregistré</div>'
+   +'<div style="margin-top:4px;font-family:-apple-system,system-ui,sans-serif;font-size:15px;'
+   +'color:#8a8378">pour aujourd’hui</div></div>';
+ doc.body.appendChild(ov);
+ try{if(navigator.vibrate)navigator.vibrate(12);}catch(e){}
+ setTimeout(function(){try{ov.remove();}catch(e){}},2200);
+}catch(e){}}
+function mdJournalBottom(doc){try{
+ var jr=doc.getElementById('screen-journal');
+ if(jr&&!jr._flPad){jr._flPad=1;
+  jr.style.setProperty('padding-bottom','calc(env(safe-area-inset-bottom, 0px) + 132px)','important');}
+ /* v675 : plus d'écouteur délégué ici. flJrnlSave() déclenche désormais la
+    confirmation — sinon le bouton « Enregistrer » du sélecteur d'heure la
+    déclenchait aussi, à tort. */
 }catch(e){}}
 function flOpenCalHebdo(){try{
  var fr=document.getElementById('frToday');var doc=fr&&fr.contentDocument;if(!doc)return;
@@ -11794,12 +12201,69 @@ function setCoachWake(v){const p=getProfile();p.wake=v||'07:00';DB.set('profile'
 var _effDay=0;
 function effDay(d){_effDay=Math.min(0,Math.max(-180,_effDay+d));if(typeof haptic==='function')haptic();renderLoad();window.scrollTo(0,0)}
 function effOpenPicker(){if(typeof haptic==='function')haptic();window._calMode='effort';slpCalOpen()}
+/* ===== v677 — Métriques de référence de l'EFFORT ============================
+   Reprend la structure des cartes de la page Récupération (icône, valeur, jauge,
+   carte cliquable), mais pour les 4 métriques d'effort. Là où la Récup compare à
+   une NORME physiologique, l'effort n'en a pas : on compare donc à la moyenne
+   des 30 derniers jours — c'est la référence qui a du sens pour une charge. */
+function effMetricsOf(k){
+ var ss=DB.get('sessions_'+k,[]).filter(function(s){return s.type!=='nap';});
+ var z=zonesToday(ss).z,str=0;
+ ss.forEach(function(s){if(s.type==='strength')str+=(s.dur||0);});
+ return {zones13:z[0]+z[1]+z[2],zones45:z[3]+z[4],strength:str,steps:flStepsOf(k)};
+}
+/* Moyenne des 30 jours PRÉCÉDANT le jour consulté (le jour lui-même exclu,
+   sinon il se compare en partie à lui-même). */
+function effAvg30(field,off){
+ var s=0,n=0;
+ for(var i=1;i<=30;i++){var v=effMetricsOf(tk((off||0)-i))[field];if(v!=null){s+=v;n++;}}
+ return n?s/n:null;
+}
+var EFF_CARD_DEFS=[
+ {key:'zones13',trend:'zones13',ic:'ti-heart',title:'Zones FC 1 à 3',time:true},
+ {key:'zones45',trend:'zones45',ic:'ti-heart',title:'Zones FC 4 et 5',time:true},
+ {key:'strength',trend:'strength',ic:'ti-barbell',title:'Temps de musculation',time:true},
+ {key:'steps',trend:'steps',ic:'ti-walk',title:'Pas',time:false}
+];
+function renderEffCards(off){
+ var host=document.getElementById('effCards');if(!host)return;
+ var cur=effMetricsOf(tk(off||0));
+ host.innerHTML=EFF_CARD_DEFS.map(function(d){
+  var v=cur[d.key]||0,avg=effAvg30(d.key,off);
+  var fmt=function(x){return d.time?minToHM(x):fmtNum(x);};
+  /* Échelle commune à la valeur et à la moyenne, pour que la comparaison
+     visuelle soit lisible même quand l'un des deux est nul. */
+  var top=Math.max(v,avg||0)*1.25||1;
+  var fill=Math.max(0,Math.min(100,v/top*100));
+  var tick=avg!=null?Math.max(0,Math.min(100,avg/top*100)):null;
+  var arw='',cmp='Pas encore de moyenne';
+  if(avg!=null){
+   var diff=v-avg,seuil=Math.max(avg*0.08,d.time?2:400);   /* bruit ignoré */
+   arw=diff>seuil?'<span class="effc-arw" style="color:#2FA86A">▲</span>'
+      :diff<-seuil?'<span class="effc-arw" style="color:#E0922A">▼</span>'
+      :'<span class="effc-arw" style="color:#B9B3A8">•</span>';
+   cmp='Moy. 30 j · '+fmt(Math.round(avg));
+  }
+  return '<button class="effc-card" type="button" onclick="openTrend(\''+d.trend+'\')">'
+   +'<div class="effc-top"><span class="effc-ic"><i class="ti '+d.ic+'"></i></span>'
+   +'<span class="effc-name">'+d.title+'</span></div>'
+   +'<div class="effc-mid"><span class="effc-val">'+fmt(v)+'</span>'+arw+'</div>'
+   +'<div class="effc-gauge"><span class="effc-fill" style="width:'+fill.toFixed(1)+'%"></span>'
+   +(tick!=null?'<span class="effc-tick" style="left:'+tick.toFixed(1)+'%"></span>':'')+'</div>'
+   +'<div class="effc-foot"><span class="effc-cmp">'+cmp+'</span>'
+   +'<i class="ti ti-chevron-right effc-cc"></i></div>'
+   +'</button>';
+ }).join('');
+}
 function renderLoad(){var off=_effDay||0,K=tk(off);
  var d=new Date();d.setDate(d.getDate()+off);var JN=['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
  set('effDate',off===0?'Aujourd\'hui':(off===-1?'Hier':JN[d.getDay()]+' '+d.getDate()+' '+CAL_MONTHS[d.getMonth()].toLowerCase()));
  var rv=recovery(off);var _eb=document.getElementById('effBadge');if(_eb){_eb.textContent=rv?rv.s:'—';_eb.style.color=rv?rv.color:'#8A857D';}
  var str=loadStrain(K);
- document.getElementById('strainRing').innerHTML=ringHTML(str/21*100,168,'EFFORT','/ 21','var(--accent)',str.toFixed(1).replace('.',','));
+ /* v677 : l'anneau passe au BLEU — l'orange est la couleur d'accent globale de
+    FLINT, il ne distinguait pas l'effort. Le vert reste à la récupération. */
+ document.getElementById('strainRing').innerHTML=ringHTML(str/21*100,168,'EFFORT','/ 21','var(--eff-blue)',str.toFixed(1).replace('.',','));
+ renderEffCards(off);
  set('strainStatus',str<10?'Charge légère':str<14?'Charge modérée':str<18?'Charge soutenue':'Charge très élevée');
  set('effMeaning',str<10?'Journée tranquille — ton corps récupère.':str<14?'Bonne zone pour progresser sans entamer ta récup.':str<18?'Bel effort — pense à bien récupérer ensuite.':'Grosse journée — priorise le repos et le sommeil.');
  var mk=document.getElementById('effScaleMark');if(mk)mk.style.left=Math.max(1.5,Math.min(98.5,str/21*100))+'%';
@@ -12901,7 +13365,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='flint-v672';
+const APP_VERSION='v678';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
