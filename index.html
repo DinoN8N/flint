@@ -7614,9 +7614,9 @@ function flRcRow(key,lab,val,unit,dir,sparkD,gid,col,noTop){
  return '<div style="display:flex;align-items:center;gap:14px;padding:20px 0;'+((noTop||key==='hrv')?'':'border-top:1px solid #efeae2')+'">'
   +'<span style="flex-shrink:0;width:52px;height:52px;border-radius:50%;background:'+_hxA(col,0.11)+';display:flex;align-items:center;justify-content:center">'+ic+'</span>'
   +'<div style="flex:1;min-width:0"><div style="font-family:-apple-system,system-ui,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.09em;line-height:1.3;color:#14110f">'+lab+'</div></div>'
-  +'<div style="flex-shrink:0;width:78px;display:flex;flex-direction:column;align-items:flex-start;margin-right:4px">'
+  +'<div style="flex-shrink:0;width:86px;display:flex;flex-direction:column;align-items:flex-start;margin-right:4px">'
    +'<div style="display:flex;align-items:flex-start;gap:5px">'
-    +'<span style="font-family:\u0027Archivo\u0027,\u0027Helvetica Neue\u0027,Arial,sans-serif;font-size:24px;font-weight:500;letter-spacing:-0.02em;color:#14110f;line-height:0.9;display:inline-block;width:58px;text-align:right">'+val+'<span style="font-family:-apple-system,system-ui,sans-serif;font-size:13px;font-weight:700">'+(unit||'')+'</span></span>'
+    +'<span style="font-family:\u0027Archivo\u0027,\u0027Helvetica Neue\u0027,Arial,sans-serif;font-size:'+(String(val).replace(/[^0-9]/g,'').length>=5?'19px':'24px')+';font-weight:500;letter-spacing:-0.02em;color:#14110f;line-height:0.9;display:inline-block;width:58px;text-align:right;white-space:nowrap">'+val+'<span style="font-family:-apple-system,system-ui,sans-serif;font-size:13px;font-weight:700">'+(unit||'')+'</span></span>'
     +tri
    +'</div>'
   +'</div>'
@@ -7784,13 +7784,13 @@ var FLEF_TREND=[
   fmt:function(v){return minToHM(v);},tick:function(v){return minToHM(Math.max(0,v));},
   series:function(){return flEfSeries(function(k){var z=flEfZoneMin(k);return z[3]+z[4];},
                                       function(k){var z=flEfZoneMin(k);return [z[3],z[4]];});}},
- {key:'steps',hb:'steps',trend:'steps',title:'PAS',kind:'bars',col:FLEF_BLUE,col2:'#8FC7F2',
+ {key:'steps',hb:'steps',trend:'steps',title:'PAS',kind:'bars',col:'#fb6015',col2:'#ffc191',
   fmt:function(v){return fmtNum(v);},tick:function(v){return fmtNum(Math.max(0,v));},
   series:function(){return flEfSeries(function(k){return flStepsOf(k);});}},
- {key:'calories',hb:'calories',trend:'calories',title:'CALORIES',kind:'bars',col:FLEF_BLUE,col2:'#8FC7F2',
+ {key:'calories',hb:'calories',trend:'calories',title:'CALORIES',kind:'bars',col:'#fb6015',col2:'#ffc191',
   fmt:function(v){return fmtNum(v);},tick:function(v){return fmtNum(Math.max(0,v));},
   series:function(){return flEfSeries(function(k){return caloriesBurned(k);});}},
- {key:'strength',hb:'strength',trend:'strength',title:'TEMPS DE MUSCULATION',emptyMax:60,kind:'bars',col:FLEF_BLUE,col2:'#8FC7F2',
+ {key:'strength',hb:'strength',trend:'strength',title:'TEMPS DE MUSCULATION',emptyMax:60,kind:'bars',col:'#fb6015',col2:'#ffc191',
   fmt:function(v){return minToHM(v);},tick:function(v){return minToHM(Math.max(0,v));},
   series:function(){return flEfSeries(function(k){var m=0;
    try{(DB.get('sessions_'+k,[])||[]).forEach(function(x){if(x.type==='strength')m+=(x.dur||0);});}catch(e){}
@@ -8767,13 +8767,13 @@ var FL_HEBDO={
  charge:{title:'Effort',lab:'VOTRE EFFORT',heroLab:'EFFORT MOYEN',unit:'/ 20',col:FLEF_BLUE,kind:'bars',fmt:function(v){return (Math.round(v*10)/10).toFixed(1).replace('.',',');},
   tickFmt:function(t){return ''+Math.round(t);},
   get:function(off){try{return loadStrain(tk(off));}catch(e){return null;}}},
- zones13:{title:'Zones de FC 1 à 3',lab:'VOTRE TEMPS EN ZONES 1-3',heroLab:'MOYENNE / JOUR',unit:'',col:FLEF_BLUE,kind:'bars',fmt:flhHM,clamp0:true,
+ zones13:{title:'Zones de FC 1 à 3',lab:'VOTRE TEMPS EN ZONES 1-3',heroLab:'MOYENNE / JOUR',unit:'',col:FLEF_BLUE,parts:[['#B9CED8','Zone 1'],['#4A9CC1','Zone 2'],['#61B99A','Zone 3']],getParts:function(off){try{var z=flEfZoneMin(tk(off));return [z[0]/60,z[1]/60,z[2]/60];}catch(e){return null;}},kind:'bars',fmt:flhHM,clamp0:true,
   tickSteps:[0.5,1,2,3,4,6],tickFmt:function(t){return t===0?'0:00':(t%1===0?t+'h':flhHM(t));},
   get:function(off){try{var z=flEfZoneMin(tk(off));return (z[0]+z[1]+z[2])/60;}catch(e){return null;}}},
- zones45:{title:'Zones de FC 4 et 5',lab:'VOTRE TEMPS EN ZONES 4-5',heroLab:'MOYENNE / JOUR',unit:'',col:FLEF_BLUE,kind:'bars',fmt:flhHM,clamp0:true,
+ zones45:{title:'Zones de FC 4 et 5',lab:'VOTRE TEMPS EN ZONES 4-5',heroLab:'MOYENNE / JOUR',unit:'',col:FLEF_BLUE,parts:[['#F5A85B','Zone 4'],['#F0492E','Zone 5']],getParts:function(off){try{var z=flEfZoneMin(tk(off));return [z[3]/60,z[4]/60];}catch(e){return null;}},kind:'bars',fmt:flhHM,clamp0:true,
   tickSteps:[0.25,0.5,1,2,3],tickFmt:function(t){return t===0?'0:00':(t%1===0?t+'h':flhHM(t));},
   get:function(off){try{var z=flEfZoneMin(tk(off));return (z[3]+z[4])/60;}catch(e){return null;}}},
- strength:{title:'Temps de musculation',lab:'VOTRE TEMPS DE MUSCULATION',heroLab:'MOYENNE / JOUR',unit:'',col:FLEF_BLUE,kind:'bars',fmt:flhHM,clamp0:true,
+ strength:{title:'Temps de musculation',lab:'VOTRE TEMPS DE MUSCULATION',heroLab:'MOYENNE / JOUR',unit:'',kind:'bars',fmt:flhHM,clamp0:true,
   tickSteps:[0.25,0.5,1,2,3],tickFmt:function(t){return t===0?'0:00':(t%1===0?t+'h':flhHM(t));},
   get:function(off){try{var m=0;(DB.get('sessions_'+tk(off),[])||[]).forEach(function(x){if(x.type==='strength')m+=(x.dur||0);});return m/60;}catch(e){return null;}}},
  recovery:{title:'Récupération',lab:'VOTRE RÉCUPÉRATION',unit:'%',kind:'bars',fmt:flhInt,ticks:[100,67,34,0],tickFmt:function(t){return t+'%';},pct:true,zoneColor:true},
@@ -8796,7 +8796,9 @@ function flhSeries(key,end,n){var cfg=FL_HEBDO[key],a=[];
  for(var i=n-1;i>=0;i--){var off=end-i,v=null;
   try{v=cfg.get?cfg.get(off):((cfg.mask&&!flHasData(off))?null:mdGet(key,off));}catch(e){}
   if(v!=null&&cfg.clamp0)v=Math.max(0,v);
-  a.push({off:off,v:(v==null?null:+v)});}
+  /* v689 : segments par zone, pour les graphiques empilés (zones de FC) */
+  var pr=null;if(cfg.getParts){try{pr=cfg.getParts(off);}catch(e){}}
+  a.push({off:off,v:(v==null?null:+v),parts:pr});}
  return a;}
 function flhTicksAuto(mx,steps){var step;
  if(steps){step=steps[steps.length-1];for(var i=0;i<steps.length;i++){if(Math.max(mx,0.01)/steps[i]<=4){step=steps[i];break;}}}
@@ -8828,7 +8830,22 @@ function flhChart(cfg,pts,n,gid){
  ticks.forEach(function(t){s+='<text x="42" y="'+(flhY(t,mn,mx)+4).toFixed(1)+'"'+(cfg.zoneColor?' fill="'+getRecoveryColor(t)+'" font-weight="700"':'')+'>'+(cfg.tickFmt?cfg.tickFmt(t):cfg.fmt(t))+'</text>';});
  s+='</g>';}
  var bw=n===7?13:7;
- if(cfg.kind==='bars'){
+ if(cfg.kind==='bars'&&cfg.parts){
+  /* v689 — barres EMPILÉES par zone : la page de détail doit montrer les mêmes
+     couleurs que la carte de la page Effort (zone 1/2/3, zone 4/5). Avant, elle
+     aplatissait tout en une seule barre unie. */
+  pts.forEach(function(p,i){if(p.v==null||!p.parts)return;
+   var x=flhX(i,n),base=300,tot=0;
+   p.parts.forEach(function(pv){tot+=pv;});
+   if(!tot)return;
+   p.parts.forEach(function(pv,zi){if(!pv)return;
+    var h=(300-flhY(pv,mn,mx));if(h<1.5)h=1.5;
+    var y=base-h;
+    s+='<rect data-flh-i="'+i+'" x="'+(x-bw/2).toFixed(2)+'" y="'+y.toFixed(2)+'" width="'+bw.toFixed(2)+'" height="'+h.toFixed(2)+'" fill="'+(cfg.parts[zi]||[])[0]+'"></rect>';
+    base=y;});});
+  if(n===7){s+='<g class="flh-vals" opacity="1" font-family="\'Archivo\', -apple-system, system-ui, sans-serif" font-size="16" font-weight="600" fill="#14110f" text-anchor="middle" style="transition:opacity .18s">';
+   pts.forEach(function(p,i){if(p.v==null)return;s+='<text x="'+flhX(i,n).toFixed(2)+'" y="'+Math.max(18,flhY(p.v,mn,mx)-22).toFixed(1)+'">'+cfg.fmt(p.v)+'</text>';});s+='</g>';}
+ }else if(cfg.kind==='bars'){
   s+='<defs><linearGradient id="'+gid+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+AC+'"></stop><stop offset="1" stop-color="'+AC2+'"></stop></linearGradient></defs>';
   pts.forEach(function(p,i){if(p.v==null)return;s+='<path data-flh-i="'+i+'" d="'+flhBarPath(flhX(i,n),flhY(p.v,mn,mx),bw)+'" fill="'+(cfg.zoneColor?getRecoveryColor(p.v):'url(#'+gid+')')+'" opacity="1" style="transition:opacity .12s"></path>';});
   if(n===7){s+='<g class="flh-vals" opacity="1" font-family="\'Archivo\', -apple-system, system-ui, sans-serif" font-size="16" font-weight="600" fill="'+AC+'" text-anchor="middle" style="transition:opacity .18s">';
@@ -8891,7 +8908,13 @@ function flhRender(cl,st){try{
  function q(c){return cl.querySelector('.'+c);}
  var t=q('flh-t');if(t)t.textContent=cfg.title;
  var lb=q('flh-herolab');if(lb)lb.textContent=cfg.heroLab||'MOYENNE';
- var vv=q('flh-heroval');if(vv)vv.textContent=avg==null?'—':cfg.fmt(avg);
+ var vv=q('flh-heroval');if(vv){var _t=avg==null?'—':cfg.fmt(avg);vv.textContent=_t;
+  /* v689 : un nombre ne doit JAMAIS passer à la ligne. On interdit le retour
+     et on réduit la police quand la valeur est longue (« 10 731 » à 52px
+     débordait et s'affichait sur deux lignes). */
+  vv.style.setProperty('white-space','nowrap','important');
+  var _n=_t.replace(/[^0-9]/g,'').length;
+  vv.style.setProperty('font-size',(_n>=5?'38px':_n>=4?'44px':'52px'),'important');}
  var un=q('flh-herounit');if(un)un.textContent=cfg.unit;
  st.labEl=lb;st.valEl=vv;
  var tri=q('flh-tri'),tnd=q('flh-tend'),dir=flhTrendDir(vals);
@@ -8936,7 +8959,7 @@ function flhMarkup(){
    '<div style="flex: 1 1 0%;">'+
     '<div class="flh-herolab" style="font-family: -apple-system, system-ui, sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 0.13em; color: rgb(162, 160, 156); white-space: nowrap;">MOYENNE</div>'+
     '<div style="display: flex; align-items: flex-start; gap: 4px; margin-top: 6px;">'+
-     '<span class="flh-heroval" style="font-family: Archivo, -apple-system, system-ui, sans-serif; font-size: 52px; font-weight: 800; letter-spacing: -0.04em; line-height: 0.9; color: rgb(20, 17, 15);"></span>'+
+     '<span class="flh-heroval" style="white-space: nowrap; font-family: Archivo, -apple-system, system-ui, sans-serif; font-size: 52px; font-weight: 800; letter-spacing: -0.04em; line-height: 0.9; color: rgb(20, 17, 15);"></span>'+
      '<span class="flh-herounit" style="font-family: Archivo, -apple-system, system-ui, sans-serif; font-size: 22px; font-weight: 700; color: rgb(20, 17, 15); margin-top: 4px;"></span>'+
      '<span class="flh-tri" style="display: inline-block; margin-top: 12px; margin-left: 2px; width: 0px; height: 0px; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 9px solid rgb(251, 96, 21); opacity: 1;"></span></div></div>'+
    '<div style="width: 1px; background: rgb(236, 231, 223);"></div>'+
@@ -13602,7 +13625,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='v688';
+const APP_VERSION='v690';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
