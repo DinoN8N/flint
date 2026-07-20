@@ -6655,7 +6655,7 @@ var el=ev.target;var a=el;for(var d1=0;d1<7&&a;d1++,a=a.parentElement){if(!a.que
   var kc=(typeof caloriesBurned==='function'?caloriesBurned(K):0);setTile('CALORIES',(''+Math.round(kc)).replace(/\B(?=(\d{3})+(?!\d))/g,' '));
   /* NOUVEAU trio d'accueil (maquette founder 15/07) : layout icônes + jauge 270°, couleurs fixes par carte */
   mdHomeTrio(doc);
-  mdBalance(doc);mdSleep(doc);mdFonts(doc);mdStickyBacks(doc);mdSleepScrub(doc);mdWeekBarsScrub(doc);mdDualScrub(doc);mdCalDualScrub(doc);mdMarchePrecise(doc);mdMarcheScrub(doc);mdMarcheZones(doc);mdDashChevrons(doc);mdNavNoCoach(doc);mdProfil(doc);mdJourneeTune(doc);mdCalReadoutPurge(doc);mdNutritionPolish(doc);mdMarcheStats(doc);mdDashUniform(doc);mdSleepPolish(doc);mdSleepViolet(doc);mdRecupTap(doc);flLoadNativeTaps(doc);if(typeof flShellHonest==='function')flShellHonest(doc);mdRings(doc);mdTrioRings(doc);mdHebTrend(doc);mdNutrition(doc);mdObjectifs(doc);mdJournalWire(doc);flNavWatch(doc);mdSwipeTabs(doc);mdNavBottom(doc);mdJournalBottom(doc);mdDayStamp(doc);mdJrnlHour(doc);
+  mdBalance(doc);mdSleep(doc);mdFonts(doc);mdStickyBacks(doc);mdSleepScrub(doc);mdWeekBarsScrub(doc);mdDualScrub(doc);mdCalDualScrub(doc);mdMarchePrecise(doc);mdMarcheScrub(doc);mdMarcheZones(doc);mdDashChevrons(doc);mdNavNoCoach(doc);mdProfil(doc);mdJourneeTune(doc);mdCalReadoutPurge(doc);mdNutritionPolish(doc);mdMarcheStats(doc);mdDashUniform(doc);mdSleepPolish(doc);mdSleepViolet(doc);mdRecupTap(doc);flLoadNativeTaps(doc);if(typeof flShellHonest==='function')flShellHonest(doc);mdRings(doc);mdTrioRings(doc);mdHebTrend(doc);mdNutrition(doc);mdObjectifs(doc);mdJournalWire(doc);flNavWatch(doc);mdSwipeTabs(doc);mdNavSync(doc);mdNavBottom(doc);mdJournalBottom(doc);mdDayStamp(doc);mdJrnlHour(doc);
   /* anti-flash orange : garder le splash FLINT opaque jusqu'à ce que le reskin soit VRAIMENT peint —
      trio construit ET peuplé, plusieurs passes faites (~1s), sinon on révélait un état mi-orange sur
      téléphone lent. Filet dur à 4s dans injectTodayLoop pour ne jamais rester bloqué. */
@@ -7820,24 +7820,63 @@ function flEfTrendsHTML(){
     return card;}).join('');
  Object.keys(_oldIco).forEach(function(k){if(_oldIco[k]===undefined)delete FLRC_ICO[k];else FLRC_ICO[k]=_oldIco[k];});
  return html;}
-/* ===== v691 — Navigation au doigt entre les onglets =========================
-   Founder : « sur Instagram, si je swipe vers la gauche depuis messages,
-   j'arrive dans les réels ». On glisse horizontalement pour passer d'un onglet
-   au suivant.
-   Choix d'implémentation : on ne réimplémente PAS l'ouverture de chaque onglet —
-   on simule un tap sur le bouton de la barre du bas. Toute la logique existante
-   (fermeture des overlays, injecteurs, animations) est donc réutilisée telle
-   quelle, sans risque de divergence entre le tap et le swipe. */
+/* ===== v702 — Onglets : menu toujours juste + glissement suivi du doigt ======
+   Founder : « il y a des fois où j'ai la page Aujourd'hui devant moi et c'est
+   Nutrition qui est allumé dans le menu » et « ça doit défiler comme deux photos
+   dans la pellicule, instantané ».
+   Deux problèmes distincts :
+   1) l'état du menu venait du gabarit, qui ne se met pas à jour quand on ouvre un
+      écran par transform → il pouvait mentir. On le déduit désormais du DOM.
+   2) le swipe basculait d'un coup, avec la transition CSS de l'écran (d'où le
+      « mini chargement »). On suit maintenant le doigt en direct, transition
+      coupée, et on ne l'anime qu'au relâchement. */
 function flTabButtons(doc){
  var nav=doc.querySelector('nav');if(!nav)return [];
  return [].slice.call(nav.querySelectorAll('[role="button"]'));
 }
-/* Un swipe ne doit pas voler le geste à un élément qui défile horizontalement,
-   ni à un graphique qu'on parcourt au doigt (scrub). */
+/* Onglet réellement visible, lu dans le DOM — pas dans un état parallèle. */
+function flActiveTab(doc){
+ function open(id){var e=doc.getElementById(id);
+  return !!e&&/translateX\(0px\)|translateY\(0px\)/.test((e.style&&e.style.transform)||'');}
+ if(open('screen-nutrition'))return 1;
+ if(open('screen-fl-profil'))return 3;
+ return 0;
+}
+function mdNavSync(doc){try{
+ var bs=flTabButtons(doc);if(bs.length<2)return;
+ var act=flActiveTab(doc);
+ /* v703 : filet de sécurité. Après un glissement, l'accueil reste décalé
+    (translateX négatif). Si on revient ensuite par un TAP sur la barre, rien ne
+    le remet en place → écran vide. On le recale dès qu'Aujourd'hui est actif. */
+ try{var _ac=doc.getElementById('screen-accueil');
+  if(_ac&&_ac.style.transform&&/translateX/.test(_ac.style.transform)){
+   if(act===0){_ac.style.transition='transform .26s cubic-bezier(.32,.72,0,1)';
+    _ac.style.setProperty('transform','translateX(0px)','important');}
+  }}catch(e){}
+ if(doc._flNavPainted===act)return;doc._flNavPainted=act;
+ bs.forEach(function(b,ix){
+  var on=(ix===act),pill=b.firstElementChild;
+  if(pill&&pill.style){
+   pill.style.background=on
+    ?'radial-gradient(75% 110% at 2% 50%, rgba(251,96,21,.08), rgba(251,96,21,0) 80%), radial-gradient(75% 110% at 98% 50%, rgba(251,96,21,.08), rgba(251,96,21,0) 80%), #fff'
+    :'transparent';
+   pill.style.boxShadow=on?'rgba(20,17,15,.08) 0px 6px 16px':'none';
+  }
+  [].slice.call(b.querySelectorAll('span')).forEach(function(sp){
+   var txt=(sp.textContent||'').trim();
+   if(txt){sp.style.color=on?'#000':'rgb(154,150,143)';sp.style.fontWeight=on?'400':'300';}
+   else sp.style.opacity=on?'1':'0';   /* liseré et reflet du pilulier */
+  });
+  var svg=b.querySelector('svg');
+  if(svg)svg.setAttribute('stroke',on?'#fb6015':'#9a968f');
+ });
+}catch(e){}}
+
+/* Le geste ne doit pas voler la main à un graphique ni à une zone qui défile. */
 function flSwipeBlocked(doc,el){
  for(var i=0;i<8&&el&&el!==doc.body;i++,el=el.parentElement){
   if(el.tagName==='SVG'||el.tagName==='svg')return true;
-  if(el.getAttribute&&(el.getAttribute('data-flh-i')!=null))return true;
+  if(el.getAttribute&&el.getAttribute('data-flh-i')!=null)return true;
   try{var cs=doc.defaultView.getComputedStyle(el);
    if(/auto|scroll/.test(cs.overflowX)&&el.scrollWidth>el.clientWidth+4)return true;}catch(e){}
  }
@@ -7846,44 +7885,66 @@ function flSwipeBlocked(doc,el){
 function mdSwipeTabs(doc){
  if(!doc||!doc.body||doc._flSwipeWired)return;doc._flSwipeWired=1;
  try{
-  /* on suit l'onglet courant en observant les taps sur la barre */
-  doc.addEventListener('click',function(ev){
-   var n=ev.target;
-   for(var i=0;i<6&&n;i++,n=n.parentElement){
-    if(n.getAttribute&&n.getAttribute('role')==='button'){
-     var bs=flTabButtons(doc),ix=bs.indexOf(n);
-     if(ix>=0)doc._flTabIx=ix;
-     return;}}
-  },true);
+  var W=function(){return doc.defaultView.innerWidth||390;};
+  var acc=null,nut=null,x0=0,y0=0,drag=false,axis=0;
 
-  var x0=0,y0=0,t0=0,tracking=false;
+  function grab(){acc=doc.getElementById('screen-accueil');nut=doc.getElementById('screen-nutrition');return acc&&nut;}
+  function trans(on){[acc,nut].forEach(function(e){if(e)e.style.transition=on?'transform .26s cubic-bezier(.32,.72,0,1)':'none';});}
+  /* p = 0 (Aujourd'hui plein écran) → 1 (Nutrition plein écran) */
+  function place(p){
+   var w=W();
+   if(acc)acc.style.setProperty('transform','translateX('+(-p*w).toFixed(1)+'px)','important');
+   if(nut){nut.style.setProperty('transform','translateX(-50%) translateX('+((1-p)*w).toFixed(1)+'px)','important');
+    nut.style.pointerEvents=p>0.5?'auto':'none';}
+  }
+
   doc.addEventListener('touchstart',function(ev){
-   if(!ev.touches||ev.touches.length!==1){tracking=false;return;}
-   /* Pas de swipe quand une page de DÉTAIL est ouverte (le retour s'y fait par
-      son bouton, et le geste sert au graphique). Mais un écran d'ONGLET ouvert
-      ne doit pas bloquer : sinon on ne peut plus revenir depuis Nutrition. */
+   drag=false;axis=0;
+   if(!ev.touches||ev.touches.length!==1)return;
    try{if(typeof flNavStack!=='undefined'&&flNavStack.filter(function(e2){
-    return !/^screen-(nutrition|fl-profil)/.test(e2.id||'');}).length){tracking=false;return;}}catch(e){}
-   if(flSwipeBlocked(doc,ev.target)){tracking=false;return;}
-   var t=ev.touches[0];x0=t.clientX;y0=t.clientY;t0=Date.now();tracking=true;
+    return !/^screen-(nutrition|fl-profil)/.test(e2.id||'');}).length)return;}catch(e){}
+   if(flSwipeBlocked(doc,ev.target))return;
+   if(!grab())return;
+   if(flActiveTab(doc)>1)return;            /* Coach/Profil : bascule simple */
+   var t=ev.touches[0];x0=t.clientX;y0=t.clientY;drag=true;
+  },{capture:true,passive:true});
+
+  doc.addEventListener('touchmove',function(ev){
+   if(!drag||!ev.touches||!ev.touches.length)return;
+   var t=ev.touches[0],dx=t.clientX-x0,dy=t.clientY-y0;
+   if(!axis){                                /* on décide une seule fois : H ou V */
+    if(Math.abs(dx)<8&&Math.abs(dy)<8)return;
+    axis=Math.abs(dx)>Math.abs(dy)?1:2;
+    if(axis===1)trans(false);                /* suivi instantané */
+    else{drag=false;return;}
+   }
+   var base=flActiveTab(doc)===1?1:0;
+   var p=base-dx/W();
+   if(p<0)p=0;if(p>1)p=1;
+   doc._flDragP=p;
+   place(p);
   },{capture:true,passive:true});
 
   doc.addEventListener('touchend',function(ev){
-   if(!tracking)return;tracking=false;
-   var t=(ev.changedTouches&&ev.changedTouches[0]);if(!t)return;
-   var dx=t.clientX-x0,dy=t.clientY-y0,dt=Date.now()-t0;
-   /* horizontal franc, assez ample, et pas un geste interminable */
-   /* 1000 ms : un swipe franc dure 150-400 ms, mais un geste lent et délibéré
-      doit passer aussi. Au-delà, c'est un appui long, pas un swipe. */
-   if(dt>1000||Math.abs(dx)<64||Math.abs(dx)<Math.abs(dy)*2)return;
-   var bs=flTabButtons(doc);if(bs.length<2)return;
-   var cur=doc._flTabIx||0;
-   var next=cur+(dx<0?1:-1);          /* vers la gauche = onglet suivant */
-   if(next<0||next>=bs.length)return; /* pas de bouclage : on sent le bord */
-   doc._flTabIx=next;
-   if(typeof haptic==='function')haptic(5);
-   ['pointerdown','pointerup','click'].forEach(function(k){
-    try{bs[next].dispatchEvent(new MouseEvent(k,{bubbles:true,cancelable:true}));}catch(e){}});
+   if(!drag)return;drag=false;
+   if(axis!==1){axis=0;return;}
+   axis=0;
+   var t=(ev.changedTouches&&ev.changedTouches[0]);
+   var dx=t?t.clientX-x0:0;
+   var base=flActiveTab(doc)===1?1:0;
+   var p=doc._flDragP!=null?doc._flDragP:base;
+   /* on valide au-delà d'un tiers d'écran, ou sur un geste franc */
+   var goTo=(Math.abs(dx)>W()/3)?(dx<0?1:0):(base);
+   if(Math.abs(dx)>90&&Math.abs(dx)<=W()/3)goTo=dx<0?1:0;
+   trans(true);
+   place(goTo);
+   setTimeout(function(){
+    if(goTo===1){if(nut){nut.style.pointerEvents='auto';nut.scrollTop=0;}
+     try{mdNutrition(doc);}catch(e){}}
+    else if(nut)nut.style.pointerEvents='none';
+    doc._flNavPainted=-1;mdNavSync(doc);
+    if(typeof haptic==='function'&&goTo!==base)haptic(5);
+   },270);
   },{capture:true,passive:true});
  }catch(e){}
 }
@@ -8552,6 +8613,10 @@ function flNavSync(doc){try{
  var open=flNavPanels(doc).filter(flNavIsOpen);
  flNavStack=flNavStack.filter(function(el){return open.indexOf(el)>=0;});   /* refermés */
  open.forEach(function(el){if(flNavStack.indexOf(el)<0)flNavStack.push(el);});/* nouveaux */
+ /* v702 : le menu du bas se repeint DÈS qu'un écran s'ouvre ou se ferme.
+    Passer par la boucle d'injection (toutes les 3 s) laissait le mauvais onglet
+    allumé pendant plusieurs secondes — le bug signalé par le founder. */
+ try{mdNavSync(doc);}catch(e){}
 }catch(e){}}
 function flNavWatch(doc){if(!doc||!doc.body||doc._flNavWired)return;doc._flNavWired=true;try{
  var mo=new MutationObserver(function(muts){for(var i=0;i<muts.length;i++){
@@ -13837,7 +13902,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='v701';
+const APP_VERSION='v704';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
