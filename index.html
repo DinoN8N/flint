@@ -6560,7 +6560,7 @@ function injectToday(){
  try{doc.addEventListener('pointerdown',function(){doc._flPtrDown=true;},{capture:true,passive:true});doc.addEventListener('pointerup',function(){doc._flPtrDown=false;doc._flPtrUpTs=performance.now();},{capture:true,passive:true});doc.addEventListener('pointercancel',function(){doc._flPtrDown=false;},{capture:true,passive:true});}catch(e){}}
  if(!_flForce&&doc._flPtrDown)return;
  if(!_flForce&&doc._flPtrUpTs&&performance.now()-doc._flPtrUpTs<600)return;
- if(!doc.getElementById('flintInjectCss')){try{var _st=doc.createElement('style');_st.id='flintInjectCss';_st.textContent='a,button{color:inherit;-webkit-text-fill-color:currentColor}a{text-decoration:none}[style*="font-size: 56px"],[style*="font-size: 54px"],[style*="font-size: 48px"],[style*="font-size: 41px"]{font-family:Archivo,-apple-system,sans-serif!important;font-weight:700!important}#screen-accueil{padding-bottom:calc(env(safe-area-inset-bottom,0px) + 96px)!important}#screen-accueil > div[style*="flex: 1"]{max-height:42px}#screen-balance > div:first-child{transform:scale(1.13);transform-origin:top center;width:calc(100%/1.13);margin:0 auto}#screen-journee{padding-top:16px!important}nav{padding-bottom:max(6px,env(safe-area-inset-bottom))!important}#screen-nutrition,#screen-balance,#screen-marche{overflow-x:hidden!important;touch-action:pan-y;overscroll-behavior-x:none}';(doc.head||doc.documentElement).appendChild(_st);}catch(e){}}
+ if(!doc.getElementById('flintInjectCss')){try{var _st=doc.createElement('style');_st.id='flintInjectCss';_st.textContent='/* v726 : la surbrillance de tap iOS (rectangle bleu-gris) apparaissait sur les en-tetes du tableau de bord. Neutralisee partout. */*{-webkit-tap-highlight-color:transparent}a,button{color:inherit;-webkit-text-fill-color:currentColor}a{text-decoration:none}[style*="font-size: 56px"],[style*="font-size: 54px"],[style*="font-size: 48px"],[style*="font-size: 41px"]{font-family:Archivo,-apple-system,sans-serif!important;font-weight:700!important}#screen-accueil{padding-bottom:calc(env(safe-area-inset-bottom,0px) + 96px)!important}#screen-accueil > div[style*="flex: 1"]{max-height:42px}#screen-balance > div:first-child{transform:scale(1.13);transform-origin:top center;width:calc(100%/1.13);margin:0 auto}#screen-journee{padding-top:16px!important}nav{padding-bottom:max(6px,env(safe-area-inset-bottom))!important}#screen-nutrition,#screen-balance,#screen-marche{overflow-x:hidden!important;touch-action:pan-y;overscroll-behavior-x:none}';(doc.head||doc.documentElement).appendChild(_st);}catch(e){}}
  if(!doc._navIntro){try{var _nv=doc.querySelector('nav');if(_nv){doc._navIntro=true;_nv.style.transition='none';_nv.style.transform='translateX(-50%) translateY(150%)';void _nv.offsetHeight;_nv.style.transition='transform 0.55s cubic-bezier(0.32,0.72,0,1), opacity 0.3s';setTimeout(function(){doc._navShown=true;try{var n2=doc.querySelector('nav');if(n2)n2.style.transform='translateX(-50%) translateY(0px)';}catch(e){}},650);}}catch(e){}}
  if(doc._navShown){try{var _nv3=doc.querySelector('nav');if(_nv3&&_nv3.style.transform.indexOf('150%')>=0)_nv3.style.transform='translateX(-50%) translateY(0px)';}catch(e){}}
  try{if(!doc.getElementById('flDateNav')){var _lbSpan=[].slice.call(doc.querySelectorAll('span')).filter(function(e){return e.children.length===0&&/^(Aujourd'hui|AUJOURD'HUI|HIER|[A-ZÀ-Ý]{3}\. \d{1,2} [A-ZÀ-Ý]+\.?)$/.test((e.textContent||'').trim())&&e.getBoundingClientRect().top<160;})[0];
@@ -6662,7 +6662,7 @@ var el=ev.target;var a=el;for(var d1=0;d1<7&&a;d1++,a=a.parentElement){if(!a.que
   var kc=(typeof caloriesBurned==='function'?caloriesBurned(K):0);setTile('CALORIES',(''+Math.round(kc)).replace(/\B(?=(\d{3})+(?!\d))/g,' '));
   /* NOUVEAU trio d'accueil (maquette founder 15/07) : layout icônes + jauge 270°, couleurs fixes par carte */
   mdHomeTrio(doc);
-  mdBalance(doc);mdSleep(doc);mdFonts(doc);mdStickyBacks(doc);mdSleepScrub(doc);mdWeekBarsScrub(doc);mdDualScrub(doc);mdCalDualScrub(doc);mdMarchePrecise(doc);mdMarcheScrub(doc);mdMarcheZones(doc);mdDashChevrons(doc);mdNavNoCoach(doc);mdProfil(doc);mdJourneeTune(doc);mdCalReadoutPurge(doc);mdNutritionPolish(doc);mdMarcheStats(doc);mdDashUniform(doc);mdSleepPolish(doc);mdSleepViolet(doc);mdRecupTap(doc);flLoadNativeTaps(doc);if(typeof flShellHonest==='function')flShellHonest(doc);mdRings(doc);mdTrioRings(doc);mdHebTrend(doc);mdNutrition(doc);mdObjectifs(doc);mdJournalWire(doc);flNavWatch(doc);mdSwipeTabs(doc);mdNavSync(doc);mdNavBottom(doc);mdNavReserve(doc);mdSectionGaps(doc);flEffPolish(doc);mdJournalBottom(doc);mdDayStamp(doc);mdJrnlHour(doc);
+  mdBalance(doc);mdSleep(doc);mdFonts(doc);mdStickyBacks(doc);mdSleepScrub(doc);mdWeekBarsScrub(doc);mdDualScrub(doc);mdCalDualScrub(doc);mdMarchePrecise(doc);mdMarcheScrub(doc);mdMarcheZones(doc);mdDashChevrons(doc);mdNavNoCoach(doc);mdProfil(doc);mdJourneeTune(doc);mdCalReadoutPurge(doc);mdNutritionPolish(doc);mdMarcheStats(doc);mdDashUniform(doc);mdSleepPolish(doc);mdSleepViolet(doc);mdRecupTap(doc);flLoadNativeTaps(doc);if(typeof flShellHonest==='function')flShellHonest(doc);mdRings(doc);mdTrioRings(doc);mdHebTrend(doc);mdNutrition(doc);mdObjectifs(doc);mdJournalWire(doc);flNavWatch(doc);mdSwipeTabs(doc);mdNavSync(doc);mdNavBottom(doc);mdNavReserve(doc);mdSectionGaps(doc);mdDashFeel(doc);mdJrnlCompact(doc);flEffPolish(doc);mdJournalBottom(doc);mdDayStamp(doc);mdJrnlHour(doc);
   /* anti-flash orange : garder le splash FLINT opaque jusqu'à ce que le reskin soit VRAIMENT peint —
      trio construit ET peuplé, plusieurs passes faites (~1s), sinon on révélait un état mi-orange sur
      téléphone lent. Filet dur à 4s dans injectTodayLoop pour ne jamais rester bloqué. */
@@ -8775,6 +8775,34 @@ function mdDayStamp(doc){try{
    min-height d'une hauteur d'écran. Quand leur contenu est plus court, le reste
    est du vide : 365 px sous Ma journée, 484 px sous le Tableau de bord. On les
    laisse s'ajuster à leur contenu, avec un espace de respiration constant. */
+/* ===== v726 — Toucher du tableau de bord ====================================
+   Founder : « une case grise dégueulasse s'affiche » (la surbrillance iOS, tuée
+   plus haut) et « il faudrait que le déroulage soit plus sympa ».
+   On ajoute une vibration légère et un enfoncement discret au toucher. */
+function mdDashFeel(doc){try{
+ var tb=doc.getElementById('screen-tableau');if(!tb||tb._flFeel)return;tb._flFeel=1;
+ var GRP=/^(RÉCUPÉRATION|SOMMEIL|ACTIVITÉ|CARDIO|CORPS)$/;
+ function entete(el){
+  for(var i=0;i<5&&el&&el!==tb;i++,el=el.parentElement){
+   if(!el.querySelectorAll)continue;
+   var hit=[].slice.call(el.querySelectorAll('div,span')).some(function(e){
+    return e.children.length===0&&GRP.test((e.textContent||'').trim());});
+   if(hit&&(el.textContent||'').replace(/\s+/g,' ').trim().length<60)return el;}
+  return null;}
+ var press=null;
+ tb.addEventListener('pointerdown',function(ev){
+  var h=entete(ev.target);if(!h)return;press=h;
+  h.style.transition='transform .12s ease';
+  h.style.transform='scale(.985)';
+ },true);
+ ['pointerup','pointercancel','pointerleave'].forEach(function(t){
+  tb.addEventListener(t,function(){if(!press)return;
+   press.style.transform='';press=null;},true);});
+ tb.addEventListener('click',function(ev){
+  if(!entete(ev.target))return;
+  if(typeof haptic==='function')haptic(6);
+ },true);
+}catch(e){}}
 function mdSectionGaps(doc){try{
  var sc=doc.getElementById('flint-scroller');if(!sc)return;
  var sections=[].slice.call(sc.children).filter(function(e){
@@ -8938,6 +8966,58 @@ function flJrnlSaved(doc){try{
  doc.body.appendChild(ov);
  try{if(navigator.vibrate)navigator.vibrate(12);}catch(e){}
  setTimeout(function(){try{ov.remove();}catch(e){}},2200);
+}catch(e){}}
+/* ===== v726 — Journal : rigide à l'horizontale et tenant sur un écran =======
+   Mesuré avant correction : aucun élément ne dépasse en largeur, mais l'écran
+   portait `overflow-x:auto`, ce qui autorise le rebond latéral — la « sensation
+   de page web » signalée. Et le contenu faisait 1076 px pour 1006 px d'écran :
+   il fallait défiler pour atteindre « Sauvegarder ».
+   On verrouille l'axe horizontal et on compacte, en gardant des zones tactiles
+   confortables. Les tailles sont relatives à la hauteur réelle de l'écran, donc
+   valables sur les différents iPhone. */
+function mdJrnlCompact(doc){try{
+ var jr=doc.getElementById('screen-journal');if(!jr)return;
+ /* --- axe horizontal totalement verrouillé --- */
+ jr.style.setProperty('overflow-x','hidden','important');
+ jr.style.setProperty('overscroll-behavior-x','none','important');
+ jr.style.setProperty('touch-action','pan-y','important');
+ jr.style.setProperty('max-width','min(464px,100vw)','important');
+ if(!jr._flNoX){jr._flNoX=1;
+  var st=doc.createElement('style');st.id='flJrnlNoX';
+  st.textContent='#screen-journal,#screen-journal *{max-width:100%!important}'
+   +'#screen-journal{overflow-x:hidden!important;overscroll-behavior-x:none!important}';
+  (doc.head||doc.documentElement).appendChild(st);}
+
+ if(jr._flCompact)return;jr._flCompact=1;
+ var H=(doc.defaultView&&doc.defaultView.innerHeight)||800;
+ var serre=H<900;                       /* petits iPhone : on resserre davantage */
+
+ /* disque SOMMEIL : 200px d'origine → proportionnel à la hauteur dispo */
+ var disc=[].slice.call(jr.querySelectorAll('div')).filter(function(e){
+  return (e.getAttribute('style')||'').indexOf('width: 200px')>=0;})[0];
+ if(disc){var d=Math.max(132,Math.min(180,Math.round(H*0.175)));
+  disc.style.setProperty('width',d+'px','important');
+  disc.style.setProperty('height',d+'px','important');
+  disc.style.setProperty('margin',(serre?'6px':'10px')+' auto 4px','important');}
+
+ /* titre « Journal. » un cran plus bas */
+ var h1=jr.querySelector('h1');
+ if(h1){h1.style.setProperty('font-size',(serre?'40px':'46px'),'important');
+  h1.style.setProperty('margin',(serre?'12px 0 0':'18px 0 0'),'important');}
+
+ /* lignes de questions : padding vertical réduit */
+ [].slice.call(jr.querySelectorAll('div')).forEach(function(e){
+  var st2=e.getAttribute('style')||'';
+  if(st2.indexOf('padding: 18px 0')>=0)e.style.setProperty('padding',(serre?'10px 0':'13px 0'),'important');
+ });
+ /* bouton de sauvegarde : moins massif, zone tactile conservée */
+ var sv=[].slice.call(jr.querySelectorAll('button')).filter(function(b){
+  return /Sauvegarder le journal/i.test(b.textContent||'');})[0];
+ if(sv){sv.style.setProperty('padding',(serre?'15px 0':'17px 0'),'important');
+  sv.style.setProperty('margin-top',(serre?'12px':'16px'),'important');
+  sv.style.setProperty('font-size','17px','important');}
+ /* marge basse : juste ce qu'il faut pour passer le menu */
+ jr.style.setProperty('padding-bottom','calc(env(safe-area-inset-bottom, 0px) + 96px)','important');
 }catch(e){}}
 function mdJournalBottom(doc){try{
  var jr=doc.getElementById('screen-journal');
@@ -14220,7 +14300,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='v725';
+const APP_VERSION='v726';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
