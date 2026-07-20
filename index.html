@@ -6295,7 +6295,14 @@ function flJrnlDate(doc){try{var jr=doc.getElementById('screen-journal');var now
  var leaf=[].slice.call(jr.querySelectorAll('*')).filter(function(e){return e.children.length===0&&/\b20\d\d\b/.test(e.textContent||'')&&/(lun|mar|mer|jeu|ven|sam|dim|janv|f[ée]vr|mars|avril|mai|juin|juil|ao[ûu]t|sept|oct|nov|d[ée]c)/i.test(e.textContent||'');})[0];
  if(leaf&&leaf.textContent!==ds)leaf.textContent=ds;
 }catch(e){}}
-function flJrnlKeep(doc){try{if(!window._fljOpen)return;var jr=doc.getElementById('screen-journal');if(!jr)return;if(!/translateY\(\s*0/.test(jr.style.transform||''))jr.style.setProperty('transform','translateX(-50%) translateY(0%)','important');}catch(e){}}
+function flJrnlKeep(doc){try{if(!window._fljOpen)return;var jr=doc.getElementById('screen-journal');if(!jr)return;if(!/translateY\(\s*0/.test(jr.style.transform||''))jr.style.setProperty('transform','translateX(-50%) translateY(0%)','important');
+ /* v708 : sur iPhone le journal s'ouvrait sur la moitié de l'écran. Le transform
+    était bon : c'est la HAUTEUR qui ne suivait pas. On l'ancre explicitement au
+    viewport, en dvh (l'unité qui tient compte des barres système iOS). */
+ jr.style.setProperty('top','0','important');jr.style.setProperty('bottom','0','important');
+ jr.style.setProperty('height','100dvh','important');
+ if(!/dvh/.test(jr.style.height||''))jr.style.setProperty('height','100vh','important');
+}catch(e){}}
 /* ═══ Calendrier horizontal du journal (founder 16/07, logique WHOOP, DA claire Flint) :
    rangée de capsules jour scrollable ; état complété (pastille orange + check) / aujourd'hui
    (contour orange) / passé non complété (pastille grise vide) / futur (atténué, non cliquable).
@@ -6335,7 +6342,7 @@ function flJournalOpen(){window._fljOpen=true;window._fljOff=0;window._fljRecent
  /* ouverture COLLANTE : _fljOpen posé d'abord (l'écran peut être momentanément absent pendant la
     tempête de re-rendus flint-today, 350ms les ~6 premières s). On ré-applique l'ouverture + le
     wiring toutes les 150ms pendant ~7s ; flJrnlKeep (boucle d'injection) prend le relais ensuite. */
- function apply(){var j=flJournalScreen();if(!j||!window._fljOpen)return;mdJournalWire(j.ownerDocument);flJrnlDate(j.ownerDocument);j.style.setProperty('transform','translateX(-50%) translateY(0%)','important');j.style.pointerEvents='auto';}
+ function apply(){var j=flJournalScreen();if(!j||!window._fljOpen)return;mdJournalWire(j.ownerDocument);flJrnlDate(j.ownerDocument);j.style.setProperty('transform','translateX(-50%) translateY(0%)','important');j.style.pointerEvents='auto';try{flJrnlKeep(j.ownerDocument);}catch(e){}}
  apply();
  if(window._fljAssert)clearInterval(window._fljAssert);var n=0;window._fljAssert=setInterval(function(){apply();if(++n>46||!window._fljOpen){clearInterval(window._fljAssert);window._fljAssert=null;}},150);
  if(typeof haptic==='function')try{haptic();}catch(e){}}
@@ -13947,7 +13954,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='v707';
+const APP_VERSION='v708';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
