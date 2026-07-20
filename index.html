@@ -9568,7 +9568,28 @@ function flNutV2HTML(d){
    +'<div style="display:flex;align-items:center;gap:7px"><span style="font-family:'+AR+';font-size:12.5px;font-weight:500;color:#14110f;white-space:nowrap">'+val+' g</span>'
    +'<div style="flex:1;height:3px;border-radius:999px;background:#ececef;overflow:hidden"><div style="width:'+w+'%;height:100%;border-radius:999px;background:'+col+'"></div></div></div></div>';}
  var _icoFork='<svg width="18" height="18" viewBox="0 0 24 24" fill="#fb6015"><path d="M6.6 2.2c-.36 0-.65.29-.65.65v3.9a1.15 1.15 0 0 1-2.3 0v-3.9a.65.65 0 0 0-1.3 0v3.9a2.45 2.45 0 0 0 1.8 2.36v10.13a.9.9 0 0 0 1.8 0V9.06a2.45 2.45 0 0 0 1.8-2.36v-3.9a.65.65 0 0 0-.65-.65z"></path><path d="M16.9 2.2c-1.55 0-2.55 2.2-2.55 4.95 0 2.3 1.02 3.7 2.35 4.02v10.06a.9.9 0 0 0 1.8 0V2.85a.65.65 0 0 0-.65-.65z"></path></svg>';
- var _icoNoPic='<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#f2a170" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2l20 20"></path><path d="M9.5 4h5l1.5 2H21a1 1 0 0 1 1 1v11.5"></path><path d="M18 18H4a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h1.5"></path><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"></path></svg>';
+ /* v727 — vignette du repas : carré teinté + icône du plat, comme la maquette.
+    Le cadre pointillé « photo absente » faisait vide et bruité. L'icône est
+    choisie d'après le nom du plat, avec un bol par défaut. */
+ var _MEALICO={
+  bol:'<path d="M3.5 11h17a8.5 8.5 0 0 1-8.5 8.5A8.5 8.5 0 0 1 3.5 11z"></path><path d="M7 8.2c0-1.2 1-1.6 1-2.7M11 8.2c0-1.4 1-1.8 1-3M15 8.2c0-1.2 1-1.6 1-2.7"></path>',
+  poulet:'<path d="M15.5 3.6a4.6 4.6 0 0 1 4.9 4.9c-.2 2.4-2 4-4 4.4-1.3.3-2 .5-2.7 1.2l-5 5a2.4 2.4 0 0 1-3.4-3.4l5-5c.7-.7.9-1.4 1.2-2.7.4-2 2-3.8 4.4-4z"></path><circle cx="6.4" cy="17.6" r="1.6"></circle>',
+  mortier:'<path d="M4 9.5h16a8 8 0 0 1-8 8 8 8 0 0 1-8-8z"></path><path d="M12 17.5v3M8.5 20.5h7"></path><path d="M14.5 8.5l4-5"></path>',
+  noix:'<path d="M12 3.5c3.6 0 6.5 3.4 6.5 7.6S15.6 20.5 12 20.5 5.5 15.3 5.5 11.1 8.4 3.5 12 3.5z"></path><path d="M12 4v16M8.6 6.6c1.6 1.8 1.6 8.8 0 10.8M15.4 6.6c-1.6 1.8-1.6 8.8 0 10.8"></path>',
+  poisson:'<path d="M2.5 12c3-4.2 6.6-6.3 10.8-6.3 3.7 0 6.4 2.1 8.2 6.3-1.8 4.2-4.5 6.3-8.2 6.3-4.2 0-7.8-2.1-10.8-6.3z"></path><circle cx="8" cy="10.6" r="1"></circle>',
+  salade:'<path d="M3 10.5h18c0 4.7-4 8.5-9 8.5s-9-3.8-9-8.5z"></path><path d="M8 10.5c-1-3 1-5.5 4-5.5s4 2.5 4 5.5"></path>',
+  pates:'<path d="M4.5 9.5h15v2.2a7.5 7.5 0 0 1-15 0z"></path><path d="M7 9.5c0-2.5 2.2-4.5 5-4.5s5 2 5 4.5"></path><path d="M4 20h16"></path>'
+ };
+ function _mealIco(nom){
+  var n=(nom||'').toLowerCase();
+  var k=/poulet|steak|viande|dinde|boeuf|b\u0153uf/.test(n)?'poulet'
+   :/skyr|yaourt|fromage blanc|granola/.test(n)?'mortier'
+   :/amande|noix|barre|chocolat|snack/.test(n)?'noix'
+   :/saumon|poisson|thon|crevette/.test(n)?'poisson'
+   :/salade|omelette|soupe|l\u00e9gume/.test(n)?'salade'
+   :/p\u00e2te|pasta|riz|quinoa|patate|pain/.test(n)?'pates':'bol';
+  return '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fb6015" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">'+_MEALICO[k]+'</svg>';
+ }
  var _TAGST="font-family:"+SANS+";font-size:11px;font-weight:400;color:#cf6a2f;background:#fdf0e8;border-radius:7px;padding:4px 9px;";
  var journalHTML=d.journal.length?d.journal.map(function(j,jx){
   var last=jx===d.journal.length-1;
@@ -9580,7 +9601,7 @@ function flNutV2HTML(d){
    +'</div>'
    +'<div style="flex:1;min-width:0;background:#fff;border:1px solid #f2eee8;border-radius:18px;box-shadow:0 6px 20px rgba(20,17,15,.035);margin-bottom:16px;overflow:hidden">'
     +'<div style="display:flex;align-items:stretch;gap:13px;padding:13px 13px 12px">'
-     +'<div style="width:82px;height:82px;flex-shrink:0;border-radius:15px;border:1.5px dashed #dcd6cc;display:flex;align-items:center;justify-content:center">'+_icoNoPic+'</div>'
+     +'<div style="width:78px;height:78px;flex-shrink:0;border-radius:16px;background:#fdf1e8;display:flex;align-items:center;justify-content:center">'+_mealIco(j.name)+'</div>'
      +'<div style="flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:7px">'
       +'<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">'
        +'<div style="font-family:-apple-system,\'Helvetica Neue\',system-ui,sans-serif;font-size:18px;font-weight:600;letter-spacing:-0.02em;color:#14110f;line-height:1.1">'+j.name+'</div>'
@@ -14076,13 +14097,18 @@ function flDemoRnd(k,salt){var h=trSeed(salt+'|'+k);return (h%10000)/10000;}
 function flSeedDemoDays(n){
  n=n||40;
  var XN=['Course','Natation','Vélo','Padel','Football','Muscu','Yoga','Marche','Rameur','Boxe'];
- var PD=[['Flocons, œufs & fruits',520,32,60,16],['Pain complet & fromage blanc',430,26,55,10],
-         ['Pancakes protéinés',480,34,52,14],['Skyr, granola & miel',390,28,50,8]];
- var DJ=[['Poulet riz légumes',760,55,80,18],['Saumon patate douce',690,42,58,28],
-         ['Pâtes bolognaise',820,38,105,22],['Bowl quinoa thon',640,40,66,20]];
+ /* v727 : carte de repas élargie, pour que chaque journée ait l'air vécue */
+ var PD=[['Flocons & œufs',520,32,60,16],['Pain complet & fromage blanc',430,26,55,10],
+         ['Pancakes protéinés',480,34,52,14],['Skyr, granola & miel',390,28,50,8],
+         ['Porridge banane',445,20,68,9],['Œufs brouillés & avocat',510,26,18,38]];
+ var DJ=[['Poulet riz',760,55,80,18],['Saumon patate douce',690,42,58,28],
+         ['Pâtes bolognaise',820,38,105,22],['Bowl quinoa thon',640,40,66,20],
+         ['Steak haricots verts',580,46,32,26],['Wrap poulet crudités',620,42,58,20]];
  var DN=[['Omelette & salade',450,30,12,30],['Soupe & pain, jambon',520,28,58,16],
-         ['Riz sauté crevettes',610,34,72,18],['Poisson blanc purée',540,38,52,16]];
- var SN=[['Amandes',290,10,10,24],['Skyr & banane',280,22,38,4],['Barre céréales',210,6,32,7]];
+         ['Riz sauté crevettes',610,34,72,18],['Poisson blanc purée',540,38,52,16],
+         ['Dinde & légumes rôtis',560,44,34,24],['Salade César poulet',495,36,22,28]];
+ var SN=[['Amandes',290,10,10,24],['Skyr & banane',280,22,38,4],['Barre céréales',210,6,32,7],
+         ['Fruits & chocolat noir',225,3,34,9],['Fromage blanc & miel',195,18,22,3]];
 
  /* i=0 inclus : sans lui, la journée en cours reste vide (« — » partout) et on
     ne peut pas tester l'écran d'accueil, qui est le plus consulté. */
@@ -14189,14 +14215,18 @@ function flSeedDemoDays(n){
    demo:true});
 
   /* --- Repas : journées complètes, partielles, ou rien --- */
-  var meals=[],mr=r('mcount');
+  /* v728 : aujourd'hui a TOUJOURS une journée alimentaire complète — c'est
+    l'écran le plus consulté, le laisser vide donnait une page morte. */
+ var meals=[],mr=(i===0?0.95:r('mcount'));
   function push(tab,salt,time){var x=tab[Math.floor(r(salt)*tab.length)];
    meals.push({name:x[0],kcal:x[1],prot:x[2],carb:x[3],fat:x[4],time:time,demo:true});}
   if(mr>0.12){
    push(PD,'m1','08:'+(5+Math.floor(r('t1')*40)));
    push(DJ,'m2','12:'+(20+Math.floor(r('t2')*35)));
-   if(mr>0.4)push(SN,'m3','16:'+(5+Math.floor(r('t3')*45)));
-   if(mr>0.3)push(DN,'m4','19:'+(30+Math.floor(r('t4')*25)));
+   if(mr>0.35)push(SN,'m3','16:'+(5+Math.floor(r('t3')*45)));
+   /* le dîner est le repas le plus régulier : presque tous les soirs */
+   if(mr>0.16)push(DN,'m4','19:'+(30+Math.floor(r('t4')*25)));
+   if(mr>0.72)push(SN,'m5','21:'+(0+Math.floor(r('t5')*30)));
   }
   DB.set('meals_'+k,meals);
 
@@ -14300,7 +14330,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='v726';
+const APP_VERSION='v729';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
