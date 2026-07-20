@@ -13937,7 +13937,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='v705';
+const APP_VERSION='v706';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
@@ -14961,7 +14961,12 @@ window.flAddActivity=function(doc){flActSt=flActDefaults();flActAdd(doc);};
   var orig={},conn=null;
   rows.forEach(function(r,i){var t=(r.textContent||'').replace(/\s+/g,' ').trim();
    if(!t){if(!conn)conn=r;return;}
-   ['Nuit','Marche','Padel','Sieste','Football','Repas'].forEach(function(nm){if(t.indexOf(nm)>=0&&!orig[nm])orig[nm]=r;});});
+   ['Nuit','Marche','Padel','Sieste','Football','Repas'].forEach(function(nm){if(t.indexOf(nm)>=0&&!orig[nm])orig[nm]=r;});
+   /* v706 : on retient la disposition RÉELLE de la ligne modèle tant qu'elle est
+      encore visible. Elle sera masquée plus bas, et le clone héritait alors de
+      « display:none » qu'on effaçait — d'où un retour à `block` et un empilement
+      vertical au lieu de la ligne horizontale. */
+   try{if(!r._flDisp){var _d=doc.defaultView.getComputedStyle(r).display;if(_d&&_d!=='none')r._flDisp=_d;}}catch(e){}});
   if(!orig['Nuit'])return;
   /* données réelles */
   var entries=[];
@@ -14989,7 +14994,7 @@ window.flAddActivity=function(doc){flActSt=flActDefaults();flActAdd(doc);};
   /* purge des générées précédentes + cacher les démo */
   [].slice.call(cont.querySelectorAll('.fl-jr')).forEach(function(r){r.remove();});
   [].slice.call(cont.children).forEach(function(r){if(r!==addRow&&(r.textContent||'').trim())r.style.display='none';else if(r!==addRow)r.style.display='none';});
-  function mkRow(e){var tplRow=orig[e.tpl]||orig['Marche']||orig['Nuit'];var c=tplRow.cloneNode(true);c.classList.add('fl-jr');c.style.display='';
+  function mkRow(e){var tplRow=orig[e.tpl]||orig['Marche']||orig['Nuit'];var c=tplRow.cloneNode(true);c.classList.add('fl-jr');c.style.display=tplRow._flDisp||'flex';
    var leaves=[].slice.call(c.querySelectorAll('div,span')).filter(function(x){return x.children.length===0&&(x.textContent||'').trim();});
    var subLeaf=leaves.filter(function(x){return /→|·/.test((x.textContent||'').trim());})[0];
    var others=leaves.filter(function(x){return x!==subLeaf;});
