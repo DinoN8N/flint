@@ -7206,14 +7206,52 @@ function flLoadNativeTaps(doc){try{if(doc._flLoadTaps)return;doc._flLoadTaps=1;
    var isRow=/→/.test(el.textContent||'')&&(el.textContent||'').replace(/\s+/g,' ').trim().length<90;
    if((hasTile&&(el.textContent||'').length<160)||isRow){flLoad(doc);return;}
   }}catch(e){}},true);}catch(e){}}
-/* ===== LOADER de transition — voile blanc + anneau orange, ultra épuré (DA) ===== */
+/* ===== v711 — LOADER de transition : le mot-marque se compose ================
+   Founder : « au lieu du cercle orange, un F qui devient FLINT, ultra pur et
+   ultra rapide ». Le F apparaît d'emblée, les quatre lettres suivantes se
+   posent en cascade, le point orange arrive en dernier avec un léger rebond.
+   Budget : ~330 ms, soit moins que la durée d'affichage (430 ms) — le mot est
+   donc TOUJOURS entièrement formé avant que le voile ne s'efface. */
 function flLoad(doc,ms){try{if(!doc||!doc.body)return;
  var el=doc.getElementById('flPageLoader');
- if(!el){el=doc.createElement('div');el.id='flPageLoader';
-  el.style.cssText='position:fixed;inset:0;z-index:9998;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.62);-webkit-backdrop-filter:blur(7px);backdrop-filter:blur(7px);opacity:0;transition:opacity .16s ease;pointer-events:none';
-  el.innerHTML='<svg width="34" height="34" viewBox="0 0 34 34" style="animation:flLoadRot .7s linear infinite"><circle cx="17" cy="17" r="14" fill="none" stroke="#f0ece4" stroke-width="2.5"></circle><circle cx="17" cy="17" r="14" fill="none" stroke="#fb6015" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="24 64"></circle></svg>';
-  var st=doc.createElement('style');st.textContent='@keyframes flLoadRot{to{transform:rotate(360deg)}}';doc.head.appendChild(st);
-  doc.body.appendChild(el);}
+ if(!el){
+  el=doc.createElement('div');el.id='flPageLoader';
+  el.style.cssText='position:fixed;inset:0;z-index:9998;display:flex;align-items:center;'
+   +'justify-content:center;background:rgba(255,255,255,.72);-webkit-backdrop-filter:blur(9px);'
+   +'backdrop-filter:blur(9px);opacity:0;transition:opacity .16s ease;pointer-events:none';
+  var L=['F','L','I','N','T'],w='';
+  for(var i2=0;i2<L.length;i2++){
+   /* le F est posé, les autres arrivent en cascade de 34 ms */
+   /* TRANSITION plutôt qu'animation : l'état final est posé par le code juste
+      après, donc si les transitions ne s'exécutent pas (accessibilité, onglet en
+      arrière-plan, rendu gelé) le mot s'affiche instantanément au lieu de rester
+      invisible. Une animation, elle, laissait les lettres bloquées à zéro. */
+   w+='<span class="flld-l" style="display:inline-block;opacity:0;transform:translateY(6px) scale(.94);'
+    +'transition:opacity .26s cubic-bezier(.22,.9,.3,1) '+(i2*0.034).toFixed(3)+'s,'
+    +'transform .26s cubic-bezier(.22,.9,.3,1) '+(i2*0.034).toFixed(3)+'s">'+L[i2]+'</span>';}
+  el.innerHTML='<div style="display:flex;align-items:flex-end;font-family:Archivo Black,Archivo,'
+   +'-apple-system,system-ui,sans-serif;font-size:30px;font-weight:900;letter-spacing:-.02em;'
+   +'line-height:1;color:#14110f">'+w
+   +'<span style="width:8px;height:8px;border-radius:50%;background:#fb6015;margin-left:5px;'
+   +'margin-bottom:3px;opacity:0;transform:scale(.3);transition:opacity .3s cubic-bezier(.34,1.5,.5,1) .19s,transform .3s cubic-bezier(.34,1.5,.5,1) .19s" class="flld-l"></span></div>';
+  var st=doc.createElement('style');
+  st.textContent='@media (prefers-reduced-motion:reduce){#flPageLoader .flld-l{transition-duration:.001s!important}}';
+  (doc.head||doc.documentElement).appendChild(st);
+  doc.body.appendChild(el);
+ }else{
+  /* remise à zéro pour rejouer la composition à chaque ouverture */
+  [].slice.call(el.querySelectorAll('.flld-l')).forEach(function(sp){
+   sp.style.transition='none';sp.style.opacity='0';
+   sp.style.transform=sp.textContent?'translateY(6px) scale(.94)':'scale(.3)';});
+  void el.offsetWidth;
+  [].slice.call(el.querySelectorAll('.flld-l')).forEach(function(sp){sp.style.transition='';});
+ }
+ /* on pose l'état final : la transition l'anime, et s'il n'y a pas de
+    transition le mot est visible tout de suite. */
+ var reveal=function(){[].slice.call(el.querySelectorAll('.flld-l')).forEach(function(sp){
+  sp.style.opacity='1';sp.style.transform='none';});};
+ try{(doc.defaultView||window).requestAnimationFrame(reveal);}catch(e2){}
+ setTimeout(reveal,30);
  el.style.pointerEvents='auto';el.style.setProperty('opacity','1','important');
  clearTimeout(el._flT);
  el._flT=setTimeout(function(){el.style.setProperty('opacity','0','important');el.style.pointerEvents='none';},ms||430);
@@ -13954,7 +13992,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='v710';
+const APP_VERSION='v713';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
