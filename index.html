@@ -6662,7 +6662,7 @@ var el=ev.target;var a=el;for(var d1=0;d1<7&&a;d1++,a=a.parentElement){if(!a.que
   var kc=(typeof caloriesBurned==='function'?caloriesBurned(K):0);setTile('CALORIES',(''+Math.round(kc)).replace(/\B(?=(\d{3})+(?!\d))/g,' '));
   /* NOUVEAU trio d'accueil (maquette founder 15/07) : layout icônes + jauge 270°, couleurs fixes par carte */
   mdHomeTrio(doc);
-  mdBalance(doc);mdSleep(doc);mdFonts(doc);mdStickyBacks(doc);mdSleepScrub(doc);mdWeekBarsScrub(doc);mdDualScrub(doc);mdCalDualScrub(doc);mdMarchePrecise(doc);mdMarcheScrub(doc);mdMarcheZones(doc);mdDashChevrons(doc);mdNavNoCoach(doc);mdProfil(doc);mdJourneeTune(doc);mdCalReadoutPurge(doc);mdNutritionPolish(doc);mdMarcheStats(doc);mdDashUniform(doc);mdSleepPolish(doc);mdSleepViolet(doc);mdRecupTap(doc);flLoadNativeTaps(doc);if(typeof flShellHonest==='function')flShellHonest(doc);mdRings(doc);mdTrioRings(doc);mdHebTrend(doc);mdNutrition(doc);mdObjectifs(doc);mdJournalWire(doc);flNavWatch(doc);mdSwipeTabs(doc);mdNavSync(doc);mdNavBottom(doc);mdNavReserve(doc);mdJournalBottom(doc);mdDayStamp(doc);mdJrnlHour(doc);
+  mdBalance(doc);mdSleep(doc);mdFonts(doc);mdStickyBacks(doc);mdSleepScrub(doc);mdWeekBarsScrub(doc);mdDualScrub(doc);mdCalDualScrub(doc);mdMarchePrecise(doc);mdMarcheScrub(doc);mdMarcheZones(doc);mdDashChevrons(doc);mdNavNoCoach(doc);mdProfil(doc);mdJourneeTune(doc);mdCalReadoutPurge(doc);mdNutritionPolish(doc);mdMarcheStats(doc);mdDashUniform(doc);mdSleepPolish(doc);mdSleepViolet(doc);mdRecupTap(doc);flLoadNativeTaps(doc);if(typeof flShellHonest==='function')flShellHonest(doc);mdRings(doc);mdTrioRings(doc);mdHebTrend(doc);mdNutrition(doc);mdObjectifs(doc);mdJournalWire(doc);flNavWatch(doc);mdSwipeTabs(doc);mdNavSync(doc);mdNavBottom(doc);mdNavReserve(doc);flEffPolish(doc);mdJournalBottom(doc);mdDayStamp(doc);mdJrnlHour(doc);
   /* anti-flash orange : garder le splash FLINT opaque jusqu'à ce que le reskin soit VRAIMENT peint —
      trio construit ET peuplé, plusieurs passes faites (~1s), sinon on révélait un état mi-orange sur
      téléphone lent. Filet dur à 4s dans injectTodayLoop pour ne jamais rester bloqué. */
@@ -12958,6 +12958,99 @@ function flEffData(doc){
  else if(strain<6){verdict='Effort léger';sub='Une séance tranquille.';}
  return {name:name,dur:dur,t0:clk(sm0),t1:clk(sm0+dur),totSec:totSec,base:base,real:real,zones:zones,avg:avg,mx:mx,kcal:kcal,strain:strain,steps:steps,calAvg:av(cH),fcAvgAvg:av(aH),fcMaxAvg:av(xH)};
 }
+/* ===== v716 — Détail d'activité de la COQUILLE : zones vides grisées + lecture
+   BPM en tête ================================================================
+   Ces deux comportements existaient dans `mdMarcheZones` / `mdMarcheScrub`, mais
+   ceux-ci opèrent sur `screen-marche`. Or en coquille, taper une activité ouvre
+   `flEffOpen` — un écran DIFFÉRENT. Les injecteurs ne trouvaient donc rien et
+   sortaient en silence : d'où l'écart constaté entre Vercel et l'iPhone.
+   On applique ici la même logique à cet écran-là. */
+function flEffPolish(doc){try{
+ var el=doc.getElementById('screen-fl-effort');if(!el)return;
+ /* --- 1. zones à 0:00 : grisées, non cliquables (comme sur screen-marche) --- */
+ [].slice.call(el.querySelectorAll('.fle-zwrap')).forEach(function(wrap){
+  var row=wrap.querySelector('.fle-zrow');if(!row)return;
+  var txt=(wrap.textContent||'').replace(/\s+/g,' ');
+  /* on lit la DURÉE, jamais le pourcentage : celui-ci compte de 0 pendant son
+     animation et donnerait de faux positifs. */
+  /* le texte est collé (« 0 %0:00:00 ») : on exige seulement un NON-CHIFFRE
+     avant, ce qui évite de confondre avec « 10:00:00 ». */
+  var vide=/(?:^|[^\d])0:00:00(?:$|[^\d])/.test(txt);
+  if(vide&&wrap.getAttribute('data-fl-empty')!=='1'){
+   wrap.setAttribute('data-fl-empty','1');
+   /* L'animation d'entrée (Web Animations) anime `opacity` et l'emporte sur le
+      style en ligne, même !important — et elle se recrée à chaque rendu, donc
+      l'annuler ne suffit pas. On passe par `filter`, que l'animation ne touche
+      pas : le gris et l'atténuation tiennent quoi qu'il arrive. */
+   wrap.style.setProperty('filter','grayscale(1) opacity(.5)','important');
+   row.style.setProperty('cursor','default','important');
+   row.style.setProperty('pointer-events','none','important');
+   var bar=row.firstElementChild;
+   if(bar)bar.style.setProperty('background','#d8d3ca','important');
+   /* la pastille de pourcentage et la barre passent au gris */
+   [].slice.call(row.querySelectorAll('div,span')).forEach(function(e2){
+    var c=(e2.style&&e2.style.color)||'';
+    if(c&&c!=='rgb(20, 17, 15)'&&!/154|138|122/.test(c))e2.style.setProperty('color','#a8a29a','important');
+    var bg=(e2.style&&e2.style.background)||'';
+    if(bg&&/#|rgb/.test(bg)&&e2!==bar&&e2.offsetHeight<14)e2.style.setProperty('background','#e2ded6','important');
+   });
+  }else if(!vide&&wrap.getAttribute('data-fl-empty')==='1'){
+   wrap.removeAttribute('data-fl-empty');
+   wrap.style.removeProperty('filter');wrap.style.removeProperty('opacity');
+   row.style.removeProperty('pointer-events');row.style.removeProperty('cursor');
+  }
+ });
+
+ /* --- 2. lecture BPM + heure DANS L'EN-TÊTE, curseur gris --- */
+ var svg=el.querySelector('svg .fle-scrub');svg=svg&&svg.ownerSVGElement;
+ if(!svg||svg._flEffHead)return;svg._flEffHead=1;
+ /* l'en-tête « FRÉQUENCE CARDIAQUE (BPM) » est remplacé pendant le geste */
+ var hdr=[].slice.call(el.querySelectorAll('div,span')).filter(function(e2){
+  return !e2.children.length&&/FR[ÉE]QUENCE CARDIAQUE/i.test(e2.textContent||'');})[0];
+ if(!hdr)return;
+ var host=hdr.parentElement;
+ var lect=doc.createElement('div');lect.className='fle-head';
+ lect.style.cssText='display:none;line-height:1.05';
+ lect.innerHTML='<div><span class="fle-h-v" style="font-family:Archivo,-apple-system,system-ui,sans-serif;'
+  +'font-size:30px;font-weight:600;color:#14110f;letter-spacing:-.02em"></span>'
+  +'<span style="font-family:-apple-system,system-ui,sans-serif;font-size:14px;font-weight:500;'
+  +'color:#9a938a;margin-left:4px">bpm</span></div>'
+  +'<div class="fle-h-t" style="font-family:-apple-system,system-ui,sans-serif;font-size:14px;'
+  +'font-weight:400;color:#9a938a;margin-top:3px"></div>';
+ host.insertBefore(lect,hdr);
+ var hv=lect.querySelector('.fle-h-v'),ht=lect.querySelector('.fle-h-t');
+ /* le curseur natif de cet écran est orange : on le passe au gris, comme sur
+    l'autre écran de détail. */
+ var GRIS='#8a857c';
+ function tint(){
+  ['.fle-dot','.fle-halo','.fle-guide'].forEach(function(sel){
+   var e2=svg.querySelector(sel);if(!e2)return;
+   if(sel==='.fle-halo')e2.setAttribute('fill','rgba(138,133,129,0.16)');
+   else if(sel==='.fle-guide'){e2.setAttribute('stroke',GRIS);e2.setAttribute('stroke-dasharray','3 3');}
+   else e2.setAttribute('fill',GRIS);});
+  var v=svg.querySelector('.fle-val'),t2=svg.querySelector('.fle-time');
+  if(v)v.style.setProperty('display','none','important');   /* la valeur passe en tête */
+  if(t2)t2.style.setProperty('display','none','important');
+ }
+ function show(on){
+  lect.style.display=on?'block':'none';
+  hdr.parentElement&&(hdr.style.display=on?'none':'');
+  var ic=hdr.previousElementSibling;if(ic&&ic.tagName==='svg')ic.style.display=on?'none':'';
+ }
+ function readAt(ev){
+  try{
+   var v=svg.querySelector('.fle-val'),t2=svg.querySelector('.fle-time');
+   var bpm=v?(v.textContent||'').replace(/[^\d]/g,''):'';
+   var hh=t2?(t2.textContent||'').trim():'';
+   if(bpm){hv.textContent=bpm;ht.textContent=hh;show(true);}
+  }catch(e){}
+ }
+ ['pointerdown','pointermove','touchstart','touchmove'].forEach(function(t2){
+  svg.addEventListener(t2,function(ev){tint();setTimeout(function(){readAt(ev);},0);},true);});
+ ['pointerup','pointerleave','pointercancel','touchend','touchcancel'].forEach(function(t2){
+  svg.addEventListener(t2,function(){setTimeout(function(){show(false);},60);},true);});
+ tint();
+}catch(e){}}
 function flEffOpen(doc){try{var o=flEffData(doc);
  var el=doc.getElementById('screen-fl-effort');
  if(!el){el=doc.createElement('section');el.id='screen-fl-effort';doc.body.appendChild(el);}
@@ -14000,7 +14093,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='v715';
+const APP_VERSION='v719';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
