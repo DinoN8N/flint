@@ -8365,6 +8365,16 @@ function mdCalReadoutPurge(doc){try{['flCalClone','screen-cal-hebdo'].forEach(fu
 /* « Ma journée » : lignes d'activités légèrement dézoomées (contenu -6 %, même largeur) + bouton Ajouter actif.
    L'en-tête (« Ma journée », « N entrées · cumul ») n'est PAS touché — seulement le bloc des lignes. */
 function mdJourneeTune(doc){try{
+ /* v707 — Espace excessif entre la fin de Ma journée et le Tableau de bord.
+    Les deux écrans s'enchaînent au défilement : le bas de l'un et le haut de
+    l'autre s'additionnaient (24 px + 52 px, plus la marge du titre). */
+ try{var _jr=doc.getElementById('screen-journee');
+  if(_jr){var _c=_jr;while(_c.children.length===1)_c=_c.children[0];
+   _c.style.setProperty('padding-bottom','12px','important');}
+  var _tb=doc.getElementById('screen-tableau');
+  if(_tb){var _t=_tb;while(_t.children.length===1)_t=_t.children[0];
+   _t.style.setProperty('padding-top','26px','important');}
+ }catch(e){}
  var addLeaf=[].slice.call(doc.querySelectorAll('div')).filter(function(e){return /Ajouter une activité/.test(e.textContent||'')&&(e.textContent||'').length<80;});
  addLeaf=addLeaf.filter(function(e){return !addLeaf.some(function(o){return o!==e&&e.contains(o);});})[0];
  if(!addLeaf)return;
@@ -8374,7 +8384,7 @@ function mdJourneeTune(doc){try{
  if((cont.style.transform||'').indexOf('scale')<0){
   cont.style.transform='scale(0.94)';cont.style.transformOrigin='top center';
   cont.style.width='calc(100%/0.94)';cont.style.marginLeft='calc((100% - 100%/0.94)/2)';}
- if(!addRow._flAdd){addRow._flAdd=1;addRow.style.cursor='pointer';
+ if(!addRow._flAdd){addRow._flAdd=1;addRow.style.cursor='pointer';/* v707 : « Ajouter une activité » collait à la dernière activité */addRow.style.setProperty('margin-top','18px','important');
   /* la maquette avale les 'click' avant la cible → dual click+pointerup, dédup + garde drag */
   var _jaX=0,_jaY=0,_jaT=0;
   var goJA=function(ev){var nw=Date.now();if(nw-_jaT<700)return;_jaT=nw;ev.preventDefault();ev.stopPropagation();try{flAddActivity(doc);}catch(e){}};
@@ -13937,7 +13947,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='v706';
+const APP_VERSION='v707';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
@@ -15017,7 +15027,7 @@ window.flAddActivity=function(doc){flActSt=flActDefaults();flActAdd(doc);};
   entries.forEach(function(e,i3){var r=mkRow(e);frag.appendChild(r);
    if(conn&&i3<entries.length-1){var cn=conn.cloneNode(true);cn.classList.add('fl-jr');cn.style.display='';frag.appendChild(cn);}});
   cont.insertBefore(frag,addRow);
-  if(!addRow._flAdd){addRow._flAdd=1;addRow.style.cursor='pointer';
+  if(!addRow._flAdd){addRow._flAdd=1;addRow.style.cursor='pointer';/* v707 : « Ajouter une activité » collait à la dernière activité */addRow.style.setProperty('margin-top','18px','important');
    var _apX=0,_apY=0,_apT=0;
    var goAdd=function(ev){var nw=Date.now();if(nw-_apT<700)return;_apT=nw;ev.preventDefault();ev.stopPropagation();flAddActivity(doc);};
    addRow.addEventListener('pointerdown',function(ev){_apX=ev.clientX;_apY=ev.clientY;},true);
