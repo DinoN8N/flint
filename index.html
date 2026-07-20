@@ -6662,7 +6662,7 @@ var el=ev.target;var a=el;for(var d1=0;d1<7&&a;d1++,a=a.parentElement){if(!a.que
   var kc=(typeof caloriesBurned==='function'?caloriesBurned(K):0);setTile('CALORIES',(''+Math.round(kc)).replace(/\B(?=(\d{3})+(?!\d))/g,' '));
   /* NOUVEAU trio d'accueil (maquette founder 15/07) : layout icônes + jauge 270°, couleurs fixes par carte */
   mdHomeTrio(doc);
-  mdBalance(doc);mdSleep(doc);mdFonts(doc);mdStickyBacks(doc);mdSleepScrub(doc);mdWeekBarsScrub(doc);mdDualScrub(doc);mdCalDualScrub(doc);mdMarchePrecise(doc);mdMarcheScrub(doc);mdMarcheZones(doc);mdDashChevrons(doc);mdNavNoCoach(doc);mdProfil(doc);mdJourneeTune(doc);mdCalReadoutPurge(doc);mdNutritionPolish(doc);mdMarcheStats(doc);mdDashUniform(doc);mdSleepPolish(doc);mdSleepViolet(doc);mdRecupTap(doc);flLoadNativeTaps(doc);if(typeof flShellHonest==='function')flShellHonest(doc);mdRings(doc);mdTrioRings(doc);mdHebTrend(doc);mdNutrition(doc);mdObjectifs(doc);mdJournalWire(doc);flNavWatch(doc);mdSwipeTabs(doc);mdNavSync(doc);mdNavBottom(doc);mdJournalBottom(doc);mdDayStamp(doc);mdJrnlHour(doc);
+  mdBalance(doc);mdSleep(doc);mdFonts(doc);mdStickyBacks(doc);mdSleepScrub(doc);mdWeekBarsScrub(doc);mdDualScrub(doc);mdCalDualScrub(doc);mdMarchePrecise(doc);mdMarcheScrub(doc);mdMarcheZones(doc);mdDashChevrons(doc);mdNavNoCoach(doc);mdProfil(doc);mdJourneeTune(doc);mdCalReadoutPurge(doc);mdNutritionPolish(doc);mdMarcheStats(doc);mdDashUniform(doc);mdSleepPolish(doc);mdSleepViolet(doc);mdRecupTap(doc);flLoadNativeTaps(doc);if(typeof flShellHonest==='function')flShellHonest(doc);mdRings(doc);mdTrioRings(doc);mdHebTrend(doc);mdNutrition(doc);mdObjectifs(doc);mdJournalWire(doc);flNavWatch(doc);mdSwipeTabs(doc);mdNavSync(doc);mdNavBottom(doc);mdNavReserve(doc);mdJournalBottom(doc);mdDayStamp(doc);mdJrnlHour(doc);
   /* anti-flash orange : garder le splash FLINT opaque jusqu'à ce que le reskin soit VRAIMENT peint —
      trio construit ET peuplé, plusieurs passes faites (~1s), sinon on révélait un état mi-orange sur
      téléphone lent. Filet dur à 4s dans injectTodayLoop pour ne jamais rester bloqué. */
@@ -8054,16 +8054,9 @@ function flEffortOpen(doc){try{
   +'<div style="margin-top:26px">'+rowsHTML+'</div>'
   +flEfTrendsHTML()
  +'</div>'
- +'<div style="flex-shrink:0;position:absolute;left:0;right:0;bottom:0;display:flex;padding:12px 26px calc(env(safe-area-inset-bottom,0px) + 16px);background:rgba(255,255,255,.92);backdrop-filter:blur(12px);box-shadow:0 -1px 0 #ececea">'
-  +'<button class="ef-close" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;background:none;border:none;cursor:pointer">'
-   +'<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#9a968f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>'
-   +'<span style="font-family:-apple-system,system-ui,sans-serif;font-size:12px;font-weight:400;color:#9a968f">Aujourd’hui</span>'
-  +'</button>'
-  +'<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px">'
-   +'<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="'+FLEF_BLUE+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4.5 13H11l-1 9 8.5-11H12z"></path></svg>'
-   +'<span style="font-family:-apple-system,system-ui,sans-serif;font-size:12px;font-weight:700;color:'+FLEF_BLUE+'">Effort</span>'
-  +'</div>'
- +'</div>';
+  /* v709 : menu propre à la page retiré. L'app n'a plus qu'UN menu — celui du
+     bas, remonté au-dessus de ces écrans (mdNavBottom). */
+  ;
  /* Fermeture + clic sur une métrique. Même délégation doc-level capture que la
     page Récup : un gestionnaire body de la maquette avale les événements avant
     nos overlays, le doc les reçoit toujours. */
@@ -8195,16 +8188,9 @@ function flRecupOpen(doc){try{
   +'</div>'
   +flRcTrendsHTML()
  +'</div>'
- +'<div style="flex-shrink:0;position:absolute;left:0;right:0;bottom:0;display:flex;padding:12px 26px calc(env(safe-area-inset-bottom,0px) + 16px);background:rgba(255,255,255,.92);backdrop-filter:blur(12px);box-shadow:0 -1px 0 #ececea">'
-  +'<button class="rc-close" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;background:none;border:none;cursor:pointer">'
-   +'<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#9a968f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>'
-   +'<span style="font-family:-apple-system,system-ui,sans-serif;font-size:12px;font-weight:400;color:#9a968f">Aujourd\u2019hui</span>'
-  +'</button>'
-  +'<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px">'
-   +'<svg viewBox="0 0 24 24" width="24" height="24" fill="#fb6015" stroke="#fb6015" stroke-width="1.6" stroke-linejoin="round"><path d="M12 20.5C12 20.5 3.5 15 3.5 8.8C3.5 6 5.7 4 8.2 4C9.9 4 11.3 4.9 12 6.2C12.7 4.9 14.1 4 15.8 4C18.3 4 20.5 6 20.5 8.8C20.5 15 12 20.5 12 20.5Z"></path></svg>'
-   +'<span style="font-family:-apple-system,system-ui,sans-serif;font-size:12px;font-weight:700;color:#fb6015">R\u00e9cup\u00e9ration</span>'
-  +'</div>'
- +'</div>';
+  /* v709 : menu propre à la page retiré. L'app n'a plus qu'UN menu — celui du
+     bas, remonté au-dessus de ces écrans (mdNavBottom). */
+  ;
  /* fermeture en délégation DOC-level capture : un gestionnaire body de la maquette avale les
     événements avant nos overlays body-level — le doc les reçoit toujours */
  if(!doc._flRcClose){doc._flRcClose=1;var _rcT=0,_rcX=0,_rcY=0;
@@ -8741,12 +8727,26 @@ function mdDayStamp(doc){try{
    Après : barre pleine largeur collée au bord. Le rembourrage bas devient la
    safe-area SEULE — on la garde, sinon le trait d'accueil iOS passe sur les
    libellés ; ce n'est pas une marge décorative. */
+function mdNavReserve(doc){try{
+ /* Ces écrans réservaient la place de LEUR barre. Celle-ci ayant disparu, on
+    garde le dégagement pour que le contenu ne passe pas sous le menu unique. */
+ ['screen-fl-recup','screen-fl-effort'].forEach(function(id){
+  var e=doc.getElementById(id);if(!e)return;
+  var sc=e.firstElementChild;if(!sc)return;
+  sc.style.setProperty('padding-bottom','calc(env(safe-area-inset-bottom,0px) + 108px)','important');
+ });
+}catch(e){}}
 function mdNavBottom(doc){try{
  var nav=null,navs=doc.getElementsByTagName('nav');
  for(var i=0;i<navs.length;i++){var st=navs[i].getAttribute('style')||'';
   if(/z-index:\s*90/.test(st)){nav=navs[i];break;}}
  if(!nav)nav=navs[0];
- if(!nav||nav._flBottom)return;nav._flBottom=1;
+ if(!nav)return;
+ /* v709 : UN SEUL menu dans toute l'app. Il passe au-dessus des écrans Récup /
+    Effort / métriques (z-index 100 à 130), qui embarquaient chacun leur propre
+    barre — d'où l'impression qu'il changeait d'une page à l'autre. */
+ nav.style.setProperty('z-index','140','important');
+ if(nav._flBottom)return;nav._flBottom=1;
  nav.style.setProperty('padding','0','important');
  var bar=nav.firstElementChild;if(!bar)return;
  bar.style.setProperty('border-radius','20px 20px 0 0','important');
@@ -13954,7 +13954,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='v708';
+const APP_VERSION='v709';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
