@@ -340,6 +340,9 @@
   nav button{flex:1;border:0;background:transparent;display:flex;flex-direction:column;align-items:center;gap:4px;padding:4px 1px;min-height:52px;cursor:pointer;color:var(--faint);font-size:9px;font-weight:700;font-family:inherit}
   nav .ic{width:23px;height:23px;display:block}
   nav button.on{color:var(--accent)}
+  /* v840 — Jost, la typo de la page Balance calorique du founder. Embarquée
+     dans le bundle : aucun appel réseau, la page rend pareil hors ligne. */
+  @font-face{font-family:'Jost';src:url('Jost.ttf') format('truetype');font-weight:100 900;font-display:swap}
   .toast{position:fixed;left:50%;top:14px;transform:translateX(-50%) translateY(-14px) scale(.96);background:var(--ink);color:#fff;padding:12px 20px;border-radius:30px;font-weight:700;font-size:14px;box-shadow:0 12px 30px rgba(20,18,12,.3);z-index:60;opacity:0;transition:.35s cubic-bezier(.3,1.3,.5,1);pointer-events:none;max-width:88vw;text-align:center}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(6px) scale(1)}
   #updBanner{display:none;position:sticky;top:0;z-index:25;background:var(--accent);color:#fff;text-align:center;padding:11px;font-weight:800;font-size:13px;cursor:pointer}
@@ -6989,6 +6992,80 @@ window.flNoBackdrop=function(doc){try{
   el.style.removeProperty('-webkit-backdrop-filter');
  }
 }catch(e){}};
+/* ============================================================
+   v841 — DIRECTION ARTISTIQUE « VERRE » ÉTENDUE À TOUTE L'APP
+   Le founder : « la couleur de la page, il faut qu'elle reste pour
+   toute la page » + « l'effet des glaces, mets-le pour la bulle
+   autour de 7h03 et celle autour de la lune — tous les ronds qui
+   sont à cet endroit-là » + « pareil pour Profil et Aujourd'hui ».
+
+   Deux gestes :
+   1. le fond bleuté #f8f9fc ne s'arrête plus à l'accueil — il porte
+      toute la page (la maquette ne le posait que sur #flint-scroller
+      et #screen-accueil, d'où la césure blanche sous « Ma journée ») ;
+   2. les ronds et pastilles blancs reçoivent la peau de verre des
+      cartes, à l'échelle : mêmes 6 couches d'ombre, rayons réduits
+      au prorata de leur taille.
+
+   Sélection PRUDENTE — uniquement ce qui est déjà blanc ou gris très
+   clair (toutes les composantes ≥ 232 et écart < 14). Les pastilles
+   teintées (lavande du sommeil, bleu de l'effort, pêche des calories)
+   gardent leur couleur : elles portent le sens, pas le décor.
+   ============================================================ */
+window.FLV_BG='linear-gradient(158deg,#ffffff 0%,rgb(250,251,254) 38%,rgb(240,243,250) 100%)';
+window.FLV_SH='inset 0 1.5px 1px rgba(255,255,255,1),inset 0 -8px 14px -9px rgba(150,160,192,.4),inset 1px 0 1px rgba(255,255,255,.95),inset -1px 0 1.5px rgba(200,208,228,.35),0 1px 2px rgba(20,17,15,.03),0 8px 20px -7px rgba(112,122,158,.22)';
+window.flDaVerre=function(doc){try{
+ if(!doc||!doc.body)return;
+ var W=doc.defaultView||window;
+ /* --- 1. le fond de page, partout ---
+    Posé en style inline, PAS en règle [id^="screen-"] : un sélecteur
+    d'attribut dans une feuille permanente est réévalué contre chaque nœud
+    à chaque recalcul de style (c'est ce qui a tué le moteur en v832).
+    Une requête ponctuelle + un style inline ne coûtent qu'un passage. */
+ var NOIR={'screen-scanner':1,'screen-fln-cam':1,'screen-meal':1};
+ var sc0=doc.getElementById('flint-scroller');
+ if(sc0&&sc0.style.background!=='rgb(248, 249, 252)')sc0.style.setProperty('background','#f8f9fc','important');
+ var pgs=doc.querySelectorAll('[id^="screen-"]');
+ for(var q=0;q<pgs.length;q++){
+  var pg=pgs[q];if(NOIR[pg.id])continue;
+  if(pg.getAttribute('data-fl-fond'))continue;
+  pg.setAttribute('data-fl-fond','1');
+  pg.style.setProperty('background','#f8f9fc','important');
+ }
+ /* --- 2. les ronds et pastilles --- */
+ function clair(c){
+  var m=/rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)(?:\s*,\s*([\d.]+))?/.exec(c||'');
+  if(!m)return false;
+  var r=+m[1],g=+m[2],b=+m[3],a=(m[4]===undefined?1:+m[4]);
+  if(a<0.9)return false;
+  return r>=232&&g>=232&&b>=232&&(Math.max(r,g,b)-Math.min(r,g,b))<14;
+ }
+ var scope=doc.querySelectorAll('#screen-journee,#screen-accueil,#screen-profil,#screen-trends,#screen-tableau,#screen-recup');
+ for(var s=0;s<scope.length;s++){
+  var els=scope[s].querySelectorAll('div,span,button');
+  for(var i=0;i<els.length;i++){
+   var e=els[i];
+   if(e.getAttribute('data-fl-verre'))continue;
+   if(e.closest&&(e.closest('nav')||e.closest('#flTopBar')||e.closest('[data-fl-card]')))continue;
+   var c=W.getComputedStyle(e);
+   var br=c.borderRadius||'';
+   var rond=/50%/.test(br), pill=(parseFloat(br)>=11);
+   if(!rond&&!pill)continue;
+   var r0=e.getBoundingClientRect();
+   if(r0.width<26||r0.width>110||r0.height<22||r0.height>110)continue;
+   if(rond&&Math.abs(r0.width-r0.height)>5)continue;
+   if(!clair(c.backgroundColor))continue;
+   /* les ombres du verre sont proportionnelles : sous 40px on allège */
+   var petit=r0.width<40;
+   e.setAttribute('data-fl-verre','1');
+   e.style.setProperty('background',FLV_BG,'important');
+   e.style.setProperty('border','1px solid rgba(255,255,255,.95)','important');
+   e.style.setProperty('box-shadow',petit
+    ?'inset 0 1px .5px rgba(255,255,255,1),inset 0 -5px 9px -6px rgba(150,160,192,.4),inset -1px 0 1px rgba(200,208,228,.35),0 1px 2px rgba(20,17,15,.03),0 5px 13px -5px rgba(112,122,158,.22)'
+    :FLV_SH,'important');
+  }
+ }
+}catch(e){}};
 window.flLayerDiet=function(doc){try{
  if(!doc||!doc.body)return;
  var OFF=/translate[XY]\(\s*(1[0-9]{2}|100)(%|vw|vh)/;   /* 100% et au-dela */
@@ -7035,7 +7112,7 @@ function flSnapLoop(){try{
     un passage toutes les ~180 ms suffit et divise le cout par 10. */
  var _n=performance.now();if(flSnapLoop._t&&_n-flSnapLoop._t<180){requestAnimationFrame(flSnapLoop);return;}flSnapLoop._t=_n;
  var f=document.getElementById('frToday');var doc=f&&f.contentDocument;if(doc&&doc.body){var win=doc.defaultView,he=doc.documentElement;var y=win.pageYOffset;if(doc._flPrevY!==y){doc._flPrevY=y;doc._lastScrollTs=performance.now();}if(he.style.scrollSnapType!=='none')he.style.scrollSnapType='none';/* founder : plus de snap, scroll continu */
- var gb=doc.getElementById('flBackBtn');if(gb){var openScr=flBackScreens(doc).some(function(s){return !(s.id==='screen-marche'&&s.querySelector('[data-fl-effhdr]'));});var want2=openScr?'1':'0';if(gb.style.opacity!==want2){gb.style.opacity=want2;gb.style.pointerEvents=openScr?'auto':'none';}}
+ var gb=doc.getElementById('flBackBtn');if(gb){var openScr=!!window._flBalOpen||flBackScreens(doc).some(function(s){return !(s.id==='screen-marche'&&s.querySelector('[data-fl-effhdr]'));});var want2=openScr?'1':'0';if(gb.style.opacity!==want2){gb.style.opacity=want2;gb.style.pointerEvents=openScr?'auto':'none';}}
  try{flEdgeBackWire(doc);}catch(_e){}
  try{if(typeof flLayerDiet==='function'){flLayerDiet(doc);flLayerDiet(document);}}catch(_e){}
  /* v822 — ceinture : aucun residu de parallaxe ne doit survivre au geste
@@ -7242,6 +7319,7 @@ var el=ev.target;var a=el;for(var d1=0;d1<7&&a;d1++,a=a.parentElement){if(!a.que
   /* NOUVEAU trio d'accueil (maquette founder 15/07) : layout icônes + jauge 270°, couleurs fixes par carte */
   mdHomeTrio(doc);
   if(typeof flNoBackdrop==='function'){flNoBackdrop(doc);flNoBackdrop(document);}
+  if(typeof flDaVerre==='function')flDaVerre(doc);
   mdBalance(doc);mdSleep(doc);mdFonts(doc);mdStickyBacks(doc);mdSleepScrub(doc);mdWeekBarsScrub(doc);mdDualScrub(doc);mdCalDualScrub(doc);mdMarchePrecise(doc);mdMarcheScrub(doc);mdMarcheZones(doc);mdDashChevrons(doc);mdNavNoCoach(doc);mdProfil(doc);mdJourneeTune(doc);mdCalReadoutPurge(doc);mdNutritionPolish(doc);mdMarcheStats(doc);mdDashUniform(doc);mdSleepPolish(doc);mdSleepViolet(doc);mdRecupTap(doc);flLoadNativeTaps(doc);if(typeof flShellHonest==='function')flShellHonest(doc);if(typeof flTendances==='function')flTendances(doc);if(typeof flDashLive==='function')flDashLive(doc);if(typeof flNativeFeel==='function')flNativeFeel(doc);if(typeof flNavPlus==='function')flNavPlus(doc);if(typeof flNavOrder==='function')flNavOrder(doc);if(typeof flNavLiquid==='function')flNavLiquid(doc);if(typeof mdStadesSync==='function')mdStadesSync(doc);if(typeof flTopBar==='function')flTopBar(doc);mdRings(doc);mdTrioRings(doc);mdHebTrend(doc);mdNutrition(doc);mdObjectifs(doc);mdJournalWire(doc);flNavWatch(doc);mdSwipeTabs(doc);mdNavSync(doc);mdNavBottom(doc);mdNavReserve(doc);mdSectionGaps(doc);mdDashFeel(doc);if(typeof flDashFold==='function')flDashFold(doc);mdJrnlCompact(doc);flEffPolish(doc);mdJournalBottom(doc);mdDayStamp(doc);mdJrnlHour(doc);
   /* anti-flash orange : garder le splash FLINT opaque jusqu'à ce que le reskin soit VRAIMENT peint —
      trio construit ET peuplé, plusieurs passes faites (~1s), sinon on révélait un état mi-orange sur
@@ -9468,7 +9546,10 @@ function flNavCloseAll(doc,exceptId){try{
   if(flNavIsOpen(el))flNavCloseScreen(el);});
  flNavStack=exceptId?flNavStack.filter(function(e){return e.id===exceptId;}):[];
 }catch(e){}}
-function flBackClose(){flNavBack();}
+/* v840 — la page Balance calorique vit dans le document PARENT (elle n'est plus
+   un clone d'écran de la maquette) : le bouton retour et le geste de bord
+   doivent la fermer avant de retomber sur la pile d'écrans de l'iframe. */
+function flBackClose(){if(window._flBalOpen){flBalClose();return;}flNavBack();}
 /* v790 — geste iOS natif : glisser depuis le bord GAUCHE ferme l'ecran detail
    ouvert (meme action que le bouton retour flottant). Detection pure, pas de
    suivi visuel : les ecrans posent leurs transforms en !important, un follow
@@ -9959,7 +10040,190 @@ function mdJournalBottom(doc){try{
     confirmation — sinon le bouton « Enregistrer » du sélecteur d'heure la
     déclenchait aussi, à tort. */
 }catch(e){}}
-function flOpenCalHebdo(){try{
+/* ============================================================
+   v840 — PAGE BALANCE CALORIQUE (maquette du founder, au pixel)
+   Remplace le clone de screen-cal-hebdo. Trois « bulles » :
+   Brûlées, Consommées, Balance calorique — chacune ouvre notre
+   propre graphique hebdomadaire (moteur flOpenHebdo).
+
+   CONVENTION DE SIGNE — tranchée par les chiffres de la maquette
+   elle-même : 3 015 brûlées − 2 220 consommées = +795, badge
+   « Déficit ». Donc balance = brûlées − consommées, et un nombre
+   POSITIF est un déficit (tu as dépensé plus que tu n'as mangé).
+
+   Semaine glissante de 7 jours finissant au jour affiché, comme
+   la maquette (MER 27 → MAR 2). Aucune valeur inventée : un jour
+   sans repas saisi affiche « — » et ne compte pas dans la moyenne.
+   ============================================================ */
+var FLBAL_W=0;      /* décalage en semaines, 0 = semaine en cours */
+var FLBAL_SEL=6;    /* jour sélectionné dans la fenêtre (6 = le plus récent) */
+function flBalNum(n){try{return Math.round(n).toLocaleString('fr-FR').replace(/ /g,' ');}catch(e){return ''+Math.round(n);}}
+function flBalSigned(n){return (n>0?'+':n<0?'−':'')+flBalNum(Math.abs(n));}
+function flBalDays(){
+ var out=[];
+ for(var i=6;i>=0;i--){
+  var off=-i+FLBAL_W*7;
+  var k=tk(off),d=new Date();d.setDate(d.getDate()+off);
+  var burn=null,eat=null;
+  try{burn=caloriesBurned(k);}catch(e){}
+  try{var t=nutTotals(k);eat=(t&&t.kcal)?t.kcal:null;}catch(e){}
+  out.push({off:off,k:k,date:d,burn:burn,eat:eat,
+   bal:(burn!=null&&eat!=null)?(burn-eat):null});
+ }
+ return out;
+}
+function flBalPanelHTML(){
+ var D=flBalDays(),sel=D[Math.max(0,Math.min(6,FLBAL_SEL))];
+ var MOIS=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+ var JOURS=['DIM','LUN','MAR','MER','JEU','VEN','SAM'];
+ var a=D[0].date,b=D[6].date;
+ var per=a.getDate()+(a.getMonth()!==b.getMonth()?' '+MOIS[a.getMonth()]:'')+' – '+b.getDate()+' '+MOIS[b.getMonth()]+' '+b.getFullYear();
+ /* hero : le jour sélectionné */
+ var bal=sel.bal,badge,badgeBg,badgeCol,valCol;
+ if(bal==null){badge='Sans repas saisi';badgeBg='#f2f2f5';badgeCol='#6b6b73';valCol='#8a8a93';}
+ else if(bal>150){badge='Déficit';badgeBg='#fdeadf';badgeCol='#f4551d';valCol='#f4551d';}
+ else if(bal<-150){badge='Surplus';badgeBg='#fdecec';badgeCol='#f5301c';valCol='#f5301c';}
+ else{badge='Équilibre';badgeBg='#f2f2f5';badgeCol='#6b6b73';valCol='#1c1c22';}
+ /* curseur de jauge : −1500 (surplus) … +1500 (déficit), 26% = repère de la maquette */
+ var pos=(bal==null)?50:Math.max(4,Math.min(96,50-(bal/1500)*50));
+ /* échelle des barres : le plus grand brûlé de la fenêtre */
+ var mx=1;D.forEach(function(x){if(x.burn!=null&&x.burn>mx)mx=x.burn;if(x.eat!=null&&x.eat>mx)mx=x.eat;});
+ var cells='';
+ D.forEach(function(x,i){
+  var on=(i===FLBAL_SEL);
+  var h1=x.burn!=null?Math.max(6,Math.round(x.burn/mx*100)):0;
+  var h2=x.eat!=null?Math.max(6,Math.round(x.eat/mx*100)):0;
+  var h3=x.bal!=null?Math.max(6,Math.round(Math.abs(x.bal)/mx*100)):0;
+  var lab=x.bal==null?'—':flBalSigned(x.bal);
+  var lc=x.bal==null?'#bdbbb7':(x.bal>150?'#f2870f':x.bal<-150?'#f5301c':'#6b6b73');
+  cells+='<div data-flbal-day="'+i+'" style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:7px 1px;border-radius:11px;cursor:pointer;transition:background .18s cubic-bezier(.22,1,.36,1);background:'+(on?'#fdf1ec':'transparent')+';border-left:1px solid '+(i===0?'transparent':'#f4f4f7')+'">'
+   +'<div style="font-size:9.5px;font-weight:500;letter-spacing:.03em;text-transform:uppercase;color:#5c5c66">'+JOURS[x.date.getDay()]+'</div>'
+   +'<div style="font-size:12.5px;font-weight:500;color:'+(on?'#f4551d':'#1c1c22')+'">'+x.date.getDate()+'</div>'
+   +'<div style="height:30px;display:flex;align-items:flex-end;gap:2.5px;position:relative">'
+   +'<div style="position:absolute;left:9.5px;bottom:0;width:7px;height:30px;border-radius:6px;background:#ececed"></div>'
+   +'<div style="width:7px;border-radius:4px;position:relative;background:#f4741a;height:'+h1+'%"></div>'
+   +'<div style="width:7px;border-radius:4px;position:relative;background:#f4551d;height:'+h2+'%"></div>'
+   +'<div style="width:7px;border-radius:4px;position:relative;background:#f9c6b4;height:'+h3+'%"></div>'
+   +'</div>'
+   +'<div style="font-size:10.5px;font-weight:500;color:'+lc+'">'+lab+'</div></div>';
+ });
+ /* moyennes de la fenêtre — uniquement sur les jours renseignés */
+ function moy(f){var v=D.map(f).filter(function(x){return x!=null;});return v.length?Math.round(v.reduce(function(p,c){return p+c;},0)/v.length):null;}
+ var mB=moy(function(x){return x.burn;}),mE=moy(function(x){return x.eat;}),mBal=moy(function(x){return x.bal;});
+ function spark(f,col){
+  var v=D.map(f);var ok=v.filter(function(x){return x!=null;});
+  if(ok.length<2)return '<svg width="86" height="34" style="flex:0 0 auto"></svg>';
+  var lo=Math.min.apply(null,ok),hi=Math.max.apply(null,ok),rg=(hi-lo)||1,pts=[];
+  v.forEach(function(x,i){if(x==null)return;pts.push((4+i*28)+','+(40-((x-lo)/rg)*30).toFixed(1));});
+  return '<svg width="86" height="34" viewBox="0 0 200 46" preserveAspectRatio="none" fill="none" style="flex:0 0 auto"><polyline points="'+pts.join(' ')+'" stroke="'+col+'" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></polyline></svg>';
+ }
+ var IC_BURN='<svg width="25" height="25" viewBox="0 0 24 24" fill="#f4551d"><path d="M12 2c.6 3.2-1.2 4.6-2.6 6C7.7 9.6 6 11.3 6 14.2 6 18 9 21 12.4 21S19 18.3 19 14.4c0-3.3-1.9-5.4-3.4-7.1-.5 1-1.3 1.8-2.2 2.2.6-2.6-.4-5.6-1.4-7.5Z"></path></svg>';
+ var IC_EAT='<svg width="25" height="25" viewBox="0 0 24 24" fill="#f5301c"><path d="M4.4 2.2c.5 0 .9.4.9.9v4.3h1V3.1a.9.9 0 0 1 1.8 0v4.3h1V3.1a.9.9 0 0 1 1.8 0v5c0 1.5-.9 2.7-2.2 3.1v10a1.5 1.5 0 0 1-3 0v-10C4.4 10.8 3.5 9.6 3.5 8.1v-5c0-.5.4-.9.9-.9Z"></path><path d="M18.6 2c-2 1.2-3.1 3.5-3.1 6.1 0 2.2 1 3.9 2.3 4.5v8.6a1.5 1.5 0 0 0 3 0V3.3c0-1-.5-1.7-1.4-1.3Z"></path></svg>';
+ var IC_BAL='<svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="#232833" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M7 21h10M5 7l7-2 7 2"></path><path d="M5 7 2 14h6L5 7Zm14 0-3 7h6l-3-7Z"></path></svg>';
+ var CHEV='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1c1c22" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:0 0 auto;margin-left:14px"><path d="m9 18 6-6-6-6"></path></svg>';
+ function row(key,ic,bg,nom,val,col){
+  return '<div data-flbal-row="'+key+'" style="display:flex;align-items:center;gap:12px;padding:13px 0;cursor:pointer;border-radius:14px;transition:background .18s cubic-bezier(.22,1,.36,1)">'
+   +'<div style="width:46px;height:46px;border-radius:50%;background:'+bg+';display:flex;align-items:center;justify-content:center;flex:0 0 auto">'+ic+'</div>'
+   +'<div style="flex:1 1 auto;min-width:0"><div style="font-size:14px;font-weight:400;color:#1c1c22">'+nom+'</div>'
+   +'<div style="display:flex;align-items:baseline;gap:8px;margin-top:2px"><div style="font-size:22px;font-weight:500;color:#1c1c22">'+val+'</div>'
+   +'<div style="font-size:12px;font-weight:400;color:#8a8a93">kcal / jour</div></div></div>'+col+CHEV+'</div>';
+ }
+ var CARD='background:#fff;border-radius:22px;box-shadow:0 1px 2px rgba(24,20,30,.03),0 6px 18px rgba(24,20,30,.035);width:100%;max-width:464px;box-sizing:border-box';
+ /* v840 — bouton retour PROPRE au panneau : celui de l'iframe (#flBackBtn)
+    est recouvert, le panneau vivant dans le document parent. Le panneau porte
+    un transform, donc ce position:fixed se cale sur SA boîte et ne défile pas.
+    Même dessin que le bouton global : cercle blanc 48px, chevron orange. */
+ var BACK='<button data-flbal-back="1" style="position:fixed;top:calc(env(safe-area-inset-top,0px) + 14px);left:16px;z-index:6;width:48px;height:48px;border-radius:50%;border:none;background:#fff;box-shadow:0 2px 14px rgba(20,17,15,.12);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fb6015" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>';
+ return BACK+'<div style="min-height:100%;display:flex;flex-direction:column;align-items:center;gap:12px;padding:calc(env(safe-area-inset-top,0px) + 62px) 14px calc(env(safe-area-inset-bottom,0px) + 118px);box-sizing:border-box;font-family:Jost,Archivo,system-ui,sans-serif">'
+  /* ---- bulle 1 : la balance du jour ---- */
+  +'<div style="'+CARD+';border-radius:26px;padding:20px 16px 18px">'
+   +'<div style="text-align:center;font-size:13.5px;font-weight:500;letter-spacing:.06em;color:#f2870f;text-transform:uppercase">Balance calorique</div>'
+   +'<div style="display:flex;align-items:baseline;justify-content:center;gap:10px;margin-top:10px">'
+    +'<div style="font-size:58px;font-weight:500;line-height:1;letter-spacing:-.01em;color:'+valCol+'">'+(bal==null?'—':flBalSigned(bal))+'</div>'
+    +'<div style="font-size:18px;font-weight:400;color:#6b6b73">kcal</div></div>'
+   +'<div style="display:flex;justify-content:center;margin-top:14px"><div style="background:'+badgeBg+';color:'+badgeCol+';font-size:12px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;padding:5px 13px;border-radius:9px">'+badge+'</div></div>'
+   +'<div style="margin-top:26px;padding:0 4px"><div style="position:relative;height:11px">'
+    +'<div style="position:absolute;inset:0;border-radius:8px;background:linear-gradient(90deg,#f97316 0%,#f97316 26%,#fb8c2a 30%,#fdbe8a 38%,#fde7d6 45%,#fdf6f3 50%,#fbe0e0 56%,#f7a7ab 66%,#f4595a 82%,#f01f26 100%)"></div>'
+    +'<div style="position:absolute;top:50%;transform:translate(-50%,-50%);width:32px;height:32px;border-radius:50%;background:#fff;box-shadow:0 3px 10px rgba(0,0,0,.16);display:flex;align-items:center;justify-content:center;left:'+pos.toFixed(1)+'%">'
+     +'<div style="width:25px;height:25px;border-radius:50%;background:#f4741a;display:flex;align-items:center;justify-content:center"><div style="width:8px;height:8px;border-radius:50%;background:#fff"></div></div></div></div>'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:10.5px;font-weight:500;letter-spacing:.04em;text-transform:uppercase">'
+     +'<span style="color:#f2870f">Déficit élevé</span><span style="color:#6b6b73">Équilibre</span><span style="color:#f5301c">Surplus élevé</span></div></div>'
+   +'<div style="display:grid;grid-template-columns:1fr 1px 1fr;margin-top:24px;align-items:center">'
+    +'<div style="display:flex;align-items:center;justify-content:center;gap:11px;padding-right:6px">'
+     +'<div style="width:48px;height:48px;border-radius:50%;background:#fdf1e7;display:flex;align-items:center;justify-content:center;flex:0 0 auto">'+IC_BURN+'</div>'
+     +'<div><div style="display:flex;align-items:baseline;gap:8px"><div style="font-size:23px;font-weight:500;color:#1c1c22;letter-spacing:.005em">'+(sel.burn==null?'—':flBalNum(sel.burn))+'</div><div style="font-size:13px;font-weight:400;color:#6b6b73">kcal</div></div>'
+     +'<div style="margin-top:2px;font-size:10px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;color:#f2870f">Brûlées</div></div></div>'
+    +'<div style="width:1px;height:52px;background:#f3f3f6;justify-self:center"></div>'
+    +'<div style="display:flex;align-items:center;justify-content:center;gap:11px;padding-left:6px">'
+     +'<div style="width:48px;height:48px;border-radius:50%;background:#fdecec;display:flex;align-items:center;justify-content:center;flex:0 0 auto">'+IC_EAT+'</div>'
+     +'<div><div style="display:flex;align-items:baseline;gap:8px"><div style="font-size:23px;font-weight:500;color:#1c1c22;letter-spacing:.005em">'+(sel.eat==null?'—':flBalNum(sel.eat))+'</div><div style="font-size:13px;font-weight:400;color:#6b6b73">kcal</div></div>'
+     +'<div style="margin-top:2px;font-size:10px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;color:#f5301c">Consommées</div></div></div></div></div>'
+  /* ---- navigation de semaine ---- */
+  +'<div style="'+CARD+';padding:10px 12px;display:flex;align-items:center;justify-content:space-between">'
+   +'<div data-flbal-nav="-1" style="width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1c1c22" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18 9 12l6-6"></path></svg></div>'
+   +'<div style="display:flex;align-items:center;gap:9px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1c1c22" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"></rect><path d="M3 10h18M8 3v3M16 3v3"></path></svg>'
+   +'<div style="font-size:12.5px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;color:#1c1c22">'+per+'</div></div>'
+   +'<div data-flbal-nav="1" style="width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:'+(FLBAL_W>=0?'.25':'1')+'"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1c1c22" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></div></div>'
+  /* ---- les 7 jours ---- */
+  +'<div style="'+CARD+';padding:12px 5px;display:grid;grid-template-columns:repeat(7,1fr)">'+cells+'</div>'
+  /* ---- les 3 bulles : chacune ouvre notre graphique ---- */
+  +'<div style="'+CARD+';padding:4px 14px">'
+   +row('kcalOut',IC_BURN,'#fdf1e7','Brûlées',(mB==null?'—':flBalNum(mB)),spark(function(x){return x.burn;},'#f2870f'))
+   +'<div style="height:1px;background:#f2f2f5"></div>'
+   +row('kcalIn',IC_EAT,'#fdecec','Consommées',(mE==null?'—':flBalNum(mE)),spark(function(x){return x.eat;},'#f4231d'))
+   +'<div style="height:1px;background:#f2f2f5"></div>'
+   +row('kcalBal',IC_BAL,'#eef0f4','Balance calorique',(mBal==null?'—':flBalSigned(mBal)),spark(function(x){return x.bal;},'#f5a417'))
+  +'</div></div>';
+}
+function flBalRender(){try{
+ var p=document.getElementById('flBalPanel');if(!p)return;
+ var sc=p.scrollTop;p.innerHTML=flBalPanelHTML();p.scrollTop=sc;
+}catch(e){}}
+function flBalOpen(){try{
+ var p=document.getElementById('flBalPanel');
+ if(!p){
+  p=document.createElement('div');p.id='flBalPanel';
+  p.style.cssText='position:fixed;top:0;bottom:0;left:50%;width:100%;max-width:464px;z-index:84;overflow-y:auto;overflow-x:hidden;background:#fbfbfc;transform:translateX(-50%) translateY(100%);transition:transform .38s cubic-bezier(.32,.72,0,1);touch-action:pan-y;-webkit-overflow-scrolling:touch';
+  document.body.appendChild(p);
+  p.addEventListener('click',function(ev){
+   var n=ev.target;
+   for(var i=0;i<6&&n&&n!==p;i++,n=n.parentElement){
+    if(!n.getAttribute)continue;
+    var d=n.getAttribute('data-flbal-day');
+    if(d!=null){FLBAL_SEL=+d;flBalRender();return;}
+    var nv=n.getAttribute('data-flbal-nav');
+    if(nv!=null){var s=+nv;if(s>0&&FLBAL_W>=0)return;FLBAL_W+=s;FLBAL_SEL=6;flBalRender();return;}
+    if(n.getAttribute('data-flbal-back')){ev.preventDefault();ev.stopPropagation();flBalClose();return;}
+    var rw=n.getAttribute('data-flbal-row');
+    if(rw){ev.preventDefault();ev.stopPropagation();try{flOpenHebdo(rw);}catch(e){}return;}
+   }
+  },true);
+ }
+ FLBAL_W=0;FLBAL_SEL=6;flBalRender();
+ /* v840 — le reflow forcé valide l'état de départ ; le transform d'arrivée peut
+    donc être posé dans la MÊME tâche. Aucun timer : rien à rater si les
+    minuteries sont bridées (app en arrière-plan, onglet non peint). */
+ void p.offsetHeight;
+ p.style.transform='translateX(-50%) translateY(0px)';
+ p.style.pointerEvents='auto';p.scrollTop=0;
+ window._flBalOpen=1;
+ try{var fd=(document.getElementById('frToday')||{}).contentDocument;if(fd&&typeof flNavBarHide==='function')flNavBarHide(fd);}catch(e){}
+ try{var bk=(document.getElementById('frToday')||{}).contentDocument;if(bk){var gb=bk.getElementById('flBackBtn');if(gb){gb.style.opacity='1';gb.style.pointerEvents='auto';}}}catch(e){}
+}catch(e){}}
+function flBalClose(){try{
+ var p=document.getElementById('flBalPanel');if(!p)return;
+ p.style.transform='translateX(-50%) translateY(100%)';p.style.pointerEvents='none';
+ window._flBalOpen=0;
+ try{var fd=(document.getElementById('frToday')||{}).contentDocument;if(fd&&typeof flNavBarShow==='function')flNavBarShow(fd);}catch(e){}
+}catch(e){}}
+function flOpenCalHebdo(){
+ /* v840 — l'onglet Calories ouvre désormais la page Balance calorique du
+    founder. Le clonage de screen-cal-hebdo (et ses rustines : purge des
+    readouts de scrub, ré-indexation des id SVG, masquage de la source)
+    est retiré du chemin. Le corps est conservé dessous en cas de retour
+    en arrière, mais plus rien ne l'appelle. */
+ if(typeof flBalOpen==='function'){flBalOpen();return;}
+ try{
  var fr=document.getElementById('frToday');var doc=fr&&fr.contentDocument;if(!doc)return;
  var cl=doc.getElementById('flCalClone');
  if(!cl){var src=doc.getElementById('screen-cal-hebdo');if(!src)return;
@@ -10041,6 +10305,14 @@ var FLH_HINTS={
  vo2:"Estimation de ta capacit\u00e9 a\u00e9robie. \u00c7a bouge lentement : regarde la tendance sur des semaines.",
  fcavg:"Ta FC moyenne de la journ\u00e9e. Plus basse \u00e0 effort \u00e9gal = meilleure forme."};
 var FL_HEBDO={
+ /* v840 — les trois bulles de la page Balance calorique.
+    balance = brûlées − consommées (positif = déficit), cf. flBalPanelHTML. */
+ kcalOut:{title:'Calories brûlées',lab:'TES CALORIES BRÛLÉES',heroLab:'MOYENNE / JOUR',unit:'kcal',col:'#f2870f',kind:'bars',fmt:flhInt,tickFmt:function(t){return ''+Math.round(t);},
+  get:function(off){try{return caloriesBurned(tk(off));}catch(e){return null;}}},
+ kcalIn:{title:'Calories consommées',lab:'TES CALORIES CONSOMMÉES',heroLab:'MOYENNE / JOUR',unit:'kcal',col:'#f4231d',kind:'bars',fmt:flhInt,tickFmt:function(t){return ''+Math.round(t);},
+  get:function(off){try{var t=nutTotals(tk(off));return (t&&t.kcal)?t.kcal:null;}catch(e){return null;}}},
+ kcalBal:{title:'Balance calorique',lab:'TA BALANCE CALORIQUE',heroLab:'MOYENNE / JOUR',unit:'kcal',col:'#f5a417',kind:'bars',fmt:flhInt,tickFmt:function(t){return ''+Math.round(t);},
+  get:function(off){try{var k=tk(off),t=nutTotals(k);if(!t||!t.kcal)return null;return caloriesBurned(k)-t.kcal;}catch(e){return null;}}},
  hrv:{title:'VFC',lab:'TA VFC',unit:'ms',kind:'line',fmt:flhInt},
  rhr:{title:'FC au repos',lab:'TA FC AU REPOS',unit:'bpm',kind:'line',fmt:flhInt},
  /* v684 — métriques de la page Effort : elles ouvrent désormais la MÊME page de
@@ -15692,7 +15964,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='v839';
+const APP_VERSION='v841';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
