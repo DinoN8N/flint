@@ -7098,6 +7098,43 @@ window.flvExclu=function(el,ecranId,cs,r,W){
     if(autres>0&&pareils===0)return true;
    }
   }
+
+  /* 5. lignes de zone de FC (écran Effort).
+     mdMarcheZones écrit background, border-color et box-shadow en !important
+     au tap — et son observateur efface toute ombre ne contenant pas
+     « 20, 17, 15 », donc la peau de verre serait rongée à chaque mutation.
+     La teinte de sélection EST l'information (Z1 bleu … Z5 rouge).
+     On ne peut pas se fier à data-fl-zsel : il n'existe qu'APRÈS un tap.
+     Repère structurel stable : un enfant direct de 5px étiré en hauteur,
+     le tick coloré de la zone. */
+  if(ecranId==='screen-marche'){
+   var ch=el.children;
+   for(var k=0;k<ch.length;k++){var kk=ch[k];
+    if(kk.style&&kk.style.width==='5px'&&kk.style.alignSelf==='stretch')return true;}
+  }
+
+  /* 6. boutons Non/Oui du questionnaire du soir.
+     Le fond EST l'état — #fff non choisi, encre choisie — et flJrnlPaint les
+     repasse en !important à chaque clic : duel d'écrivains, dernier arrivé
+     gagne, état visuel indéterminé. Ils vont par paires, donc la règle 4,
+     qui réclame une fratrie de plus de deux, ne les voit pas. */
+  if(ecranId==='screen-journal'&&el.tagName==='BUTTON'&&Math.round(parseFloat(cs.borderRadius)||0)===13)return true;
+
+  /* 7. cartes-accordéon du tableau de bord.
+     L'état DÉPLIÉ vit dans un fond à deux couches (remplissage en padding-box
+     + liseré orange en border-box), une largeur de bordure et une ombre :
+     exactement les trois propriétés que la peau écrase. Repère : bordure
+     solide de couleur transparente, rayon 26. */
+  if((ecranId==='screen-tableau'||ecranId==='screen-balance')
+     &&cs.borderStyle==='solid'&&/transparent|rgba\(0, 0, 0, 0\)/.test(cs.borderColor||'')
+     &&Math.round(parseFloat(cs.borderRadius)||0)===26)return true;
+
+  /* 8. cadre de graphe : un dégradé de verre sous une courbe et son aire
+     teintée se lit comme de la donnée. Repère : l'élément est surtout rempli
+     par un SVG. */
+  var sv=el.querySelector&&el.querySelector('svg');
+  if(sv){var rs=sv.getBoundingClientRect();
+   if(rs.width*rs.height>r.width*r.height*0.5&&r.height>110)return true;}
  }catch(e){}
  return false;
 };
@@ -16105,7 +16142,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='v843';
+const APP_VERSION='v844';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
