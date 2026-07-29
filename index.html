@@ -7040,6 +7040,21 @@ window.flDaVerre=function(doc){try{
   if(a<0.9)return false;
   return r>=232&&g>=232&&b>=232&&(Math.max(r,g,b)-Math.min(r,g,b))<14;
  }
+ /* --- 2 bis. la barre du haut : le rond du profil et la pastille AUJOURD'HUI ---
+    Le filtre générique écarte #flTopBar (pour ne pas toucher l'indicateur de
+    batterie ni les chevrons de date) : ces deux-là sont donc nommés.
+    Peau de verre en version courte — un halo de 32px sous un élément de 40px
+    ferait une flaque ; les ombres restent proportionnelles à l'objet. */
+ var SH_MINI='inset 0 1px .5px rgba(255,255,255,1),inset 0 -5px 9px -6px rgba(150,160,192,.4),inset -1px 0 1px rgba(200,208,228,.35),0 1px 2px rgba(20,17,15,.03),0 5px 13px -5px rgba(112,122,158,.22)';
+ var chrome=doc.querySelectorAll('#flTopBar .pf,#flTopBar .cal .lb');
+ for(var t=0;t<chrome.length;t++){
+  var ce=chrome[t];
+  if(ce.getAttribute('data-fl-verre'))continue;
+  ce.setAttribute('data-fl-verre','1');
+  ce.style.setProperty('background',FLV_BG,'important');
+  ce.style.setProperty('border','1px solid rgba(255,255,255,.95)','important');
+  ce.style.setProperty('box-shadow',SH_MINI,'important');
+ }
  var scope=doc.querySelectorAll('#screen-journee,#screen-accueil,#screen-profil,#screen-trends,#screen-tableau,#screen-recup');
  for(var s=0;s<scope.length;s++){
   var els=scope[s].querySelectorAll('div,span,button');
@@ -15964,7 +15979,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='v841';
+const APP_VERSION='v842';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
