@@ -7375,7 +7375,7 @@ function injectToday(){
  try{doc.addEventListener('pointerdown',function(){doc._flPtrDown=true;},{capture:true,passive:true});doc.addEventListener('pointerup',function(){doc._flPtrDown=false;doc._flPtrUpTs=performance.now();},{capture:true,passive:true});doc.addEventListener('pointercancel',function(){doc._flPtrDown=false;},{capture:true,passive:true});}catch(e){}}
  if(!_flForce&&doc._flPtrDown)return;
  if(!_flForce&&doc._flPtrUpTs&&performance.now()-doc._flPtrUpTs<600)return;
- if(!doc.getElementById('flintInjectCss')){try{var _st=doc.createElement('style');_st.id='flintInjectCss';_st.textContent='/* v726 : la surbrillance de tap iOS (rectangle bleu-gris) apparaissait sur les en-tetes du tableau de bord. Neutralisee partout. */*{-webkit-tap-highlight-color:transparent}a,button{color:inherit;-webkit-text-fill-color:currentColor}a{text-decoration:none}[style*="font-size: 56px"],[style*="font-size: 54px"],[style*="font-size: 48px"],[style*="font-size: 41px"]{font-family:Archivo,-apple-system,sans-serif!important;font-weight:700!important}#screen-accueil{padding-bottom:calc(env(safe-area-inset-bottom,0px) + 96px)!important}#screen-accueil > div[style*="flex: 1"]{max-height:42px}#screen-balance > div:first-child{transform:scale(1.13);transform-origin:top center;width:calc(100%/1.13);margin:0 auto}#screen-journee{padding-top:16px!important}nav{padding-bottom:max(6px,env(safe-area-inset-bottom))!important}#screen-nutrition,#screen-balance,#screen-marche{overflow-x:hidden!important;touch-action:pan-y;overscroll-behavior-x:none}/* v739 : une app native ne laisse ni selectionner son UI au long-press (loupe iOS), ni rebondir lateralement */*{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}input,textarea,[contenteditable=\'true\']{-webkit-user-select:text;user-select:text}html,body{overscroll-behavior-x:none}button:active,a:active{opacity:.85}/* v741 : l espace Ma journee <-> Tableau de bord vit ICI et plus en style inline : React recree la section au depliage, le style inline mourait, et le titre faisait l aller-retour 52px/26px a chaque toggle */#screen-tableau{padding-top:26px!important}#screen-fl-effort,#screen-marche{padding-top:calc(env(safe-area-inset-top,0px) + 16px)!important}#screen-accueil{padding-top:calc(env(safe-area-inset-top,0px) + 70px)!important}#screen-journee{padding-bottom:12px!important}#flTopBar{position:fixed;top:0;left:0;right:0;z-index:55;padding:calc(env(safe-area-inset-top,0px) + 8px) 16px 12px;display:flex;flex-direction:column;pointer-events:none;background:linear-gradient(180deg,#ffffff 58%,rgba(255,255,255,0));transform-origin:50% 0;transition:opacity .16s linear, transform .16s linear}#flTopBar .r1{display:flex;align-items:center;justify-content:space-between;pointer-events:auto}#flTopBar .r2{display:flex;justify-content:center;pointer-events:auto}#flTopBar .pf{width:40px;height:40px;border-radius:50%;background:#fff;border:1px solid #f0ebe3;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(22,21,18,.06)}#flTopBar .wm{font-family:Archivo,-apple-system,sans-serif;font-weight:800;font-style:italic;font-size:24px;letter-spacing:-0.5px;color:#14110f}#flTopBar .wm b{color:#fb6015}#flTopBar .bt{display:flex;align-items:center;gap:5px;font-family:-apple-system,system-ui,sans-serif;font-size:13px;font-weight:600;color:#14110f;font-variant-numeric:tabular-nums}#flTopBar .cal{display:flex;align-items:center;gap:6px}#flTopBar .cal .nv{width:34px;height:34px;border:0;background:none;display:flex;align-items:center;justify-content:center;color:#14110f;font-size:17px;cursor:pointer}#flTopBar .cal .nv[disabled]{opacity:.25}#flTopBar .cal .lb{border:0;background:#fff;border:1px solid #f0ebe3;border-radius:22px;padding:8px 16px;font-family:Archivo,-apple-system,sans-serif;font-size:13.5px;font-weight:700;letter-spacing:.1em;color:#14110f;box-shadow:0 4px 12px rgba(22,21,18,.05);cursor:pointer;white-space:nowrap}#screen-journal{transform:translateX(-50%) translateY(102%)!important}#flTopMask{position:fixed;top:0;left:0;right:0;height:calc(env(safe-area-inset-top,0px) + 26px);z-index:54;pointer-events:none;background:linear-gradient(180deg,rgba(255,255,255,.97),rgba(255,255,255,.86) 55%,rgba(255,255,255,0))}';(doc.head||doc.documentElement).appendChild(_st);}catch(e){}}
+ if(!doc.getElementById('flintInjectCss')){try{var _st=doc.createElement('style');_st.id='flintInjectCss';_st.textContent='/* v726 : la surbrillance de tap iOS (rectangle bleu-gris) apparaissait sur les en-tetes du tableau de bord. Neutralisee partout. */*{-webkit-tap-highlight-color:transparent}a,button{color:inherit;-webkit-text-fill-color:currentColor}a{text-decoration:none}[style*="font-size: 56px"],[style*="font-size: 54px"],[style*="font-size: 48px"],[style*="font-size: 41px"]{font-family:Archivo,-apple-system,sans-serif!important;font-weight:700!important}#screen-accueil{padding-bottom:calc(env(safe-area-inset-bottom,0px) + 52px)!important}#screen-accueil > div[style*="flex: 1"]{max-height:42px}#screen-balance > div:first-child{transform:scale(1.13);transform-origin:top center;width:calc(100%/1.13);margin:0 auto}#screen-journee{padding-top:6px!important}nav{padding-bottom:max(6px,env(safe-area-inset-bottom))!important}#screen-nutrition,#screen-balance,#screen-marche{overflow-x:hidden!important;touch-action:pan-y;overscroll-behavior-x:none}/* v739 : une app native ne laisse ni selectionner son UI au long-press (loupe iOS), ni rebondir lateralement */*{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}input,textarea,[contenteditable=\'true\']{-webkit-user-select:text;user-select:text}html,body{overscroll-behavior-x:none}button:active,a:active{opacity:.85}/* v741 : l espace Ma journee <-> Tableau de bord vit ICI et plus en style inline : React recree la section au depliage, le style inline mourait, et le titre faisait l aller-retour 52px/26px a chaque toggle */#screen-tableau{padding-top:26px!important}#screen-fl-effort,#screen-marche{padding-top:calc(env(safe-area-inset-top,0px) + 16px)!important}#screen-accueil{padding-top:calc(env(safe-area-inset-top,0px) + 70px)!important}#screen-journee{padding-bottom:12px!important}#flTopBar{position:fixed;top:0;left:0;right:0;z-index:55;padding:calc(env(safe-area-inset-top,0px) + 8px) 16px 12px;display:flex;flex-direction:column;pointer-events:none;background:linear-gradient(180deg,#ffffff 58%,rgba(255,255,255,0));transform-origin:50% 0;transition:opacity .16s linear, transform .16s linear}#flTopBar .r1{display:flex;align-items:center;justify-content:space-between;pointer-events:auto}#flTopBar .r2{display:flex;justify-content:center;pointer-events:auto}#flTopBar .pf{width:40px;height:40px;border-radius:50%;background:#fff;border:1px solid #f0ebe3;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(22,21,18,.06)}#flTopBar .wm{font-family:Archivo,-apple-system,sans-serif;font-weight:800;font-style:italic;font-size:24px;letter-spacing:-0.5px;color:#14110f}#flTopBar .wm b{color:#fb6015}#flTopBar .bt{display:flex;align-items:center;gap:5px;font-family:-apple-system,system-ui,sans-serif;font-size:13px;font-weight:600;color:#14110f;font-variant-numeric:tabular-nums}#flTopBar .cal{display:flex;align-items:center;gap:6px}#flTopBar .cal .nv{width:34px;height:34px;border:0;background:none;display:flex;align-items:center;justify-content:center;color:#14110f;font-size:17px;cursor:pointer}#flTopBar .cal .nv[disabled]{opacity:.25}#flTopBar .cal .lb{border:0;background:#fff;border:1px solid #f0ebe3;border-radius:22px;padding:8px 16px;font-family:Archivo,-apple-system,sans-serif;font-size:13.5px;font-weight:700;letter-spacing:.1em;color:#14110f;box-shadow:0 4px 12px rgba(22,21,18,.05);cursor:pointer;white-space:nowrap}#screen-journal{transform:translateX(-50%) translateY(102%)!important;padding:6px 0!important}#flTopMask{position:fixed;top:0;left:0;right:0;height:calc(env(safe-area-inset-top,0px) + 26px);z-index:54;pointer-events:none;background:linear-gradient(180deg,rgba(255,255,255,.97),rgba(255,255,255,.86) 55%,rgba(255,255,255,0))}';(doc.head||doc.documentElement).appendChild(_st);}catch(e){}}
  /* audit v780 — masque haut : en scroll, textes et pointilles chevauchaient
     l'horloge/Dynamic Island. Degrade blanc fixe (z54) : sous flTopBar (55),
     sous tous les ecrans (z87+), au-dessus du fil seulement. */
@@ -10395,55 +10395,10 @@ function flBalClose(){try{
  try{var fd=(document.getElementById('frToday')||{}).contentDocument;if(fd&&typeof flNavBarShow==='function')flNavBarShow(fd);}catch(e){}
 }catch(e){}}
 function flOpenCalHebdo(){
- /* v840 — l'onglet Calories ouvre désormais la page Balance calorique du
-    founder. Le clonage de screen-cal-hebdo (et ses rustines : purge des
-    readouts de scrub, ré-indexation des id SVG, masquage de la source)
-    est retiré du chemin. Le corps est conservé dessous en cas de retour
-    en arrière, mais plus rien ne l'appelle. */
- if(typeof flBalOpen==='function'){flBalOpen();return;}
- try{
- var fr=document.getElementById('frToday');var doc=fr&&fr.contentDocument;if(!doc)return;
- var cl=doc.getElementById('flCalClone');
- if(!cl){var src=doc.getElementById('screen-cal-hebdo');if(!src)return;
-  cl=src.cloneNode(true);cl.id='flCalClone';
-  /* v836 — le regime de couches masque la source hors champ ; le clone en
-     heritait et s'ouvrait invisible (« je clique sur Calories, rien »). */
-  try{cl.style.visibility='';cl.removeAttribute('data-fl-off');}catch(e){}
- /* purge des readouts de scrub de la maquette : dans le clone ils rendent comme texte libre (« 3 078 2 210 mardi 2 ») */
- try{[].slice.call(cl.querySelectorAll('div,span')).forEach(function(e2){
-  if(e2.children.length)return;var t2=(e2.textContent||'').replace(/\s+/g,' ').trim();
-  if(/^[\d\s\u00a0\u202f]{3,9}$/.test(t2)||/^(lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)\s*\d*$/i.test(t2)){
-   var anc=e2.parentElement,inChart=false;
-   for(var u2=0;u2<3&&anc;u2++,anc=anc.parentElement){if(/CALORIES PAR JOUR/.test(anc.textContent||'')&&(anc.getAttribute('style')||'').indexOf('padding-top')>=0){inChart=true;break;}}
-   if(inChart&&e2.tagName==='SPAN'&&e2.parentElement&&/CALORIES PAR JOUR/.test(e2.parentElement.textContent||'')&&e2.parentElement.children.length>6)e2.style.display='none';
-  }});}catch(e9){}
-  src.style.setProperty('display','none','important');
-  try{cl.innerHTML=cl.innerHTML
-   .replace(/id="([^"]+)"/g,'id="$1-flc"')
-   .replace(/url\(#([^)]+)\)/g,'url(#$1-flc)')
-   .replace(/url\("#([^"]+)"\)/g,'url(#$1-flc)')
-   .replace(/(xlink:href|href)="#([^"]+)"/g,'$1="#$2-flc"');}catch(e){}
-  cl.style.setProperty('display','block','important');
-  cl.style.setProperty('position','fixed','important');
-  cl.style.setProperty('top','0','important');cl.style.setProperty('bottom','0','important');
-  cl.style.setProperty('left','50%','important');
-  cl.style.setProperty('width','100%','important');cl.style.setProperty('max-width','464px','important');
-  cl.style.setProperty('z-index','84','important');
-  cl.style.setProperty('overflow-y','auto','important');
-  cl.style.setProperty('overflow-x','hidden','important');
-  cl.style.setProperty('background','rgb(251, 251, 250)','important');
-  cl.style.setProperty('transition','transform 0.38s cubic-bezier(0.32, 0.72, 0, 1)','important');
-  cl.style.setProperty('transform','translateX(-50%) translateY(100%)','important');
-  cl.style.touchAction='pan-y';
-  doc.body.appendChild(cl);void cl.offsetHeight;
-  [].slice.call(cl.querySelectorAll('button,[role="button"]')).filter(function(bt){return bt.querySelector('svg');}).slice(0,4).forEach(function(bt){
-   bt.addEventListener('click',function(ev){ev.preventDefault();ev.stopPropagation();flCloseCalHebdo();},true);});
- }
- setTimeout(function(){cl.style.setProperty('transform','translateX(-50%) translateY(0px)','important');},30);
- cl.style.pointerEvents='auto';cl.scrollTop=0;
- setTimeout(function(){try{mdWeekBarsScrub(doc);mdCalDualScrub(doc);mdMarchePrecise(doc);mdMarcheScrub(doc);mdMarcheZones(doc);mdDashChevrons(doc);mdNavNoCoach(doc);mdProfil(doc);mdJourneeTune(doc);mdCalReadoutPurge(doc);mdNutritionPolish(doc);mdMarcheStats(doc);mdDashUniform(doc);mdSleepPolish(doc);mdSleepViolet(doc);mdRecupTap(doc);flLoadNativeTaps(doc);if(typeof flShellHonest==='function')flShellHonest(doc);if(typeof flTendances==='function')flTendances(doc);if(typeof flNavPlus==='function')flNavPlus(doc);mdStickyBacks(doc);mdFonts(doc);}catch(e){}},200);
- if(typeof haptic==='function')haptic();
-}catch(e){}}
+ try{if(typeof flBalOpen==='function'){flBalOpen();return;}}catch(e){}
+ // fallback: just close modal if open
+ try{var m=document.getElementById('frToday');if(m&&m.contentDocument){var modal=m.contentDocument.getElementById('flCalGraphModal');if(modal)modal.remove();}}catch(e){}
+}
 function flCloseCalHebdo(){try{var fr=document.getElementById('frToday');var doc=fr&&fr.contentDocument;if(!doc)return;var cl=doc.getElementById('flCalClone');if(!cl)return;
  cl.style.setProperty('transform','translateX(-50%) translateY(100%)','important');cl.style.pointerEvents='none';}catch(e){}}
 /* ===== Pages métriques hebdo : moteur générique (clone screen-sommeil-hebdo) ===== */
@@ -16142,7 +16097,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='v844';
+const APP_VERSION='v846';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
