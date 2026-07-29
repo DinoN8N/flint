@@ -1,8 +1,9 @@
-// FLINT — proxy d'analyse de repas par photo (Gemini Flash, vision).
+// FLINT — proxy d'analyse de repas (Gemini Flash) : photo OU description texte.
 // Déployé sur Vercel. La clé API vit UNIQUEMENT ici (variable d'env GEMINI_API_KEY),
 // jamais dans le front public.
 //
 // Front : POST { image: "<dataURL ou base64>", mime?: "image/jpeg" }
+//      ou POST { text: "2 œufs au plat, une tranche de pain complet, un café au lait" }
 // Retour: { mealName, items:[{name,grams,kcal,prot,carb,fat,confidence}], total:{kcal,prot,carb,fat} }
 
 const MODEL = 'gemini-2.5-flash';
@@ -71,6 +72,43 @@ healthNote : justification en une phrase courte.
 
 Donne un mealName court. Réponds UNIQUEMENT en JSON conforme au schéma.`;
 
+const PROMPT_TEXT = `Tu es un nutritionniste expert. L'utilisateur décrit son repas en texte libre (français).
+Identifie CHAQUE aliment mentionné séparément (ne regroupe pas tout en un seul item).
+Pour chaque aliment : name (français court), grams, kcal, prot, carb, fat (grammes), confidence (0-1).
+
+OBJECTIF : le nombre de calories le plus JUSTE possible. Ni prudent, ni généreux — exact.
+
+PORTIONS :
+1. Si la quantité est précisée (« 2 œufs », « 150 g de riz », « une tranche »), respecte-la exactement.
+2. Sinon, prends la portion STANDARD la plus probable pour un adulte : œuf 55 g, tranche de pain 40 g,
+   assiette de féculents cuits 200-300 g, portion de viande/poisson 120-180 g, yaourt 125 g,
+   verre de jus 200 ml, café au lait 150-200 ml, poignée de noix 30 g.
+3. Compte les matières grasses de cuisson probables (œufs au plat, plats sautés, fritures) ; n'en invente pas sur des crudités nature.
+
+DENSITÉS CALORIQUES DE RÉFÉRENCE (kcal pour 100 g) — vérifie chaque item contre sa catégorie :
+- légumes crus/cuits 15-45 · fruits 30-90 · féculents cuits (riz, pâtes, purée) 100-160
+- viandes maigres 100-170 · viandes grasses/panées 200-300 · poissons 80-210
+- pain 250-290 · pizza 220-280 · frites 280-330 · plats frits 250-350
+- fromages 260-400 · charcuterie 250-400 · sauces grasses (mayo, béarnaise) 400-700
+- pâtisseries/viennoiseries 350-450 · chocolat 500-550 · huile/beurre 720-900
+
+AUTO-VÉRIFICATION avant de répondre (corrige si besoin) :
+1. Chaque item : kcal ≈ 4×prot + 4×carb + 9×fat (±10 %).
+2. Chaque item : kcal/grams cohérent avec sa densité de catégorie ci-dessus.
+3. Total : plausible pour ce que décrit RÉELLEMENT l'utilisateur.
+Si la description ne contient AUCUN aliment identifiable, renvoie items: [].
+
+healthScore : note santé du plat de 1 à 10 (entier), pour un sportif :
+- 8-10 : aliments bruts, légumes/fruits abondants, bonne source de protéines, peu transformé
+- 6-7 : équilibré mais un point faible (peu de légumes, sauce riche, portion très calorique)
+- 4-5 : transformé, frit, ou très déséquilibré (pizza 5, burger-frites 4)
+- 1-3 : ultra-transformé, sucré ou friture pure (soda 2, viennoiserie industrielle 3)
+healthNote : justification en une phrase courte.
+
+Donne un mealName court. Réponds UNIQUEMENT en JSON conforme au schéma.
+
+Description du repas : `;
+
 function cors(res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -112,16 +150,23 @@ module.exports = async function handler(req, res) {
     let body = req.body;
     if (typeof body === 'string') { try { body = JSON.parse(body); } catch (e) { body = {}; } }
     let image = body && body.image;
-    if (!image) return res.status(400).json({ error: 'champ "image" manquant' });
+    const text = (body && typeof body.text === 'string') ? body.text.trim().slice(0, 800) : '';
+    if (!image && !text) return res.status(400).json({ error: 'champ "image" ou "text" manquant' });
 
-    // accepte une data URL (data:image/jpeg;base64,xxxx) ou du base64 brut
-    let mime = (body && body.mime) || 'image/jpeg';
-    const m = /^data:([^;]+);base64,(.*)$/s.exec(image);
-    if (m) { mime = m[1]; image = m[2]; }
+    let parts;
+    if (image) {
+      // accepte une data URL (data:image/jpeg;base64,xxxx) ou du base64 brut
+      let mime = (body && body.mime) || 'image/jpeg';
+      const m = /^data:([^;]+);base64,(.*)$/s.exec(image);
+      if (m) { mime = m[1]; image = m[2]; }
+      parts = [{ text: PROMPT }, { inline_data: { mime_type: mime, data: image } }];
+    } else {
+      parts = [{ text: PROMPT_TEXT + text }];
+    }
 
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${key}`;
     const gReq = {
-      contents: [{ parts: [{ text: PROMPT }, { inline_data: { mime_type: mime, data: image } }] }],
+      contents: [{ parts }],
       generationConfig: { responseMimeType: 'application/json', responseSchema: SCHEMA, temperature: 0.1 }
     };
 
