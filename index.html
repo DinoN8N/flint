@@ -6445,6 +6445,7 @@ function flJrnlCalBuild(doc){try{var jr=doc.getElementById('screen-journal');if(
 function flJrnlCalPaint(doc){try{var jr=doc.getElementById('screen-journal');var CAL=jr&&jr.querySelector('[data-flcal]');if(!CAL)return;
  [].slice.call(CAL.querySelectorAll('[data-flcd]')).forEach(function(b){var o=parseInt(b.getAttribute('data-flcd'),10);
   var completed=!!flJrnlDayData(o)._saved,isToday=o===0,isFuture=o>0,dot=b.querySelector('.flcd-dot'),wk=b.querySelector('.flcd-wk');
+  b.style.display=(isFuture||(!completed&&!isToday))?'none':'flex';
   b.style.opacity=isFuture?'0.42':'1';
   b.style.borderStyle=isFuture?'dashed':'solid';
   b.style.borderColor=isToday?'#fb6015':'#eeece7';b.style.borderWidth=isToday?'2px':'1.5px';
@@ -16097,7 +16098,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='v846';
+const APP_VERSION='v847';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
