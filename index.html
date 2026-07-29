@@ -7012,8 +7012,95 @@ window.flNoBackdrop=function(doc){try{
    teintées (lavande du sommeil, bleu de l'effort, pêche des calories)
    gardent leur couleur : elles portent le sens, pas le décor.
    ============================================================ */
+/* --- PALETTE PAR DOMAINE (v843) ---
+   Le founder : « la couleur un peu bleue de l'accueil, pour la page sommeil
+   c'est la même chose mais un petit peu violet ».
+   Chaque domaine décline la MÊME recette autour de sa couleur : le fond de
+   page, la 3e butée du dégradé de verre, la teinte de l'ombre interne basse
+   et celle du halo externe. Rien d'autre ne bouge — c'est ce qui fait que
+   les pages restent sœurs au lieu de devenir cinq chartes différentes.
+     fond   : le papier de la page
+     stop3  : la butée basse du dégradé de la carte
+     creux  : l'ombre interne basse (le galbe)
+     halo   : l'ombre portée colorée                                        */
+window.FLV_PAL={
+ neutre:{fond:'#f8f9fc',stop3:'240,243,250',creux:'150,160,192',halo:'112,122,158',bord:'200,208,228'},
+ sommeil:{fond:'#f8f7fd',stop3:'243,240,250',creux:'160,150,192',halo:'126,112,158',bord:'208,200,228'},
+ effort:{fond:'#f7f9fd',stop3:'238,243,251',creux:'150,168,196',halo:'112,134,166',bord:'198,212,232'},
+ nutrition:{fond:'#fdf9f7',stop3:'250,243,238',creux:'192,170,150',halo:'158,132,112',bord:'228,212,198'},
+ recup:{fond:'#f7fbf9',stop3:'238,249,243',creux:'150,192,170',halo:'112,158,132',bord:'198,228,212'}
+};
+/* à quel domaine appartient chaque écran */
+window.FLV_DOM=function(id){
+ if(/sommeil|dette|nuit|manuit/.test(id))return 'sommeil';
+ if(/marche|addact|effort|analyse|trends/.test(id))return 'effort';
+ if(/nutrition|ingr|meal|cal-hebdo|balance|besoin|scanner|objectifs|objflow/.test(id))return 'nutrition';
+ if(/recup/.test(id))return 'recup';
+ return 'neutre';
+};
+/* fabrique la peau à partir d'une palette et d'une taille */
+window.FLV_PEAU=function(p,taille){
+ var bg='linear-gradient(158deg,#ffffff 0%,rgb(250,251,254) 38%,rgb('+p.stop3+') 100%)';
+ var sh;
+ if(taille==='mini')       /* < 40px : chrome, pastilles */
+  sh='inset 0 1px .5px rgba(255,255,255,1),inset 0 -5px 9px -6px rgba('+p.creux+',.4),inset -1px 0 1px rgba('+p.bord+',.35),0 1px 2px rgba(20,17,15,.03),0 5px 13px -5px rgba('+p.halo+',.22)';
+ else if(taille==='interne') /* bulle DANS une bulle : relief présent mais discret,
+                                sinon l'empilement de halos empâte la page */
+  sh='inset 0 1px 1px rgba(255,255,255,1),inset 0 -7px 12px -8px rgba('+p.creux+',.32),inset -1px 0 1.5px rgba('+p.bord+',.28),0 1px 2px rgba(20,17,15,.025),0 4px 12px -6px rgba('+p.halo+',.14)';
+ else                      /* carte de premier niveau */
+  sh='inset 0 1.5px 1px rgba(255,255,255,1),inset 0 -14px 22px -14px rgba('+p.creux+',.4),inset 1.5px 0 1.5px rgba(255,255,255,.95),inset -1.5px 0 2px rgba('+p.bord+',.35),0 1px 2px rgba(20,17,15,.03),0 14px 32px -10px rgba('+p.halo+',.22)';
+ return {bg:bg,sh:sh,bord:'1px solid rgba(255,255,255,.95)'};
+};
 window.FLV_BG='linear-gradient(158deg,#ffffff 0%,rgb(250,251,254) 38%,rgb(240,243,250) 100%)';
 window.FLV_SH='inset 0 1.5px 1px rgba(255,255,255,1),inset 0 -8px 14px -9px rgba(150,160,192,.4),inset 1px 0 1px rgba(255,255,255,.95),inset -1px 0 1.5px rgba(200,208,228,.35),0 1px 2px rgba(20,17,15,.03),0 8px 20px -7px rgba(112,122,158,.22)';
+/* v843 — CE QUI NE DOIT PAS RECEVOIR LA PEAU DE VERRE.
+   Issu d'un audit en éventail sur les 21 écrans, chaque exclusion passée
+   devant un réfuteur : 75 proposées, 31 tombées (le test d'écart
+   chromatique de clair() épargnait déjà les pastilles teintées).
+   Ce qui reste tient en quatre motifs GÉNÉRIQUES — pas une liste de
+   sélecteurs, qui vieillirait mal : une maquette n'est jamais un contrat. */
+window.flvExclu=function(el,ecranId,cs,r,W){
+ try{
+  /* 1. surface déjà gouvernée par un injecteur nommé.
+     Écrire background + box-shadow en inline !important par-dessus, c'est
+     se battre avec lui à chaque passe (mdSleepPolish, mdMarcheStats et
+     flBalRender reconstruisent leur bloc en innerHTML). */
+  var at=el.attributes;
+  for(var i=0;i<at.length;i++){var n=at[i].name;
+   if(n==='data-fl-verre'||n==='data-fl-fond')continue;
+   if(n.indexOf('data-fl')===0||n.indexOf('data-md')===0)return true;}
+  if(el.classList&&(el.classList.contains('flbb')||el.classList.contains('mnrow')||el.classList.contains('mnrow-empty')))return true;
+
+  /* 2. piste de barre de progression ou de jauge : très allongée.
+     Un dégradé plus une ombre interne y rendraient la valeur illisible. */
+  if(r.width/r.height>6||r.height/r.width>6)return true;
+
+  /* 3. feuille modale ancrée à un bord : rayons asymétriques (« 26px 26px 0 0 »).
+     Elle est posée sur un voile sombre ; un halo clair l'en décollerait. */
+  var br=cs.borderRadius||'';
+  if(/\s/.test(br)&&/(^|\s)0(px)?(\s|$)/.test(br))return true;
+
+  /* 4. surface porteuse d'un ÉTAT SÉLECTIONNÉ.
+     Le motif le plus dangereux : chip actif, jour retenu, sexe choisi,
+     bouton désactivé, onglet Semaine|Mois… l'état ne vit QUE dans le fond
+     et la bordure. Les repeindre efface l'information.
+     Signature : l'élément est cliquable ET il est l'exception chromatique
+     de sa fratrie de même forme. */
+  var interactif=(cs.cursor==='pointer')||el.tagName==='BUTTON'||el.getAttribute('role')==='button'||el.hasAttribute('disabled');
+  if(interactif){
+   var p=el.parentElement;
+   if(p&&p.children.length>2){
+    var mien=cs.backgroundColor,pareils=0,autres=0,monR=parseFloat(cs.borderRadius)||0;
+    for(var j=0;j<p.children.length;j++){var f=p.children[j];if(f===el)continue;
+     var fc=W.getComputedStyle(f);
+     if(Math.abs((parseFloat(fc.borderRadius)||0)-monR)>2)continue;
+     if(fc.backgroundColor===mien)pareils++;else autres++;}
+    if(autres>0&&pareils===0)return true;
+   }
+  }
+ }catch(e){}
+ return false;
+};
 window.flDaVerre=function(doc){try{
  if(!doc||!doc.body)return;
  var W=doc.defaultView||window;
@@ -7024,13 +7111,15 @@ window.flDaVerre=function(doc){try{
     Une requête ponctuelle + un style inline ne coûtent qu'un passage. */
  var NOIR={'screen-scanner':1,'screen-fln-cam':1,'screen-meal':1};
  var sc0=doc.getElementById('flint-scroller');
- if(sc0&&sc0.style.background!=='rgb(248, 249, 252)')sc0.style.setProperty('background','#f8f9fc','important');
+ if(sc0&&!sc0.getAttribute('data-fl-fond')){sc0.setAttribute('data-fl-fond','1');sc0.style.setProperty('background',FLV_PAL.neutre.fond,'important');}
  var pgs=doc.querySelectorAll('[id^="screen-"]');
  for(var q=0;q<pgs.length;q++){
   var pg=pgs[q];if(NOIR[pg.id])continue;
   if(pg.getAttribute('data-fl-fond'))continue;
   pg.setAttribute('data-fl-fond','1');
-  pg.style.setProperty('background','#f8f9fc','important');
+  /* v843 — le papier prend la teinte du domaine : violet sur le sommeil,
+     bleu sur l'effort, orangé sur la nutrition, vert sur la récupération. */
+  pg.style.setProperty('background',FLV_PAL[FLV_DOM(pg.id)].fond,'important');
  }
  /* --- 2. les ronds et pastilles --- */
  function clair(c){
@@ -7054,6 +7143,43 @@ window.flDaVerre=function(doc){try{
   ce.style.setProperty('background',FLV_BG,'important');
   ce.style.setProperty('border','1px solid rgba(255,255,255,.95)','important');
   ce.style.setProperty('box-shadow',SH_MINI,'important');
+ }
+ /* --- 3. TOUTES les bulles de TOUS les écrans (v843) ---
+    Le founder : « ce style de bulle sur toute l'app, et quand il y a des
+    bulles dans des bulles, je le fais aussi ».
+    Une bulle imbriquée reçoit une version atténuée : empiler deux halos
+    pleins empâte la page au lieu de creuser la profondeur. */
+ var ecrans=doc.querySelectorAll('[id^="screen-"]');
+ for(var z=0;z<ecrans.length;z++){
+  var ec=ecrans[z];if(NOIR[ec.id])continue;
+  var pal=FLV_PAL[FLV_DOM(ec.id)];
+  var cand=ec.querySelectorAll('div,section,button');
+  /* 1re passe : retenir les surfaces-cartes */
+  var gardees=[];
+  for(var y=0;y<cand.length;y++){
+   var el=cand[y];
+   if(el.getAttribute('data-fl-verre'))continue;
+   if(el.closest&&(el.closest('nav')||el.closest('#flTopBar')))continue;
+   var cc=W.getComputedStyle(el);
+   if((parseFloat(cc.borderRadius)||0)<10)continue;
+   var rr=el.getBoundingClientRect();
+   if(rr.width<40||rr.height<28||rr.width>470||rr.height>560)continue;
+   if(!clair(cc.backgroundColor))continue;
+   if(typeof flvExclu==='function'&&flvExclu(el,ec.id,cc,rr,W))continue;
+   gardees.push(el);
+  }
+  /* 2e passe : profondeur d'imbrication, puis peau */
+  for(var w2=0;w2<gardees.length;w2++){
+   var g=gardees[w2],prof=0;
+   for(var pp=g.parentElement;pp&&pp!==ec;pp=pp.parentElement){if(gardees.indexOf(pp)>=0){prof++;break;}}
+   var rg=g.getBoundingClientRect();
+   var taille=(rg.width<40||rg.height<34)?'mini':(prof>0?'interne':'carte');
+   var peau=FLV_PEAU(pal,taille);
+   g.setAttribute('data-fl-verre','1');
+   g.style.setProperty('background',peau.bg,'important');
+   g.style.setProperty('border',peau.bord,'important');
+   g.style.setProperty('box-shadow',peau.sh,'important');
+  }
  }
  var scope=doc.querySelectorAll('#screen-journee,#screen-accueil,#screen-profil,#screen-trends,#screen-tableau,#screen-recup');
  for(var s=0;s<scope.length;s++){
@@ -15979,7 +16105,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='v842';
+const APP_VERSION='v843';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
