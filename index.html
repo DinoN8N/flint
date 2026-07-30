@@ -9741,6 +9741,15 @@ function flBackClose(){
     Maintenant : une détail ouverte DEPUIS la page Calories se ferme d'abord et
     rend la main à la page Calories ; c'est seulement au retour suivant que la
     page Calories se ferme. Un retour = un niveau. */
+ /* v850 — GARDE DE RÉ-ENTRANCE.
+    Le retour propre d'une sous-page et le bouton flottant global occupent la
+    même place à l'écran : un seul appui déclenchait les DEUX handlers, donc
+    deux niveaux d'un coup. La page Calories reparaissait bien — puis était
+    refermée aussitôt par le second appel, d'où le clignotement d'une
+    demi-seconde avant de se retrouver à l'accueil. */
+ var _t=Date.now();
+ if(window._flBackTs&&_t-window._flBackTs<500)return;
+ window._flBackTs=_t;
  if(window._flBalHid&&window._flBalSub){
   if(window._flBalSub==='clone'){flCloseCalHebdo();return;}
   flCloseHebdo('screen-flh-'+window._flBalSub);return;}
@@ -10450,6 +10459,68 @@ function flOpenCalHebdo(){
    Les trois graphiques étant trois SECTIONS d'une même page, chaque bulle
    l'ouvre sur la sienne — « au bon endroit du coup, chacun ». */
 window.FLCAL_SECT={kcalOut:'CALORIES BRÛLÉES',kcalIn:'CALORIES CONSOMMÉES',kcalBal:'CALORIES PAR JOUR'};
+/* v850 — UN GRAPHIQUE PAR PAGE.
+   Le founder : « quand je clique sur brûlé, je suis censé ne tomber que sur
+   le graphique calories brûlées seul… et puisqu'il est seul, tu peux les
+   faire un peu plus gros, pour qu'il prenne vraiment toute la page ».
+   L'écran cloné empile six blocs : bouton retour, titre « Calories », carte
+   BRÛLÉES, carte CONSOMMÉES, titre « Balance calorique », carte PAR JOUR.
+   On garde le retour, le titre qui précède la carte demandée, et cette carte
+   seule ; puis on l'agrandit pour occuper la hauteur libre.
+   L'agrandissement suit le patron déjà employé ailleurs dans ce fichier
+   (cf. la règle sur #screen-balance) : scale + largeur divisée d'autant. La
+   carte reste donc bord à bord, c'est son CONTENU qui grossit — « le même
+   format, juste plus gros », sans toucher au HTML de la maquette. */
+function flCalIsolate(cl,which){try{
+ var wrap=(cl.children.length===1&&cl.children[0].tagName==='DIV')?cl.children[0]:cl;
+ var kids=[].slice.call(wrap.children);
+ /* remise à zéro : une bulle peut être ouverte après une autre */
+ kids.forEach(function(k){if(!k.style)return;
+  k.style.removeProperty('display');k.style.removeProperty('transform');
+  k.style.removeProperty('transform-origin');k.style.removeProperty('width');
+  k.style.removeProperty('margin-left');k.style.removeProperty('margin-right');});
+ var lab=which&&window.FLCAL_SECT&&FLCAL_SECT[which];
+ if(!lab)return;
+ /* la carte porteuse : celle qui contient le libellé ET qui est haute (le
+    libellé apparaît aussi dans des sous-blocs) */
+ var card=null,idx=-1;
+ for(var i=0;i<kids.length;i++){
+  var t=(kids[i].textContent||'').replace(/\s+/g,' ');
+  if(t.indexOf(lab)>=0&&kids[i].offsetHeight>200){card=kids[i];idx=i;break;}}
+ if(!card)return;
+ /* le titre de la section = le dernier petit bloc avant la carte */
+ var titre=null;
+ for(var j=idx-1;j>=0;j--){
+  if(kids[j].tagName==='BUTTON')continue;
+  if(kids[j].offsetHeight<90){titre=kids[j];break;}}
+ kids.forEach(function(k){
+  if(k===card||k===titre||k.tagName==='BUTTON')return;
+  k.style.setProperty('display','none','important');});
+ /* mesurer APRÈS avoir masqué : offsetTop a bougé */
+ var avail=cl.clientHeight-card.offsetTop-18;
+ var h=card.offsetHeight||1;
+ var f=Math.min(1.34,Math.max(1,avail/h));
+ if(f>1.02){var fs=f.toFixed(3);
+  /* Les marges automatiques ne sont PAS décoratives : en réduisant la largeur
+     de mise en page à 100/f, la boîte reste alignée à GAUCHE dans son
+     conteneur, donc son centre propre se déplace et « top center » l'agrandit
+     autour d'un axe décalé — la carte sortait par la gauche (titre et grand
+     chiffre coupés). C'est pour cela que la règle maison sur #screen-balance
+     porte « margin:0 auto ». On ne touche qu'aux marges latérales, pour ne pas
+     écraser l'espacement vertical de la maquette. */
+  card.style.setProperty('margin-left','auto','important');
+  card.style.setProperty('margin-right','auto','important');
+  card.style.setProperty('transform-origin','top center','important');
+  card.style.setProperty('width','calc(100% / '+fs+')','important');
+  card.style.setProperty('transform','scale('+fs+')','important');
+  /* Pas de centrage vertical : il dépendait d'une mesure de hauteur qui varie
+     selon l'état de la page (panneau ouvert ou non, écrans voisins masqués ou
+     non) et projetait la carte hors de l'écran. L'agrandissement uniforme est
+     de toute façon plafonné par la LARGEUR — la carte occupe déjà 420 px sur
+     464 — donc remplir la hauteur exigerait de changer le rapport de forme du
+     graphe, ce que le founder a demandé de ne pas toucher. */
+ }
+}catch(e){}}
 function flCalGraph(which){try{
  var fr=document.getElementById('frToday');var doc=fr&&fr.contentDocument;if(!doc)return;
  var cl=doc.getElementById('flCalClone');
@@ -10487,24 +10558,18 @@ function flCalGraph(which){try{
   cl.style.setProperty('transform','translateX(-50%) translateY(100%)','important');
   cl.style.touchAction='pan-y';
   doc.body.appendChild(cl);
+  /* v850 — le retour propre du clone passe par flBackClose, comme le bouton
+     flottant global : une seule porte, donc une seule garde de ré-entrance. */
   [].slice.call(cl.querySelectorAll('button,[role="button"]')).filter(function(bt){return bt.querySelector('svg');}).slice(0,4).forEach(function(bt){
-   bt.addEventListener('click',function(ev){ev.preventDefault();ev.stopPropagation();flCloseCalHebdo();},true);});
+   bt.addEventListener('click',function(ev){ev.preventDefault();ev.stopPropagation();flBackClose();},true);});
  }
  /* v840 — reflow forcé : l'état de départ est validé, le transform d'arrivée
     peut être posé dans la MÊME tâche. Aucun timer à rater. */
  void cl.offsetHeight;
  cl.style.setProperty('transform','translateX(-50%) translateY(0px)','important');
  cl.style.pointerEvents='auto';
- /* on se place sur la section demandée */
- var lab=which&&FLCAL_SECT[which];
+ flCalIsolate(cl,which);
  cl.scrollTop=0;
- if(lab){try{
-  var hit=[].slice.call(cl.querySelectorAll('div,span,p')).filter(function(e){
-   return e.children.length===0&&(e.textContent||'').replace(/\s+/g,' ').trim()===lab;})[0];
-  if(hit){var card=hit;
-   for(var u=0;u<7&&card&&card!==cl;u++,card=card.parentElement){if(card.offsetHeight>200)break;}
-   if(card&&card!==cl)cl.scrollTop=Math.max(0,card.offsetTop-12);}
- }catch(e){}}
  /* les injecteurs qui rendent la page vivante (scrub des barres, scrub du
     graphe double, polices) doivent repasser sur le clone */
  setTimeout(function(){try{mdWeekBarsScrub(doc);mdCalDualScrub(doc);mdCalReadoutPurge(doc);mdStickyBacks(doc);mdFonts(doc);if(typeof flDaVerre==='function')flDaVerre(doc);}catch(e){}},200);
@@ -16250,7 +16315,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='v849';
+const APP_VERSION='v850';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
