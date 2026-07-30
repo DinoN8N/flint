@@ -10496,30 +10496,19 @@ function flCalIsolate(cl,which){try{
  kids.forEach(function(k){
   if(k===card||k===titre||k.tagName==='BUTTON')return;
   k.style.setProperty('display','none','important');});
- /* mesurer APRÈS avoir masqué : offsetTop a bougé */
- var avail=cl.clientHeight-card.offsetTop-18;
- var h=card.offsetHeight||1;
- var f=Math.min(1.34,Math.max(1,avail/h));
- if(f>1.02){var fs=f.toFixed(3);
-  /* Les marges automatiques ne sont PAS décoratives : en réduisant la largeur
-     de mise en page à 100/f, la boîte reste alignée à GAUCHE dans son
-     conteneur, donc son centre propre se déplace et « top center » l'agrandit
-     autour d'un axe décalé — la carte sortait par la gauche (titre et grand
-     chiffre coupés). C'est pour cela que la règle maison sur #screen-balance
-     porte « margin:0 auto ». On ne touche qu'aux marges latérales, pour ne pas
-     écraser l'espacement vertical de la maquette. */
-  card.style.setProperty('margin-left','auto','important');
-  card.style.setProperty('margin-right','auto','important');
-  card.style.setProperty('transform-origin','top center','important');
-  card.style.setProperty('width','calc(100% / '+fs+')','important');
-  card.style.setProperty('transform','scale('+fs+')','important');
-  /* Pas de centrage vertical : il dépendait d'une mesure de hauteur qui varie
-     selon l'état de la page (panneau ouvert ou non, écrans voisins masqués ou
-     non) et projetait la carte hors de l'écran. L'agrandissement uniforme est
-     de toute façon plafonné par la LARGEUR — la carte occupe déjà 420 px sur
-     464 — donc remplir la hauteur exigerait de changer le rapport de forme du
-     graphe, ce que le founder a demandé de ne pas toucher. */
- }
+ /* v851 — AUCUN AGRANDISSEMENT, et c'est un choix mesuré, pas un abandon.
+    L'essai de la v850 agrandissait la carte entière : le grand chiffre passait
+    sur deux lignes. Le founder voulait que SEUL le graphe grandisse.
+    Ce n'est pas faisable sans le redessiner : le SVG du graphe porte ses 26
+    textes DEDANS (graduations 4 000/3 000…, valeurs au-dessus des barres,
+    jours). Barres et texte partagent donc un unique système de coordonnées
+    figé dans la maquette. Les deux seuls leviers CSS échouent :
+      - scale() uniforme grossit le chiffre et les libellés avec les barres ;
+      - une hauteur forcée avec preserveAspectRatio="none" étire les 26 textes.
+    Rendre les barres plus hautes en gardant le texte droit exige de régénérer
+    la géométrie du SVG — donc de refaire le graphique, ce qui est exclu.
+    On garde donc l'isolation (un graphique par page) et la carte telle que le
+    founder l'a dessinée. */
 }catch(e){}}
 function flCalGraph(which){try{
  var fr=document.getElementById('frToday');var doc=fr&&fr.contentDocument;if(!doc)return;
@@ -16315,7 +16304,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='v850';
+const APP_VERSION='v851';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
