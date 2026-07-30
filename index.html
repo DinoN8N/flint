@@ -10374,7 +10374,16 @@ function flBalOpen(){try{
     if(nv!=null){var s=+nv;if(s>0&&FLBAL_W>=0)return;FLBAL_W+=s;FLBAL_SEL=6;flBalRender();return;}
     if(n.getAttribute('data-flbal-back')){ev.preventDefault();ev.stopPropagation();flBalClose();return;}
     var rw=n.getAttribute('data-flbal-row');
-    if(rw){ev.preventDefault();ev.stopPropagation();try{flOpenHebdo(rw);}catch(e){}return;}
+    if(rw){ev.preventDefault();ev.stopPropagation();
+     /* v848 — flBalPanel vit dans le document PARENT (z-index 84) tandis que la
+        page de détail vit DANS l'iframe. L'iframe étant un seul élément du
+        parent, rien de ce qu'elle contient ne peut peindre au-dessus du
+        panneau : le détail s'ouvrait donc DERRIÈRE la page Calories, et comme
+        les panneaux sont gardés en cache par id, trois bulles tapées = trois
+        retours à faire. On escamote la page Calories avant d'ouvrir le détail,
+        et flCloseHebdo la ramène. */
+     try{p.style.transform='translateX(-50%) translateY(100%)';p.style.pointerEvents='none';window._flBalHid=1;}catch(e){}
+     try{flOpenHebdo(rw);}catch(e){}return;}
    }
   },true);
  }
@@ -10441,12 +10450,22 @@ var FLH_HINTS={
 var FL_HEBDO={
  /* v840 — les trois bulles de la page Balance calorique.
     balance = brûlées − consommées (positif = déficit), cf. flBalPanelHTML. */
- kcalOut:{title:'Calories brûlées',lab:'TES CALORIES BRÛLÉES',heroLab:'MOYENNE / JOUR',unit:'kcal',col:'#f2870f',kind:'bars',fmt:flhInt,tickFmt:function(t){return ''+Math.round(t);},
+ /* v848 — les trois bulles ouvrent des COURBES, pas des histogrammes.
+    Le founder : « t'as inventé des graphiques… je voulais exactement les mêmes
+    qu'on avait faits ». Les siens sont les sparklines des bulles : des lignes,
+    dans la couleur de la bulle. On reprend ces couleurs à l'identique. */
+ kcalOut:{title:'Calories brûlées',lab:'TES CALORIES BRÛLÉES',heroLab:'MOYENNE / JOUR',unit:'kcal',col:'#f2870f',kind:'line',fmt:flhInt,tickFmt:function(t){return ''+Math.round(t);},
   get:function(off){try{return caloriesBurned(tk(off));}catch(e){return null;}}},
- kcalIn:{title:'Calories consommées',lab:'TES CALORIES CONSOMMÉES',heroLab:'MOYENNE / JOUR',unit:'kcal',col:'#f4231d',kind:'bars',fmt:flhInt,tickFmt:function(t){return ''+Math.round(t);},
+ kcalIn:{title:'Calories consommées',lab:'TES CALORIES CONSOMMÉES',heroLab:'MOYENNE / JOUR',unit:'kcal',col:'#f4231d',kind:'line',fmt:flhInt,tickFmt:function(t){return ''+Math.round(t);},
   get:function(off){try{var t=nutTotals(tk(off));return (t&&t.kcal)?t.kcal:null;}catch(e){return null;}}},
- kcalBal:{title:'Balance calorique',lab:'TA BALANCE CALORIQUE',heroLab:'MOYENNE / JOUR',unit:'kcal',col:'#f5a417',kind:'bars',fmt:flhInt,tickFmt:function(t){return ''+Math.round(t);},
-  get:function(off){try{var k=tk(off),t=nutTotals(k);if(!t||!t.kcal)return null;return caloriesBurned(k)-t.kcal;}catch(e){return null;}}},
+ /* La balance n'est pas une série de plus : c'est l'ÉCART entre les deux
+    courbes. On trace donc brûlées (orange) et consommées (jaune) sur la même
+    échelle — « la comparaison », mot pour mot. `parts` ne sert ici QUE de
+    légende : le branchement des barres empilées teste kind==='bars'. */
+ kcalBal:{title:'Balance calorique',lab:'BRÛLÉES CONTRE CONSOMMÉES',heroLab:'BRÛLÉES / JOUR',unit:'kcal',col:'#f2870f',colB:'#f5a417',kind:'line',fmt:flhInt,tickFmt:function(t){return ''+Math.round(t);},
+  parts:[['#f2870f','Brûlées'],['#f5a417','Consommées']],
+  get:function(off){try{return caloriesBurned(tk(off));}catch(e){return null;}},
+  get2:function(off){try{var t=nutTotals(tk(off));return (t&&t.kcal)?t.kcal:null;}catch(e){return null;}}},
  hrv:{title:'VFC',lab:'TA VFC',unit:'ms',kind:'line',fmt:flhInt},
  rhr:{title:'FC au repos',lab:'TA FC AU REPOS',unit:'bpm',kind:'line',fmt:flhInt},
  /* v684 — métriques de la page Effort : elles ouvrent désormais la MÊME page de
@@ -10532,10 +10551,19 @@ function flhChart(cfg,pts,n,gid){
     en bleu, celles de sommeil/récup gardent l'orange par défaut. */
  var AC=(cfg&&cfg.col)||'#fb6015',AC2=(cfg&&cfg.col2)||(cfg&&cfg.col?'#8FC7F2':'#ffc191');
  var vals=pts.filter(function(p){return p.v!=null;}).map(function(p){return p.v;});
+ /* v848 — COMPARAISON À DEUX COURBES (cfg.get2).
+    Le founder, sur la Balance calorique : « on voulait la comparaison des
+    graphiques, il y avait deux lignes, une jaune et une orange ». La balance
+    n'est pas une série à part : c'est l'ÉCART entre brûlées et consommées.
+    D'où deux courbes sur une MÊME échelle — donc les deux séries doivent
+    entrer dans le calcul des graduations, sinon la seconde sort du cadre. */
+ var vals2=[];
+ if(cfg.get2){pts.forEach(function(p){var v2=null;try{v2=cfg.get2(p.off);}catch(e){}if(v2!=null)vals2.push(v2);});}
+ var allv=vals.concat(vals2);
  var mn,mx,ticks;
  if(cfg.ticks){mx=cfg.ticks[0];mn=cfg.ticks[cfg.ticks.length-1];ticks=cfg.ticks;}
- else if(cfg.kind==='bars'){ticks=flhTicksAuto(vals.length?Math.max.apply(null,vals):1,cfg.tickSteps);mx=ticks[0];mn=0;}
- else{var r=flhRange(vals.length?vals:[0,1]);mn=r.min;mx=r.max;ticks=r.ticks;}
+ else if(cfg.kind==='bars'){ticks=flhTicksAuto(allv.length?Math.max.apply(null,allv):1,cfg.tickSteps);mx=ticks[0];mn=0;}
+ else{var r=flhRange(allv.length?allv:[0,1]);mn=r.min;mx=r.max;ticks=r.ticks;}
  var s='',avg=vals.length?vals.reduce(function(a,b){return a+b;},0)/vals.length:null;
  s+='<g stroke="#e7ded1" stroke-width="1.3" stroke-dasharray="4 5">';
  ticks.forEach(function(t){var y=flhY(t,mn,mx);if(Math.abs(y-660)>2)s+='<line x1="52" y1="'+y.toFixed(1)+'" x2="588" y2="'+y.toFixed(1)+'"></line>';});
@@ -10571,6 +10599,17 @@ function flhChart(cfg,pts,n,gid){
   pts.forEach(function(p,i){if(p.v!=null)seg.push([flhX(i,n),flhY(p.v,mn,mx)]);else if(seg.length){segs.push(seg);seg=[];}});
   if(seg.length)segs.push(seg);
   segs.forEach(function(sg){if(sg.length>1)s+='<polyline points="'+sg.map(function(q){return q[0].toFixed(2)+','+q[1].toFixed(2);}).join(' ')+'" fill="none" stroke="'+AC+'" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></polyline>';});
+  /* v848 — la seconde courbe : même tracé, sa propre couleur (cfg.colB), posée
+     SOUS les pastilles de la première pour que le scrub reste lisible. */
+  if(cfg.get2){var ACB=cfg.colB||'#f5a417',sg2=[],sgs2=[];
+   pts.forEach(function(p,i){var v2=null;try{v2=cfg.get2(p.off);}catch(e){}
+    if(v2!=null)sg2.push([flhX(i,n),flhY(v2,mn,mx)]);else if(sg2.length){sgs2.push(sg2);sg2=[];}});
+   if(sg2.length)sgs2.push(sg2);
+   sgs2.forEach(function(g2){if(g2.length>1)s+='<polyline points="'+g2.map(function(q){return q[0].toFixed(2)+','+q[1].toFixed(2);}).join(' ')+'" fill="none" stroke="'+ACB+'" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></polyline>';});
+   s+='<g fill="#ffffff" stroke="'+ACB+'" stroke-width="2.2">';
+   pts.forEach(function(p,i){var v2=null;try{v2=cfg.get2(p.off);}catch(e){}if(v2==null)return;
+    s+='<circle cx="'+flhX(i,n).toFixed(2)+'" cy="'+flhY(v2,mn,mx).toFixed(2)+'" r="'+(n===7?4.4:2.6)+'"></circle>';});
+   s+='</g>';}
   s+='<g fill="#ffffff" stroke="'+AC+'" stroke-width="2.4">';
   pts.forEach(function(p,i){if(p.v==null)return;s+='<circle data-flh-i="'+i+'" cx="'+flhX(i,n).toFixed(2)+'" cy="'+flhY(p.v,mn,mx).toFixed(2)+'" r="'+(n===7?5.4:3.2)+'"></circle>';});
   s+='</g>';
@@ -10852,7 +10891,13 @@ function flOpenHebdo(key){try{
  if(typeof haptic==='function')haptic();
 }catch(e){}}
 function flCloseHebdo(cid){try{var fr=document.getElementById('frToday');var doc=fr&&fr.contentDocument;if(!doc)return;var cl=doc.getElementById(cid);if(!cl)return;
- cl.style.setProperty('transform','translateX(-50%) translateY(100%)','important');cl.style.pointerEvents='none';}catch(e){}}
+ cl.style.setProperty('transform','translateX(-50%) translateY(100%)','important');cl.style.pointerEvents='none';
+ /* v848 — si on venait de la page Calories, elle se rouvre : un seul retour
+    par page, plus d'empilement. */
+ if(window._flBalHid){window._flBalHid=0;
+  var bp=document.getElementById('flBalPanel');
+  if(bp&&window._flBalOpen){bp.style.transform='translateX(-50%) translateY(0px)';bp.style.pointerEvents='auto';}}
+}catch(e){}}
 /* ===== Tendances des écrans hebdo NATIFS : mini-courbe + phrase + triangle recalculés
    depuis les valeurs AFFICHÉES sur le grand graphe (cohérence garantie, jamais au hasard) ===== */
 function mdHebTrend(doc){try{
@@ -16098,7 +16143,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='v847';
+const APP_VERSION='v848';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
