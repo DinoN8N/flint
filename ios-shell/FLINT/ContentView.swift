@@ -121,6 +121,21 @@ final class ShellBridge: NSObject, WKScriptMessageHandler, WKNavigationDelegate,
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         pageReady = true
+        // v795 — le web affiche le compteur de crashs WebKit (Réglages) : on
+        // pousse la vérité native à chaque chargement, y compris après un
+        // rechargement post-crash.
+        let d = UserDefaults.standard
+        let kills = d.integer(forKey: "flintWKKills")
+        let last = d.string(forKey: "flintWKLastKill") ?? ""
+        // Repli imposé par le coupe-circuit : on force le thème le plus léger
+        // avant que la page ne construise quoi que ce soit.
+        let force = d.bool(forKey: "flintForceLight")
+        if force { d.set(false, forKey: "flintForceLight") }
+        let js = """
+        try{localStorage.setItem('flWkKills','\(kills)');localStorage.setItem('flWkLast','\(last)');
+        \(force ? "localStorage.setItem('flTheme','light');" : "")}catch(e){}
+        """
+        webView.evaluateJavaScript(js, completionHandler: nil)
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) { [weak self] in self?.flushNight() }
     }
 
@@ -136,9 +151,82 @@ final class ShellBridge: NSObject, WKScriptMessageHandler, WKNavigationDelegate,
             if let id = body["deviceId"] as? String { band.connect(id) }
         case "nightack":
             break   // le web a intégré le journal ; on garde les 36 h glissantes côté natif
+        case "haptic":
+            playHaptic(style: body["style"] as? String ?? "LIGHT")
         default:
             break
         }
+    }
+
+    // MARK: haptique native
+    // Le web appelle haptic(), qui teste Capacitor.Plugins.Haptics en premier : on injecte
+    // ce shim au chargement (voir WebShellView) et il retombe donc ici. navigator.vibrate
+    // n'existe pas sur iOS — sans ça, aucun retour tactile dans toute l'app.
+    private let lightGen = UIImpactFeedbackGenerator(style: .light)
+    private let mediumGen = UIImpactFeedbackGenerator(style: .medium)
+    private let heavyGen = UIImpactFeedbackGenerator(style: .heavy)
+
+    private func playHaptic(style: String) {
+        DispatchQueue.main.async {
+            switch style.uppercased() {
+            case "HEAVY": self.heavyGen.impactOccurred()
+            case "MEDIUM": self.mediumGen.impactOccurred()
+            default: self.lightGen.impactOccurred()
+            }
+        }
+    }
+
+    // MARK: crash du processus web (pression mémoire en navigation rapide) →
+    // rechargement IMMÉDIAT au lieu d'un écran figé/blanc. C'est la cause du
+    // « ça lague puis l'écran de démarrage revient » : WebKit tue son processus,
+    // et sans ce handler l'app restait plantée jusqu'à une relance manuelle.
+    func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+        // v791 — chaque mort du processus web est comptée et horodatée : permet de
+        // distinguer un VRAI crash WebKit (visible ici) du voile de chargement web
+        // (flPageLoader) quand le founder signale « l'app se recharge ».
+        let d = UserDefaults.standard
+        d.set(d.integer(forKey: "flintWKKills") + 1, forKey: "flintWKKills")
+        d.set(Date().description, forKey: "flintWKLastKill")
+        NSLog("FLINT WKWebContent TERMINATED — total: %d", d.integer(forKey: "flintWKKills"))
+        pageReady = false
+
+        // v832 — COUPE-CIRCUIT. Sans lui, une page qui meurt à l'init est
+        // rechargée aussitôt, remeurt, et l'app boucle indéfiniment (constaté :
+        // 3 morts en 15 s). Au 2ᵉ décès en moins de 45 s on repasse en thème
+        // Clair — le mode le plus léger — avant de recharger, et on espace la
+        // relance pour laisser le système respirer.
+        let now = Date().timeIntervalSince1970
+        let last = d.double(forKey: "flintWKLastKillTS")
+        let rapid = (now - last) < 45
+        d.set(now, forKey: "flintWKLastKillTS")
+
+        if rapid {
+            NSLog("FLINT — boucle de crash détectée : repli sur le thème Clair")
+            d.set(true, forKey: "flintForceLight")
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + (rapid ? 1.5 : 0)) {
+            webView.reload()
+        }
+    }
+
+    // MARK: échec de chargement → message natif au lieu d'une page blanche
+    func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+        showLoadError(in: webView)
+    }
+    func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+        showLoadError(in: webView)
+    }
+    private func showLoadError(in webView: WKWebView) {
+        let html = """
+        <html><head><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"></head>
+        <body style="margin:0;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+        font-family:-apple-system,system-ui,sans-serif;background:#fbfbfa;color:#14110f;text-align:center;padding:32px">
+        <div style="font-size:26px;font-weight:800;letter-spacing:-.02em">FLINT<span style="color:#fb6015">.</span></div>
+        <p style="font-size:15px;font-weight:300;color:#8a8378;margin:14px 0 22px;line-height:1.5">
+        L'application n'a pas pu se charger.<br>Relance-la, ça devrait repartir.</p>
+        </body></html>
+        """
+        webView.loadHTMLString(html, baseURL: nil)
     }
 }
 
@@ -150,15 +238,54 @@ struct WebShellView: UIViewRepresentable {
         cfg.allowsInlineMediaPlayback = true
         cfg.mediaTypesRequiringUserActionForPlayback = []
         cfg.userContentController.add(bridge, name: "flint")
+
+        // Shim Capacitor : le haptic() du web teste Capacitor.Plugins.Haptics en premier,
+        // donc en le fournissant ici on obtient un vrai retour tactile natif partout,
+        // sans modifier une seule ligne de l'app web.
+        // Jeu de démonstration : 40 jours de données variées (nuits, séances,
+        // repas, journal) avec des trous quand la montre n'est pas portée.
+        // Mettre à false pour retrouver l'app avec les seules données réelles.
+        let demoData = true
+        if demoData {
+            cfg.userContentController.addUserScript(WKUserScript(
+                source: "try{localStorage.setItem('flintDemoData','1')}catch(e){}",
+                injectionTime: .atDocumentStart, forMainFrameOnly: true))
+        } else {
+            cfg.userContentController.addUserScript(WKUserScript(
+                source: "try{localStorage.setItem('flintDemoData','0')}catch(e){}",
+                injectionTime: .atDocumentStart, forMainFrameOnly: true))
+        }
+
+        let shim = """
+        window.Capacitor = window.Capacitor || {};
+        window.Capacitor.Plugins = window.Capacitor.Plugins || {};
+        window.Capacitor.Plugins.Haptics = {
+          impact: function(o){ try{ window.webkit.messageHandlers.flint.postMessage(
+            {cmd:'haptic', style:(o&&o.style)||'LIGHT'}); }catch(e){} return Promise.resolve(); }
+        };
+        """
+        cfg.userContentController.addUserScript(
+            WKUserScript(source: shim, injectionTime: .atDocumentStart, forMainFrameOnly: true))
+
+        // Servir l'app via un scheme perso : indispensable pour que index.html puisse
+        // accéder au document de l'iframe (tous nos injecteurs en dépendent). Voir
+        // WebSchemeHandler pour le détail — en file:// l'accès cross-frame est bloqué.
+        cfg.setURLSchemeHandler(WebSchemeHandler(root: WebRoot.prepare()),
+                                forURLScheme: WebSchemeHandler.scheme)
+
         let web = WKWebView(frame: .zero, configuration: cfg)
         web.scrollView.contentInsetAdjustmentBehavior = .never
         web.scrollView.bounces = false
         web.allowsBackForwardNavigationGestures = false
         web.isOpaque = false
+        // Blanc pur : même couleur que l'écran de lancement natif ET que le splash web
+        // (#flSplash). Les trois se succèdent sans le moindre changement de teinte.
         web.backgroundColor = .white
         web.navigationDelegate = bridge
         bridge.webView = web
-        web.load(URLRequest(url: URL(string: "https://flint-demo-eta.vercel.app")!))
+
+        // App web EMBARQUÉE : démarrage instantané, aucun écran blanc, marche hors ligne.
+        web.load(URLRequest(url: WebSchemeHandler.startURL(root: WebRoot.prepare())))
         return web
     }
 
@@ -172,5 +299,11 @@ struct ContentView: View {
         WebShellView(bridge: bridge)
             .ignoresSafeArea()
             .statusBarHidden(false)
+            .onAppear {
+                // Mise à jour silencieuse : on télécharge la version en ligne si elle est
+                // plus récente ; elle sera active au prochain lancement (jamais de
+                // rechargement pendant l'utilisation).
+                WebRoot.checkForUpdate()
+            }
     }
 }
