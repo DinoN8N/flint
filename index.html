@@ -7521,6 +7521,507 @@ window.flSommeilData=function(){try{
    recovery(), loadStrain(), caloriesBurned(), sleepNight() — plutot que de
    recalculer, sinon les deux moities de l app finiraient par se contredire.
    Chaque champ est optionnel : absent, il s affichera en tiret. */
+/* ===== v919 — PONT DE LA PAGE EFFORT ==========================================
+   Même contrat que flSommeilData / flAccueilData : le web CALCULE, le natif
+   PRÉSENTE. On rebranche sur loadStrain(), effMetricsOf(), FLEF_TREND — les
+   fonctions qui alimentent déjà l'écran web — plutôt que de refaire les maths
+   côté Swift. Deux calculs pour un même chiffre finiraient par diverger.
+
+   Les VALEURS FORMATÉES partent d'ici (minToHM, fmtNum, T.fmt, T.tick) : ce sont
+   les formateurs du fichier d'origine, et les réécrire en Swift serait la
+   meilleure façon d'obtenir « 1:05 » d'un côté et « 1h05 » de l'autre.
+
+   Les BORNES d'axe (mn, mx) partent d'ici aussi, avec le même padding de 35 % et
+   le même repli quand toutes les valeurs sont égales. Le natif ne fait plus que
+   projeter v → y ; il ne décide de rien.                                      */
+window.flEffortData=function(){try{
+ var off=window.flDayOff||0, K=tk(off);
+ var str=loadStrain(K);
+ var cur=effMetricsOf(K);
+ function hist(f){var o=[];for(var i=6;i>=0;i--){var v=null;
+  try{v=f(tk(off-i));}catch(e){}
+  o.push((v==null||isNaN(v))?null:+v);}return o;}
+ var hZ13=hist(function(k){return effMetricsOf(k).zones13;});
+ var hZ45=hist(function(k){return effMetricsOf(k).zones45;});
+ var hStr=hist(function(k){return effMetricsOf(k).strength;});
+ var hStp=hist(function(k){return effMetricsOf(k).steps;});
+ var metriques=[
+  {cle:'zones13',libelle:'ZONES DE FRÉQUENCE\nCARDIAQUE 1 À 3',
+   valeur:minToHM(cur.zones13),dir:flRcDir(cur.zones13,hZ13),spark:hZ13},
+  {cle:'zones45',libelle:'ZONES DE FRÉQUENCE\nCARDIAQUE 4-5',
+   valeur:minToHM(cur.zones45),dir:flRcDir(cur.zones45,hZ45),spark:hZ45},
+  {cle:'strength',libelle:'TEMPS DE\nMUSCULATION',
+   valeur:minToHM(cur.strength),dir:flRcDir(cur.strength,hStr),spark:hStr},
+  {cle:'steps',libelle:'PAS',
+   valeur:fmtNum(cur.steps),dir:flRcDir(cur.steps,hStp),spark:hStp}
+ ];
+ var hebdo=FLEF_TREND.map(function(T){
+  var pts=[];try{pts=T.series();}catch(e){pts=[];}
+  var ok=pts.filter(function(p){return p.v!=null;});
+  var mn=0,mx=1;
+  if(T.scale){mn=0;mx=T.scale;}
+  else if(ok.length){
+   mn=Math.min.apply(null,ok.map(function(p){return p.v;}));
+   mx=Math.max.apply(null,ok.map(function(p){return p.v;}));
+   if(mx-mn<1e-9){mn=0;mx=T.emptyMax||Math.max(1,mx*2)||1;}
+   else{var pad=(mx-mn)*0.35;mn-=pad;mx+=pad;}
+   if(mn<0)mn=0;}
+  var ticks=[40,105,170,235,300].map(function(y){
+   var v=mn+(300-y)/(300-40)*(mx-mn);
+   try{return String(T.tick(v));}catch(e){return '';}});
+  return {cle:T.trend,titre:T.title,genre:T.kind,
+   couleur:T.col||'#fb6015',couleur2:T.col2||'#ffc191',
+   parts:(T.parts||[]).map(function(p){return {couleur:p[0],nom:p[1]};}),
+   mn:mn,mx:mx,ticks:ticks,
+   jours:pts.map(function(p){
+    var lab=null;try{if(p.v!=null)lab=String(T.fmt(p.v));}catch(e){}
+    return {jour:p.day+' '+p.num,v:p.v,label:lab,parts:p.parts||null};})};
+ });
+ return {aDesDonnees:true,strain:str,
+  /* le verdict est celui de l'écran web, au mot près */
+  verdict:(str<10?'Légère':str<14?'Modérée':str<18?'Soutenue':'Élevée'),
+  jour:(off===0?'AUJOURD’HUI':flDayLabelFull(off)),
+  metriques:metriques,hebdo:hebdo};
+}catch(e){return {aDesDonnees:false};}};
+/* ===== v920 — PONT DE LA PAGE CALORIES (balance calorique) ====================
+   Reprend flBalDays() telle quelle : c'est elle qui décide de la fenêtre de sept
+   jours, du signe de la balance (brûlées − consommées, donc POSITIF = déficit) et
+   du « — » quand aucun repas n'est saisi. On ne recalcule rien côté natif ; on ne
+   fait que transporter, y compris les COULEURS de verdict, qui appartiennent à la
+   règle métier (>150 déficit, <−150 surplus, sinon équilibre) et non au dessin. */
+window.flBalanceData=function(){try{
+ var D=flBalDays(),sel=D[Math.max(0,Math.min(6,FLBAL_SEL))];
+ var MOIS=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+ var JOURS=['DIM','LUN','MAR','MER','JEU','VEN','SAM'];
+ var a=D[0].date,b=D[6].date;
+ var per=a.getDate()+(a.getMonth()!==b.getMonth()?' '+MOIS[a.getMonth()]:'')+' – '+b.getDate()+' '+MOIS[b.getMonth()]+' '+b.getFullYear();
+ var bal=sel.bal,badge,badgeBg,badgeCol,valCol;
+ if(bal==null){badge='Sans repas saisi';badgeBg='#f2f2f5';badgeCol='#6b6b73';valCol='#8a8a93';}
+ else if(bal>150){badge='Déficit';badgeBg='#fdeadf';badgeCol='#f4551d';valCol='#f4551d';}
+ else if(bal<-150){badge='Surplus';badgeBg='#fdecec';badgeCol='#f5301c';valCol='#f5301c';}
+ else{badge='Équilibre';badgeBg='#f2f2f5';badgeCol='#6b6b73';valCol='#1c1c22';}
+ var pos=(bal==null)?50:Math.max(4,Math.min(96,50-(bal/1500)*50));
+ var mx=1;D.forEach(function(x){if(x.burn!=null&&x.burn>mx)mx=x.burn;if(x.eat!=null&&x.eat>mx)mx=x.eat;});
+ function moy(f){var v=D.map(f).filter(function(x){return x!=null;});
+  return v.length?Math.round(v.reduce(function(p,c){return p+c;},0)/v.length):null;}
+ var mB=moy(function(x){return x.burn;}),mE=moy(function(x){return x.eat;}),mBal=moy(function(x){return x.bal;});
+ return {aDesDonnees:true,
+  balance:bal,balanceTxt:(bal==null?null:flBalSigned(bal)),
+  badge:badge,badgeFond:badgeBg,badgeCouleur:badgeCol,valeurCouleur:valCol,
+  /* position du curseur en pourcentage, bornée 4–96 comme la maquette */
+  curseur:pos,
+  brulees:sel.burn,bruleesTxt:(sel.burn==null?null:flBalNum(sel.burn)),
+  consommees:sel.eat,consommeesTxt:(sel.eat==null?null:flBalNum(sel.eat)),
+  periode:per,semaine:FLBAL_W,selection:FLBAL_SEL,futurBloque:(FLBAL_W>=0),
+  jours:D.map(function(x,i){return {
+   nom:JOURS[x.date.getDay()],num:String(x.date.getDate()),
+   /* hauteurs en pourcentage de la zone de 30 px, plancher de 6 comme la maquette */
+   hBrulees:(x.burn!=null?Math.max(6,Math.round(x.burn/mx*100)):0),
+   hConsommees:(x.eat!=null?Math.max(6,Math.round(x.eat/mx*100)):0),
+   hBalance:(x.bal!=null?Math.max(6,Math.round(Math.abs(x.bal)/mx*100)):0),
+   label:(x.bal==null?'—':flBalSigned(x.bal)),
+   labelCouleur:(x.bal==null?'#bdbbb7':(x.bal>150?'#f2870f':x.bal<-150?'#f5301c':'#6b6b73'))};}),
+  lignes:[
+   {cle:'kcalOut',nom:'Brûlées',valeur:(mB==null?null:flBalNum(mB)),
+    couleur:'#f2870f',fond:'#fdf1e7',serie:D.map(function(x){return x.burn;})},
+   {cle:'kcalIn',nom:'Consommées',valeur:(mE==null?null:flBalNum(mE)),
+    couleur:'#f4231d',fond:'#fdecec',serie:D.map(function(x){return x.eat;})},
+   {cle:'kcalBal',nom:'Balance calorique',valeur:(mBal==null?null:flBalSigned(mBal)),
+    couleur:'#F5A417',fond:'#eef0f4',serie:D.map(function(x){return x.bal;})}
+  ]};
+}catch(e){return {aDesDonnees:false};}};
+
+/* Semaine précédente / suivante, puis renvoi de la page à jour. */
+window.flBalanceNav=function(d){try{
+ var n=FLBAL_W+(+d||0); if(n>0)n=0; FLBAL_W=n; FLBAL_SEL=6;
+ var nt=window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint;
+ if(nt)nt.postMessage({cmd:'natif',screen:'calories',data:flBalanceData()});
+ return true;}catch(e){return false;}};
+
+/* Sélection d'un des sept jours. */
+window.flBalanceJour=function(i){try{
+ FLBAL_SEL=Math.max(0,Math.min(6,+i||0));
+ var nt=window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint;
+ if(nt)nt.postMessage({cmd:'natif',screen:'calories',data:flBalanceData()});
+ return true;}catch(e){return false;}};
+/* ===== v922 — PONT DE L'ÉCRAN DE DÉTAIL HEBDOMADAIRE, POUR TOUTES LES MÉTRIQUES
+   Le web possède DÉJÀ un moteur générique : `FL_HEBDO` décrit chaque métrique
+   (titre, unité, couleur, barres ou courbe, formateurs, graduations sur mesure)
+   et `flhSeries` en tire la série. Effort, Calories, Récup et Sommeil y sont tous
+   décrits. Écrire un écran par page aurait produit quatre copies qui divergent ;
+   on expose donc le moteur tel quel, et le natif n'a qu'UN écran de détail.
+
+   TOUT CE QUI RELÈVE D'UNE DÉCISION reste ici : le choix des graduations (barres
+   depuis zéro, courbes recadrées à ±40 %), le formatage, la phrase de lecture, la
+   pente de tendance. Le natif projette v → y et dessine.                       */
+window.flHebdoDetail=function(key,mode,recul){try{
+ var cfg=FL_HEBDO[key];
+ if(!cfg)return {aDesDonnees:false};
+ var n=(mode==='M')?30:7, r=Math.max(0,+recul||0), end=-(r*n);
+ var pts=flhSeries(key,end,n);
+ var vals=[],i;
+ for(i=0;i<pts.length;i++)if(pts[i].v!=null)vals.push(pts[i].v);
+ /* seconde série (balance calorique) : elle doit entrer dans les graduations,
+    sinon la courbe jaune sort du cadre. */
+ var v2s=[];
+ if(cfg.get2)pts.forEach(function(p){var v=null;try{v=cfg.get2(p.off);}catch(e){}
+  p.v2=(v==null?null:+v); if(v!=null)v2s.push(v);});
+ var allv=vals.concat(v2s);
+ var mn,mx,ticks;
+ if(cfg.ticks){mx=cfg.ticks[0];mn=cfg.ticks[cfg.ticks.length-1];ticks=cfg.ticks;}
+ else if(cfg.kind==='bars'){ticks=flhTicksAuto(allv.length?Math.max.apply(null,allv):1,cfg.tickSteps);mx=ticks[0];mn=0;}
+ else{var rr=flhRange(allv.length?allv:[0,1]);mn=rr.min;mx=rr.max;ticks=rr.ticks;}
+ var avg=vals.length?vals.reduce(function(a,b){return a+b;},0)/vals.length:null;
+ var prevPts=flhSeries(key,end-n,n),prev=[];
+ for(i=0;i<prevPts.length;i++)if(prevPts[i].v!=null)prev.push(prevPts[i].v);
+ function fmt(v){try{return String(cfg.fmt?cfg.fmt(v):Math.round(v));}catch(e){return '';}}
+ function tickTxt(t){try{return String(cfg.tickFmt?cfg.tickFmt(t):fmt(t));}catch(e){return '';}}
+ var a=flhDate(pts[0].off),b=flhDate(pts[pts.length-1].off);
+ var per=a.getDate()+' '+FLH_MOIS[a.getMonth()]+' – '+b.getDate()+' '+FLH_MOIS[b.getMonth()];
+ return {aDesDonnees:true,cle:key,
+  titre:cfg.title,libelleGraphe:cfg.lab,libelleHero:(cfg.heroLab||'MOYENNE'),
+  unite:(cfg.unit||''),couleur:(cfg.col||'#fb6015'),couleurB:(cfg.colB||null),
+  couleur2:(cfg.col2||(cfg.col?'#8FC7F2':'#ffc191')),
+  genre:(cfg.kind==='bars'?'bars':'line'),
+  mode:(n===30?'M':'S'),recul:r,periode:per,futurBloque:(r<=0),
+  parts:((cfg.parts||[]).map(function(p){return {couleur:p[0],nom:p[1]};})),
+  empile:!!(cfg.kind==='bars'&&cfg.parts),
+  mn:mn,mx:mx,
+  ticks:ticks.map(function(t){return {v:t,txt:tickTxt(t)};}),
+  moyenne:avg,moyenneTxt:(avg==null?null:fmt(avg)),
+  tendance:flhTrendDir(vals),
+  lecture:flhReadPhrase(cfg,key,(n===30?'M':'S'),vals,prev),
+  points:pts.map(function(p,i2){
+   var d=flhDate(p.off);
+   return {v:p.v,v2:(p.v2==null?null:p.v2),txt:(p.v==null?null:fmt(p.v)),
+    parts:(p.parts||null),
+    /* étiquette d'axe : les sept jours sont tous nommés ; sur trente on n'en
+       garde qu'un sur cinq, sinon les libellés se chevauchent. */
+    lab:(n===7?FLH_JOURS[d.getDay()]:((i2%5===0||i2===n-1)?String(d.getDate()):'')),
+    sub:(n===7?String(d.getDate()):''),
+    jour:FLH_JOURS[d.getDay()]+' '+d.getDate()+' '+FLH_MOIS[d.getMonth()]};})};
+}catch(e){return {aDesDonnees:false};}};
+
+/* Ouvre / rafraîchit l'écran de détail natif. */
+window.flOuvrirHebdo=function(key,mode,recul){try{
+ var d=flHebdoDetail(key,mode,recul);
+ var nt=window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint;
+ if(nt)nt.postMessage({cmd:'natif',screen:'hebdo',data:d});
+ return true;}catch(e){return false;}};
+/* ===== v927 — PONT DE LA PAGE RÉCUPÉRATION ====================================
+   Reprend flRecupOpen : score et verdict de recovery(), valeurs du jour de
+   sensorOf, direction de flRcDir sur 22 jours, séries hebdo de flRcSeries via
+   FLRC_TREND. La couleur PAR MÉTRIQUE reproduit _mcol : le z-score de
+   recovery().c décide si la ligne est verte, orange ou rouge — c'est une règle
+   métier, elle voyage donc avec la donnée. */
+window.flRecupData=function(){try{
+ var K=tk(0), rv=(typeof recovery==='function')?recovery():null;
+ var s0=(typeof sensorOf==='function')?sensorOf(K):null;
+ var need=((getProfile().need)||8)*60;
+ var score=rv?Math.round(rv.s):null;
+ var _RC={g:'#3FB57A',a:'#F2A93B',r:'#FF3B30'};
+ var ringCol=score==null?'#9a968f':(score>=67?_RC.g:score>=34?_RC.a:_RC.r);
+ var verdict=score==null?null:(score>=67?'Bonne':score>=34?'Modérée':'Faible');
+ function mcol(idx){
+  if(!rv||!rv.c||!rv.c[idx])return _RC.a;
+  var z=rv.c[idx][2];
+  if(z==null)return _RC.a;
+  return z>=-0.35?_RC.g:(z>=-1.1?_RC.a:_RC.r);}
+ function hist(f){var o=[];for(var i=21;i>=0;i--){var v=null;
+  try{v=f(tk(-i));}catch(e){}
+  o.push((v==null||isNaN(v))?null:+v);}return o;}
+ var hH=hist(function(k){var x=sensorOf(k);return x?x.hrv:null;});
+ var hR=hist(function(k){var x=sensorOf(k);return x?x.rhr:null;});
+ var hP=hist(function(k){var x=sensorOf(k);return x?x.resp:null;});
+ var hS=hist(function(k){var x=sensorOf(k);
+  return (x&&x.sleepMin)?Math.min(100,Math.round(x.sleepMin/need*100)):null;});
+ var sPct=(s0&&s0.sleepMin)?Math.min(100,Math.round(s0.sleepMin/need*100)):null;
+ var metriques=[
+  {cle:'hrv', libelle:'VARIABILITÉ DE LA\nFRÉQUENCE CARDIAQUE',
+   valeur:(s0&&s0.hrv!=null)?String(Math.round(s0.hrv)):null, unite:' ms',
+   dir:flRcDir(s0&&s0.hrv,hH), spark:hH, couleur:mcol(0)},
+  {cle:'rhr', libelle:'FRÉQUENCE CARDIAQUE\nAU REPOS',
+   valeur:(s0&&s0.rhr!=null)?String(Math.round(s0.rhr)):null, unite:' bpm',
+   dir:flRcDir(s0&&s0.rhr,hR), spark:hR, couleur:mcol(1)},
+  {cle:'resp', libelle:'FRÉQUENCE\nRESPIRATOIRE',
+   valeur:(s0&&s0.resp!=null)?String(Math.round(s0.resp*10)/10).replace('.',','):null, unite:' /min',
+   dir:flRcDir(s0&&s0.resp,hP), spark:hP, couleur:mcol(3)},
+  {cle:'sleep', libelle:'SOMMEIL PAR RAPPORT\nAU BESOIN',
+   valeur:sPct!=null?String(sPct):null, unite:'%',
+   dir:flRcDir(sPct,hS), spark:hS, couleur:mcol(2)}
+ ];
+ var hebdo=FLRC_TREND.map(function(T){
+  var pts=[];try{pts=flRcSeries(T.key);}catch(e){}
+  var ok=pts.filter(function(p){return p.v!=null;});
+  var mn=0,mx=1;
+  if(T.scale){mn=0;mx=T.scale;}
+  else if(ok.length){
+   mn=Math.min.apply(null,ok.map(function(p){return p.v;}));
+   mx=Math.max.apply(null,ok.map(function(p){return p.v;}));
+   if(mx-mn<1e-9){mn=0;mx=Math.max(1,mx*2)||1;}
+   else{var pad=(mx-mn)*0.35;mn-=pad;mx+=pad;}
+   if(mn<0)mn=0;}
+  var ticks=[40,105,170,235,300].map(function(y){
+   var v=mn+(300-y)/(300-40)*(mx-mn);
+   try{return String(T.tick(v));}catch(e){return '';}});
+  return {cle:(T.hb||T.key),titre:T.title,
+   genre:(T.kind==='bars'?'bars':'line'),
+   couleur:(T.col||'#fb6015'),couleur2:(T.col2||'#ffc191'),
+   mn:mn,mx:mx,ticks:ticks,
+   jours:pts.map(function(p){
+    var lab=null;try{if(p.v!=null)lab=String(T.fmt(p.v));}catch(e){}
+    return {jour:(p.day||'')+' '+(p.num||''),v:(p.v==null?null:+p.v),label:lab};})};
+ });
+ return {aDesDonnees:true,score:score,verdict:verdict,anneau:ringCol,
+  jour:'AUJOURD’HUI',metriques:metriques,hebdo:hebdo};
+}catch(e){return {aDesDonnees:false};}};
+/* ===== v928 — PONT DE LA PAGE TENDANCES =======================================
+   Reprend renderTrends : les 5 métriques et leurs accès (recov_/sensorOf/loadOf),
+   les 3 périodes, la moyenne, les moyennes 7 jours, le bilan de la semaine
+   (assess) et les corrélations du journal (behaviorCorr). Tout est calculé ici ;
+   le natif choisit deux index et dessine. */
+window.flTendancesData=function(mi,pi){try{
+ mi=Math.max(0,Math.min(4,+mi||0)); pi=Math.max(0,Math.min(2,+pi||0));
+ var METR=[
+  ['recov','Récupération','#fb6015',function(k){return DB.get('recov_'+k,null);}],
+  ['hrv','HRV (ms)','#6C7BD6',function(k){var s=sensorOf(k);return s?s.hrv:null;}],
+  ['rhr','FC repos','#E0723A',function(k){var s=sensorOf(k);return s?s.rhr:null;}],
+  ['sleep','Sommeil (h)','#3A4FB0',function(k){var s=sensorOf(k);return (s&&s.sleepMin!=null)?s.sleepMin/60:null;}],
+  ['load','Charge','#3FB57A',function(k){return loadOf(k);}]];
+ var PER=[[7,'1 sem'],[30,'1 mois'],[180,'6 mois']];
+ var m=METR[mi], nd=PER[pi][0];
+ var vals=[];
+ for(var i=nd-1;i>=0;i--){var v=null;try{v=m[3](tk(-i));}catch(e){}
+  vals.push((v==null||isNaN(v))?null:+v);}
+ var ok=vals.filter(function(v){return v!=null;});
+ function fmt(v){return mi===3?(Math.round(v*10)/10).toFixed(1).replace('.',',')+'h':String(Math.round(v));}
+ var moy=ok.length?ok.reduce(function(a,b){return a+b;},0)/ok.length:null;
+ /* bornes : pad 35 %, plancher 0, comme les autres graphes de l'app */
+ var mn=0,mx=1;
+ if(ok.length){mn=Math.min.apply(null,ok);mx=Math.max.apply(null,ok);
+  if(mx-mn<1e-9){mn=0;mx=Math.max(1,mx*2);}
+  else{var pad=(mx-mn)*0.35;mn-=pad;mx+=pad;}
+  if(mn<0)mn=0;}
+ var ticks=[40,105,170,235,300].map(function(y){
+  var v=mn+(300-y)/(300-40)*(mx-mn);return fmt(v).replace('h','');});
+ /* moyennes 7 jours */
+ function a7(f,dec){var s=0,n=0;for(var i=0;i<7;i++){var v=null;
+  try{v=f(tk(-i));}catch(e){}
+  if(v!=null&&!isNaN(v)){s+=+v;n++;}}
+  if(!n)return null;var r=s/n;return dec?(Math.round(r*10)/10).toFixed(1).replace('.',','):String(Math.round(r));}
+ var m7=[
+  {nom:'Récup moy', valeur:a7(METR[0][3]), unite:'%'},
+  {nom:'Sommeil moy', valeur:a7(METR[3][3],1), unite:'h'},
+  {nom:'HRV moy', valeur:a7(METR[1][3]), unite:'ms'},
+  {nom:'Charge', valeur:(function(){var v=loadAvg(7);return v?String(Math.round(v)):null;})(), unite:''}];
+ /* bilan de la semaine — reprend assess(7) */
+ var bilan=null;
+ try{
+  var rec=0,rn=0,sl=0,sn=0,str=0,ses=0;
+  for(var i=0;i<7;i++){var k=tk(-i);
+   var r=DB.get('recov_'+k,null);if(r!=null){rec+=r;rn++;}
+   var sd=sensorOf(k);if(sd&&sd.sleepMin!=null){sl+=sd.sleepMin/60;sn++;}
+   str+=+loadStrain(k)||0;
+   ses+=(DB.get('sessions_'+k,[])||[]).filter(function(x){return x.type!=='nap';}).length;}
+  var prec=0,pn=0;
+  for(var i=7;i<14;i++){var r=DB.get('recov_'+tk(-i),null);if(r!=null){prec+=r;pn++;}}
+  var d=(rn&&pn)?Math.round(rec/rn-prec/pn):null;
+  var slh=sn?sl/sn:null;
+  bilan={recup:rn?String(Math.round(rec/rn)):null,
+   delta:(d==null?null:((d>=0?'+':'')+d+' vs sem. dernière')),
+   sommeil:slh==null?null:(Math.floor(slh)+'h'+String(Math.round((slh%1)*60)).padStart(2,'0')),
+   effort:String(Math.round(str)), seances:String(ses)};
+ }catch(e){}
+ /* corrélations du journal — reprend behaviorCorr */
+ var corr=[];
+ try{
+  var BEH=[['cafeine','☕ Caféine tardive'],['alcool','🍺 Alcool'],['ecrans','📱 Écrans au lit'],
+   ['sportintense','🏃 Sport intense'],['magnesium','💊 Magnésium'],['meditation','🧘 Méditation'],
+   ['repastard','🍽️ Repas tard'],['hydrate','💧 Bien hydraté']];
+  BEH.forEach(function(b){
+   var oui=[],non=[];
+   for(var i=1;i<=30;i++){var k=tk(-i);
+    var r=DB.get('recov_'+k,null);if(r==null)continue;
+    var j=DB.get('journal_'+k,{})||{};
+    (j[b[0]]?oui:non).push(r);}
+   if(oui.length>=2&&non.length>=2){
+    var mo=oui.reduce(function(a,c){return a+c;},0)/oui.length;
+    var mn2=non.reduce(function(a,c){return a+c;},0)/non.length;
+    if(mn2>0){var imp=Math.round((mo-mn2)/mn2*100);
+     if(Math.abs(imp)>=1)corr.push({nom:b[1],impact:imp});}}});
+  corr.sort(function(a,b){return Math.abs(b.impact)-Math.abs(a.impact);});
+  corr=corr.slice(0,7);
+ }catch(e){}
+ return {aDesDonnees:true,metrique:mi,periode:pi,
+  titre:m[1]+' · '+PER[pi][1],couleur:m[2],
+  metriques:['Récupération','HRV','FC','Sommeil','Charge'],
+  periodes:['1 sem','1 mois','6 mois'],
+  points:vals,labels:vals.map(function(_,i2){
+   var d=new Date();d.setDate(d.getDate()-(nd-1-i2));
+   if(nd===7)return ['dim','lun','mar','mer','jeu','ven','sam'][d.getDay()];
+   /* 30 et 180 jours : une étiquette par tranche, sinon illisible */
+   var step=nd===30?5:30;
+   return (i2%step===0||i2===nd-1)?String(d.getDate())+(nd===180?'/'+(d.getMonth()+1):''):'';}),
+  mn:mn,mx:mx,ticks:ticks,
+  moyenneTxt:(moy==null?null:'Moyenne '+fmt(moy)),
+  moyennes7:m7,bilan:bilan,correlations:corr};
+}catch(e){return {aDesDonnees:false};}};
+/* ===== v930 — PONT DE LA PAGE PROFIL ==========================================
+   Reprend flPfMain : identité, état du bracelet (window._watchLive), corps,
+   objectifs, et la version de l'app. RIEN n'est recalculé côté natif — pas même
+   « Sur FLINT depuis mars 2026 », qui dépend de la première trace en base.
+
+   Les ACTIONS restent au web : changer son poids, sa taille, son sexe, ses
+   objectifs, importer, exporter, effacer. Ce sont des écritures dans le
+   localStorage, et le web en est le propriétaire. Le natif appelle, le web fait. */
+window.flProfilData=function(){try{
+ var p=(typeof getProfile==='function')?getProfile():{};
+ var W=window._watchLive||{};
+ var fresh=!!(W.t&&(Date.now()-W.t<120000));
+ var bat=(W.battery!=null)?Math.round(W.battery):null;
+ var etat=fresh?('Connecté'+(W.hr?(' · '+Math.round(W.hr)+' bpm'):''))
+   :(W.status==='scanning'?'Recherche en cours…':'Non connecté');
+ var synchro='Jamais synchronisé';
+ if(W.t){var mn=Math.floor((Date.now()-W.t)/60000);
+  synchro=mn<1?'Synchro à l’instant':('Synchro il y a '+mn+' min');}
+ /* depuis quand : première clé sensor_ trouvée en remontant deux ans */
+ var depuis=null;
+ try{
+  var MOIS=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+  for(var i=730;i>=0;i--){if(DB.get('sensor_'+tk(-i),null)){
+   var d=new Date();d.setDate(d.getDate()-i);
+   depuis='Sur FLINT depuis '+MOIS[d.getMonth()]+' '+d.getFullYear();break;}}
+ }catch(e){}
+ var poids=null;
+ try{poids=p.weight||null;
+  if(poids==null){var bl=DB.get('bodylog',{})||{},ks=Object.keys(bl);
+   if(ks.length)poids=bl[ks[ks.length-1]].weight;}}catch(e){}
+ var but=null,prot=null;
+ try{var g=flNutGoals();but=g&&g.kcal;prot=g&&g.prot;}catch(e){}
+ var objet=null;
+ try{objet=flNGoalWord();if(objet==='Maintien')objet='Mieux récupérer';}catch(e){}
+ return {aDesDonnees:true,
+  prenom:(p.name||null),
+  age:(p.age!=null?String(p.age):null),
+  region:(p.region||'France'),
+  depuis:depuis,
+  avatar:(function(){try{return localStorage.getItem('flAvatar')||null;}catch(e){return null;}})(),
+  bracelet:{etat:etat,synchro:synchro,batterie:bat,actif:fresh},
+  poids:(poids==null?null:String(Math.round(poids*10)/10).replace('.',',')),
+  taille:(p.height==null?null:String(Math.round(p.height))),
+  sexe:(p.gender==='f'?'Femme':(p.gender==='h'?'Homme':null)),
+  objectif:objet,
+  objectifSous:((but!=null&&prot!=null)?(but+' kcal · '+prot+' g de protéines / j'):null),
+  reveil:(p.wake||null), besoin:(p.need!=null?String(p.need):null),
+  version:(typeof APP_VERSION!=='undefined'?APP_VERSION:null)};
+}catch(e){return {aDesDonnees:false};}};
+
+/* Les actions du Profil restent web : on lui demande d'ouvrir SA feuille. */
+window.flProfilAction=function(quoi){try{
+ var doc=document;
+ var map={poids:'.pf-poids',taille:'.pf-taille',sexe:'.pf-sexe',objectif:'.pf-obj',
+  sommeil:'.pf-sleepg',bracelet:'.pf-brac',compte:'.pf-cpt',notifs:'.pf-notif',
+  aide:'.pf-aide',exporter:'.pf-exp',importer:'.pf-imp',effacer:'.pf-wipe',
+  identite:'.pf-id',photo:'.pf-photo',reglages:'.pf-gear'};
+ var sel=map[quoi]; if(!sel)return false;
+ /* la page profil doit exister pour que ses gestionnaires soient posés */
+ if(!doc.getElementById('screen-fl-profil')){try{flPfOpen(doc);}catch(e){}}
+ var el=doc.querySelector(sel);
+ if(!el)return false;
+ el.click();
+ return true;}catch(e){return false;}};
+/* ===== v931 — LE WEB SUIT LE THÈME DU NATIF, SANS RÉVEILLER LE CRASH ==========
+   Le thème sombre COMPLET du web est désactivé depuis la v832, et pour une bonne
+   raison : ses deux feuilles font ~80 Ko de sélecteurs `[style*="…"]` et leur
+   injection permanente a tué le moteur WebKit 64 fois. On ne le rallume pas.
+
+   On pose à la place TROIS règles — fond de page, encre, fond des sections. Aucun
+   sélecteur d'attribut, aucun balayage du DOM. Ça ne thème pas chaque carte du
+   web, mais ça supprime l'éclair blanc quand une page web apparaît par-dessus un
+   écran natif sombre, et ça évite la brûlure de rétine. Les écrans web restants
+   passent en natif de toute façon ; c'est une passerelle, pas une solution.     */
+window.flSombreNatif=function(on){try{
+ var d=document, id='flSombreMin', st=d.getElementById(id);
+ if(on){
+  if(!st){st=d.createElement('style');st.id=id;
+   st.textContent='html.fl-nuit,html.fl-nuit body{background:#0E0F12!important;color:#F2F1EE!important}'
+    +'html.fl-nuit [id^="screen-"],html.fl-nuit #flint-scroller{background:#0E0F12!important}'
+    +'html.fl-nuit #flTopBar,html.fl-nuit #flTopMask{background:linear-gradient(180deg,#0E0F12 58%,rgba(14,15,18,0))!important}';
+   (d.head||d.documentElement).appendChild(st);}
+  d.documentElement.classList.add('fl-nuit');
+ }else{
+  d.documentElement.classList.remove('fl-nuit');
+ }
+ return true;}catch(e){return false;}};
+/* ===== v938 — « AJOUTER UNE ACTIVITÉ » DEPUIS LE NATIF ========================
+   Le bouton de la frise n'ouvrait rien. Il appelle maintenant le sélecteur
+   d'activités DU WEB (`flActPick`), qui possède la liste des 36 sports, la roue
+   de durée, l'intensité et l'écriture dans `sessions_`. Reconstruire tout cela
+   en natif garantirait deux catalogues qui divergent — et le natif ne sait pas
+   écrire dans la base, c'est le web qui la détient.                            */
+window.flAjouterActivite=function(){try{
+ if(typeof flActPick!=='function')return false;
+ flActPick(document);
+ return true;}catch(e){return false;}};
+/* ===== v943 — PONT DE L'ÉCRAN D'ACTIVITÉ (le BON) =============================
+   La v940 était bâtie sur `renderActivityDetail` — l'ancien écran à bandeau
+   photo. Le founder : « tu es parti sur une trop ancienne version ». Le bon
+   modèle est `flEffData`, le « standalone (2) » du 13/07 : verdict en titre,
+   deux compteurs, une courbe de FC à plage habituelle, six zones cliquables et
+   des statistiques clés.
+
+   `flEffData` lit `window._flCurSess` pour retrouver la séance ; on la lui pose
+   depuis le rang envoyé par le natif. Le VERDICT est recalculé ici parce que
+   la fonction le calcule sans le renvoyer — mêmes seuils, à la ligne près
+   (>= 14 intense, < 6 léger).                                                 */
+window.flActiviteData=function(rang){try{
+ var K=tk(window.flDayOff||0);
+ var ss=(DB.get('sessions_'+K,[])||[]).filter(function(x){return x.type!=='nap';});
+ var s=ss[Math.max(0,Math.min(ss.length-1,+rang||0))]||null;
+ if(s){var sp=String(s.start||'0:0').split(':');
+  window._flCurSess={K:K,startMin:(+sp[0])*60+(+sp[1]),title:s.name||''};}
+ var m=flEffData(document);
+ var verdict='Effort validé',sous='Une sortie active et régulière.';
+ if(m.strain>=14){verdict='Effort intense';sous='Grosse séance — bravo.';}
+ else if(m.strain<6){verdict='Effort léger';sous='Une séance tranquille.';}
+ return {aDesDonnees:true,
+  nom:m.name, verdict:verdict, sous:sous,
+  debut:m.t0, fin:m.t1, minutes:m.dur, duree:hmsFull(m.totSec),
+  /* `real` dit si la courbe vient de la MONTRE ou d'un modèle : le natif doit
+     pouvoir le dire, on n'affiche pas une simulation comme une mesure. */
+  mesure:!!m.real,
+  effort:(m.strain==null?null:String(Math.round(m.strain*10)/10).replace('.',',')),
+  effortPart:(m.strain==null?null:Math.max(0,Math.min(1,m.strain/20))),
+  pas:(m.steps==null?null:String(m.steps)),
+  pasPart:(m.steps==null?null:Math.max(0,Math.min(1,m.steps/10000))),
+  kcal:(m.kcal==null?null:String(m.kcal)),
+  moyenne:(m.avg==null?null:String(m.avg)),
+  maximum:(m.mx==null?null:String(m.mx)),
+  /* moyennes personnelles sur 45 jours, MÊME activité — null si trop peu */
+  effortMoy:(function(){try{var a=[],KC={1:6,2:8,3:10,4:13};
+   for(var d=1;d<=45;d++){var kk=tk(-d);
+    (DB.get('sessions_'+kk,[])||[]).forEach(function(x){
+     if(x.type==='nap'||(x.name||'')!==m.name)return;
+     a.push(x.eff!=null?+x.eff:actStrain(x));});}
+   if(!a.length)return null;
+   var v=a.reduce(function(p,c){return p+c;},0)/a.length;
+   return String(Math.round(v*10)/10).replace('.',',');}catch(e){return null;}})(),
+  pasMoy:(function(){try{var a=[];
+   for(var d=1;d<=45;d++){var kk=tk(-d);
+    (DB.get('sessions_'+kk,[])||[]).forEach(function(x){
+     if(x.type==='nap'||(x.name||'')!==m.name)return;
+     var iv=x.int||2;a.push(Math.round((x.dur||30)*(iv>=3?128:104)));});}
+   if(!a.length)return null;
+   return String(Math.round(a.reduce(function(p,c){return p+c;},0)/a.length));}catch(e){return null;}})(),
+  kcalMoy:(m.calAvg==null?null:String(m.calAvg)),
+  fcMoyMoy:(m.fcAvgAvg==null?null:String(m.fcAvgAvg)),
+  fcMaxMoy:(m.fcMaxAvg==null?null:String(m.fcMaxAvg)),
+  hr:m.base,
+  zones:(m.zones||[]).map(function(z){return {
+   id:z.z, nom:z.lab, plage:z.range, pct:z.pct, duree:z.dur,
+   couleur:z.col, part:z.frac, bas:z.lo, haut:z.hi};})};
+}catch(e){return {aDesDonnees:false};}};
+
 window.flAccueilData=function(){try{
  var K=(typeof tk==='function')?tk(0):null;
  var prof=(typeof getProfile==='function')?getProfile():{};
@@ -7582,21 +8083,21 @@ window.flAccueilData=function(){try{
             valeur:hm(n.asleep), tri:0});
    }
    var ss=[];try{ss=DB.get('sessions_'+K,[])||[];}catch(x){}
-   ss.forEach(function(o){
+   ss.forEach(function(o,idx){
     var d0=min(o.start), d1=(d0!=null)?d0+(o.dur||30):null;
     var sieste=o.type==='nap';
     e.push({debut:hhmm(d0), fin:hhmm(d1), nom:o.name||'Séance',
             genre:sieste?'sommeil':(o.auto?'auto':'manuelle'),
             valeur:sieste?hm(o.dur||0)
                   :((typeof actStrain==='function')?String(actStrain(o)).replace('.',','):null),
-            tri:d0==null?9999:d0});
+            source:'seance', rang:idx, tri:d0==null?9999:d0});
    });
    var mm=[];try{mm=DB.get('meals_'+K,[])||[];}catch(x){}
-   mm.forEach(function(o){
+   mm.forEach(function(o,idx){
     var d0=min(o.time);
     e.push({debut:hhmm(d0), fin:hhmm(d0!=null?d0+30:null), nom:o.name||'Repas',
             genre:'repas', valeur:o.kcal!=null?String(Math.round(o.kcal)):null,
-            tri:d0==null?9999:d0});
+            source:'repas', rang:idx, tri:d0==null?9999:d0});
    });
    e.sort(function(a,b){return a.tri-b.tri;});
    var cumul=(typeof loadStrain==='function')?loadStrain(K):null;
@@ -7618,28 +8119,28 @@ window.flAccueilData=function(){try{
    var rep=(n&&n.asleep)?Math.round((n.restorative||0)/n.asleep*100):null;
    return [
     {titre:'RÉCUPÉRATION', icone:'heart', lignes:[
-      {libelle:'VFC',           valeur:nb(t&&t.hrv),        unite:'ms',  fleche:true},
-      {libelle:'FC au repos',   valeur:nb(t&&t.rhr),        unite:'bpm', fleche:true},
-      {libelle:'Récupération',  valeur:rv?String(rv.s):null,unite:'%',   fleche:true}]},
+      {libelle:'VFC',           cle:'hrv',      valeur:nb(t&&t.hrv),        unite:'ms',  fleche:true},
+      {libelle:'FC au repos',   cle:'rhr',      valeur:nb(t&&t.rhr),        unite:'bpm', fleche:true},
+      {libelle:'Récupération',  cle:'recovery', valeur:rv?String(rv.s):null,unite:'%',   fleche:true}]},
     {titre:'SOMMEIL', icone:'moon', lignes:[
-      {libelle:'Sommeil réparateur',  valeur:rep!=null?String(rep):null, unite:'%'},
-      {libelle:'Dette de sommeil',    valeur:nb(detteH,true),            unite:'h'},
-      {libelle:'Efficacité du sommeil',valeur:(n&&n.efficiency!=null)?String(n.efficiency):null, unite:'%'},
-      {libelle:'Temps passé au lit',  valeur:n?hm(n.inBed):null,         unite:''},
-      {libelle:'Durée de sommeil',    valeur:n?hm(n.asleep):null,        unite:''}]},
+      {libelle:'Sommeil réparateur',  cle:'sleepresto', valeur:rep!=null?String(rep):null, unite:'%', fleche:true},
+      {libelle:'Dette de sommeil',    cle:'sleepdebt',  valeur:nb(detteH,true),            unite:'h', fleche:true},
+      {libelle:'Efficacité du sommeil',cle:'sleepeff',  valeur:(n&&n.efficiency!=null)?String(n.efficiency):null, unite:'%', fleche:true},
+      {libelle:'Temps passé au lit',  cle:'timeinbed',  valeur:n?hm(n.inBed):null,         unite:'', fleche:true},
+      {libelle:'Durée de sommeil',    cle:'sleep',      valeur:n?hm(n.asleep):null,        unite:'', fleche:true}]},
     {titre:'ACTIVITÉ', icone:'figure.walk', lignes:[
-      {libelle:'Pas',                  valeur:mil(t&&t.steps), unite:'pas'},
-      {libelle:'Calories',             valeur:mil(kcal),       unite:'kcal'},
-      {libelle:'Effort et récupération',valeur:eff!=null?String(eff).replace('.',','):null,
-       unite:'/'+((typeof STRAIN_MAX!=='undefined')?STRAIN_MAX:20)}]},
+      {libelle:'Pas',                  cle:'steps',    valeur:mil(t&&t.steps), unite:'pas', fleche:true},
+      {libelle:'Calories',             cle:'calories', valeur:mil(kcal),       unite:'kcal', fleche:true},
+      {libelle:'Effort et récupération',cle:'effortrecup',valeur:eff!=null?String(eff).replace('.',','):null,
+       unite:'/'+((typeof STRAIN_MAX!=='undefined')?STRAIN_MAX:20), fleche:true}]},
     {titre:'CARDIO', icone:'waveform.path.ecg', lignes:[
-      {libelle:'VO₂ max',              valeur:nb(t&&t.vo2),   unite:''},
-      {libelle:'FC moyenne',           valeur:nb(t&&t.hrAvg), unite:'bpm'},
-      {libelle:'Fréquence respiratoire',valeur:nb(t&&t.resp,true), unite:'r/m'},
-      {libelle:'Zones de FC (hebdo)',  valeur:null, unite:'', fleche:true}]},
+      {libelle:'VO₂ max',              cle:'vo2',      valeur:nb(t&&t.vo2),   unite:'', fleche:true},
+      {libelle:'FC moyenne',           cle:'fcavg',    valeur:nb(t&&t.hrAvg), unite:'bpm', fleche:true},
+      {libelle:'Fréquence respiratoire',cle:'resp',    valeur:nb(t&&t.resp,true), unite:'r/m', fleche:true},
+      {libelle:'Zones de FC (hebdo)',  cle:'hrzall',   valeur:null, unite:'', fleche:true}]},
     {titre:'CORPS', icone:'person', lignes:[
-      {libelle:'Poids',                 valeur:nb(bl&&bl.weight,true), unite:'kg'},
-      {libelle:'Masse corporelle maigre',valeur:nb(bl&&bl.lean,true),  unite:'kg'}]}
+      {libelle:'Poids',                 cle:'weight',   valeur:nb(bl&&bl.weight,true), unite:'kg', fleche:true},
+      {libelle:'Masse corporelle maigre',cle:'leanmass',valeur:nb(bl&&bl.lean,true),  unite:'kg', fleche:true}]}
    ];
   }catch(e){return null;}})()
  };
@@ -7732,6 +8233,26 @@ window.flNutritionData=function(){try{
   })
  };
 }catch(e){return {aDesDonnees:false};}};
+/* ═══ v916 — SUPPRESSION D UNE ENTREE DE LA JOURNEE ════════════════════════
+   Appelee par l ecran natif apres un balayage vers la droite. On supprime dans
+   le MEME magasin que le web utilise, puis on renvoie l accueil a jour pour que
+   les deux mondes ne divergent jamais. La nuit n est pas supprimable : ce n est
+   pas une activite saisie, c est une mesure. */
+window.flSupprimerEntree=function(source,rang){try{
+ var K=(typeof tk==='function')?tk(0):null;
+ var cle = source==='repas' ? 'meals_'+K : (source==='seance' ? 'sessions_'+K : null);
+ if(!cle)return false;
+ var L=DB.get(cle,[])||[];
+ if(rang<0||rang>=L.length)return false;
+ L.splice(rang,1);
+ DB.set(cle,L);
+ try{if(typeof persistRecov==='function')persistRecov();}catch(e){}
+ try{if(typeof renderToday==='function')renderToday();}catch(e){}
+ try{haptic(6);}catch(e){}
+ var nt=window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint;
+ if(nt)nt.postMessage({cmd:'natif',screen:'accueil',data:flAccueilData()});
+ return true;
+}catch(e){return false;}};
 window.flSpringCss=function(response,z,v0){try{
  var w=2*Math.PI/response,wd=z<1?w*Math.sqrt(1-z*z):0,out=[],N=200,T=0,i,t;
  function y(t){var e=Math.exp(-z*w*t);
@@ -11420,8 +11941,8 @@ var FL_HEBDO={
     courbes. On trace donc brûlées (orange) et consommées (jaune) sur la même
     échelle — « la comparaison », mot pour mot. `parts` ne sert ici QUE de
     légende : le branchement des barres empilées teste kind==='bars'. */
- kcalBal:{title:'Balance calorique',lab:'BRÛLÉES CONTRE CONSOMMÉES',heroLab:'BRÛLÉES / JOUR',unit:'kcal',col:'#f2870f',colB:'#f5a417',kind:'line',fmt:flhInt,tickFmt:function(t){return ''+Math.round(t);},
-  parts:[['#f2870f','Brûlées'],['#f5a417','Consommées']],
+ kcalBal:{title:'Balance calorique',lab:'BRÛLÉES CONTRE CONSOMMÉES',heroLab:'BRÛLÉES / JOUR',unit:'kcal',col:'#f2870f',colB:'#D6455B',kind:'line',fmt:flhInt,tickFmt:function(t){return ''+Math.round(t);},
+  parts:[['#f2870f','Brûlées'],['#D6455B','Consommées']],
   get:function(off){try{return caloriesBurned(tk(off));}catch(e){return null;}},
   get2:function(off){try{var t=nutTotals(tk(off));return (t&&t.kcal)?t.kcal:null;}catch(e){return null;}}},
  hrv:{title:'VFC',lab:'TA VFC',unit:'ms',kind:'line',fmt:flhInt},
@@ -11443,11 +11964,11 @@ var FL_HEBDO={
   tickSteps:[0.25,0.5,1,2,3],tickFmt:function(t){return t===0?'0:00':(t%1===0?t+'h':flhHM(t));},
   get:function(off){try{var m=0;(DB.get('sessions_'+tk(off),[])||[]).forEach(function(x){if(x.type==='strength')m+=(x.dur||0);});return m/60;}catch(e){return null;}}},
  recovery:{title:'Récupération',lab:'TA RÉCUPÉRATION',unit:'%',kind:'bars',fmt:flhInt,ticks:[100,67,34,0],tickFmt:function(t){return t+'%';},pct:true,zoneColor:true},
- sleepresto:{title:'Sommeil réparateur',lab:'TON SOMMEIL RÉPARATEUR',unit:'%',kind:'bars',fmt:flhInt,ticks:[100,75,50,25,0],tickFmt:function(t){return t+'%';},pct:true},
- sleepdebt:{title:'Dette de sommeil',lab:'TA DETTE',heroLab:'DETTE MOYENNE',unit:'',kind:'bars',fmt:flhHM,clamp0:true,tickSteps:[0.5,1,2,3,4,6],tickFmt:function(t){return t===0?'0:00':(t%1===0?t+'h':flhHM(t));}},
- sleepeff:{title:'Efficacité du sommeil',lab:'TON EFFICACITÉ',unit:'%',kind:'bars',fmt:flhInt,ticks:[100,75,50,25,0],tickFmt:function(t){return t+'%';},pct:true},
- timeinbed:{title:'Temps passé au lit',lab:'TON TEMPS AU LIT',unit:'',kind:'bars',fmt:flhHM,tickSteps:[0.5,1,2,3,4,6],tickFmt:function(t){return t===0?'0:00':(t%1===0?t+'h':flhHM(t));}},
- sleep:{title:'Durée de sommeil',lab:'TON SOMMEIL',unit:'',kind:'bars',fmt:flhHM,tickSteps:[0.5,1,2,3,4,6],tickFmt:function(t){return t===0?'0:00':(t%1===0?t+'h':flhHM(t));}},
+ sleepresto:{col:'#6c4ff0',col2:'#c9bcff',title:'Sommeil réparateur',lab:'TON SOMMEIL RÉPARATEUR',unit:'%',kind:'bars',fmt:flhInt,ticks:[100,75,50,25,0],tickFmt:function(t){return t+'%';},pct:true},
+ sleepdebt:{col:'#6c4ff0',col2:'#c9bcff',title:'Dette de sommeil',lab:'TA DETTE',heroLab:'DETTE MOYENNE',unit:'',kind:'bars',fmt:flhHM,clamp0:true,tickSteps:[0.5,1,2,3,4,6],tickFmt:function(t){return t===0?'0:00':(t%1===0?t+'h':flhHM(t));}},
+ sleepeff:{col:'#6c4ff0',col2:'#c9bcff',title:'Efficacité du sommeil',lab:'TON EFFICACITÉ',unit:'%',kind:'bars',fmt:flhInt,ticks:[100,75,50,25,0],tickFmt:function(t){return t+'%';},pct:true},
+ timeinbed:{col:'#6c4ff0',col2:'#c9bcff',title:'Temps passé au lit',lab:'TON TEMPS AU LIT',unit:'',kind:'bars',fmt:flhHM,tickSteps:[0.5,1,2,3,4,6],tickFmt:function(t){return t===0?'0:00':(t%1===0?t+'h':flhHM(t));}},
+ sleep:{col:'#6c4ff0',col2:'#c9bcff',title:'Temps de sommeil',lab:'EFFECTIF CONTRE NÉCESSAIRE',heroLab:'SOMMEIL MOYEN',unit:'',kind:'line',colB:'#8a93a3',parts:[['#6c4ff0','Heures de sommeil'],['#8a93a3','Heures nécessaires']],get2:function(off){try{return (getProfile().need)||null;}catch(e){return null;}},fmt:flhHM,tickSteps:[0.5,1,2,3,4,6],tickFmt:function(t){return t===0?'0:00':(t%1===0?t+'h':flhHM(t));}},
  steps:{title:'Pas',lab:'VOS PAS',unit:'pas',kind:'bars',fmt:flhInt,mask:true,tickFmt:function(t){return t>=1000?(t/1000)+'k':''+t;}},
  calories:{title:'Calories',lab:'CALORIES BRÛLÉES',heroLab:'MOYENNE / JOUR',unit:'kcal',kind:'bars',fmt:flhInt,tickFmt:function(t){return t>=1000?(Math.round(t/100)/10).toString().replace('.',',')+'k':''+Math.round(t);}},
  effortrecup:{title:'Effort et récupération',lab:'TON EFFORT',unit:'/ 20',kind:'bars',fmt:flhDec,mask:true,ticks:[20,15,10,5,0],tickFmt:function(t){return ''+t;}},
@@ -17103,7 +17624,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='v912';
+const APP_VERSION='v944';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
@@ -17113,7 +17634,7 @@ if(DB.get('flseedtest')!==494&&!(window.webkit&&window.webkit.messageHandlers&&w
    Le marqueur de version force un nouveau semis quand on fait évoluer le jeu. */
 try{
  var _demoOn=(function(){try{return localStorage.getItem('flintDemoData')==='1';}catch(e){return false;}})();
- if(_demoOn&&DB.get('flDemoSeed')!==735){flSeedDemoDays(40,62);DB.set('flDemoSeed',735);}  /* seedTodayShowcase() retiré : il réécrivait les séances du jour APRÈS coup,
+ if(_demoOn&&DB.get('flDemoSeed')!==736){flSeedDemoDays(40,62);DB.set('flDemoSeed',736);}  /* seedTodayShowcase() retiré : il réécrivait les séances du jour APRÈS coup,
      alors que la courbe de FC (donc l'effort) est construite à partir d'elles. */
  if(!_demoOn&&DB.get('flDemoSeed')===735){flPurgeDemoDays(60,70);DB.set('flDemoSeed',0);}
 }catch(e){}
