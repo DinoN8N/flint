@@ -7913,8 +7913,238 @@ window.flProfilData=function(){try{
   objectif:objet,
   objectifSous:((but!=null&&prot!=null)?(but+' kcal · '+prot+' g de protéines / j'):null),
   reveil:(p.wake||null), besoin:(p.need!=null?String(p.need):null),
-  version:(typeof APP_VERSION!=='undefined'?APP_VERSION:null)};
+  version:(typeof APP_VERSION!=='undefined'?APP_VERSION:null),
+
+  /* ═══ v960 — LA PAGE PROFIL REFAITE ═══════════════════════════════════ */
+  nom:(p.lastName||null),
+  ville:(p.city||null),
+  naissance:(p.birth||null),
+  unites:(p.units||'metric'),
+  pseudo:(function(){var n=((p.name||'')+' '+(p.lastName||'')).trim().toLowerCase();
+   return n?('@'+n.replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'')):null;})(),
+
+  /* ─ ÂGE FLINT ─────────────────────────────────────────────────────────
+     Un âge physiologique, comparé à l'âge réel. Ce n'est PAS une mesure :
+     c'est un indice, et il est bâti pour être défendable plutôt que flatteur.
+
+     Trois signaux, chacun ramené à un écart en années :
+       • la VFC, le plus robuste — elle décline d'environ 0,7 ms par an après
+         vingt ans ; on compare la moyenne 30 j à la norme de l'âge ;
+       • la FC au repos, ~0,15 an d'écart par battement sous ou sur la norme ;
+       • le sommeil, plafonné : dormir douze heures ne rajeunit personne.
+     Le total est borné à ±10 ans. Au-delà, on ne mesure plus rien, on flatte.  */
+  age2:(function(){try{
+   var age=p.age||28;
+   function moy(f,n){var a=[];for(var i=1;i<=n;i++){var v=null;try{v=f(tk(-i));}catch(e){}
+    if(v!=null&&!isNaN(v))a.push(+v);}
+    return a.length>=5?a.reduce(function(x,y){return x+y;},0)/a.length:null;}
+   var hrv=moy(function(k){var s=sensorOf(k);return s?s.hrv:null;},30);
+   var rhr=moy(function(k){var s=sensorOf(k);return s?s.rhr:null;},30);
+   var slp=moy(function(k){var s=sensorOf(k);return (s&&s.sleepMin!=null)?s.sleepMin/60:null;},30);
+   if(hrv==null&&rhr==null&&slp==null)return null;
+   var d=0,poids=0;
+   if(hrv!=null){var normeH=Math.max(25,68-0.7*Math.max(0,age-20));
+    d+=-(hrv-normeH)/0.7; poids++;}
+   if(rhr!=null){d+=(rhr-60)*0.15; poids++;}
+   if(slp!=null){d+=Math.max(-2.5,Math.min(2.5,(7.5-slp)*1.2)); poids++;}
+   if(!poids)return null;
+   var ecart=Math.max(-10,Math.min(10,d/poids*(poids>=2?1:0.6)));
+   if(!isFinite(ecart))return null;
+   var f=Math.round((age+ecart)*10)/10;
+   if(!isFinite(f))return null;
+   return {valeur:String(f).replace('.',','),
+           ecart:String(Math.abs(Math.round(ecart*10)/10)).replace('.',','),
+           mieux:(ecart<0)};
+  }catch(e){return null;}})(),
+
+  /* ─ RÉCUPÉRATION MOYENNE 30 JOURS, la carte jumelle ─────────────────── */
+  recup30:(function(){try{var a=[];
+   for(var i=1;i<=30;i++){var r=DB.get('recov_'+tk(-i),null);if(r!=null)a.push(+r);}
+   if(a.length<5)return null;
+   return {valeur:String(Math.round(a.reduce(function(x,y){return x+y;},0)/a.length)),
+           jours:String(a.length)};
+  }catch(e){return null;}})(),
+
+  /* ─ OBJECTIFS ATTEINTS ────────────────────────────────────────────────
+     Des paliers réellement franchis, comptés sur les MÊMES enregistrements
+     que le reste de l'app. Un objectif qu'on n'a pas atteint n'est pas
+     affiché comme atteint : on renvoie aussi le palier SUIVANT, avec son
+     avancement, pour qu'il reste quelque chose à viser. */
+  objectifs:(function(){try{
+   var nuits=0,seances=0,kcal=0,jours=0;
+   for(var i=0;i<365;i++){var k=tk(-i);
+    var sn=sensorOf(k); if(sn&&sn.sleepMin!=null)nuits++;
+    var ss=(DB.get('sessions_'+k,[])||[]).filter(function(x){return x.type!=='nap';});
+    seances+=ss.length;
+    /* v961b — UN SEUL NaN ET LE MESSAGE ENTIER DISPARAÎT.
+       `postMessage` sérialise la charge utile ; NaN n'est pas sérialisable et
+       la sérialisation LÈVE. L'exception remonte dans le try d'appel côté
+       Swift, qui l'avale : aucun message n'arrive, l'écran ne s'ouvre pas, et
+       rien nulle part ne dit pourquoi. Une journée sans données suffisait.
+       On n'additionne donc que des nombres finis. */
+    try{var c=caloriesBurned(k); if(c!=null&&isFinite(c))kcal+=c;}catch(e){}
+    if(sn||ss.length)jours++;}
+   function palier(v,seuils){var atteint=0,suivant=seuils[0];
+    for(var i=0;i<seuils.length;i++){if(v>=seuils[i]){atteint=seuils[i];
+     suivant=(i+1<seuils.length)?seuils[i+1]:null;}}
+    return {atteint:atteint,suivant:suivant};}
+   var L=[
+    {cle:'seances',nom:'Séances',v:seances,seuils:[10,50,100,250,500]},
+    {cle:'nuits',  nom:'Nuits suivies',v:nuits,seuils:[7,25,100,200,365]},
+    {cle:'jours',  nom:'Jours sur FLINT',v:jours,seuils:[7,30,100,200,365]},
+    {cle:'kcal',   nom:'Milliers de kcal',v:Math.round(kcal/1000),seuils:[10,50,100,250,500]}];
+   return L.map(function(o){if(!isFinite(o.v))o.v=0;
+    var p=palier(o.v,o.seuils);
+    return {cle:o.cle,nom:o.nom,valeur:o.v,
+            atteint:p.atteint,suivant:p.suivant,
+            part:(p.suivant?Math.max(0,Math.min(1,(o.v-p.atteint)/(p.suivant-p.atteint))):1)};});
+  }catch(e){return null;}})()};
 }catch(e){return {aDesDonnees:false};}};
+
+/* ===== v959 — ÉCRITURE DU PROFIL DEPUIS LE NATIF ==========================
+   `flProfilAction` ouvrait les feuilles DU WEB. Depuis que plus aucun écran
+   web ne s'affiche, elle ne mène nulle part. Le natif édite donc lui-même, et
+   il a besoin d'un seul point d'entrée en écriture.
+
+   On passe par getProfile()/DB.set('profile') — la MÊME paire que le web — et
+   non par une écriture directe dans localStorage : getProfile applique des
+   valeurs par défaut sur les champs absents, et court-circuiter cela ferait
+   diverger un profil natif d'un profil web.
+   ========================================================================= */
+/* ===== v961 — POINTS FORTS DES DONNÉES ====================================
+   Les records de l'utilisateur sur une fenêtre : 30 jours, 90 jours, ou tout.
+
+   PARTI PRIS : un record n'est renvoyé QUE s'il repose sur au moins trois
+   mesures. Un « meilleur sommeil : 100 % » établi sur une seule nuit n'est pas
+   un record, c'est un accident, et l'afficher comme tel décrédibilise toute la
+   section. `jours` voyage avec le résultat pour que le natif puisse le dire.
+   ========================================================================= */
+window.flProfilRecords=function(pi){try{
+ pi=Math.max(0,Math.min(2,+pi||0));
+ var N=[30,90,730][pi];
+
+ var qs=[],rec=[],eff=[],rhr=[],hrv=[],fcx=[],slp=[],jours=0;
+ for(var i=0;i<N;i++){var k=tk(-i),vu=false;
+  var sn=null;try{sn=sensorOf(k);}catch(e){}
+  if(sn){
+   if(sn.sleepMin!=null){slp.push(sn.sleepMin);vu=true;}
+   if(sn.rhr!=null)rhr.push(sn.rhr);
+   if(sn.hrv!=null)hrv.push(sn.hrv);
+  }
+  try{var n2=sleepNight(k);if(n2&&n2.efficiency!=null){qs.push(n2.efficiency);vu=true;}}catch(e){}
+  var r=DB.get('recov_'+k,null); if(r!=null){rec.push(+r);vu=true;}
+  var l=null;try{l=loadStrain(k);}catch(e){}
+  if(l!=null&&!isNaN(l)){eff.push(+l);if(l>0)vu=true;}
+  try{(DB.get('sessions_'+k,[])||[]).forEach(function(x){
+   if(x.maxHr!=null)fcx.push(+x.maxHr);});}catch(e){}
+  if(vu)jours++;
+ }
+ function mx(a){return a.length>=3?Math.max.apply(null,a):null;}
+ function mn(a){return a.length>=3?Math.min.apply(null,a):null;}
+ function un(v,d){return v==null?null:(d?String(Math.round(v*10)/10).replace('.',','):String(Math.round(v)));}
+ function hm(m){if(m==null)return null;m=Math.round(m);
+  return Math.floor(m/60)+':'+String(m%60).padStart(2,'0');}
+
+ /* ─ SÉRIES : la plus longue suite de jours consécutifs remplissant un critère.
+    On compte des SUITES, pas des totaux : c'est la régularité qu'on récompense. */
+ function serie(test){var meilleure=0,cur=0;
+  for(var i=0;i<N;i++){var k=tk(-i);
+   if(test(k)){cur++;if(cur>meilleure)meilleure=cur;}else cur=0;}
+  return meilleure;}
+ var sSommeil=serie(function(k){try{var n2=sleepNight(k);
+  return !!(n2&&n2.efficiency!=null&&n2.efficiency>=70);}catch(e){return false;}});
+ var sRecup=serie(function(k){var r=DB.get('recov_'+k,null);return r!=null&&+r>=67;});
+ var sEffort=serie(function(k){var l=null;try{l=loadStrain(k);}catch(e){}
+  return l!=null&&+l>=10;});
+
+ return {aDesDonnees:jours>0, periode:pi, jours:String(jours),
+  anneaux:[
+   {cle:'sommeil', nom:'Meilleur sommeil', valeur:un(mx(qs)), unite:'%',
+    part:(mx(qs)==null?null:mx(qs)/100), couleur:'#3A4FB0'},
+   {cle:'recup', nom:'Récup maximale', valeur:un(mx(rec)), unite:'%',
+    part:(mx(rec)==null?null:mx(rec)/100), couleur:'#2FA76B'},
+   {cle:'effort', nom:'Effort maximal', valeur:un(mx(eff),1), unite:'/20',
+    part:(mx(eff)==null?null:Math.min(1,mx(eff)/20)), couleur:'#2F80ED'}],
+  series:[
+   {nom:'Sommeil', jours:sSommeil, sous:'70 % et plus', icone:'moon', couleur:'#3A4FB0'},
+   {nom:'Récup', jours:sRecup, sous:'dans le vert', icone:'leaf', couleur:'#2FA76B'},
+   {nom:'Effort', jours:sEffort, sous:'effort > 10', icone:'bolt', couleur:'#2F80ED'}],
+  stats:[
+   {nom:'FC au repos la plus basse', valeur:un(mn(rhr)), unite:'bpm', icone:'coeurBas'},
+   {nom:'FC au repos la plus haute', valeur:un(mx(rhr)), unite:'bpm', icone:'coeurHaut'},
+   {nom:'VFC la plus basse', valeur:un(mn(hrv)), unite:'ms', icone:'ondeBas'},
+   {nom:'VFC la plus haute', valeur:un(mx(hrv)), unite:'ms', icone:'ondeHaut'},
+   {nom:'FC maximale', valeur:un(mx(fcx)), unite:'bpm', icone:'coeurHaut'},
+   {nom:'Sommeil le plus long', valeur:hm(mx(slp)), unite:'', icone:'lune'},
+   {nom:'Récup la plus basse', valeur:un(mn(rec)), unite:'%', icone:'feuille'}],
+
+  /* ─ RÉCAPITULATIF DE L'ACTIVITÉ ───────────────────────────────────────
+     Combien de fois chaque sport, et à quel effort moyen. Trié par nombre :
+     ce qu'on fait le plus doit se lire en premier. La part est relative au
+     sport le PLUS pratiqué — une barre pleine dit « c'est ton sport », pas
+     « tu as atteint un objectif ». */
+  total:(function(){var t=0;try{for(var i=0;i<N;i++){
+   t+=(DB.get('sessions_'+tk(-i),[])||[]).filter(function(x){return x.type!=='nap';}).length;}
+  }catch(e){} return t;})(),
+  sports:(function(){try{
+   var m={};
+   for(var i=0;i<N;i++){
+    (DB.get('sessions_'+tk(-i),[])||[]).forEach(function(x){
+     if(x.type==='nap')return;
+     var n=x.name||'Séance';
+     if(!m[n])m[n]={n:0,e:0,ne:0};
+     m[n].n++;
+     var e=(x.eff!=null)?+x.eff:(typeof actStrain==='function'?actStrain(x):null);
+     if(e!=null&&!isNaN(e)){m[n].e+=+e;m[n].ne++;}});}
+   var L=Object.keys(m).map(function(k){return {nom:k,nombre:m[k].n,
+    effort:(m[k].ne?String(Math.round(m[k].e/m[k].ne*10)/10).replace('.',','):null)};});
+   L.sort(function(a,b){return b.nombre-a.nombre;});
+   var top=L.length?L[0].nombre:1;
+   return L.slice(0,14).map(function(o){o.part=o.nombre/top;return o;});
+  }catch(e){return null;}})()};
+}catch(e){return {aDesDonnees:false};}};
+
+window.flProfilAvatar=function(dataURL){try{
+ if(dataURL)localStorage.setItem('flAvatar',dataURL);
+ else localStorage.removeItem('flAvatar');
+ return true;}catch(e){return false;}};
+
+window.flProfilSet=function(champ,valeur){try{
+ var p=getProfile();
+ switch(champ){
+  case 'prenom': p.name=String(valeur||'').slice(0,24); break;
+  case 'age':    p.age=Math.max(10,Math.min(100,Math.round(+valeur||0))); break;
+  case 'taille': p.height=Math.max(120,Math.min(230,Math.round(+valeur||0))); break;
+  case 'poids':  p.weight=Math.max(30,Math.min(250,Math.round((+valeur||0)*10)/10)); break;
+  case 'sexe':   p.gender=(valeur==='f'||valeur==='h')?valeur:''; break;
+  case 'reveil': p.wake=String(valeur||'07:00'); break;
+  case 'besoin': p.need=Math.max(5,Math.min(12,Math.round((+valeur||8)*10)/10)); break;
+  case 'objectif': p.goal=String(valeur||'recup'); break;
+  case 'region': p.region=String(valeur||''); break;
+  /* v960 — les champs de la page « Modifier le profil ». */
+  case 'nom':    p.lastName=String(valeur||'').slice(0,32); break;
+  case 'ville':  p.city=String(valeur||'').slice(0,40); break;
+  case 'unites': p.units=(valeur==='imperial')?'imperial':'metric'; break;
+  case 'naissance':
+   /* On stocke la DATE et on en DÉDUIT l'âge, jamais l'inverse : un âge saisi
+      à la main se périme au prochain anniversaire et personne ne le corrige. */
+   p.birth=String(valeur||'');
+   (function(){try{var d=new Date(p.birth);if(!isNaN(d)){
+    var n=new Date(),a=n.getFullYear()-d.getFullYear();
+    var m=n.getMonth()-d.getMonth();
+    if(m<0||(m===0&&n.getDate()<d.getDate()))a--;
+    if(a>=10&&a<=100)p.age=a;}}catch(e){}})();
+   break;
+  default: return false;
+ }
+ DB.set('profile',p);
+ /* Le poids alimente aussi le journal corporel, source des courbes de poids.
+    Écrire l'un sans l'autre ferait mentir la page Tendances dès le lendemain. */
+ if(champ==='poids'){try{var bl=DB.get('bodylog',{})||{};
+  bl[tk(0)]=Object.assign({},bl[tk(0)]||{},{weight:p.weight});DB.set('bodylog',bl);}catch(e){}}
+ if(typeof haptic==='function')haptic();
+ return true;
+}catch(e){return false;}};
 
 /* Les actions du Profil restent web : on lui demande d'ouvrir SA feuille. */
 window.flProfilAction=function(quoi){try{
@@ -7976,8 +8206,15 @@ window.flAjouterActivite=function(){try{
    (>= 14 intense, < 6 léger).                                                 */
 window.flActiviteData=function(rang){try{
  var K=tk(window.flDayOff||0);
- var ss=(DB.get('sessions_'+K,[])||[]).filter(function(x){return x.type!=='nap';});
- var s=ss[Math.max(0,Math.min(ss.length-1,+rang||0))]||null;
+ /* v950 — LE RANG EST CELUI DU TABLEAU BRUT, PAS D'UNE COPIE FILTRÉE.
+    « Ma journée » numérote les séances telles qu'elles sont stockées, siestes
+    comprises. Ici on filtrait les siestes AVANT d'indexer : dès qu'une sieste
+    précédait une séance, le rang 3 du journal désignait la séance 2 du pont.
+    On ouvrait une autre activité que celle touchée. */
+ var ss=(DB.get('sessions_'+K,[])||[]);
+ var s=ss[+rang||0]||null;
+ /* Une sieste n'a pas d'écran d'activité : elle part vers le sommeil. */
+ if(s&&s.type==='nap')return {aDesDonnees:false};
  if(s){var sp=String(s.start||'0:0').split(':');
   window._flCurSess={K:K,startMin:(+sp[0])*60+(+sp[1]),title:s.name||''};}
  var m=flEffData(document);
@@ -8021,6 +8258,43 @@ window.flActiviteData=function(rang){try{
    id:z.z, nom:z.lab, plage:z.range, pct:z.pct, duree:z.dur,
    couleur:z.col, part:z.frac, bas:z.lo, haut:z.hi};})};
 }catch(e){return {aDesDonnees:false};}};
+
+/* ===== v950 — LES TROIS AUTRES LIGNES DE « MA JOURNÉE » ===================
+   Une séance avait son écran ; la nuit, la sieste et le repas n'avaient rien
+   et le clic tombait dans le vide. Ces trois ponts leur en donnent un.
+   ======================================================================== */
+
+/* La nuit et la sieste ouvrent le MÊME écran natif que l'onglet Sommeil —
+   c'est ce que faisait déjà le web (openNapDetail → go('sleepdetail')).
+   `rang` vaut -1 pour la nuit, sinon l'index de la sieste dans sessions_. */
+window.flNuitData=function(rang){try{
+ var K=tk(window.flDayOff||0);
+ if(+rang>=0){var s=(DB.get('sessions_'+K,[])||[])[+rang];
+  window._sleepCtx=(s&&s.type==='nap')?{nap:true,sess:s}:null;}
+ else window._sleepCtx=null;
+ return flSommeilData();
+}catch(e){return {aDesDonnees:false};}};
+
+window.flRepasData=function(rang){try{
+ var K=tk(window.flDayOff||0);
+ var a=(typeof mealsOf==='function')?mealsOf(K):(DB.get('meals_'+K,[])||[]);
+ var m=a[+rang||0]; if(!m)return {aDesDonnees:false};
+ var p=+m.prot||0,c=+m.carb||0,f=+m.fat||0;
+ /* Les parts se calculent en CALORIES, pas en grammes : un gramme de lipide
+    en pèse neuf contre quatre. Un camembert en grammes mentirait d'un tiers. */
+ var pk=p*4,ck=c*4,fk=f*9,tt=(pk+ck+fk)||1;
+ return {aDesDonnees:true, rang:+rang||0,
+  nom:m.name||'Repas', heure:m.time||null,
+  jour:(typeof nutDayLabel==='function')?nutDayLabel(K):null,
+  kcal:Math.round(m.kcal||0), prot:p, gluc:c, lip:f,
+  partProt:pk/tt, partGluc:ck/tt, partLip:fk/tt,
+  photo:m.photo||null};
+}catch(e){return {aDesDonnees:false};}};
+
+window.flSupprimerRepas=function(rang){try{
+ var K=tk(window.flDayOff||0);
+ var a=DB.get('meals_'+K,[])||[]; a.splice(+rang||0,1); DB.set('meals_'+K,a);
+ return true;}catch(e){return false;}};
 
 window.flAccueilData=function(){try{
  var K=(typeof tk==='function')?tk(0):null;
@@ -17624,7 +17898,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='v944';
+const APP_VERSION='v962';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
