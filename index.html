@@ -57,13 +57,46 @@
     --disp:'Geist',-apple-system,'Arial Narrow',sans-serif;
     --sans:'Switzer','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
   }
+  /* v856 — LE MATERIAU, cote coquille. Bloc rigoureusement identique a celui injecte
+     dans l'iframe : les deux documents doivent parler le meme vocabulaire de mouvement,
+     sinon la barre de navigation et l'ecran qu'elle ouvre ne bougent pas pareil.
+     Trois formes de ressort, cinq tokens. La forme ne depend que de zeta : on change la
+     vitesse en changeant des millisecondes, jamais la courbe. */
+  :root{--fl-s-vif:linear(0,0.0012 0.58%,0.0055 1.25%,0.0126 1.92%,0.0235 2.67%,0.0372 3.42%,0.0534 4.17%,0.0966 5.83%,0.1394 7.25%,0.1917 8.83%,0.4196 15.25%,0.5235 18.33%,0.5757 20%,0.6223 21.58%,0.6658 23.17%,0.7041 24.67%,0.7394 26.17%,0.7736 27.75%,0.8046 29.33%,0.8326 30.92%,0.8577 32.5%,0.8812 34.17%,0.9029 35.92%,0.9218 37.67%,0.9387 39.5%,0.9537 41.42%,0.9667 43.42%,0.9781 45.58%,0.9948 50.17%,1.0049 55.42%,1.0088 60.25%,1.0096 66.33%,1);--fl-s-ferme:linear(0,0.0047 1.08%,0.0201 2.33%,0.0459 3.67%,0.0811 5.08%,0.1144 6.25%,0.1586 7.67%,0.3651 13.83%,0.4627 16.92%,0.5117 18.58%,0.5554 20.17%,0.5963 21.75%,0.6361 23.42%,0.6729 25.08%,0.7065 26.75%,0.7372 28.42%,0.7665 30.17%,0.7928 31.92%,0.8176 33.75%,0.8397 35.58%,0.8601 37.5%,0.8804 39.67%,0.8985 41.92%,0.9151 44.33%,0.9295 46.83%,0.9535 52.33%,0.9713 58.58%,0.9834 65.5%,0.9914 73.75%,0.996 83.17%,1);--fl-s-pop:linear(0,0.0018 0.58%,0.0068 1.17%,0.0149 1.75%,0.0275 2.42%,0.0433 3.08%,0.0619 3.75%,0.0859 4.5%,0.1125 5.25%,0.1618 6.5%,0.2194 7.83%,0.479 13.42%,0.5892 15.92%,0.6471 17.33%,0.698 18.67%,0.7452 20%,0.7859 21.25%,0.8231 22.5%,0.859 23.83%,0.8911 25.17%,0.9194 26.5%,0.9441 27.83%,0.9667 29.25%,0.9858 30.67%,1.0024 32.17%,1.0219 34.5%,1.0355 37%,1.0435 39.75%,1.046 42.83%,1.0407 48.08%,1.0119 62.67%,1.0026 70.5%,0.998 82.33%,1);--fl-tap:var(--fl-s-vif);--fl-tap-ms:207ms;--fl-vif:var(--fl-s-vif);--fl-vif-ms:469ms;--fl-ample:var(--fl-s-vif);--fl-ample-ms:759ms;--fl-ferme:var(--fl-s-ferme);--fl-ferme-ms:441ms;--fl-pop:var(--fl-s-pop);--fl-pop-ms:491ms}
+  @supports not (animation-timing-function:linear(0,1)){:root{--fl-tap:cubic-bezier(.2,.7,.2,1);--fl-vif:cubic-bezier(.22,.72,.2,1);--fl-ample:cubic-bezier(.22,1,.36,1);--fl-ferme:cubic-bezier(.32,.72,0,1);--fl-pop:cubic-bezier(.34,1.56,.64,1)}}
   /* === Design system : back-button unifié (visuel only, garde le positionnement de chaque écran) === */
+  /* v854 — la même peau de verre que le trio SOMMEIL/EFFORT/CALORIES et que
+     #flBackBtn dans l'iframe : FLV_BG + FLV_SH, chevron noir encre et fin. */
   .bk,.abk,.fcbk,.calbk,.slbk,.effbk,.tbk,.elx-bk,.nbil-back,.nh-back,.act2-back{
-    width:42px!important;height:42px!important;border-radius:50%!important;border:1px solid var(--line)!important;
-    background:#fff!important;color:var(--ink)!important;box-shadow:0 5px 14px rgba(20,18,12,.06)!important;
+    width:42px!important;height:42px!important;border-radius:50%!important;border:1px solid rgba(255,255,255,.95)!important;
+    background:linear-gradient(158deg,#ffffff 0%,rgb(250,251,254) 38%,rgb(240,243,250) 100%)!important;
+    color:#14110f!important;
+    box-shadow:inset 0 1.5px 1px rgba(255,255,255,1),inset 0 -8px 14px -9px rgba(150,160,192,.4),inset 1px 0 1px rgba(255,255,255,.95),inset -1px 0 1.5px rgba(200,208,228,.35),0 1px 2px rgba(20,17,15,.03),0 8px 20px -7px rgba(112,122,158,.22)!important;
     font-size:21px!important;line-height:1!important;display:grid!important;place-items:center!important;padding:0!important;
-    cursor:pointer;font-family:inherit}
-  .bk:active,.abk:active,.fcbk:active,.calbk:active,.slbk:active,.effbk:active,.tbk:active,.elx-bk:active,.nbil-back:active,.nh-back:active{transform:scale(.88)}
+    cursor:pointer;font-family:inherit;
+    transition:scale var(--fl-tap-ms) var(--fl-tap),box-shadow var(--fl-tap-ms) var(--fl-tap)}
+  .bk svg,.abk svg,.fcbk svg,.calbk svg,.slbk svg,.effbk svg,.tbk svg,.elx-bk svg,.nbil-back svg,.nh-back svg,.act2-back svg{stroke:#14110f!important;stroke-width:1.7!important}
+  /* v854 — la pastille GONFLE au lieu de rétrécir, et s'illumine. En `scale` et
+     jamais en `transform` : .act2-back est centré par translateY(-50%) qu'un
+     transform:scale() écraserait — le bouton sautait hors de son axe (v837).
+     L'ancienne règle était justement un transform:scale(.88). */
+  .bk:active,.abk:active,.fcbk:active,.calbk:active,.slbk:active,.effbk:active,.tbk:active,.elx-bk:active,.nbil-back:active,.nh-back:active,.act2-back:active,
+  .bk[data-fl-press],.abk[data-fl-press],.fcbk[data-fl-press],.calbk[data-fl-press],.slbk[data-fl-press],.effbk[data-fl-press],.tbk[data-fl-press],.elx-bk[data-fl-press],.nbil-back[data-fl-press],.nh-back[data-fl-press],.act2-back[data-fl-press]{
+    scale:1.12;transition-duration:var(--fl-tap-ms);transition-timing-function:var(--fl-tap);
+    box-shadow:0 2px 6px rgba(20,17,15,.06),0 10px 26px -6px rgba(112,122,158,.30),inset 0 2px 2px rgba(255,255,255,1)!important}
+  /* v854 — la lumière qui suit le doigt, côté coquille (Journal, Coach…).
+     Calque créé au toucher par flVie et retiré au relâchement : aucune couche
+     de composition au repos, cf. le budget de 48 couches / 333 Mo de la v835. */
+  #flGlow{position:fixed;pointer-events:none;z-index:2147483000;opacity:0;transition:opacity .2s ease;
+    background:radial-gradient(circle 132px at var(--x,50%) var(--y,50%),rgba(255,255,255,.55),rgba(255,255,255,.20) 42%,rgba(255,255,255,0) 72%)}
+  #flGlow[data-on]{opacity:1}
+  @keyframes flVieIn{from{opacity:0;scale:.965}to{opacity:1;scale:1}}
+  [data-fl-in]{animation:flVieIn var(--fl-vif-ms) var(--fl-vif) both}
+  /* v856 — Apple ne demande pas de SUPPRIMER le mouvement mais de le REMPLACER par un fondu :
+     couper net desoriente autant que trop bouger. Ecraser les tokens suffit. */
+  @media (prefers-reduced-motion:reduce){:root{--fl-tap:linear(0,1);--fl-vif:linear(0,1);--fl-ample:linear(0,1);--fl-ferme:linear(0,1);--fl-pop:linear(0,1);--fl-tap-ms:1ms;--fl-vif-ms:200ms;--fl-ample-ms:200ms;--fl-ferme-ms:200ms;--fl-pop-ms:200ms}
+    #flGlow{display:none!important}
+    .bk:active,.abk:active,.fcbk:active,.calbk:active,.slbk:active,.effbk:active,.tbk:active,.elx-bk:active,.nbil-back:active,.nh-back:active,.act2-back:active,[data-fl-press]{scale:1!important}}
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
   img{-webkit-touch-callout:none;-webkit-user-drag:none;user-drag:none;pointer-events:none}
   input,textarea{user-select:auto}
@@ -6585,7 +6618,17 @@ function mdHomeTrio(doc){try{
       « une fois sur deux » (ouvre puis referme). On ouvre l'écran par transform, comme flOpenNutrition. */
    try{
     if(lab==='CALORIES'){if(typeof flOpenCalHebdo==='function')flOpenCalHebdo();return;}
-    if(lab==='SOMMEIL'){var ss=doc.getElementById('screen-sommeil');if(!ss)return;
+    if(lab==='SOMMEIL'){
+     /* v871 — PREMIER ECRAN NATIF. Dans la coquille iOS, la carte SOMMEIL ouvre
+        desormais un ecran SwiftUI pose PAR-DESSUS le web, au lieu de l ecran web.
+        Le reste de l app continue de tourner dessous, intact. Dans un navigateur
+        (pas de pont natif), on garde l ecran web : le laboratoire de design
+        reste utilisable. */
+     var _nat=window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint;
+     if(_nat){try{_nat.postMessage({cmd:'natif',screen:'sommeil'});}catch(e){}
+      if(typeof haptic==='function')try{haptic(6);}catch(e){}
+      return;}
+     var ss=doc.getElementById('screen-sommeil');if(!ss)return;
      ss.style.setProperty('transform','translateX(-50%) translateX(0px)','important');ss.style.pointerEvents='auto';ss.scrollTop=0;
      try{mdSleep(doc);mdSleepPolish(doc);mdSleepViolet(doc);mdSleepHebdoBig(doc);mdFonts(doc);}catch(e){}
      if(typeof haptic==='function')try{haptic();}catch(e){}return;}
@@ -7066,9 +7109,17 @@ window.flvExclu=function(el,ecranId,cs,r,W){
      Écrire background + box-shadow en inline !important par-dessus, c'est
      se battre avec lui à chaque passe (mdSleepPolish, mdMarcheStats et
      flBalRender reconstruisent leur bloc en innerHTML). */
+  /* v855 — data-flv est la TROISIÈME exception, et c'est elle qui privait tout le
+     domaine Sommeil de verre. Ce n'est PAS une marque de propriété : mdSleepViolet
+     le pose sur CHAQUE nœud qu'il visite (804 dans le document, mesuré) uniquement
+     pour ne pas refaire deux fois sa passe coûteuse en getComputedStyle. Il ne
+     gouverne ni le fond ni l'ombre — il ne fait que convertir l'orange en violet.
+     La règle 1 le lisait comme un injecteur propriétaire et excluait donc tout le
+     Sommeil à vie. Mesure de l'assouplissement : +4 surfaces seulement, toutes
+     dans les écrans Sommeil (screen-sommeil, -hebdo, -dual, dette-hebdo). */
   var at=el.attributes;
   for(var i=0;i<at.length;i++){var n=at[i].name;
-   if(n==='data-fl-verre'||n==='data-fl-fond')continue;
+   if(n==='data-fl-verre'||n==='data-fl-fond'||n==='data-flv')continue;
    if(n.indexOf('data-fl')===0||n.indexOf('data-md')===0)return true;}
   if(el.classList&&(el.classList.contains('flbb')||el.classList.contains('mnrow')||el.classList.contains('mnrow-empty')))return true;
 
@@ -7139,6 +7190,38 @@ window.flvExclu=function(el,ecranId,cs,r,W){
  }catch(e){}
  return false;
 };
+/* v855 — POURQUOI LE VERRE DISPARAISSAIT POUR DE BON QUAND ON CLIQUAIT.
+   Mesuré sur l'écran Sommeil : au clic sur un stade, le nœud N'EST PAS remplacé
+   (il reste dans le DOM, même identité) mais React réécrit son attribut style en
+   entier. Le dégradé meurt ; l'ATTRIBUT data-fl-verre, lui, survit — les
+   attributs ne sont pas touchés par une réécriture de style. La passe suivante
+   voyait le marqueur, croyait avoir déjà travaillé, et passait son chemin. La
+   carte restait blanche à vie. Cliquer les quatre stades vidait la page.
+
+   La correction avait déjà été tentée puis annulée par crainte de repeindre les
+   109 surfaces à chaque passe. La mesure dit autre chose : au repos 0 surface est
+   dans cet état, et après un clic 1 seule. Surtout, le repeint ne peut PAS boucler,
+   et c'est structurel : « background: linear-gradient(...) » met background-color
+   à transparent, donc une surface correctement vitrée échoue au test clair() qui
+   suit et n'est jamais reprise. Le seul scénario de boucle serait un injecteur
+   tiers qui la repeindrait en aplat à chaque cycle — d'où le compteur ci-dessous,
+   qui borne la partie à 24 reprises. Un élément qu'on retrouve intact remet son
+   compteur à zéro : cliquer ses stades toute la journée ne l'épuise donc jamais.
+
+   Le compteur se bump à la POSE (flvCompte), surtout pas à l'examen. Première
+   version faite ainsi, et mesurée fausse : la carte du stade sélectionné porte un
+   aplat cyan rgb(238,251,253) dont l'écart chromatique est de 15, donc clair() la
+   rejette de toute façon et elle n'est JAMAIS repeinte — pourtant son compteur
+   grimpait de 2 par cycle et aurait atteint le plafond en 40 s. On aurait alors
+   renoncé d'avance à une surface qui, une fois désélectionnée et redevenue claire,
+   avait légitimement besoin d'être reprise : le bug du founder serait revenu par
+   la fenêtre. Compter les poses réelles, pas les regards. */
+window.flvRepeindre=function(el){
+ if(!el.getAttribute('data-fl-verre'))return true;              /* jamais vitré : candidat normal */
+ if((el.style.background||'').indexOf('gradient')>=0){el._flReg=0;return false;} /* intact */
+ return (el._flReg||0)<24;                                      /* borne dure anti-guerre */
+};
+window.flvCompte=function(el){if(el.getAttribute('data-fl-verre'))el._flReg=(el._flReg||0)+1;};
 window.flDaVerre=function(doc){try{
  if(!doc||!doc.body)return;
  var W=doc.defaultView||window;
@@ -7176,8 +7259,8 @@ window.flDaVerre=function(doc){try{
  var chrome=doc.querySelectorAll('#flTopBar .pf,#flTopBar .cal .lb');
  for(var t=0;t<chrome.length;t++){
   var ce=chrome[t];
-  if(ce.getAttribute('data-fl-verre'))continue;
-  ce.setAttribute('data-fl-verre','1');
+  if(!flvRepeindre(ce))continue;
+  flvCompte(ce);ce.setAttribute('data-fl-verre','1');
   ce.style.setProperty('background',FLV_BG,'important');
   ce.style.setProperty('border','1px solid rgba(255,255,255,.95)','important');
   ce.style.setProperty('box-shadow',SH_MINI,'important');
@@ -7196,7 +7279,7 @@ window.flDaVerre=function(doc){try{
   var gardees=[];
   for(var y=0;y<cand.length;y++){
    var el=cand[y];
-   if(el.getAttribute('data-fl-verre'))continue;
+   if(!flvRepeindre(el))continue;
    if(el.closest&&(el.closest('nav')||el.closest('#flTopBar')))continue;
    var cc=W.getComputedStyle(el);
    if((parseFloat(cc.borderRadius)||0)<10)continue;
@@ -7211,9 +7294,29 @@ window.flDaVerre=function(doc){try{
    var g=gardees[w2],prof=0;
    for(var pp=g.parentElement;pp&&pp!==ec;pp=pp.parentElement){if(gardees.indexOf(pp)>=0){prof++;break;}}
    var rg=g.getBoundingClientRect();
-   var taille=(rg.width<40||rg.height<34)?'mini':(prof>0?'interne':'carte');
+   /* v855 — LA PILE. Le founder, sur le Profil : « il y en a trop, ça fait too
+      much et moche ». Mesuré : 10 dalles pleine largeur enfilées, chacune avec le
+      halo complet de 32px. Le code tenait déjà ce raisonnement pour les bulles
+      IMBRIQUÉES (« empiler deux halos pleins empâte la page au lieu de creuser la
+      profondeur ») — il vaut tout autant pour des sœurs empilées en colonne :
+      les halos se recouvrent de proche en proche et la page devient laiteuse.
+      À partir de 3 cartes larges sœurs, on passe donc à la peau atténuée. Le
+      matériau reste, le bruit part. Une pile de 2 garde le relief plein.
+      Piège payé une fois : compter les sœurs présentes dans gardees ne marche
+      PAS. gardees ne contient que les surfaces vitrées à CETTE passe ; celles des
+      passes précédentes en sont absentes, et la pile n'était jamais détectée
+      (mesuré : 0 carte atténuée sur 10). On compte donc aussi celles qui portent
+      déjà le marqueur. */
+   var empile=0;
+   if(g.parentElement&&rg.width>=220){
+    var fr=g.parentElement.children;
+    for(var q2=0;q2<fr.length;q2++){var f2=fr[q2];
+     if(f2===g)continue;
+     if(gardees.indexOf(f2)>=0||f2.getAttribute('data-fl-verre'))empile++;}
+   }
+   var taille=(rg.width<40||rg.height<34)?'mini':((prof>0||empile>=2)?'interne':'carte');
    var peau=FLV_PEAU(pal,taille);
-   g.setAttribute('data-fl-verre','1');
+   flvCompte(g);g.setAttribute('data-fl-verre','1');
    g.style.setProperty('background',peau.bg,'important');
    g.style.setProperty('border',peau.bord,'important');
    g.style.setProperty('box-shadow',peau.sh,'important');
@@ -7224,7 +7327,7 @@ window.flDaVerre=function(doc){try{
   var els=scope[s].querySelectorAll('div,span,button');
   for(var i=0;i<els.length;i++){
    var e=els[i];
-   if(e.getAttribute('data-fl-verre'))continue;
+   if(!flvRepeindre(e))continue;
    if(e.closest&&(e.closest('nav')||e.closest('#flTopBar')||e.closest('[data-fl-card]')))continue;
    var c=W.getComputedStyle(e);
    var br=c.borderRadius||'';
@@ -7236,7 +7339,7 @@ window.flDaVerre=function(doc){try{
    if(!clair(c.backgroundColor))continue;
    /* les ombres du verre sont proportionnelles : sous 40px on allège */
    var petit=r0.width<40;
-   e.setAttribute('data-fl-verre','1');
+   flvCompte(e);e.setAttribute('data-fl-verre','1');
    e.style.setProperty('background',FLV_BG,'important');
    e.style.setProperty('border','1px solid rgba(255,255,255,.95)','important');
    e.style.setProperty('box-shadow',petit
@@ -7283,6 +7386,655 @@ window.flLayerDiet=function(doc){try{
   doc._flDietMO=mo;
  }
  for(var i=0;i<scr.length;i++)apply(scr[i],false);
+}catch(e){}};
+/* ═══════════ v854 — LA VIE : le doigt et la surface ══════════════════════════
+   Le founder : « ce n'est pas réactif, même Sommeil ; les pages ne bougent pas
+   assez ». Trois gestes, un seul moteur, deux écouteurs délégués.
+
+   • data-fl-press est posé sur le PLUS PROCHE ancêtre de verre (closest). Un
+     simple :active aurait gonflé la bulle ET sa bulle parente en même temps :
+     les 109 surfaces de flDaVerre s'emboîtent, l'effet se serait multiplié.
+   • #flGlow — la lumière qui suit le doigt. UN calque position:fixed, créé au
+     toucher, retiré au relâchement : zéro couche de composition au repos. Le
+     budget mesuré sur l'appareil est de 48 couches pour 333 Mo de mémoire GPU,
+     et c'est ce plafond qui a tué WebKit en v835. Le calque est posé en fixed
+     aux coordonnées du rect, et NON en enfant absolu de la carte : il aurait
+     fallu passer l'hôte en position:relative, ce qui ré-ancre ses descendants
+     absolus — plusieurs cartes en ont (l'anneau du trio, par exemple).
+   • getBoundingClientRect : UN seul appel, au pointerdown, jamais dans la
+     boucle. C'est un calcul de mise en page synchrone ; en boucle il avait déjà
+     figé une fonction entière pendant la rafale de 18 passes au démarrage.
+   • La boucle rAF est BORNÉE : une frame en attente au maximum, annulée au
+     relâchement. Rien ne tourne quand le doigt n'est pas là.
+   • Le geste meurt dès que le doigt part en défilement : WebKit émet
+     pointercancel quand il prend la main sur le scroll. Pour les PETITS boutons
+     (pas de lumière) on ajoute un seuil de 14 px — sur les grandes surfaces au
+     contraire le doigt DOIT pouvoir se promener, c'est tout l'effet demandé. */
+/* ═══════════ v856 — RESSORT CALCULÉ À LA VOLÉE ═══════════════════════════════
+   Les trois formes du socle (--fl-s-vif / -ferme / -pop) sont précalculées : elles
+   suffisent partout où le mouvement part de l'arrêt. Mais un objet LÂCHÉ part avec
+   une vitesse, et cette vitesse change la forme même de la courbe — on ne peut donc
+   pas la précalculer. C'est le seul endroit qui justifie un générateur embarqué.
+
+   Solution analytique de l'oscillateur amorti, normalisée y(0)=0, y(∞)=1, y'(0)=v0 :
+     sous-amorti (z<1) : y = 1 - e^(-zwt)·[cos(wd·t) + ((zw - v0)/wd)·sin(wd·t)]
+     critique   (z=1)  : y = 1 - e^(-wt)·[1 + (w - v0)·t]
+   avec w = 2π/response et wd = w·√(1-z²).
+   Vérifié en Node avant embarquement : à v0=0 il reproduit les trois formes du socle
+   au millième près (dépassement 0.960 % contre 0.967 % théorique pour z=0.828,
+   4.600 contre 4.599 pour z=0.7, 0 pour z=1). Et il fait ce qu'aucune courbe fixe ne
+   peut faire : v0=0 → 485 ms et 0.96 % de dépassement, v0=20 → 398 ms et 4.70 %.
+   Plus on lance fort, plus c'est court et plus ça dépasse : le comportement exact
+   d'UIScrollView. La simplification de la polyligne se fait à distance VERTICALE,
+   parce que c'est précisément l'erreur que commet linear(), qui interpole en x. */
+
+/* ═══════════ v878 — LE PONT DE DONNEES VERS L ECRAN NATIF ═══════════════════════
+   Le web reste PROPRIETAIRE des donnees ; le natif ne fait que les afficher. C est
+   ce qui rend la migration progressive possible : on remplace la presentation ecran
+   par ecran sans toucher au calcul, qui est la vraie valeur de FLINT et qui est
+   eprouve.
+
+   DOCTRINE, la meme que partout ailleurs : jamais un chiffre invente. Une valeur
+   absente part a null et l ecran natif affichera un tiret. Le scan a 600 kcal de
+   cette nuit a montre ce que coute un bel ecran qui ment. */
+window.flSommeilData=function(){try{
+ var K=(typeof tk==='function')?tk(0):null;
+ var n=(typeof sleepNight==='function')?sleepNight(K):null;
+ var prof=(typeof getProfile==='function')?getProfile():{};
+ var besoinMin=(prof.need||8)*60;
+ function hm(m){if(m==null)return null;m=Math.round(m);return Math.floor(m/60)+'h'+String(m%60).padStart(2,'0');}
+ function hhmm(m){if(m==null)return null;m=((Math.round(m)%1440)+1440)%1440;
+  return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');}
+
+ /* Series de N derniers jours. v887 : extraite en fonction parce que l ecran de
+    detail natif propose deux echelles, S (7 jours) et M (30 jours), exactement
+    comme la page hebdo du web. La dette s accumule sur la fenetre demandee. */
+ var JJ=['dim','lun','mar','mer','jeu','ven','sam'];
+ function serieJours(N){
+  var out=[],dt=0;
+  for(var i=N-1;i>=0;i--){
+   var kk=(typeof tk==='function')?tk(-i):null;
+   var sn=(typeof sleepNight==='function')?sleepNight(kk):null;
+   var d=new Date();d.setDate(d.getDate()-i);
+   var h=sn?sn.asleep/60:null;
+   if(h!=null)dt=Math.max(0,dt+(besoinMin/60-h));
+   out.push({jour:JJ[d.getDay()]+' '+d.getDate(),
+             qualite:(sn&&sn.efficiency!=null)?sn.efficiency:null,
+             heures:h,besoin:besoinMin/60,dette:h!=null?Math.round(dt*100)/100:null});
+  }
+  return out;
+ }
+ var sem=serieJours(7),mois=serieJours(30);
+ var dette=0;sem.forEach(function(j){if(j.dette!=null)dette=j.dette;});
+
+ /* La courbe de FC de la nuit vient de la MONTRE : DB('watch_'+K).hr, remplie par
+    flintNative depuis le pont Bluetooth. C est la meme source que la pastille live. */
+ var hr=[];
+ try{var w=DB.get('watch_'+K,null);
+  if(w&&w.hr&&w.hr.length)hr=w.hr.map(function(x){return x[1];}).filter(function(v){return v>25&&v<230;});
+ }catch(e){}
+
+ return {
+  aDesDonnees: !!n,
+  duree: n?hm(n.asleep):null,
+  score: (n&&n.efficiency!=null)?n.efficiency:null,
+  couche: (n&&n.bedMin!=null)?hhmm(n.bedMin):null,
+  reveil: (n&&n.wakeMin!=null)?hhmm(n.wakeMin):null,
+  efficacite: (n&&n.efficiency!=null)?n.efficiency:null,
+  reveils: (n&&n.wakeEvents!=null)?n.wakeEvents:null,
+  tempsReveil: (n&&n.awake!=null)?hm(n.awake):null,
+  besoin: hm(besoinMin),
+  besoinH: besoinMin/60,
+  dormiH: n?n.asleep/60:null,
+  detteH: Math.round(dette*100)/100,
+  stades: n?[
+   {nom:'PROFOND',  pct:n.asleep?Math.round((n.deep||0)/n.asleep*100):0,  duree:hm(n.deep||0)},
+   {nom:'LÉGER',    pct:n.asleep?Math.round((n.light||0)/n.asleep*100):0, duree:hm(n.light||0)},
+   {nom:'PARADOXAL',pct:n.asleep?Math.round((n.rem||0)/n.asleep*100):0,   duree:hm(n.rem||0)},
+   {nom:'RÉVEIL',   pct:n.asleep?Math.round((n.awake||0)/n.asleep*100):0, duree:hm(n.awake||0)}
+  ]:null,
+  fc: hr,
+  semaine: sem,
+  mois: mois,
+
+  /* v886 — LE DÉCOUPAGE DE LA NUIT, pour l interactivite de l ecran natif.
+     Sans lui, le natif peut afficher la courbe mais pas SURLIGNER un stade dessus :
+     il ne sait pas a quel moment de la nuit chaque stade a eu lieu. C est la meme
+     source que slCurveSVG cote web (slStageSegs2), donc les deux ecrans surlignent
+     exactement les memes segments. */
+  segments: n?(function(){try{
+   var sg=(typeof slStageSegs2==='function')?slStageSegs2(n):null;
+   if(!sg||!sg.length)return null;
+   var FR={deep:'PROFOND',light:'LÉGER',rem:'PARADOXAL',awake:'RÉVEIL'};
+   return sg.map(function(g){return {stade:FR[g.stage]||g.stage,
+                                     debut:g.startMin,duree:g.durMin};});
+  }catch(e){return null;}})():null,
+  /* Duree au lit et heure de coucher en minutes : le natif en a besoin pour
+     convertir la position du doigt sur la courbe en heure affichable. */
+  litMin: (n&&n.inBed!=null)?n.inBed:null,
+  coucheMin: (n&&n.bedMin!=null)?n.bedMin:null
+ };
+}catch(e){return {aDesDonnees:false};}};
+/* ═══ v904 — PONT DE LA PAGE PRINCIPALE (accueil) ═══════════════════════════
+   Meme principe que flSommeilData : le web reste proprietaire du calcul, le
+   natif ne fait que presenter. On rebranche sur les fonctions DEJA eprouvees —
+   recovery(), loadStrain(), caloriesBurned(), sleepNight() — plutot que de
+   recalculer, sinon les deux moities de l app finiraient par se contredire.
+   Chaque champ est optionnel : absent, il s affichera en tiret. */
+window.flAccueilData=function(){try{
+ var K=(typeof tk==='function')?tk(0):null;
+ var prof=(typeof getProfile==='function')?getProfile():{};
+ var rv=(typeof recovery==='function')?recovery():null;
+ var n=(typeof sleepNight==='function')?sleepNight(K):null;
+
+ function hm(m){if(m==null)return null;m=Math.round(m);
+  return Math.floor(m/60)+'h'+String(m%60).padStart(2,'0');}
+
+ /* — sommeil — */
+ var besoinMin=(prof.need||8)*60, dormi=n?n.asleep:null;
+ var sPct=(dormi!=null&&besoinMin)?Math.max(0,Math.min(1,dormi/besoinMin)):null;
+ var sEtat=sPct==null?null:(sPct>=0.95?'Excellent':sPct>=0.85?'Bon':sPct>=0.7?'Correct':'Court');
+
+ /* — dette de la nuit : ce qui manque au besoin, en heures — */
+ var detteH=(dormi!=null&&besoinMin)?Math.round((besoinMin-dormi)/60*10)/10:null;
+
+ /* — effort — */
+ var eff=(typeof loadStrain==='function')?loadStrain(K):null;
+ var cible=(typeof strainTarget==='function')?strainTarget():null;
+ var eMot=null,eEtat=null;
+ if(eff!=null&&cible){
+  eMot = eff<cible[0]?'léger':eff<=cible[1]?'soutenu':'intense';
+  eEtat= eff<cible[0]?'Léger':eff<=cible[1]?'Modéré':'Élevé';
+ }
+
+ /* — calories — */
+ var kcal=(typeof caloriesBurned==='function')?caloriesBurned(K):null;
+ var but=prof.kcalGoal||2500;
+ var cEtat=kcal==null?null:(kcal>=but?'Excellente':kcal>=but*0.8?'Bonne':'Faible');
+
+ return {
+  aDesDonnees: !!rv,
+  prenom: prof.name||null,
+  score:  rv?rv.s:null,
+  verdict: rv?rv.state:null,
+  zone:    rv?rv.zone:null,
+  sommeil: {valeur:hm(dormi), sous:hm(besoinMin)?((prof.need||8)+'h cible'):null,
+            part:sPct, etat:sEtat},
+  effort:  {valeur:eff!=null?String(eff).replace('.',','):null,
+            max:(typeof STRAIN_MAX!=='undefined')?STRAIN_MAX:null,
+            sous:eMot, part:(eff!=null)?Math.max(0,Math.min(1,eff/STRAIN_MAX)):null,
+            etat:eEtat},
+  calories:{valeur:kcal!=null?String(kcal).replace(/\B(?=(\d{3})+(?!\d))/g,' '):null,
+            sous:'brûlées', part:(kcal!=null)?Math.max(0,Math.min(1,kcal/but)):null,
+            etat:cEtat},
+
+  /* — MA JOURNEE (screen-journee) —
+     La frise du jour : la nuit, les seances detectees ou saisies, les repas.
+     On lit les MEMES enregistrements que le web (sessions_<jour>, meals_<jour>,
+     sleepNight) et on les remet dans l ordre horaire. */
+  journee: (function(){try{
+   function hhmm(m){if(m==null)return null;m=((Math.round(m)%1440)+1440)%1440;
+    return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');}
+   function min(t){if(!t)return null;var p=String(t).split(':');return (+p[0])*60+(+p[1]||0);}
+   var e=[];
+   if(n&&n.bedMin!=null&&n.wakeMin!=null){
+    e.push({debut:hhmm(n.bedMin), fin:hhmm(n.wakeMin), nom:'Nuit', genre:'sommeil',
+            valeur:hm(n.asleep), tri:0});
+   }
+   var ss=[];try{ss=DB.get('sessions_'+K,[])||[];}catch(x){}
+   ss.forEach(function(o){
+    var d0=min(o.start), d1=(d0!=null)?d0+(o.dur||30):null;
+    var sieste=o.type==='nap';
+    e.push({debut:hhmm(d0), fin:hhmm(d1), nom:o.name||'Séance',
+            genre:sieste?'sommeil':(o.auto?'auto':'manuelle'),
+            valeur:sieste?hm(o.dur||0)
+                  :((typeof actStrain==='function')?String(actStrain(o)).replace('.',','):null),
+            tri:d0==null?9999:d0});
+   });
+   var mm=[];try{mm=DB.get('meals_'+K,[])||[];}catch(x){}
+   mm.forEach(function(o){
+    var d0=min(o.time);
+    e.push({debut:hhmm(d0), fin:hhmm(d0!=null?d0+30:null), nom:o.name||'Repas',
+            genre:'repas', valeur:o.kcal!=null?String(Math.round(o.kcal)):null,
+            tri:d0==null?9999:d0});
+   });
+   e.sort(function(a,b){return a.tri-b.tri;});
+   var cumul=(typeof loadStrain==='function')?loadStrain(K):null;
+   var mot=cumul==null?null:(cumul>=14?'Journée bien remplie':cumul>=8?'Journée active':'Journée calme');
+   return {entrees:e, resume:e.length+' entrée'+(e.length>1?'s':'')
+            +(cumul!=null?' · cumul '+String(cumul).replace('.',','):''),
+           badge:mot};
+  }catch(e){return null;}})(),
+
+  /* — TABLEAU DE BORD (screen-tableau) —
+     Cinq cartes depliables, dix-sept lignes. Chaque valeur est lue sur la MEME
+     source que le reste de l app ; ce qu on ne sait pas lire vaut null et
+     s affichera en tiret plutot qu en zero. */
+  tableau: (function(){try{
+   var t=(typeof sensorOf==='function')?sensorOf(K):null;
+   var bl=(function(){try{return (DB.get('bodylog',{})||{})[K]||null;}catch(e){return null;}})();
+   function nb(v,d){return v==null?null:(d?String(Math.round(v*10)/10).replace('.',','):String(Math.round(v)));}
+   function mil(v){return v==null?null:String(Math.round(v)).replace(/\B(?=(\d{3})+(?!\d))/g,' ');}
+   var rep=(n&&n.asleep)?Math.round((n.restorative||0)/n.asleep*100):null;
+   return [
+    {titre:'RÉCUPÉRATION', icone:'heart', lignes:[
+      {libelle:'VFC',           valeur:nb(t&&t.hrv),        unite:'ms',  fleche:true},
+      {libelle:'FC au repos',   valeur:nb(t&&t.rhr),        unite:'bpm', fleche:true},
+      {libelle:'Récupération',  valeur:rv?String(rv.s):null,unite:'%',   fleche:true}]},
+    {titre:'SOMMEIL', icone:'moon', lignes:[
+      {libelle:'Sommeil réparateur',  valeur:rep!=null?String(rep):null, unite:'%'},
+      {libelle:'Dette de sommeil',    valeur:nb(detteH,true),            unite:'h'},
+      {libelle:'Efficacité du sommeil',valeur:(n&&n.efficiency!=null)?String(n.efficiency):null, unite:'%'},
+      {libelle:'Temps passé au lit',  valeur:n?hm(n.inBed):null,         unite:''},
+      {libelle:'Durée de sommeil',    valeur:n?hm(n.asleep):null,        unite:''}]},
+    {titre:'ACTIVITÉ', icone:'figure.walk', lignes:[
+      {libelle:'Pas',                  valeur:mil(t&&t.steps), unite:'pas'},
+      {libelle:'Calories',             valeur:mil(kcal),       unite:'kcal'},
+      {libelle:'Effort et récupération',valeur:eff!=null?String(eff).replace('.',','):null,
+       unite:'/'+((typeof STRAIN_MAX!=='undefined')?STRAIN_MAX:20)}]},
+    {titre:'CARDIO', icone:'waveform.path.ecg', lignes:[
+      {libelle:'VO₂ max',              valeur:nb(t&&t.vo2),   unite:''},
+      {libelle:'FC moyenne',           valeur:nb(t&&t.hrAvg), unite:'bpm'},
+      {libelle:'Fréquence respiratoire',valeur:nb(t&&t.resp,true), unite:'r/m'},
+      {libelle:'Zones de FC (hebdo)',  valeur:null, unite:'', fleche:true}]},
+    {titre:'CORPS', icone:'person', lignes:[
+      {libelle:'Poids',                 valeur:nb(bl&&bl.weight,true), unite:'kg'},
+      {libelle:'Masse corporelle maigre',valeur:nb(bl&&bl.lean,true),  unite:'kg'}]}
+   ];
+  }catch(e){return null;}})()
+ };
+}catch(e){return {aDesDonnees:false};}};
+/* v904 — DECLENCHEUR DE LA PAGE PRINCIPALE NATIVE.
+   Un appui sur le libelle RECUPERATION bascule sur la version native.
+   Point d entree PROVISOIRE, le temps de juger la page pendant la migration.
+
+   v905 — ECOUTE EN CAPTURE SUR LE DOCUMENT, et non sur l element.
+   Premiere version : on attachait un listener au libelle lui-meme. React recree
+   son arbre a chaque rendu, le listener mourait avec l ancien noeud — c est le
+   meme piege qui avait ete paye pour le bouton +, ou la delegation au document
+   avait ete la solution. On refait pareil : un seul ecouteur, en phase de
+   CAPTURE, qui remonte depuis la cible. Il survit aux re-rendus et passe avant
+   les gestionnaires de la maquette. */
+window.flOuvrirAccueilNatif=function(){try{
+ var nt=window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint;
+ if(!nt)return;
+ nt.postMessage({cmd:'natif',screen:'accueil',data:flAccueilData()});
+ try{haptic(6);}catch(e){}
+}catch(e){}};
+(function(){try{
+ setInterval(function(){try{
+  var fr=document.getElementById('frToday'),doc=fr&&fr.contentDocument;
+  if(!doc||doc._flAccNat)return;
+  doc._flAccNat=1;
+  doc.addEventListener('click',function(ev){try{
+   var acc=doc.getElementById('screen-accueil'); if(!acc)return;
+   var n=ev.target,hit=null;
+   for(var k=0;k<4&&n;k++,n=n.parentNode){
+    if(!n.textContent)continue;
+    if(/^R[EÉ]CUP[EÉ]RATION$/.test(n.textContent.trim())&&acc.contains(n)){hit=n;break;}
+   }
+   if(!hit)return;
+   ev.preventDefault();ev.stopPropagation();
+   window.flOuvrirAccueilNatif();
+  }catch(e){}},true);
+ }catch(e){}},1000);
+}catch(e){}})();
+/* ═══ v911 — PONT DE LA PAGE NUTRITION ═════════════════════════════════════ */
+window.flNutritionData=function(){try{
+ var K=(typeof tk==='function')?tk(0):null;
+ var prof=(typeof getProfile==='function')?getProfile():{};
+ var repas=[];try{repas=DB.get('meals_'+K,[])||[];}catch(e){}
+ function mil(v){return v==null?null:String(Math.round(v)).replace(/\B(?=(\d{3})+(?!\d))/g,' ');}
+
+ var kcalBut=prof.kcalGoal||2500;
+ var pris=0,P=0,G=0,L=0;
+ repas.forEach(function(m){pris+=(m.kcal||0);P+=(m.prot||0);G+=(m.carb||0);L+=(m.fat||0);});
+ /* Le budget du jour = objectif + ce qui a ete brule. Meme regle que la page web. */
+ var brule=(typeof caloriesBurned==='function')?caloriesBurned(K):0;
+ var budget=Math.round(kcalBut+Math.max(0,brule-1600));
+ var reste=Math.max(0,budget-pris);
+ var pct=budget?Math.round(pris/budget*100):null;
+
+ var butP=prof.protGoal||140;
+ var butG=Math.round(kcalBut*0.45/4), butL=Math.round(kcalBut*0.3/9);
+
+ var JJ=['D','L','M','M','J','V','S'];
+ var jours=[];
+ for(var i=6;i>=0;i--){
+  var d=new Date();d.setDate(d.getDate()-i);
+  jours.push({lettre:JJ[d.getDay()],numero:String(d.getDate()),actif:i===0});
+ }
+ var MOIS=['janvier','février','mars','avril','mai','juin','juillet','août',
+           'septembre','octobre','novembre','décembre'];
+ var JOURS=['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];
+ var au=new Date();
+
+ return {
+  aDesDonnees:true,
+  date: JOURS[au.getDay()]+' '+au.getDate()+' '+MOIS[au.getMonth()],
+  restantes: mil(reste),
+  budget: mil(budget),
+  pourcent: pct,
+  part: budget?Math.max(0,Math.min(1,pris/budget)):null,
+  jours: jours,
+  macros: [
+   {nom:'Protéines', actuel:Math.round(P), cible:butP, couleur:'#fb6015'},
+   {nom:'Glucides',  actuel:Math.round(G), cible:butG, couleur:'#3d9b40'},
+   {nom:'Lipides',   actuel:Math.round(L), cible:butL, couleur:'#1e6fe0'}
+  ],
+  repas: repas.map(function(m){
+   var mp=Math.round(m.prot||0),mg=Math.round(m.carb||0),ml=Math.round(m.fat||0);
+   /* Note simple et honnete : part des proteines dans l apport du repas. */
+   var note=(m.kcal)?Math.max(1,Math.min(10,Math.round(mp*4/m.kcal*30))):null;
+   return {heure:m.time||null, nom:m.name||'Repas',
+           ligne:mil(m.kcal)+' kcal · '+mp+' P · '+mg+' G · '+ml+' L',
+           note:note!=null?String(note):null};
+  })
+ };
+}catch(e){return {aDesDonnees:false};}};
+window.flSpringCss=function(response,z,v0){try{
+ var w=2*Math.PI/response,wd=z<1?w*Math.sqrt(1-z*z):0,out=[],N=200,T=0,i,t;
+ function y(t){var e=Math.exp(-z*w*t);
+  if(z<1)return 1-e*(Math.cos(wd*t)+((z*w-v0)/wd)*Math.sin(wd*t));
+  return 1-e*(1+(w-v0)*t);}
+ for(t=0;t<6;t+=1/600)if(Math.abs(y(t)-1)>0.001)T=t;
+ T+=1/60;
+ for(i=0;i<=N;i++)out.push([y(i/N*T),i/N*100]);
+ function rdp(p,eps){
+  if(p.length<3)return p;
+  var a=p[0],b=p[p.length-1],dm=0,ix=0,k,u,d;
+  for(k=1;k<p.length-1;k++){u=(p[k][1]-a[1])/((b[1]-a[1])||1);
+   d=Math.abs(p[k][0]-(a[0]+u*(b[0]-a[0])));if(d>dm){dm=d;ix=k;}}
+  if(dm<=eps)return [a,b];
+  return rdp(p.slice(0,ix+1),eps).slice(0,-1).concat(rdp(p.slice(ix),eps));}
+ var s=rdp(out,0.0012);
+ var body=s.map(function(p,k){
+  if(k===0)return '0';
+  if(k===s.length-1)return '1';
+  return (Math.round(p[0]*1e4)/1e4)+' '+(Math.round(p[1]*100)/100)+'%';}).join(',');
+ return {easing:'linear('+body+')',ms:Math.round(T*1000)};
+}catch(e){return {easing:'cubic-bezier(.32,.72,0,1)',ms:300};}};
+/* ═══════════ v867 — LA BARRE QUI SE RETIRE (d'après la référence Instagram) ═══════
+   Adaptation, pas copie. Ce qu'on garde du composant SwiftUI : la barre rétrécit
+   quand on descend, se redéploie quand on remonte, et la progression est une
+   FONCTION DU DOIGT — pas une animation qu'on lance. Ce qu'on écarte : le
+   glassEffect(.interactive()) d'Apple, impossible ici sans backdrop-filter (crash
+   v835), et le UISegmentedControl, dont la bulle liquide maison (v768) est déjà
+   une meilleure version.
+
+   POURQUOI CE CHANTIER. Mesuré sur mes captures du simulateur cette nuit : la barre
+   recouvrait le bas des cartes du trio ET le journal Bluetooth de l'écran Bracelet.
+   C'est un bandeau permanent qui mange de la hauteur sur chaque écran.
+
+   TROIS CHOIX D'ADAPTATION, assumés :
+   1. On pilote une VARIABLE CSS sur <html>, pas un style inline sur la nav. React
+      réécrit l'attribut style de la nav à chaque rendu ; il ne touche jamais <html>.
+      C'est le patron déjà éprouvé par fl-td-on et fl-cam-on.
+   2. `scale` et `translate`, JAMAIS `transform` : la nav est centrée par
+      translateX(-50%) et flNavBarHide s'en sert aussi. Un transform:scale() les
+      écraserait toutes les deux (piège payé en v837).
+   3. La référence appelle withAnimation() À CHAQUE frame de scroll — un ressort
+      relancé soixante fois par seconde, qui ne tient que parce qu'il est
+      interruptible. On fait plus fidèle à l'intention : pendant le geste la valeur
+      suit le doigt SANS transition, et le ressort n'intervient qu'au relâchement,
+      quand il n'y a plus de doigt pour guider.
+
+   Le décalage de référence (shift) est repris tel quel de la référence, et c'est sa
+   meilleure idée : la progression est comptée depuis le dernier CHANGEMENT DE SENS,
+   pas depuis le haut de la page. Un petit retour en arrière redéploie donc la barre
+   immédiatement, au lieu d'exiger de remonter toute la distance parcourue. */
+/* ═══════════ v868 — LES BULLES QUI SE RANGENT (d'après StickySection) ═══════════
+   Le founder : « quand je descends, les bulles s'imbriquent, puis elles
+   disparaissent ». C'est le motif des sections de Météo et Santé sous iOS 26.
+
+   CE QU'ON REPREND de la référence SwiftUI : la carte RECULE et s'efface à mesure
+   qu'elle sort par le haut — scale 1 → 0.94 ancré en haut, opacité 1 → 0. Ce sont
+   ses deux lignes maîtresses (fadeScale 0.05, opacity 1 - progress).
+
+   CE QU'ON N'EN PREND PAS, et pourquoi :
+   · glassEffect(.regular) sur le fond : impossible sans backdrop-filter (crash v835).
+   · position:sticky sur chaque carte. La référence épingle CHAQUE section. Sur le web
+     une carte réellement collée est promue en couche de composition ; avec 119 surfaces
+     de verre on exploserait le plafond de 48 couches mesuré sur l'appareil. On garde
+     donc le recul et l'effacement — la lecture « elle se range et s'en va » — sans
+     l'épinglage. C'est un arbitrage, pas un oubli.
+   · le fondu croisé en-tête complet / en-tête minimisé : il exige une structure
+     en-tête + corps identifiable. FLINT ne possède pas son markup (React), et deviner
+     cette structure serait une couche d'inférence de plus — la cause commune de tous
+     les bugs coûteux de cette nuit. On s'appuie sur [data-fl-verre], qui existe déjà.
+
+   PERFORMANCE, la contrainte qui a dicté l'écriture : AUCUN getBoundingClientRect
+   dans la boucle de défilement. On mesure les positions UNE fois via offsetTop
+   (propriété simple, pas de recalcul forcé), on met en cache, et le défilement ne fait
+   plus que de l'arithmétique. Un rect par carte et par frame, c'est exactement ce qui
+   a figé une fonction entière dans ce projet. */
+window.flPile=function(doc){try{
+ if(!doc||!doc.body||doc._flPileWired)return;
+ doc._flPileWired=1;
+ var W=doc.defaultView||window;
+ var ZONE=150;      /* hauteur, en px, sur laquelle la carte recule et s-efface */
+ var raf=0, cache=null, tCache=0;
+
+ function scrollerDe(el){
+  for(var p=el.parentElement;p;p=p.parentElement){
+   var o;try{o=W.getComputedStyle(p).overflowY;}catch(e){return null;}
+   if(o==='auto'||o==='scroll')return p;
+   if(p===doc.body)break;
+  }
+  return null;
+ }
+ /* Mesure UNIQUE, mise en cache 2 s. offsetTop ne force pas de recalcul de mise en
+    page comme le ferait getBoundingClientRect appelé en rafale. */
+ function mesure(){
+  var t=Date.now();
+  if(cache&&t-tCache<2000)return cache;
+  tCache=t;cache=[];
+  var vus=doc.querySelectorAll('[data-fl-verre]');
+  for(var i=0;i<vus.length&&i<160;i++){
+   var el=vus[i];
+   var r=el.getBoundingClientRect();
+   if(r.height<60||r.width<160)continue;          /* pastilles et puces : hors sujet */
+   var sc=scrollerDe(el);if(!sc)continue;
+   cache.push({el:el,sc:sc,haut:el.offsetTop});
+  }
+  return cache;
+ }
+ function peins(){
+  raf=0;
+  var l=mesure();
+  for(var i=0;i<l.length;i++){
+   var c=l[i];
+   /* position de la carte par rapport au haut de son défileur : une soustraction,
+      aucune lecture de géométrie. */
+   var y=c.haut-c.sc.scrollTop;
+   var p=0;
+   if(y<ZONE)p=Math.max(0,Math.min(1,(ZONE-y)/ZONE));
+   if(p<=0.001){
+    if(c.el._flP!==0){c.el._flP=0;c.el.style.removeProperty('scale');c.el.style.removeProperty('opacity');}
+   }else{
+    if(c.el._flP!==p){
+     c.el._flP=p;
+     c.el.style.setProperty('scale',(1-p*0.06).toFixed(4));
+     c.el.style.setProperty('opacity',(1-p*0.92).toFixed(3));
+    }
+   }
+  }
+ }
+ doc.addEventListener('scroll',function(){
+  if(!raf)raf=W.requestAnimationFrame(peins);       /* borné : une frame en attente au plus */
+ },{capture:true,passive:true});
+ W.addEventListener('resize',function(){cache=null;},{passive:true});
+}catch(e){}};
+window.flNavShrink=function(doc){try{
+ if(!doc||!doc.body||doc._flNavShrinkWired)return;
+ doc._flNavShrinkWired=1;
+ var W=doc.defaultView||window;
+ var DIST=110;                 /* course, en px de scroll, pour aller de 0 à 1 */
+ var p=0, shift=0, cible=null, dernier=null, sens=null, idle=0, tPrec=0, yPrec=0, vit=0;
+
+ function pose(v,ressort){
+  p=Math.max(0,Math.min(1,v));
+  var de=doc.documentElement;
+  if(ressort)de.classList.add('fl-navsnap');else de.classList.remove('fl-navsnap');
+  de.style.setProperty('--fl-navp',p.toFixed(4));
+ }
+ function yDe(t){
+  if(!t||t===doc||t===doc.documentElement||t===W)return W.pageYOffset||doc.documentElement.scrollTop||0;
+  return t.scrollTop||0;
+ }
+ /* Projection de la vitesse, même règle que le relâchement du swipe-back (v856) :
+    on décide sur où le geste ARRIVERAIT, pas sur où il s-arrête. */
+ function colle(){
+  var proj=p+(vit*0.12);
+  pose(proj>0.5?1:0,true);
+  W.setTimeout(function(){try{doc.documentElement.classList.remove('fl-navsnap');}catch(e){}},520);
+ }
+ doc.addEventListener('scroll',function(ev){try{
+  var t=ev.target, y=yDe(t);
+  var maintenant=Date.now();
+  if(t!==cible){cible=t;dernier=y;shift=y-p*DIST;sens=null;tPrec=maintenant;yPrec=y;return;}
+  if(dernier===null){dernier=y;shift=y-p*DIST;return;}
+  /* pas de rétrécissement si la page ne défile pas vraiment */
+  var haut=(t&&t.scrollHeight)||doc.documentElement.scrollHeight||0;
+  var vue=(t&&t.clientHeight)||W.innerHeight||0;
+  if(haut-vue<DIST*1.5){pose(0,false);dernier=y;return;}
+  var descend=y>dernier;
+  if(sens!==descend){sens=descend;shift=y-p*DIST;}   /* on repart du changement de sens */
+  var dt=maintenant-tPrec;
+  if(dt>0){vit=((y-yPrec)/dt)*1000/DIST;tPrec=maintenant;yPrec=y;}
+  pose((y-shift)/DIST,false);
+  dernier=y;
+  if(idle)W.clearTimeout(idle);
+  idle=W.setTimeout(colle,140);                       /* scroll fini : on colle */
+ }catch(e){}},{capture:true,passive:true});
+
+ /* Réveil au toucher, repris de la référence (onTouchBegan) : toucher une barre
+    réduite la redéploie AVANT de traiter le tap, sinon on vise à côté. */
+ doc.addEventListener('pointerdown',function(ev){try{
+  if(p<=0.02)return;
+  var n=ev.target&&ev.target.closest&&ev.target.closest('nav');
+  if(!n)return;
+  if(idle)W.clearTimeout(idle);
+  pose(0,true);shift=yDe(cible);
+  W.setTimeout(function(){try{doc.documentElement.classList.remove('fl-navsnap');}catch(e){}},520);
+ }catch(e){}},{capture:true,passive:true});
+}catch(e){}};
+/* Interpolation multi-points, portée depuis la référence SwiftUI. Elle mappe une
+   progression sur n'importe quelle plage de sortie et sert dès qu-on pilote une
+   valeur au doigt — largeur d-indicateur, décalage, opacité. */
+window.flInterp=function(x,entree,sortie){
+ if(!entree||entree.length<2||entree.length!==sortie.length)return sortie&&sortie[0]||0;
+ if(x<=entree[0])return sortie[0];
+ for(var i=1;i<entree.length;i++){
+  if(x<=entree[i]){
+   var x1=entree[i-1],x2=entree[i],y1=sortie[i-1],y2=sortie[i];
+   return y1+((y2-y1)/(x2-x1))*(x-x1);
+  }
+ }
+ return sortie[sortie.length-1];
+};
+window.flVie=function(doc){try{
+ if(!doc||!doc.body||doc._flVieWired)return;
+ doc._flVieWired=1;
+ var W=doc.defaultView||window;
+ var SEL='#flBackBtn,.pf-back,.flnv2-back,[data-fl-back],[data-fl-card],[data-fl-verre]';
+ var cur=null,glow=null,raf=0,rct=null,px=0,py=0,sx=0,sy=0,t0=0;
+ /* Un tap iOS dure ~80 ms et la montée en prend 110 : sans plancher, le doigt
+    repartait avant que le gonflement n'ait commencé — c'est exactement le
+    « pas assez d'effet » du founder. */
+ var PLANCHER=130;
+ function lache(){
+  if(raf){try{W.cancelAnimationFrame(raf);}catch(e){}raf=0;}
+  if(cur){
+   var el=cur;cur=null;rct=null;
+   var reste=PLANCHER-(Date.now()-t0);
+   /* data-fl-large part EN MEME TEMPS que data-fl-press : le retirer plus tot
+      changerait le sens du scale au milieu du retour, et la carte partirait
+      s enfoncer puis remonterait en gonflant. */
+   var _fin=function(){try{el.removeAttribute('data-fl-press');el.removeAttribute('data-fl-large');}catch(e){}};
+   if(reste>0)W.setTimeout(_fin,reste);else _fin();
+  }
+  if(glow){
+   var g=glow;glow=null;
+   try{g.removeAttribute('data-on');}catch(e){}
+   W.setTimeout(function(){try{if(g.parentNode)g.parentNode.removeChild(g);}catch(e){}},260);
+  }
+ }
+ function peins(){raf=0;if(!glow)return;
+  glow.style.setProperty('--x',px+'px');glow.style.setProperty('--y',py+'px');}
+ doc.addEventListener('pointerdown',function(ev){try{
+  if(ev.pointerType==='mouse'&&ev.button!==0)return;
+  lache();
+  var el=ev.target&&ev.target.closest&&ev.target.closest(SEL);
+  if(!el)return;
+  cur=el;t0=Date.now();sx=ev.clientX;sy=ev.clientY;
+  el.setAttribute('data-fl-press','1');
+  var r=el.getBoundingClientRect();      /* UN appel — ici, et nulle part ailleurs */
+  /* v856 — LE SENS DE L'APPUI DÉPEND DE LA TAILLE. Sur iOS un petit contrôle en
+     Liquid Glass se SOULÈVE vers le doigt (le matériau fléchit et s'illumine),
+     tandis qu'une grande surface s'ENFONCE — carte App Store Today, cellule Music.
+     FLINT faisait grossir tout le monde, y compris des cartes de 361 px : un
+     rectangle de cette taille qui gonfle sous le doigt ne ressemble à rien de ce
+     qu'on voit sur iOS. Le rect est déjà mesuré ci-dessus, la bascule ne coûte rien.
+     Seuil à 200 px : calé pour que les cartes du trio (≈103 px) continuent de se
+     soulever et que les cartes pleine largeur s'enfoncent. */
+  if(r.width>=200)el.setAttribute('data-fl-large','1');
+  /* Seuil calé sur la MESURE, pas à vue : sur un iPhone de 375 px, une carte du
+     trio fait (375 - 44 de marges - 2 gouttières de 10) / 3 ≈ 103 px de large.
+     Un seuil de 130 les aurait toutes privées de lumière — justement les trois
+     cartes que le founder cite. À 92 elles passent, et les boutons retour
+     (48 à 54 px) restent dehors : une lumière sous une pastille de 48 px serait
+     une flaque, l'effet d'appui leur suffit. */
+  if(r.width<92||r.height<64)return;
+  rct=r;
+  var cs=W.getComputedStyle(el);
+  glow=doc.createElement('i');glow.id='flGlow';
+  glow.style.cssText='left:'+r.left+'px;top:'+r.top+'px;width:'+r.width+'px;height:'+r.height+'px;border-radius:'+(cs.borderRadius||'22px');
+  px=ev.clientX-r.left;py=ev.clientY-r.top;
+  glow.style.setProperty('--x',px+'px');glow.style.setProperty('--y',py+'px');
+  doc.body.appendChild(glow);
+  /* Le fondu doit partir d'un état DÉJÀ peint, sinon l'opacité saute de 0 à 1.
+     On force le recalcul ICI plutôt que d'attendre une frame : mesuré, un
+     requestAnimationFrame ne se déclenche PAS quand le document est masqué
+     (document.hidden) — la lumière restait alors à opacité 0, invisible. Un
+     recalcul synchrone par appui est du même ordre que le getBoundingClientRect
+     ci-dessus ; c'est en BOUCLE qu'il est interdit. */
+  void glow.offsetWidth;
+  glow.setAttribute('data-on','1');
+ }catch(e){try{lache();}catch(e2){}}},{capture:true,passive:true});
+ doc.addEventListener('pointermove',function(ev){try{
+  if(!cur)return;
+  if(!glow){if(Math.abs(ev.clientX-sx)>14||Math.abs(ev.clientY-sy)>14)lache();return;}
+  if(!rct)return;
+  px=ev.clientX-rct.left;py=ev.clientY-rct.top;
+  if(!raf)raf=W.requestAnimationFrame(peins);
+ }catch(e){}},{capture:true,passive:true});
+ ['pointerup','pointercancel','pointerleave','contextmenu','dragstart'].forEach(function(t){
+  doc.addEventListener(t,lache,{capture:true,passive:true});});
+ try{W.addEventListener('scroll',lache,{capture:true,passive:true});}catch(e){}
+}catch(e){}};
+/* v854 — ENTRÉE DE PAGE. Le founder trouve l'ouverture des Tendances gracieuse
+   et celle d'Aujourd'hui / Nutrition / Profil « brute ». La raison est dans le
+   code : Tendances bascule un display:none → flex (l'écran paraît d'un bloc,
+   sans résidu de mouvement) tandis que les autres posent leur transform avec la
+   transition COUPÉE (v777, pour supprimer un glissement depuis le bas que le
+   founder ne voulait plus) — d'où le claquement. On leur rend un geste : fondu
+   + très léger zoom.
+   En `scale` et non `transform` : #screen-nutrition et les écrans du Profil sont
+   centrés par translateX(-50%), qu'un transform:scale() écraserait (v837).
+   L'attribut est posé par la NAV et retiré à 560 ms. Aucun injecteur ne le pose,
+   donc l'animation ne peut pas se rejouer à chaque repaint de React — c'est ce
+   qui avait fait clignoter la barre de navigation sans fin (v838). */
+window.flScrIn=function(el){try{
+ if(!el||!el.setAttribute)return;
+ var W=(el.ownerDocument&&el.ownerDocument.defaultView)||window;
+ if(el._flInT){W.clearTimeout(el._flInT);el.removeAttribute('data-fl-in');void el.offsetHeight;}
+ el.setAttribute('data-fl-in','1');
+ /* v856 — 700 et non 560 : la 6e carte de la cascade du Profil demarre a 190 ms de retard
+    et dure --fl-ferme-ms (441 ms), donc se termine a 631 ms. A 560 ms on lui coupait
+    l attribut 71 ms avant la fin et, l animation etant en backwards, elle sautait
+    brutalement a son etat naturel. Bug trouve par l audit v856. */
+ el._flInT=W.setTimeout(function(){try{el.removeAttribute('data-fl-in');}catch(e){}el._flInT=0;},700);
 }catch(e){}};
 function flSnapLoop(){try{
  /* v755 — cette boucle rAF tournait a CHAQUE frame avec layout force :
@@ -7372,11 +8124,17 @@ function injectToday(){
  try{if(typeof flDarkTag==='function'){flDarkTag(doc);flDarkTag(document);}}catch(e){}
  var _flForce=window._flForceTs&&performance.now()-window._flForceTs<1200;
  if(!_flForce&&doc._lastScrollTs&&performance.now()-doc._lastScrollTs<400)return;
- if(!doc._ptrWired){doc._ptrWired=true;try{doc.addEventListener('click',function(){setTimeout(function(){try{mdSleepScrub(doc);mdWeekBarsScrub(doc);mdDualScrub(doc);mdCalDualScrub(doc);mdMarchePrecise(doc);mdMarcheScrub(doc);mdMarcheZones(doc);mdDashChevrons(doc);mdNavNoCoach(doc);mdProfil(doc);mdJourneeTune(doc);mdCalReadoutPurge(doc);mdNutritionPolish(doc);mdMarcheStats(doc);mdDashUniform(doc);mdSleepPolish(doc);mdSleepViolet(doc);mdRecupTap(doc);flLoadNativeTaps(doc);if(typeof flShellHonest==='function')flShellHonest(doc);if(typeof flTendances==='function')flTendances(doc);if(typeof flNavPlus==='function')flNavPlus(doc);mdStickyBacks(doc);}catch(e){}},500);},{capture:true,passive:true});}catch(e){}
+ if(!doc._ptrWired){doc._ptrWired=true;try{doc.addEventListener('click',function(){setTimeout(function(){try{mdSleepScrub(doc);mdWeekBarsScrub(doc);mdDualScrub(doc);mdCalDualScrub(doc);mdMarchePrecise(doc);mdMarcheScrub(doc);mdMarcheZones(doc);mdDashChevrons(doc);mdNavNoCoach(doc);mdProfil(doc);mdJourneeTune(doc);mdCalReadoutPurge(doc);mdNutritionPolish(doc);mdMarcheStats(doc);mdDashUniform(doc);mdSleepPolish(doc);mdSleepViolet(doc);mdRecupTap(doc);flLoadNativeTaps(doc);if(typeof flShellHonest==='function')flShellHonest(doc);if(typeof flTendances==='function')flTendances(doc);if(typeof flNavPlus==='function')flNavPlus(doc);mdStickyBacks(doc);
+  /* v855 — le verre se répare ICI, dans le lot qui suit le clic (500 ms), et non
+     au prochain cycle d'injection : c'est le clic qui casse le dégradé (React
+     réécrit le style du stade), donc c'est le clic qui doit le refaire. Sans ça
+     la carte restait blanche jusqu'à 3 s — le « il n'y a pas d'animation » du
+     founder. Aucun listener nouveau : on se greffe sur le lot existant. */
+  if(typeof flDaVerre==='function')flDaVerre(doc);}catch(e){}},500);},{capture:true,passive:true});}catch(e){}
  try{doc.addEventListener('pointerdown',function(){doc._flPtrDown=true;},{capture:true,passive:true});doc.addEventListener('pointerup',function(){doc._flPtrDown=false;doc._flPtrUpTs=performance.now();},{capture:true,passive:true});doc.addEventListener('pointercancel',function(){doc._flPtrDown=false;},{capture:true,passive:true});}catch(e){}}
  if(!_flForce&&doc._flPtrDown)return;
  if(!_flForce&&doc._flPtrUpTs&&performance.now()-doc._flPtrUpTs<600)return;
- if(!doc.getElementById('flintInjectCss')){try{var _st=doc.createElement('style');_st.id='flintInjectCss';_st.textContent='/* v726 : la surbrillance de tap iOS (rectangle bleu-gris) apparaissait sur les en-tetes du tableau de bord. Neutralisee partout. */*{-webkit-tap-highlight-color:transparent}a,button{color:inherit;-webkit-text-fill-color:currentColor}a{text-decoration:none}[style*="font-size: 56px"],[style*="font-size: 54px"],[style*="font-size: 48px"],[style*="font-size: 41px"]{font-family:Archivo,-apple-system,sans-serif!important;font-weight:700!important}#screen-accueil{padding-bottom:calc(env(safe-area-inset-bottom,0px) + 52px)!important}#screen-accueil > div[style*="flex: 1"]{max-height:42px}#screen-balance > div:first-child{transform:scale(1.13);transform-origin:top center;width:calc(100%/1.13);margin:0 auto}#screen-journee{padding-top:6px!important}nav{padding-bottom:max(6px,env(safe-area-inset-bottom))!important}#screen-nutrition,#screen-balance,#screen-marche{overflow-x:hidden!important;touch-action:pan-y;overscroll-behavior-x:none}/* v739 : une app native ne laisse ni selectionner son UI au long-press (loupe iOS), ni rebondir lateralement */*{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}input,textarea,[contenteditable=\'true\']{-webkit-user-select:text;user-select:text}html,body{overscroll-behavior-x:none}button:active,a:active{opacity:.85}/* v741 : l espace Ma journee <-> Tableau de bord vit ICI et plus en style inline : React recree la section au depliage, le style inline mourait, et le titre faisait l aller-retour 52px/26px a chaque toggle */#screen-tableau{padding-top:26px!important}#screen-fl-effort,#screen-marche{padding-top:calc(env(safe-area-inset-top,0px) + 16px)!important}#screen-accueil{padding-top:calc(env(safe-area-inset-top,0px) + 70px)!important}#screen-journee{padding-bottom:12px!important}#flTopBar{position:fixed;top:0;left:0;right:0;z-index:55;padding:calc(env(safe-area-inset-top,0px) + 8px) 16px 12px;display:flex;flex-direction:column;pointer-events:none;background:linear-gradient(180deg,#ffffff 58%,rgba(255,255,255,0));transform-origin:50% 0;transition:opacity .16s linear, transform .16s linear}#flTopBar .r1{display:flex;align-items:center;justify-content:space-between;pointer-events:auto}#flTopBar .r2{display:flex;justify-content:center;pointer-events:auto}#flTopBar .pf{width:40px;height:40px;border-radius:50%;background:#fff;border:1px solid #f0ebe3;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(22,21,18,.06)}#flTopBar .wm{font-family:Archivo,-apple-system,sans-serif;font-weight:800;font-style:italic;font-size:24px;letter-spacing:-0.5px;color:#14110f}#flTopBar .wm b{color:#fb6015}#flTopBar .bt{display:flex;align-items:center;gap:5px;font-family:-apple-system,system-ui,sans-serif;font-size:13px;font-weight:600;color:#14110f;font-variant-numeric:tabular-nums}#flTopBar .cal{display:flex;align-items:center;gap:6px}#flTopBar .cal .nv{width:34px;height:34px;border:0;background:none;display:flex;align-items:center;justify-content:center;color:#14110f;font-size:17px;cursor:pointer}#flTopBar .cal .nv[disabled]{opacity:.25}#flTopBar .cal .lb{border:0;background:#fff;border:1px solid #f0ebe3;border-radius:22px;padding:8px 16px;font-family:Archivo,-apple-system,sans-serif;font-size:13.5px;font-weight:700;letter-spacing:.1em;color:#14110f;box-shadow:0 4px 12px rgba(22,21,18,.05);cursor:pointer;white-space:nowrap}#screen-journal{transform:translateX(-50%) translateY(102%)!important;padding:6px 0!important}#flTopMask{position:fixed;top:0;left:0;right:0;height:calc(env(safe-area-inset-top,0px) + 26px);z-index:54;pointer-events:none;background:linear-gradient(180deg,rgba(255,255,255,.97),rgba(255,255,255,.86) 55%,rgba(255,255,255,0))}/* v853 : effet d appui Liquid Glass. La pastille gonfle sous le doigt puis revient en RESSORT. Chiffres Apple : montee 90ms, retour 340ms sur une courbe qui depasse legerement. On utilise scale et NON transform : plusieurs boutons retour sont centres par translateY(-50%), quun transform:scale() ecraserait. Piege deja paye en v837. Aucun backdrop-filter (cause du crash WebKit). */#flBackBtn,.bk,.abk,.fcbk,.calbk,.slbk,.effbk,.tbk,.elx-bk,.nbil-back,.act2-back,.flnv2-back,.pf-back,[data-fl-back]{transition:scale .34s cubic-bezier(.34,1.56,.64,1),box-shadow .34s cubic-bezier(.34,1.56,.64,1)}#flBackBtn:active,.bk:active,.abk:active,.fcbk:active,.calbk:active,.slbk:active,.effbk:active,.tbk:active,.elx-bk:active,.nbil-back:active,.act2-back:active,.flnv2-back:active,.pf-back:active,[data-fl-back]:active{scale:1.12;transition-duration:.09s;box-shadow:0 2px 6px rgba(20,17,15,.06),0 10px 26px -6px rgba(112,122,158,.30),inset 0 2px 2px rgba(255,255,255,1)}';(doc.head||doc.documentElement).appendChild(_st);}catch(e){}}
+ if(!doc.getElementById('flintInjectCss')){try{var _st=doc.createElement('style');_st.id='flintInjectCss';_st.textContent='/* v726 : la surbrillance de tap iOS (rectangle bleu-gris) apparaissait sur les en-tetes du tableau de bord. Neutralisee partout. */*{-webkit-tap-highlight-color:transparent}a,button{color:inherit;-webkit-text-fill-color:currentColor}a{text-decoration:none}[style*="font-size: 56px"],[style*="font-size: 54px"],[style*="font-size: 48px"],[style*="font-size: 41px"]{font-family:Archivo,-apple-system,sans-serif!important;font-weight:700!important}#screen-accueil{padding-bottom:calc(env(safe-area-inset-bottom,0px) + 52px)!important}#screen-accueil > div[style*="flex: 1"]{max-height:42px}#screen-balance > div:first-child{transform:scale(1.13);transform-origin:top center;width:calc(100%/1.13);margin:0 auto}#screen-journee{padding-top:6px!important}nav{padding-bottom:max(6px,env(safe-area-inset-bottom))!important}#screen-nutrition,#screen-balance,#screen-marche{overflow-x:hidden!important;touch-action:pan-y;overscroll-behavior-x:none}/* v739 : une app native ne laisse ni selectionner son UI au long-press (loupe iOS), ni rebondir lateralement */*{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}input,textarea,[contenteditable=\'true\']{-webkit-user-select:text;user-select:text}html,body{overscroll-behavior-x:none}button:active,a:active{opacity:.85}/* v741 : l espace Ma journee <-> Tableau de bord vit ICI et plus en style inline : React recree la section au depliage, le style inline mourait, et le titre faisait l aller-retour 52px/26px a chaque toggle */#screen-tableau{padding-top:26px!important}#screen-fl-effort,#screen-marche{padding-top:calc(env(safe-area-inset-top,0px) + 16px)!important}#screen-accueil{padding-top:calc(env(safe-area-inset-top,0px) + 70px)!important}#screen-journee{padding-bottom:12px!important}#flTopBar{position:fixed;top:0;left:0;right:0;z-index:55;padding:calc(env(safe-area-inset-top,0px) + 8px) 16px 12px;display:flex;flex-direction:column;pointer-events:none;background:linear-gradient(180deg,#ffffff 58%,rgba(255,255,255,0));transform-origin:50% 0;transition:opacity .16s linear, transform .16s linear}#flTopBar .r1{display:flex;align-items:center;justify-content:space-between;pointer-events:auto}#flTopBar .r2{display:flex;justify-content:center;pointer-events:auto}#flTopBar .pf{width:40px;height:40px;border-radius:50%;background:#fff;border:1px solid #f0ebe3;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(22,21,18,.06)}#flTopBar .wm{font-family:Archivo,-apple-system,sans-serif;font-weight:800;font-style:italic;font-size:24px;letter-spacing:-0.5px;color:#14110f}#flTopBar .wm b{color:#fb6015}#flTopBar .bt{display:flex;align-items:center;gap:5px;font-family:-apple-system,system-ui,sans-serif;font-size:13px;font-weight:600;color:#14110f;font-variant-numeric:tabular-nums}#flTopBar .cal{display:flex;align-items:center;gap:6px}#flTopBar .cal .nv{width:34px;height:34px;border:0;background:none;display:flex;align-items:center;justify-content:center;color:#14110f;font-size:17px;cursor:pointer}#flTopBar .cal .nv[disabled]{opacity:.25}#flTopBar .cal .lb{border:0;background:#fff;border:1px solid #f0ebe3;border-radius:22px;padding:8px 16px;font-family:Archivo,-apple-system,sans-serif;font-size:13.5px;font-weight:700;letter-spacing:.1em;color:#14110f;box-shadow:0 4px 12px rgba(22,21,18,.05);cursor:pointer;white-space:nowrap}#screen-journal{transform:translateX(-50%) translateY(102%)!important;padding:6px 0!important}#flTopMask{position:fixed;top:0;left:0;right:0;height:calc(env(safe-area-inset-top,0px) + 26px);z-index:54;pointer-events:none;background:linear-gradient(180deg,rgba(255,255,255,.97),rgba(255,255,255,.86) 55%,rgba(255,255,255,0))}/* v853 : effet d appui Liquid Glass. La pastille gonfle sous le doigt puis revient en RESSORT. Chiffres Apple : montee 90ms, retour 340ms sur une courbe qui depasse legerement. On utilise scale et NON transform : plusieurs boutons retour sont centres par translateY(-50%), quun transform:scale() ecraserait. Piege deja paye en v837. Aucun backdrop-filter (cause du crash WebKit). */#flBackBtn,.bk,.abk,.fcbk,.calbk,.slbk,.effbk,.tbk,.elx-bk,.nbil-back,.act2-back,.flnv2-back,.pf-back,[data-fl-back]{transition:scale .34s cubic-bezier(.34,1.56,.64,1),box-shadow .34s cubic-bezier(.34,1.56,.64,1)}#flBackBtn:active,.bk:active,.abk:active,.fcbk:active,.calbk:active,.slbk:active,.effbk:active,.tbk:active,.elx-bk:active,.nbil-back:active,.act2-back:active,.flnv2-back:active,.pf-back:active,[data-fl-back]:active{scale:1.12;transition-duration:.09s;box-shadow:0 2px 6px rgba(20,17,15,.06),0 10px 26px -6px rgba(112,122,158,.30),inset 0 2px 2px rgba(255,255,255,1)}/* v854 : LA VIE. Quatre chantiers, une seule feuille. 1) Les boutons retour quittent leur peau maison (rond blanc, chevron orange) et prennent EXACTEMENT celle du trio SOMMEIL/EFFORT/CALORIES : verre gris FLV_BG + FLV_SH, chevron noir encre et fin. Attention : dans liframe, .bk .abk .slbk .effbk et consorts NEXISTENT PAS (mesure : zero occurrence dans flint-today.html) ; la regle v853 qui les visait etait morte. Les quatre vrais boutons sont ceux-ci. 2) Reaction au toucher sur TOUTE surface de verre : gonflement + illumination. Pilote par data-fl-press pose au pointerdown sur le PLUS PROCHE ancetre de verre (closest), ce qui evite le double gonflement des bulles imbriquees que :active seul provoquerait. On anime scale et box-shadow, jamais transform (piege v837 : translateY(-50%) ecrase). 3) #flGlow : la lumiere qui suit le doigt. Calque position:fixed cree au toucher, retire au relachement, une seule instance, cadence par requestAnimationFrame borne. Zero cout au repos, une couche transitoire au maximum. 4) data-fl-in : entree de page. Pose par la NAV et retire a 560ms, jamais par un injecteur, donc pas de clignotement en boucle (piege v838). Aucun backdrop-filter nulle part (crash WebKit v835). */#flBackBtn,.pf-back,.flnv2-back{background:linear-gradient(158deg,#ffffff 0%,rgb(250,251,254) 38%,rgb(240,243,250) 100%)!important;border:1px solid rgba(255,255,255,.95)!important;box-shadow:inset 0 1.5px 1px rgba(255,255,255,1),inset 0 -8px 14px -9px rgba(150,160,192,.4),inset 1px 0 1px rgba(255,255,255,.95),inset -1px 0 1.5px rgba(200,208,228,.35),0 1px 2px rgba(20,17,15,.03),0 8px 20px -7px rgba(112,122,158,.22)!important;color:#14110f!important}#flBackBtn svg,.pf-back svg,.flnv2-back svg,[data-fl-back] svg{stroke:#14110f!important;stroke-width:1.7!important}[data-fl-card],[data-fl-verre]{transition:scale .34s cubic-bezier(.34,1.56,.64,1),box-shadow .34s cubic-bezier(.34,1.56,.64,1),transform .34s cubic-bezier(.34,1.56,.64,1)}/* v854 : la maquette possede sa PROPRE famille de pression, .scp3 .scp5 .scp6 .scp8 .scp9, qui RETRECIT en transform:scale(.94)!important — le contraire du geste demande. Mesure faite dans le CSSOM de liframe : 7 surfaces de verre la portent. Notre scale:1.028 se COMPOSE avec leur transform au lieu de le remplacer (cest tout linteret de la propriete scale, cf. v837), le resultat net etait donc 0.966 : la carte rentrait sous le doigt. On annule leur transform, et seulement sur les surfaces de verre — leur transform au repos est none sur les 7, verifie, donc rien de centre par translate nest touche. Ailleurs elles gardent leur effet. */[data-fl-verre].scp3:active,[data-fl-card].scp3:active,[data-fl-verre].scp3[data-fl-press],[data-fl-card].scp3[data-fl-press],[data-fl-verre].scp5:active,[data-fl-card].scp5:active,[data-fl-verre].scp5[data-fl-press],[data-fl-card].scp5[data-fl-press],[data-fl-verre].scp6:active,[data-fl-card].scp6:active,[data-fl-verre].scp6[data-fl-press],[data-fl-card].scp6[data-fl-press],[data-fl-verre].scp8:active,[data-fl-card].scp8:active,[data-fl-verre].scp8[data-fl-press],[data-fl-card].scp8[data-fl-press],[data-fl-verre].scp9:active,[data-fl-card].scp9:active,[data-fl-verre].scp9[data-fl-press],[data-fl-card].scp9[data-fl-press]{transform:none!important}[data-fl-press]{transition-duration:.11s!important}#flBackBtn[data-fl-press],#flBackBtn:active,.pf-back[data-fl-press],.pf-back:active,.flnv2-back[data-fl-press],.flnv2-back:active,[data-fl-back][data-fl-press],[data-fl-back]:active{scale:1.12;box-shadow:0 2px 6px rgba(20,17,15,.06),0 10px 26px -6px rgba(112,122,158,.30),inset 0 2px 2px rgba(255,255,255,1)!important}[data-fl-verre][data-fl-press]{scale:1.028;box-shadow:inset 0 2px 2px rgba(255,255,255,1),inset 0 -12px 20px -14px rgba(150,160,192,.26),0 2px 6px rgba(20,17,15,.04),0 20px 40px -12px rgba(112,122,158,.30)!important}[data-fl-card][data-fl-press]{scale:1.035;box-shadow:inset 0 2px 2px rgba(255,255,255,1),inset 0 -14px 22px -14px rgba(150,160,192,.26),0 2px 6px rgba(20,17,15,.04),0 24px 46px -12px rgba(112,122,158,.32)!important}#flGlow{position:fixed;pointer-events:none;z-index:2147483000;opacity:0;transition:opacity .2s ease;background:radial-gradient(circle 132px at var(--x,50%) var(--y,50%),rgba(255,255,255,.55),rgba(255,255,255,.20) 42%,rgba(255,255,255,0) 72%)}#flGlow[data-on]{opacity:1}@keyframes flVieIn{from{opacity:0;scale:.965}to{opacity:1;scale:1}}@keyframes flVieRise{from{opacity:0;translate:0 16px}to{opacity:1;translate:0 0}}[data-fl-in]{animation:flVieIn .34s cubic-bezier(.22,.72,.2,1) both}#screen-fl-profil[data-fl-in] > div > *,[id^="screen-fl-pf-"][data-fl-in] > div > *{animation:flVieRise .42s cubic-bezier(.2,.7,.2,1) backwards}#screen-fl-profil[data-fl-in] > div > *:nth-child(2),[id^="screen-fl-pf-"][data-fl-in] > div > *:nth-child(2){animation-delay:.05s}#screen-fl-profil[data-fl-in] > div > *:nth-child(3),[id^="screen-fl-pf-"][data-fl-in] > div > *:nth-child(3){animation-delay:.09s}#screen-fl-profil[data-fl-in] > div > *:nth-child(4),[id^="screen-fl-pf-"][data-fl-in] > div > *:nth-child(4){animation-delay:.13s}#screen-fl-profil[data-fl-in] > div > *:nth-child(5),[id^="screen-fl-pf-"][data-fl-in] > div > *:nth-child(5){animation-delay:.16s}#screen-fl-profil[data-fl-in] > div > *:nth-child(6),[id^="screen-fl-pf-"][data-fl-in] > div > *:nth-child(6){animation-delay:.19s}@media (prefers-reduced-motion:reduce){[data-fl-in],#screen-fl-profil[data-fl-in] > div > *,[id^="screen-fl-pf-"][data-fl-in] > div > *{animation:none!important}#flGlow{display:none!important}[data-fl-press]{scale:1!important}}/* v856 — LE MATERIAU. Un seul ressort pour toute lapplication, en CSS pur. Trois FORMES et cinq TOKENS remplacent 29 courbes cubic-bezier et 32 durees. Fait fondateur, verifie numeriquement : la forme normalisee dun ressort ne depend QUE de zeta. On change donc la VITESSE dun mouvement en changeant des millisecondes, jamais la courbe — trois chaines suffisent. zeta 0.828 (--fl-s-vif) nest pas invente : cest la physique exacte de flNavLiquid (m=0.85, k=290, c=26), la seule piece du code qui bougeait deja comme iOS, et cest a 0.4 pour cent la dampingFraction 0.825 du .spring() de SwiftUI. Le founder avait donc deja le materiau Apple dans son app, a un seul endroit ; on le generalise. Depassements verifies contre exp(-pi*z/racine(1-z*z)) : vif 0.960 pour cent mesure contre 0.967 theorique, pop 4.600 contre 4.599, ferme 0 par construction. Ecart maximal 0.007 point. linear() est interpolee par le compositeur, donc zero JS par frame et pas de plafond a 60 fps (une boucle rAF en WKWebView est bridee par PreferPageRenderingUpdatesNear60FPSEnabled). */:root{--fl-s-vif:linear(0,0.0012 0.58%,0.0055 1.25%,0.0126 1.92%,0.0235 2.67%,0.0372 3.42%,0.0534 4.17%,0.0966 5.83%,0.1394 7.25%,0.1917 8.83%,0.4196 15.25%,0.5235 18.33%,0.5757 20%,0.6223 21.58%,0.6658 23.17%,0.7041 24.67%,0.7394 26.17%,0.7736 27.75%,0.8046 29.33%,0.8326 30.92%,0.8577 32.5%,0.8812 34.17%,0.9029 35.92%,0.9218 37.67%,0.9387 39.5%,0.9537 41.42%,0.9667 43.42%,0.9781 45.58%,0.9948 50.17%,1.0049 55.42%,1.0088 60.25%,1.0096 66.33%,1);--fl-s-ferme:linear(0,0.0047 1.08%,0.0201 2.33%,0.0459 3.67%,0.0811 5.08%,0.1144 6.25%,0.1586 7.67%,0.3651 13.83%,0.4627 16.92%,0.5117 18.58%,0.5554 20.17%,0.5963 21.75%,0.6361 23.42%,0.6729 25.08%,0.7065 26.75%,0.7372 28.42%,0.7665 30.17%,0.7928 31.92%,0.8176 33.75%,0.8397 35.58%,0.8601 37.5%,0.8804 39.67%,0.8985 41.92%,0.9151 44.33%,0.9295 46.83%,0.9535 52.33%,0.9713 58.58%,0.9834 65.5%,0.9914 73.75%,0.996 83.17%,1);--fl-s-pop:linear(0,0.0018 0.58%,0.0068 1.17%,0.0149 1.75%,0.0275 2.42%,0.0433 3.08%,0.0619 3.75%,0.0859 4.5%,0.1125 5.25%,0.1618 6.5%,0.2194 7.83%,0.479 13.42%,0.5892 15.92%,0.6471 17.33%,0.698 18.67%,0.7452 20%,0.7859 21.25%,0.8231 22.5%,0.859 23.83%,0.8911 25.17%,0.9194 26.5%,0.9441 27.83%,0.9667 29.25%,0.9858 30.67%,1.0024 32.17%,1.0219 34.5%,1.0355 37%,1.0435 39.75%,1.046 42.83%,1.0407 48.08%,1.0119 62.67%,1.0026 70.5%,0.998 82.33%,1);--fl-tap:var(--fl-s-vif);--fl-tap-ms:207ms;--fl-vif:var(--fl-s-vif);--fl-vif-ms:469ms;--fl-ample:var(--fl-s-vif);--fl-ample-ms:759ms;--fl-ferme:var(--fl-s-ferme);--fl-ferme-ms:441ms;--fl-pop:var(--fl-s-pop);--fl-pop-ms:491ms}@supports not (animation-timing-function:linear(0,1)){:root{--fl-tap:cubic-bezier(.2,.7,.2,1);--fl-vif:cubic-bezier(.22,.72,.2,1);--fl-ample:cubic-bezier(.22,1,.36,1);--fl-ferme:cubic-bezier(.32,.72,0,1);--fl-pop:cubic-bezier(.34,1.56,.64,1)}}/* v856 — LAPPUI : UN SEUL ressort dans les deux sens. Avant, la montee durait 110 ms et le retour 340 ms sur une bezier a un seul depassement : deux vocabulaires pour un seul geste. Desormais un ressort unique de 207 ms, symetrique, et interruptible de fait — un second appui pendant le retour repart de la valeur visible, la transition CSS sen charge. Cest lequivalent de linteractiveSpring de SwiftUI (response 0.15), litteralement le ressort quiOS utilise PENDANT un geste. transform reste dans la liste : 7 surfaces de verre portent une transition transform propre a la maquette, mesuree en v855, quun raccourci sans elle effacerait. */[data-fl-verre],[data-fl-card],#flBackBtn,.pf-back,.flnv2-back,[data-fl-back]{transition:scale var(--fl-tap-ms) var(--fl-tap),box-shadow var(--fl-tap-ms) var(--fl-tap),transform var(--fl-tap-ms) var(--fl-tap)}[data-fl-press]{transition-duration:var(--fl-tap-ms)!important;transition-timing-function:var(--fl-tap)!important}/* v856 — ENTREES DECRAN sur --fl-vif. La cascade du Profil passe en --fl-ferme et NON en --fl-vif : six elements qui depassent ensemble a 50 ms dintervalle produisent un scintillement collectif, alors que sans depassement la cascade se lit comme une vague. */[data-fl-in]{animation-duration:var(--fl-vif-ms)!important;animation-timing-function:var(--fl-vif)!important}#screen-fl-profil[data-fl-in] > div > *,[id^="screen-fl-pf-"][data-fl-in] > div > *{animation-duration:var(--fl-ferme-ms)!important;animation-timing-function:var(--fl-ferme)!important}/* v856 — OUVERTURES DECRAN, toutes sur --fl-ferme, sans exception. La forme fermee est OBLIGATOIRE ici : un ecran plein qui glisse jusqua 0 avec la forme vif depasserait de 0.97 pour cent de sa course, soit environ 8 px sur les 852 points dun iPhone — il decouvrirait une bande vide sous lui pendant six frames. Calibrage iso-perception : lancienne courbe cubic-bezier(.32,.72,0,1) a 380 ms atteignait 95 pour cent vers 228 ms, --fl-ferme y arrive a 227 ms. On ne gagne que la queue physique, rien ne paraitra ralenti. */#screen-nutrition,#screen-fl-profil,[id^="screen-fl-pf-"],#screen-journal,#screen-balance{transition:transform var(--fl-ferme-ms) var(--fl-ferme)!important}/* v856 — JAUGES ET ANNEAUX sur --fl-ferme, jamais sur une forme a depassement : une barre qui depasse puis revient se lit comme une erreur de calcul, pas comme un style. Reserve de cout assumee : width declenche un LAYOUT a chaque frame et non un simple repaint. Le passage des jauges a scale avec transform-origin:0 50% supprimerait ce layout et les mettrait sur le compositeur, mais cela change le rendu des coins arrondis et des bordures : a evaluer separement, pas dans ce lot. */[class*="gauge"] > i,[class*="bar"] > i,[data-fl-jauge]{transition:width var(--fl-ferme-ms) var(--fl-ferme)!important}circle[stroke-dasharray],[data-fl-ring]{transition:stroke-dashoffset var(--fl-ferme-ms) var(--fl-ferme)!important}/* v856 — REDUCE MOTION. Apple ne demande pas de SUPPRIMER le mouvement mais de le REMPLACER par un fondu : couper net desoriente autant que trop bouger. Ecraser les cinq tokens suffit — aucune regle a reecrire. */@media (prefers-reduced-motion:reduce){:root{--fl-tap:linear(0,1);--fl-vif:linear(0,1);--fl-ample:linear(0,1);--fl-ferme:linear(0,1);--fl-pop:linear(0,1);--fl-tap-ms:1ms;--fl-vif-ms:200ms;--fl-ample-ms:200ms;--fl-ferme-ms:200ms;--fl-pop-ms:200ms}}/* v856 — LES GRANDES SURFACES SENFONCENT. Regle iOS : au-dela denviron 200 px de large lobjet recule sous le doigt, en deca il se souleve vers lui. data-fl-large est pose par flVie au pointerdown, a partir du rect deja mesure. Les cartes du trio (103 px) gardent donc leur gonflement a 1.035, les dalles pleine largeur passent a 0.978. Cest un jugement de doigt : a trancher sur lappareil, pas ici. */[data-fl-large][data-fl-press]{scale:0.978!important}[data-fl-card][data-fl-large][data-fl-press]{scale:0.978!important}/* v867 : LA BARRE QUI SE RETIRE. Pilotee par --fl-navp (0 = deployee, 1 = reduite), posee sur documentElement par flNavShrink. On passe par une variable sur html parce que React reecrit lattribut style de la nav a chaque rendu et ne touche jamais la racine. scale et translate en proprietes INDIVIDUELLES, jamais transform : la nav est centree par translateX(-50%) et flNavBarHide sen sert aussi pour la sortir de lecran ; un transform:scale() ecraserait les deux (piege v837). transform-origin en bas : la barre se tasse VERS le bord, elle ne retrecit pas sur place. Pendant le geste aucune transition, la valeur suit le doigt ; la classe fl-navsnap najoute le ressort quau relachement. */nav{transform-origin:50% 100%}html.fl-navsnap nav{transition:scale var(--fl-vif-ms) var(--fl-vif),translate var(--fl-vif-ms) var(--fl-vif)}@media (prefers-reduced-motion:reduce){nav{scale:1;translate:0 0}}/* v868 : les cartes de verre reculent et sefacent en sortant par le haut. La transition est courte et lineaire parce que la valeur est deja pilotee par le doigt image par image : y ajouter un ressort la ferait trainer derriere le scroll. transform-origin en haut, comme le anchor:.top de la reference. */[data-fl-verre]{transform-origin:50% 0}@media (prefers-reduced-motion:reduce){[data-fl-verre]{scale:1!important;opacity:1!important}}/* v870 : POINT BLEU DE VERIFICATION. Repere temporaire demande par le founder pour confirmer que lapp installee sur son iPhone est bien celle que je modifie. A retirer des que cest verifie. */#flPointBleu{position:fixed;top:calc(env(safe-area-inset-top,0px) + 8px);right:14px;z-index:2147483600;width:22px;height:22px;border-radius:50%;background:#0A84FF;box-shadow:0 0 0 3px rgba(255,255,255,.9),0 4px 12px rgba(10,132,255,.5);pointer-events:none}';(doc.head||doc.documentElement).appendChild(_st);}catch(e){}}
  /* audit v780 — masque haut : en scroll, textes et pointilles chevauchaient
     l'horloge/Dynamic Island. Degrade blanc fixe (z54) : sous flTopBar (55),
     sous tous les ecrans (z87+), au-dessus du fil seulement. */
@@ -7418,7 +8176,14 @@ var _fc=ev.target;for(var _z=0;_z<7&&_fc;_z++,_fc=_fc.parentElement){if(_fc.getA
  if(_lab==='CALORIES'){flOpenCalHebdo();}
  /* v678 : la carte EFFORT du trio ouvre la page Effort (jumelle de Récup) */
  else if(_lab==='EFFORT'){try{flEffortOpen(doc);}catch(e){}}
- else if(_lab==='SOMMEIL'){var _ss=doc.getElementById('screen-sommeil');if(_ss){_ss.style.setProperty('transform','translateX(-50%) translateX(0px)','important');_ss.style.pointerEvents='auto';_ss.scrollTop=0;try{mdSleep(doc);mdSleepPolish(doc);mdSleepViolet(doc);mdSleepHebdoBig(doc);mdFonts(doc);}catch(e){}}}
+ else if(_lab==='SOMMEIL'){
+  /* v872 — PREMIER ECRAN NATIF. Ce handler-ci est celui qui gagne la course (v640,
+     capture avant tout le reste) : cest donc ICI quil faut brancher, et pas dans
+     celui de mdHomeTrio, qui ne sexecute jamais pour cette carte. Erreur payee une fois.
+     Dans la coquille iOS on ouvre lecran SwiftUI ; dans un navigateur on garde le web. */
+  var _nt=window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint;
+  if(_nt){try{_nt.postMessage({cmd:'natif',screen:'sommeil',data:flSommeilData()});}catch(e){}try{haptic(6);}catch(e){}return;}
+  var _ss=doc.getElementById('screen-sommeil');if(_ss){_ss.style.setProperty('transform','translateX(-50%) translateX(0px)','important');_ss.style.pointerEvents='auto';_ss.scrollTop=0;try{mdSleep(doc);mdSleepPolish(doc);mdSleepViolet(doc);mdSleepHebdoBig(doc);mdFonts(doc);}catch(e){}}}
  return;}}
 var _tc=ev.target;for(var _i5=0;_i5<5&&_tc;_i5++,_tc=_tc.parentElement){var _tt=(_tc.textContent||'').replace(/\s+/g,' ').trim();if(/^CALORIES\b/.test(_tt)&&_tt.length<40){var _sa=_tc;while(_sa&&_sa.id!=='screen-accueil')_sa=_sa.parentElement;if(_sa){ev.preventDefault();ev.stopPropagation();flOpenCalHebdo();return;}}}
 var _pt=ev.target;while(_pt&&_pt.id!=='screen-tableau')_pt=_pt.parentElement;
@@ -7499,6 +8264,20 @@ var el=ev.target;var a=el;for(var d1=0;d1<7&&a;d1++,a=a.parentElement){if(!a.que
   mdHomeTrio(doc);
   if(typeof flNoBackdrop==='function'){flNoBackdrop(doc);flNoBackdrop(document);}
   if(typeof flDaVerre==='function')flDaVerre(doc);
+  /* v854 — le moteur de vie se câble UNE fois par document (garde _flVieWired) :
+     il est appelé depuis la boucle uniquement pour attraper le doc dès qu'il
+     existe, pas pour retravailler à chaque passe. */
+  if(typeof flVie==='function'){flVie(doc);flVie(document);}
+  /* v869 — DESACTIVE. Le founder, apres essai sur appareil : « on dirait quil y a une
+     image par seconde, ca fait mal aux yeux ». Ce nest pas un reglage a corriger : sur iOS,
+     WebKit fait defiler sur un thread separe et ne distribue les evenements scroll a
+     JavaScript que par a-coups pendant linertie. Tout effet de scroll ecrit en JS est donc
+     structurellement saccade dans une WebView. On ne laisse pas une regression a lecran en
+     attendant la bonne solution (timeline de defilement CSS). Le code reste, il ne tourne plus. */
+  /* if(typeof flNavShrink==='function')flNavShrink(doc); */
+  if(typeof flPile==='function')flPile(doc);
+  /* v870 — point bleu de verification, temporaire */
+  try{if(!doc.getElementById('flPointBleu')){var _pb=doc.createElement('div');_pb.id='flPointBleu';doc.body.appendChild(_pb);}}catch(_e){}
   mdBalance(doc);mdSleep(doc);mdFonts(doc);mdStickyBacks(doc);mdSleepScrub(doc);mdWeekBarsScrub(doc);mdDualScrub(doc);mdCalDualScrub(doc);mdMarchePrecise(doc);mdMarcheScrub(doc);mdMarcheZones(doc);mdDashChevrons(doc);mdNavNoCoach(doc);mdProfil(doc);mdJourneeTune(doc);mdCalReadoutPurge(doc);mdNutritionPolish(doc);mdMarcheStats(doc);mdDashUniform(doc);mdSleepPolish(doc);mdSleepViolet(doc);mdRecupTap(doc);flLoadNativeTaps(doc);if(typeof flShellHonest==='function')flShellHonest(doc);if(typeof flTendances==='function')flTendances(doc);if(typeof flDashLive==='function')flDashLive(doc);if(typeof flNativeFeel==='function')flNativeFeel(doc);if(typeof flNavPlus==='function')flNavPlus(doc);if(typeof flNavOrder==='function')flNavOrder(doc);if(typeof flNavLiquid==='function')flNavLiquid(doc);if(typeof mdStadesSync==='function')mdStadesSync(doc);if(typeof flTopBar==='function')flTopBar(doc);mdRings(doc);mdTrioRings(doc);mdHebTrend(doc);mdNutrition(doc);mdObjectifs(doc);mdJournalWire(doc);flNavWatch(doc);mdSwipeTabs(doc);mdNavSync(doc);mdNavBottom(doc);mdNavReserve(doc);mdSectionGaps(doc);mdDashFeel(doc);if(typeof flDashFold==='function')flDashFold(doc);mdJrnlCompact(doc);flEffPolish(doc);mdJournalBottom(doc);mdDayStamp(doc);mdJrnlHour(doc);
   /* anti-flash orange : garder le splash FLINT opaque jusqu'à ce que le reskin soit VRAIMENT peint —
      trio construit ET peuplé, plusieurs passes faites (~1s), sinon on révélait un état mi-orange sur
@@ -7530,6 +8309,9 @@ var el=ev.target;var a=el;for(var d1=0;d1<7&&a;d1++,a=a.parentElement){if(!a.que
        en dur qui ratait Sommeil, Ma nuit et les pages hebdo). */
     flNavCloseAll(doc);
     if(typeof flNCloseAll==='function')flNCloseAll();
+    /* v854 — le fil Aujourd'hui est le scroller racine : c'est LUI qui reçoit
+       l'entrée, pas un écran posé. */
+    try{if(typeof flScrIn==='function')flScrIn(doc.getElementById('flint-scroller')||doc.body);}catch(_ei){}
    }catch(e){}setTimeout(function(){try{var sn=doc.getElementById('screen-nutrition');if(sn){var r=sn.getBoundingClientRect();var w=doc.defaultView.innerWidth;if(Math.abs(r.left-(w-r.width)/2)<40){var bk=[].slice.call(sn.querySelectorAll('*')).filter(function(x){return x.children.length<3&&/Aujourd/.test((x.textContent||'').trim())&&x.getBoundingClientRect().top<80;})[0];if(bk){var rb2=bk;while(rb2&&rb2.getAttribute&&rb2.getAttribute('role')!=='button'&&rb2.tagName!=='BUTTON')rb2=rb2.parentElement;var tt=rb2||bk;['pointerdown','pointerup','click'].forEach(function(e2){tt.dispatchEvent(new MouseEvent(e2,{bubbles:true,cancelable:true}));});}}}}catch(e){}},0);return;}return;}}},true);}catch(e){}}
 }
 /* ===== Écran de détail métrique (dynamique, DA maquette VFC) ===== */
@@ -9813,13 +10595,26 @@ function flEdgeBackWire(doc){try{
    S.u.style.setProperty('transform',S.utr+' translateX('+(-32*(1-p)).toFixed(2)+'%)','important');}
   var v=veil();v.style.opacity=(0.16*(1-p)).toFixed(3);
  }catch(_e){}},{passive:true,capture:true});
- function release(commit){
-  if(!S)return;try{doc._flEdgeBusy=0;}catch(e){}var sc=S.sc,u=S.u,tr=S.tr,utr=S.utr,w=S.w;S=null;
-  var EASE='transform .3s cubic-bezier(.32,.72,0,1)';
-  sc.style.setProperty('transition',EASE+', box-shadow .3s linear','important');
+ function release(commit,vpx){
+  if(!S)return;try{doc._flEdgeBusy=0;}catch(e){}var sc=S.sc,u=S.u,tr=S.tr,utr=S.utr,w=S.w,dx0=S.dx||0;S=null;
+  /* v856 — ON REND AU GESTE SA VITESSE. C'est le seul endroit où un ressort fait
+     quelque chose qu'aucune courbe ne peut faire, et c'est le trait signature d'iOS :
+     un objet lâché vite part loin, un objet lâché mou colle. La vitesse était déjà
+     mesurée pendant le geste (vx, pour décider de fermer ou non) puis JETÉE au moment
+     précis où elle vaut de l'or — la fin retombait sur un cubic-bezier fixe de 300 ms,
+     identique qu'on ait effleuré ou lancé sèchement.
+     Normalisation Apple : v0 est en fractions de la distance RESTANTE par seconde.
+     Amortissement selon la destination : hors champ (commit) → 0.828, le dépassement
+     se fait hors écran donc il est gratuit ; retour à ras du bord → 1.0 obligatoire,
+     sinon l'écran dépasse sa position d'origine et découvre une bande vide sous lui. */
+  var reste=Math.max(1,commit?(w-dx0):dx0);
+  var v0=Math.max(0,Math.min(28,(Math.abs(vpx||0)*1000)/reste));
+  var sp=flSpringCss(commit?0.34:0.30,commit?0.828:1.0,v0);
+  var EASE='transform '+sp.ms+'ms '+sp.easing;
+  sc.style.setProperty('transition',EASE+', box-shadow '+sp.ms+'ms linear','important');
   if(u)u.style.setProperty('transition',EASE,'important');
   var v=doc.getElementById('flEdgeVeil');
-  if(v){v.style.transition='opacity .3s linear';v.style.opacity='0';}
+  if(v){v.style.transition='opacity '+sp.ms+'ms linear';v.style.opacity='0';}
   if(commit){
    sc.style.setProperty('transform',tr+' translateX('+w+'px)','important');
    sc.style.setProperty('box-shadow','none','important');
@@ -9833,7 +10628,7 @@ function flEdgeBackWire(doc){try{
      sc.style.removeProperty('transition');
      if(u){u.style.removeProperty('transition');u.style.removeProperty('transform');}
     }catch(e){}},80);
-   }catch(e){}},260);
+   }catch(e){}},Math.max(180,sp.ms-40));
   }else{
    sc.style.setProperty('transform',tr,'important');
    if(u){u.style.removeProperty('transform');u.removeAttribute('data-fl-par');}
@@ -9841,7 +10636,7 @@ function flEdgeBackWire(doc){try{
     sc.style.removeProperty('box-shadow');sc.style.removeProperty('will-change');
     sc.style.removeProperty('transition');
     if(u){u.style.removeProperty('transition');u.style.removeProperty('transform');}
-   }catch(e){}},320);
+   }catch(e){}},sp.ms+40);
   }
  }
  doc.addEventListener('touchend',function(e){try{
@@ -9849,9 +10644,9 @@ function flEdgeBackWire(doc){try{
   if(!S.on){S=null;return;}
   var t=e.changedTouches[0],dx=Math.max(0,t.clientX-S.x0),ms=Date.now()-S.t0;
   var vx=dx/Math.max(1,ms);                       /* px/ms */
-  release(dx>S.w*0.32||(vx>0.5&&dx>44));
+  release(dx>S.w*0.32||(vx>0.5&&dx>44),vx);
  }catch(_e){}},{passive:true,capture:true});
- doc.addEventListener('touchcancel',function(){try{if(S&&S.on)release(false);else S=null;}catch(e){}},{passive:true,capture:true});
+ doc.addEventListener('touchcancel',function(){try{if(S&&S.on)release(false,0);else S=null;}catch(e){}},{passive:true,capture:true});
 }catch(e){}}
 /* ===== Rappel du jour consulté (v674) =======================================
    Founder : « si je clique sur le 18 juin, tout doit être lié à ça, et en haut
@@ -11310,7 +12105,7 @@ function flNutV2HTML(d){
    +'</div>'
   +'</div>';}).join(''):'<div style="padding:26px;text-align:center;font-family:'+SANS+';font-size:13.5px;color:#a29c92">Aucun repas enregistré aujourd’hui.</div>';
  return '<div style="min-height:100%;padding:max(20px,calc(env(safe-area-inset-top,0px) + 12px)) 22px calc(env(safe-area-inset-bottom,0px) + 116px)">'
-  +'<button class="flnv2-back" aria-label="Retour" style="display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;cursor:pointer;padding:0;margin-bottom:18px;border-radius:50%;background:#fff;border:none;box-shadow:0 1px 2px rgba(20,17,15,.06),0 8px 20px rgba(20,17,15,.06)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fb6015" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></button>'
+  +'<button class="flnv2-back" aria-label="Retour" style="display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;cursor:pointer;padding:0;margin-bottom:18px;border-radius:50%;background:'+FLV_BG+';border:1px solid rgba(255,255,255,.95);box-shadow:'+FLV_SH+'"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#14110f" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></button>'
   +'<div style="margin-top:6px"><div style="font-family:'+AR+';font-size:40px;font-weight:800;letter-spacing:-0.035em;color:#14110f;line-height:1">Nutrition<span style="display:inline-block;width:0.17em;height:0.17em;border-radius:50%;background:#fb6015;vertical-align:baseline;margin-left:0.03em"></span></div><div style="font-family:'+SANS+';font-size:12px;font-weight:400;letter-spacing:0.18em;color:#b3ada3;margin-top:8px">NOURRIS TON OBJECTIF</div></div>'
   +'<div style="position:relative;margin-top:22px;background:#fff;border:1px solid #f5f2ec;border-radius:26px;padding:16px 46px 16px 16px;box-shadow:0 10px 30px rgba(20,17,15,.05);display:grid;grid-template-columns:repeat(7,1fr);align-items:start;column-gap:2px">'+days+'<div role="button" style="position:absolute;top:50%;right:10px;transform:translateY(-50%);width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:50%;border:1.5px solid #eae5dd;background:#fff;cursor:pointer"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8a857c" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg></div></div>'
   +'<div style="position:relative;text-align:center"><div style="position:absolute;inset:-16px 0;background:radial-gradient(46% 58% at 50% 48%,rgba(251,96,21,0.065),rgba(251,96,21,0.022) 40%,rgba(251,96,21,0) 72%);pointer-events:none"></div><div style="position:relative;font-family:'+SANS+';font-size:11px;font-weight:700;letter-spacing:0.16em;color:#fb6015;padding:22px 0 16px">AUJOURD’HUI</div></div>'
@@ -11548,6 +12343,7 @@ function flOpenNutrition(doc){try{doc=doc||(document.getElementById('frToday')||
  void nut.offsetHeight;
  setTimeout(function(){try{nut.style.removeProperty('transition');nut.style.transition=tr0||'';}catch(e){}},60);
  nut.style.pointerEvents='auto';nut.scrollTop=0;
+ try{if(typeof flScrIn==='function')flScrIn(nut);}catch(_ei){}   /* v854 — fin du claquement */
  /* audit v780 — onglet racine : le chevron retour (haut gauche) n'a plus de sens */
  try{if(!nut._flBackHidden){setTimeout(function(){try{
   [].slice.call(nut.querySelectorAll('[role="button"],button')).forEach(function(b3){
@@ -11994,7 +12790,7 @@ function flNScanReviewOpen(st){window._flnScanSt=st;window._flnAnaT0=null;flN.wh
  if(st&&st.status==='pending'){flNAnaScreenShow(st);flNAnaStart();}
  else{flNScanReviewRender();flNOpen('screen-fln-scanres');}}
 function flNScanUpdate(r){var st=window._flnScanSt;if(!st)return;
- if(!r||!r.kcal){st.status='fail';if(typeof navigator!=='undefined'&&navigator.onLine===false)st.failMsg='Impossible d’analyser sans connexion. Reconnecte-toi ou saisis le repas à la main.';}
+ if(!r||!r.kcal){st.status='fail';if(typeof navigator!=='undefined'&&navigator.onLine===false)st.failMsg='Impossible d’analyser sans connexion. Reconnecte-toi ou saisis le repas à la main.';else if(window._flScanFail)st.failMsg=window._flScanFail;}
  else{st.status='done';st.name=r.name||'Mon repas';st.kcal=Math.round(r.kcal||0);st.prot=Math.round(r.prot||0);st.carb=Math.round(r.carb||0);st.fat=Math.round(r.fat||0);if(r.score!=null)st.score=r.score;
   try{var items=window._flintScanItems;if(items&&items.length)st.ing=items.map(function(it){return {name:it.name,grams:Math.round(it.grams||0),kcal:Math.round(it.kcal||0)};});}catch(e){}}
  flNAnaStop();window._flnAnaT0=null;flNAnaScreenHide();
@@ -13054,8 +13850,11 @@ function flNProgres(){var doc=flNdoc();var g=flNutGoals();
 function mdStickyBacks(doc){try{
  if(!doc.getElementById('flBackBtn')){
   var gb=doc.createElement('button');gb.id='flBackBtn';
-  gb.style.cssText='position:fixed;top:calc(env(safe-area-inset-top,0px) + 14px);left:16px;z-index:96;width:48px;height:48px;border-radius:50%;border:none;background:#fff;box-shadow:0 2px 14px rgba(20,17,15,0.12);display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .2s ease;padding:0;';
-  gb.innerHTML='<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fb6015" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>';
+  /* v854 — peau du trio SOMMEIL/EFFORT/CALORIES au pixel (FLV_BG + FLV_SH),
+     chevron noir encre et fin. La feuille injectée le rejoue en !important ;
+     l'écrire ici évite le blanc-orange d'une frame avant qu'elle n'arrive. */
+  gb.style.cssText='position:fixed;top:calc(env(safe-area-inset-top,0px) + 14px);left:16px;z-index:96;width:48px;height:48px;border-radius:50%;border:1px solid rgba(255,255,255,.95);background:'+FLV_BG+';box-shadow:'+FLV_SH+';display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;pointer-events:none;transition:opacity .2s ease;padding:0;';
+  gb.innerHTML='<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#14110f" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>';
   gb.setAttribute('onclick','parent.flBackClose&&parent.flBackClose();');
   doc.body.appendChild(gb);
  }
@@ -16304,7 +17103,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='v853';
+const APP_VERSION='v912';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
@@ -16335,34 +17134,62 @@ document.addEventListener('visibilitychange',function(){if(document.hidden)retur
 <script>
 /* ===== Scan repas façon Cal AI — branche le vrai cerveau (proxy Gemini) sur le hook de Dino + liste éditable aliment-par-aliment. Script isolé. ===== */
 (function(){
-  /* >>> À REMPLACER par l'URL de ta fonction Vercel après déploiement <<< */
-  window.FLINT_SCAN_API = window.FLINT_SCAN_API || '/api/scan-meal';
+  /* v858 — POURQUOI LA RECONNAISSANCE DE PLAT NE MARCHAIT PLUS DANS L'APP.
+     Cette URL était RELATIVE. Sur le web servi par Vercel, « /api/scan-meal » tombe
+     juste : même origine, la fonction répond. Mais dans la coquille iOS l'app n'est
+     pas servie par un serveur — WebSchemeHandler lit des FICHIERS du bundle et
+     renvoie 404 pour tout le reste (vérifié dans son code). La requête n'avait donc
+     aucune chance d'atteindre Gemini : elle mourait sur un 404 local.
+     On bascule sur l'URL absolue dès que la page n'est pas servie en http(s) — donc
+     dans l'app — et on garde le chemin relatif sur le web, ce qui évite un aller-retour
+     CORS inutile quand l'origine est déjà la bonne.
+     Vérifié le 31/07/2026 : le point d'accès répond 200 et le préflight OPTIONS renvoie
+     Access-Control-Allow-Origin: * — l'origine exotique flintapp://localhost passe. */
+  window.FLINT_SCAN_API = window.FLINT_SCAN_API ||
+    (/^https?:$/.test(location.protocol) ? '/api/scan-meal'
+                                         : 'https://flint-demo-eta.vercel.app/api/scan-meal');
   /* doit correspondre à la variable d'env FLINT_APP_SECRET côté Vercel */
   window.FLINT_APP_KEY = window.FLINT_APP_KEY || 'fl1nt-scan-9x4q2';
   function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
-  function fallback(){ window._flintScanItems=null; return {name:'Mon repas',kcal:600,prot:35,carb:60,fat:22}; }
+  /* v858 — LE FAUX POSITIF LE PLUS TRAITRE DU PROJET, mesure au simulateur.
+     Cette fonction rendait un repas INVENTE — toujours le meme : 600 kcal, 35 P, 60 G,
+     22 L, nomme « Mon repas ». Le chemin photo l appelait sur TOUTE erreur : reseau
+     coupe, cle refusee, ou image non alimentaire. L utilisateur voyait donc un beau
+     resultat chiffre alors qu aucune analyse n avait eu lieu, et ne pouvait pas
+     distinguer un scan qui marche d un scan mort. C est exactement ce qui faisait
+     croire que « ca marche encore » quand plus rien ne repondait — et l inverse.
+     Cela contredisait aussi la doctrine ecrite du projet : jamais un chiffre invente.
+     Le chemin TEXTE, lui, echouait deja honnetement (voir analyzeMealText).
+     Desormais les deux rejettent, et l ecran d echec honnete (statut fail,
+     « Analyse indisponible ») s affiche avec la raison RENVOYEE PAR L API. */
+  function echec(raison){
+    window._flintScanItems=null;
+    window._flScanFail=raison||'';
+    return Promise.reject(new Error(raison||'scan-failed'));
+  }
   window.analyzeMealPhoto=function(file){
-    return new Promise(function(resolve){
+    window._flScanFail='';
+    return new Promise(function(resolve,reject){
       try{
         var rd=new FileReader();
         rd.onload=function(e){
           _downscaleImg(e.target.result,1280,function(dataUrl){
-            if(!dataUrl){resolve(fallback());return;}
+            if(!dataUrl){echec('Photo illisible.').catch(reject);return;}
             fetch(window.FLINT_SCAN_API,{method:'POST',headers:{'Content-Type':'application/json','x-flint-key':window.FLINT_APP_KEY},body:JSON.stringify({image:dataUrl})})
               .then(function(r){return r.json();})
               .then(function(d){
-                if(!d||!d.items||!d.items.length){resolve(fallback());return;}
+                if(!d||!d.items||!d.items.length){echec((d&&d.healthNote)||(d&&d.error)||'Aucun aliment reconnu sur la photo.').catch(reject);return;}
                 window._flintScanItems=d.items.map(function(it){return Object.assign({},it);});
                 setTimeout(function(){renderItems();syncUI();},30);
                 var t=d.total||{};
                 resolve({name:d.mealName||'Mon repas',kcal:Math.round(t.kcal||0),prot:Math.round(t.prot||0),carb:Math.round(t.carb||0),fat:Math.round(t.fat||0),score:(d.healthScore!=null?Math.max(1,Math.min(10,Math.round(d.healthScore))):undefined),scoreNote:d.healthNote||''});
               })
-              .catch(function(){resolve(fallback());});
+              .catch(function(err){echec(navigator.onLine===false?'Pas de connexion.':('Analyse injoignable : '+(err&&err.message||'erreur reseau'))).catch(reject);});
           },0.85);
         };
-        rd.onerror=function(){resolve(fallback());};
+        rd.onerror=function(){echec('Lecture du fichier impossible.').catch(reject);};
         rd.readAsDataURL(file);
-      }catch(e){resolve(fallback());}
+      }catch(e){echec('Erreur inattendue : '+(e&&e.message||e)).catch(reject);}
     });
   };
   /* Décrire son repas en texte → même endpoint, champ {text} au lieu de {image}.
@@ -16695,12 +17522,23 @@ function flPfShow(el,slide){try{flPfGlobalBack(el.ownerDocument,false);}catch(e)
  if(slide){setTimeout(function(){el.style.transform='translateX(-50%) translateY(0)';},20);return;}
  el.style.transition='none';el.style.transform='translateX(-50%) translateY(0)';
  void el.offsetHeight;
- setTimeout(function(){el.style.transition='transform .38s cubic-bezier(.32,.72,0,1)';},60);}
+ setTimeout(function(){el.style.transition='transform .38s cubic-bezier(.32,.72,0,1)';},60);
+ /* v854 — l'onglet reste DIRECT (pas de glissement depuis le bas, v777), mais il
+    arrive maintenant en fondu-zoom, et ses cartes montent en cascade : le
+    contenu du Profil est bâti par flPfMain (nous), pas par React, donc aucun
+    risque que la cascade se rejoue à un repaint. */
+ try{if(typeof flScrIn==='function')flScrIn(el);}catch(_ei){}
+ /* v855 — le verre du Profil « mettait du temps à apparaître » : mesuré, 0 surface
+    vitrée pendant 2 à 3,5 s, puis 10 d'un coup. L'écran est bâti à la demande et
+    n'était donc rattrapé qu'au cycle d'injection suivant. On pose le verre TOUT DE
+    SUITE, sur le document de l'écran, avant même que la première frame ne parte. */
+ try{var _d9=el.ownerDocument;if(_d9&&typeof flDaVerre==='function')flDaVerre(_d9);}catch(_ev){}}
 function flPfHide(el){if(!el)return;el.style.transform='translateX(-50%) translateY(100%)';el.style.pointerEvents='none';
  try{var doc=el.ownerDocument,main=doc.getElementById('screen-fl-profil');
   if(!main||(main.style.transform||'').indexOf('100%')>=0)flPfGlobalBack(doc,true);}catch(e){}}
 function flPfCloseAll(doc){try{['screen-fl-profil','screen-fl-pf-bracelet','screen-fl-pf-compte','screen-fl-pf-secu','screen-fl-pf-aide','screen-fl-pf-regl'].forEach(function(id){flPfHide(doc.getElementById(id));});var sh=doc.getElementById('flPfSheet');if(sh)sh.remove();flPfGlobalBack(doc,true);}catch(e){}}
-function flPfBack(){return '<button class="pf-back" aria-label="Retour" style="width:52px;height:52px;border-radius:50%;border:none;background:#fff;color:#fb6015;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 20px rgba(20,17,15,.08);margin-bottom:22px"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></button>';}
+/* v854 — même peau que le trio (cf. flintInjectCss), chevron noir fin. */
+function flPfBack(){return '<button class="pf-back" aria-label="Retour" style="width:52px;height:52px;border-radius:50%;border:1px solid rgba(255,255,255,.95);background:'+FLV_BG+';color:#14110f;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:'+FLV_SH+';margin-bottom:22px"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></button>';}
 function flPfTitle(t){return '<h1 style="font-size:34px;font-weight:800;letter-spacing:-.03em;line-height:1;margin:0 0 24px;color:#14110f">'+t+'<span style="color:#fb6015">.</span></h1>';}
 function flPfPad(inner){return '<div style="min-height:100%;display:flex;flex-direction:column;padding:max(28px,calc(env(safe-area-inset-top,0px) + 20px)) 24px calc(env(safe-area-inset-bottom,0px) + 120px)">'+inner+'</div>';}
 function flPfCard(inner,pad){return '<div style="background:#fff;border-radius:22px;box-shadow:0 8px 26px rgba(20,17,15,.05);padding:'+(pad||'20px')+'">'+inner+'</div>';}
@@ -16940,10 +17778,68 @@ function flPfBracelet(doc){var W=window._watchLive||{};
   +'<div style="height:14px"></div>'
   +flPfCard('<div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:14px;font-weight:400;color:#8a857c">Dernière synchro</span><span style="font-size:15px;font-weight:600">'+lastSync+'</span></div>','20px')
   +'<button class="pfb-scan" style="width:100%;margin-top:22px;padding:18px;border:none;border-radius:18px;background:#fb6015;color:#fff;font-family:Archivo,-apple-system,sans-serif;font-size:16px;font-weight:700;cursor:pointer;box-shadow:0 10px 24px rgba(251,96,21,.28)">Rechercher mon bracelet</button>'
-  +'<div style="font-family:-apple-system,system-ui,sans-serif;font-size:12.5px;color:#a7a29a;text-align:center;margin-top:14px;line-height:1.5">Porte le bracelet bien serré, capteur contre la peau.<br>La connexion se fait toute seule à l\'ouverture de l\'app.</div>',
-  function(el){el.querySelector('.pfb-scan').addEventListener('click',function(){
+  +'<div style="font-family:-apple-system,system-ui,sans-serif;font-size:12.5px;color:#a7a29a;text-align:center;margin-top:14px;line-height:1.5">Porte le bracelet bien serré, capteur contre la peau.<br>La connexion se fait toute seule à l\'ouverture de l\'app.</div>'
+  /* v857 — JOURNAL BLUETOOTH VISIBLE. Sans lui, un échec de connexion est muet :
+     le pont natif sait exactement ce qui se passe (nom de la montre, dump GATT,
+     famille détectée, refus) mais personne ne pouvait le lire. Monospace, fond sombre,
+     hauteur fixe et défilement propre — c'est un outil de diagnostic, pas une carte
+     du produit ; il vit au bas de Mon bracelet et ne gêne rien au-dessus. */
+  +'<div style="height:26px"></div>'
+  +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
+    +'<span style="font-family:-apple-system,system-ui,sans-serif;font-size:12px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#8a8378">Appareils détectés</span>'
+    +'<button class="pfb-all" style="border:none;background:#f0ece4;border-radius:999px;padding:7px 14px;font-family:-apple-system,system-ui,sans-serif;font-size:12.5px;font-weight:600;color:#14110f;cursor:pointer">Tout chercher</button>'
+  +'</div>'
+  +'<div id="flBleList" style="margin-bottom:22px"></div>'
+  +'<div style="height:8px"></div>'
+  +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">'
+    +'<span style="font-family:-apple-system,system-ui,sans-serif;font-size:12px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#8a8378">Journal Bluetooth</span>'
+    +'<button class="pfb-copy" style="border:none;background:#f0ece4;border-radius:999px;padding:7px 14px;font-family:-apple-system,system-ui,sans-serif;font-size:12.5px;font-weight:600;color:#14110f;cursor:pointer">Copier</button>'
+  +'</div>'
+  +'<pre id="flBlePre" style="margin:0;padding:14px;background:#14120F;color:#C9F0D2;border-radius:16px;height:230px;overflow:auto;-webkit-overflow-scrolling:touch;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10.5px;line-height:1.5;white-space:pre-wrap;word-break:break-all;-webkit-user-select:text;user-select:text">'+((window.flBleLogLines&&window.flBleLogLines.length)?window.flBleLogLines.join('\n'):'(rien encore — appuie sur Rechercher, puis approche la montre)')+'</pre>'
+  +'<div style="font-family:-apple-system,system-ui,sans-serif;font-size:12px;color:#a7a29a;text-align:center;margin-top:10px;line-height:1.5">Une JC Vital se connecte seule (JCV8B / J2208A2).<br>Si son nom apparaît sans que rien ne suive, c\'est le protocole qui bloque, pas la détection.</div>',
+  function(el){
+   var pre=el.querySelector('#flBlePre');
+   if(pre)pre.scrollTop=pre.scrollHeight;
+   try{flBleRenderList();}catch(e){}
+   /* « Tout chercher » : mode sélecteur — le pont n'adopte plus personne tout seul
+      et se contente de RAPPORTER tout ce qu'il voit, y compris les appareils sans
+      nom et sans service exploitable. C'est le recours quand une montre n'est pas
+      reconnue automatiquement. */
+   var all=el.querySelector('.pfb-all');
+   if(all)all.addEventListener('click',function(){
+    var nat=window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint;
+    if(!nat){try{flNToast('Disponible seulement sur l\'app iPhone');}catch(e){}return;}
+    window.flBleDevices={};try{flBleRenderList();}catch(e){}
+    /* v863 — OUBLIER AVANT DE CHERCHER. Sans ce forget, le pont reprend en
+       silence le bracelet memorise et ne scanne jamais : cest ce qui gardait
+       lapp accrochee a une montre posee sur un meuble pendant que celle du
+       poignet restait invisible. Ce bouton doit repartir de zero. */
+    try{flBleLog('▶︎ oubli du bracelet memorise puis recherche LARGE');}catch(e){}
+    try{nat.postMessage({cmd:'forget'});}catch(e){}
+    setTimeout(function(){try{nat.postMessage({cmd:'start',picker:true});}catch(e){}},350);
+   });
+   /* Choisir un appareil : on le MÉMORISE côté natif (il sera repris au prochain
+      lancement, y compris s'il a cessé d'émettre parce qu'il est déjà connecté)
+      puis on s'y connecte. */
+   el.addEventListener('click',function(ev){
+    var b=ev.target;while(b&&b!==el&&!(b.classList&&b.classList.contains('fl-ble-pick')))b=b.parentElement;
+    if(!b||b===el)return;
+    var nat=window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint;
+    if(!nat)return;
+    var id=b.getAttribute('data-id'),nom=b.getAttribute('data-nom')||'';
+    try{flBleLog('▶︎ choix manuel : '+nom+' ['+id.slice(0,8)+']');}catch(e){}
+    try{nat.postMessage({cmd:'remember',deviceId:id,name:nom});}catch(e){}
+    try{flOkShow('Appareil retenu',nom);}catch(e){}
+   });
+   var cp=el.querySelector('.pfb-copy');
+   if(cp)cp.addEventListener('click',function(){
+    var txt=(window.flBleLogLines||[]).join('\n');
+    try{navigator.clipboard.writeText(txt);}catch(e){
+     try{var ta=doc.createElement('textarea');ta.value=txt;doc.body.appendChild(ta);ta.select();doc.execCommand('copy');ta.remove();}catch(e2){}}
+    try{flNToast('Journal copié');}catch(e){}});
+   el.querySelector('.pfb-scan').addEventListener('click',function(){
    var nat=window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint;
-   if(nat){try{nat.postMessage({cmd:'start'});}catch(e){}try{flOkShow('Recherche lancée','Approche ton bracelet');}catch(e){}setTimeout(function(){flPfBracelet(doc);},4000);}
+   if(nat){try{nat.postMessage({cmd:'start'});}catch(e){}try{flBleLog('▶︎ recherche lancée manuellement');}catch(e){}try{flOkShow('Recherche lancée','Approche ton bracelet');}catch(e){}}
    else{try{flNToast('Connexion au bracelet : sur l\'app iPhone');}catch(e){}}});});}
 /* --- Mon compte --- */
 function flPfCompte(doc){var p=flPfP();
@@ -17357,6 +18253,65 @@ window.flAddActivity=function(doc){flActSt=flActDefaults();flActAdd(doc);};
    bedMin:bed.getHours()*60+bed.getMinutes(),wakeMin:wake.getHours()*60+wake.getMinutes(),
    deep:deep,rem:rem,light:light,awake:awakeMin,lowestHr:night[0],_est:true};
  }
+ /* v857 — tampon circulaire du journal Bluetooth. Borné à 300 lignes : le pont natif
+    peut cracher plusieurs lignes par seconde pendant un dump GATT, et rien ne doit
+    grandir sans fin dans une app qui tourne la nuit. Chaque ligne est horodatée à la
+    seconde — c'est ce qui permet de voir si un scan reste muet ou si la montre répond
+    puis se tait. Si le panneau de Mon bracelet est ouvert, on écrit dedans en direct. */
+ window.flBleLogLines=window.flBleLogLines||[];
+ window.flBleLog=function(line){try{
+  var d=new Date();
+  var hh=('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2)+':'+('0'+d.getSeconds()).slice(-2);
+  var txt=hh+'  '+line;
+  window.flBleLogLines.push(txt);
+  if(window.flBleLogLines.length>300)window.flBleLogLines.splice(0,window.flBleLogLines.length-300);
+  /* Le panneau vit dans l IFRAME, pas dans la coquille : flBleLog est défini côté
+     coquille et un document.getElementById() y cherchait au mauvais endroit. Le
+     journal ne se remplissait donc qu à l ouverture de l écran et restait figé
+     pendant tout le scan — exactement le moment où on a besoin de le lire. */
+  var pre=document.getElementById('flBlePre');
+  if(!pre){try{var _fd=(document.getElementById('frToday')||{}).contentDocument;if(_fd)pre=_fd.getElementById('flBlePre');}catch(e){}}
+  if(pre){pre.textContent=window.flBleLogLines.join('\n');pre.scrollTop=pre.scrollHeight;}
+ }catch(e){}};
+ /* v860 — REGISTRE DES APPAREILS VUS. Le pont émet un deviceFound par appareil
+    détecté ; sans registre, cette information passait et disparaissait. On la garde
+    pour que l'utilisateur puisse CHOISIR — c'est le filet quand l'adoption
+    automatique sur la capacité ne se déclenche pas, par exemple un bracelet qui
+    n'annonce aucun service exploitable dans sa publicité. */
+ window.flBleDevices=window.flBleDevices||{};
+ window.flBleSeen=function(d){try{
+  if(!d||!d.deviceId)return;
+  var e=window.flBleDevices[d.deviceId]||{};
+  e.id=d.deviceId;
+  if(d.name)e.name=d.name;
+  if(d.rssi!=null)e.rssi=d.rssi;
+  if(d.source)e.source=d.source;
+  if(d.known!=null)e.known=!!d.known;
+  e.vu=Date.now();
+  window.flBleDevices[d.deviceId]=e;
+  if(typeof flBleRenderList==='function')flBleRenderList();
+ }catch(e){}};
+ /* Rendu de la liste dans l'écran Mon bracelet, s'il est ouvert. Comme flBleLog,
+    l'élément vit dans l'IFRAME : le chercher avec document seul échouerait. */
+ window.flBleRenderList=function(){try{
+  var host=document.getElementById('flBleList');
+  if(!host){try{var fd=(document.getElementById('frToday')||{}).contentDocument;if(fd)host=fd.getElementById('flBleList');}catch(e){}}
+  if(!host)return;
+  var ds=Object.keys(window.flBleDevices).map(function(k){return window.flBleDevices[k];});
+  ds.sort(function(a,b){return (b.rssi==null?-999:b.rssi)-(a.rssi==null?-999:a.rssi);});
+  if(!ds.length){host.innerHTML='<div style="font-family:-apple-system,system-ui,sans-serif;font-size:13px;color:#a7a29a;text-align:center;padding:16px 0">Aucun appareil détecté pour l\'instant.</div>';return;}
+  host.innerHTML=ds.map(function(d){
+   var nom=d.name||'(sans nom)';
+   var det=[];
+   if(d.rssi!=null)det.push(d.rssi+' dBm');
+   if(d.source)det.push(d.source);
+   if(d.known)det.push('connu');
+   return '<button class="fl-ble-pick" data-id="'+d.id+'" data-nom="'+nom.replace(/"/g,'&quot;')+'" style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px;padding:14px 16px;border:1px solid rgba(255,255,255,.95);border-radius:16px;background:linear-gradient(158deg,#ffffff 0%,rgb(250,251,254) 38%,rgb(240,243,250) 100%);box-shadow:0 1px 2px rgba(20,17,15,.03),0 8px 20px -7px rgba(112,122,158,.22);cursor:pointer;text-align:left">'
+    +'<span style="min-width:0"><span style="display:block;font-family:-apple-system,system-ui,sans-serif;font-size:15px;font-weight:600;color:#14110f;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+nom+'</span>'
+    +'<span style="display:block;font-family:-apple-system,system-ui,sans-serif;font-size:11.5px;color:#a7a29a;margin-top:2px">'+det.join(' · ')+'</span></span>'
+    +'<span style="font-family:Archivo,-apple-system,sans-serif;font-size:12.5px;font-weight:700;color:#fb6015;flex:none">Choisir</span></button>';
+  }).join('');
+ }catch(e){}};
  window.flintNative=function(type,data){try{
   data=data||{};var K=tk(0),d2=wGet(K),now=Date.now();
   if(type==='hr'&&data.hr){W.hr=data.hr;W.t=now;ensureChip();chip.style.display='flex';chip.style.opacity='1';chipHr.textContent=data.hr;
@@ -17367,7 +18322,22 @@ window.flAddActivity=function(doc){flActSt=flActDefaults();flActAdd(doc);};
   else if(type==='kcal'){W.kcal=data.kcal;d2.kcal=data.kcal;wSave();}
   else if(type==='distance'){W.dist=data.distance;d2.dist=data.distance;wSave();}
   else if(type==='rr'&&data.rr&&data.rr.length){W.rr=data.rr;Array.prototype.push.apply(d2.rr,data.rr);wSave();}
-  else if(type==='status')W.status=data.status;
+  else if(type==='status'){W.status=data.status;flBleLog('· '+data.status);}
+  /* v857 — LE JOURNAL BLUETOOTH ARRIVAIT ICI ET MOURAIT. Le pont natif produit un
+     journal détaillé (montres détectées, nom, dump GATT, verdict de famille, échecs)
+     et l'envoie fidèlement via flintNative('log'). Il n'existait aucune branche pour
+     le recevoir : la ligne tombait dans le `else` final, donc dans le vide. Résultat,
+     quand une montre ne se connectait pas, il n'y avait AUCUN moyen de savoir pourquoi,
+     ni depuis l'app ni depuis le téléphone. On le garde désormais en mémoire et on
+     l'affiche dans Profil > Mon bracelet. */
+  else if(type==='log'&&data.line)flBleLog(data.line);
+  else if(type==='deviceFound'){
+   flBleLog('◆ TROUVÉE : '+(data.name||'(sans nom)')+'  ['+(data.deviceId||'?').slice(0,8)+']'
+     +(data.source?('  ·'+data.source):'')+(data.rssi!=null?('  '+data.rssi+' dBm'):''));
+   flBleSeen(data);
+  }
+  else if(type==='family')flBleLog('⚙︎ famille GATT : '+(data.family||JSON.stringify(data)));
+  else if(type==='error')flBleLog('✕ ERREUR : '+(data.message||JSON.stringify(data)));
   else if(type==='nightlog'&&data.hr){
    /* rejouage du journal natif : répartir les échantillons par jour + calcul de la nuit */
    var perDay={};
