@@ -8227,13 +8227,68 @@ window.flCatalogue=function(){try{
 /* Écriture d'une séance. Mêmes champs que celles créées par le web : c'est ce
    qui garantit qu'elle apparaîtra partout — frise, effort du jour, écran de
    détail — sans traitement particulier. */
-window.flCreerActivite=function(nom,debut,duree,intensite){try{
+/* v1027 — L'ANALYSE D'UNE PHOTO DE REPAS, POUR LE NATIF.
+   Le natif envoie l'image, on la passe à `analyzeMealPhoto` et on renvoie le
+   résultat par le canal habituel. Le nom d'écran `repasIA` est déclaré dans
+   `sectionsSansEcran` : il porte une donnée, il ne prend jamais l'écran. */
+window.flAnalyserRepas=function(url){
+ /* v1028 — LA PHOTO ARRIVAIT SOUS LA MAUVAISE FORME.
+    `analyzeMealPhoto` a changé de contrat : un second script écrase le stub de
+    maquette par la VRAIE analyse, qui attend un File et appelle
+    `readAsDataURL` dessus. Le natif envoyait une data-URL — une chaîne — ce qui
+    lève un TypeError SYNCHRONE avant même le réseau. La promesse rejetait donc
+    toujours, et l'écran affichait toujours « On n'a pas reconnu ce plat ».
+    On enveloppe la data-URL dans un File, exactement comme les deux autres
+    appelants du web le font déjà.
+    `atob` + Uint8Array plutôt que `fetch(dataURL)` : aucune dépendance au
+    support du schéma `data:` par fetch ni à la CSP sous flintapp://localhost. */
+ function envoyer(d){try{window.webkit.messageHandlers.flint.postMessage(
+   {cmd:'natif',screen:'repasIA',data:d});}catch(e){}}
+ function echouer(r){envoyer({ok:false,raison:String(r||window._flScanFail||'')});}
+ try{
+  var s=String(url||''), i=s.indexOf(',');
+  if(i<0){echouer('Image illisible.');return;}
+  var type=(s.slice(0,i).match(/data:([^;]+)/)||[])[1]||'image/jpeg';
+  var bin=atob(s.slice(i+1)), n=bin.length, arr=new Uint8Array(n);
+  for(var k=0;k<n;k++)arr[k]=bin.charCodeAt(k);
+  var f=new File([arr],'repas.jpg',{type:type});
+  Promise.resolve(window.analyzeMealPhoto(f)).then(function(m){
+   envoyer({nom:String((m&&m.name)||'Mon repas'),
+            kcal:Math.round((m&&m.kcal)||0),prot:Math.round((m&&m.prot)||0),
+            carb:Math.round((m&&m.carb)||0),fat:Math.round((m&&m.fat)||0),
+            ok:true});
+  }).catch(function(e){echouer(e&&e.message);});
+ }catch(e){echouer(e&&e.message);}
+};
+
+/* v1027 — écrire le repas validé. Même enregistrement que le formulaire du
+   web : `meals_<jour>` est la seule source, et la frise le relit tel quel. */
+window.flAjouterRepas=function(nom,kcal,prot,carb,fat){try{
+ var K=tk(window.flDayOff||0);
+ var a=DB.get('meals_'+K,[])||[];
+ a.push({name:String(nom||'Repas'),
+         kcal:Math.max(0,Math.round(+kcal||0)),
+         prot:Math.max(0,Math.round(+prot||0)),
+         carb:Math.max(0,Math.round(+carb||0)),
+         fat:Math.max(0,Math.round(+fat||0))});
+ DB.set('meals_'+K,a);
+ try{renderNutrition();}catch(e){}
+ return true;
+}catch(e){return false;}};
+
+window.flCreerActivite=function(nom,debut,duree,intensite,icone){try{
  var K=tk(window.flDayOff||0);
  var a=DB.get('sessions_'+K,[])||[];
+ /* v1026 — ON ENREGISTRE LA CLÉ D'ICÔNE AVEC LA SÉANCE.
+    Le catalogue portait déjà l'icône (v980) mais elle mourait à l'écran de
+    choix : la séance ne gardait que son nom, et la frise du jour retombait
+    sur quatre silhouettes génériques. Trois octets de plus, et les cent
+    quarante-quatre icônes servent enfin à quelque chose. */
  a.push({name:String(nom||'Séance'),
          start:String(debut||'12:00'),
          dur:Math.max(5,Math.min(600,Math.round(+duree||45))),
          int:Math.max(1,Math.min(4,Math.round(+intensite||2))),
+         ti:(icone?String(icone):null),
          auto:false});
  /* Remises en ordre horaire : la frise lit ce tableau tel quel. */
  a.sort(function(x,y){
@@ -8417,6 +8472,8 @@ window.flAccueilData=function(){try{
     var sieste=o.type==='nap';
     e.push({debut:hhmm(d0), fin:hhmm(d1), nom:o.name||'Séance',
             genre:sieste?'sommeil':(o.auto?'auto':'manuelle'),
+            /* v1026 — l'icône choisie au catalogue accompagne la ligne. */
+            icone:(o.ti||null),
             valeur:sieste?hm(o.dur||0)
                   :((typeof actStrain==='function')?String(actStrain(o)).replace('.',','):null),
             source:'seance', rang:idx, tri:d0==null?9999:d0});
@@ -17970,7 +18027,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='v999';
+const APP_VERSION='v1028';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
