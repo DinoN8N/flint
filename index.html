@@ -7689,11 +7689,25 @@ window.flHebdoDetail=function(key,mode,recul){try{
   mn:mn,mx:mx,
   ticks:ticks.map(function(t){return {v:t,txt:tickTxt(t)};}),
   moyenne:avg,moyenneTxt:(avg==null?null:fmt(avg)),
+  /* v998 — la moyenne de la SECONDE série. Sur le sommeil, c'est le besoin
+     moyen : sans lui, l'en-tête annonçait un chiffre isolé alors que la page
+     entière est une comparaison. */
+  moyenne2:(function(){try{
+   var a=pts.map(function(p){return p.v2;}).filter(function(v){return v!=null;});
+   if(!a.length)return null;
+   return a.reduce(function(x,y){return x+y;},0)/a.length;}catch(e){return null;}})(),
+  moyenne2Txt:(function(){try{
+   var a=pts.map(function(p){return p.v2;}).filter(function(v){return v!=null;});
+   if(!a.length)return null;
+   return fmt(a.reduce(function(x,y){return x+y;},0)/a.length);}catch(e){return null;}})(),
   tendance:flhTrendDir(vals),
   lecture:flhReadPhrase(cfg,key,(n===30?'M':'S'),vals,prev),
   points:pts.map(function(p,i2){
    var d=flhDate(p.off);
    return {v:p.v,v2:(p.v2==null?null:p.v2),txt:(p.v==null?null:fmt(p.v)),
+    /* v996 — le libellé de la SECONDE courbe. Sans lui, le natif ne pouvait
+       afficher qu'une des deux valeurs sous le doigt. */
+    txt2:(p.v2==null?null:fmt(p.v2)),
     parts:(p.parts||null),
     /* étiquette d'axe : les sept jours sont tous nommés ; sur trente on n'en
        garde qu'un sur cinq, sinon les libellés se chevauchent. */
@@ -8189,6 +8203,47 @@ window.flSombreNatif=function(on){try{
    de durée, l'intensité et l'écriture dans `sessions_`. Reconstruire tout cela
    en natif garantirait deux catalogues qui divergent — et le natif ne sait pas
    écrire dans la base, c'est le web qui la détient.                            */
+/* ===== v978 — AJOUTER UNE ACTIVITÉ, DEPUIS LE NATIF ========================
+   Le sélecteur du web (`flActPick`) ne s'affiche plus. Le natif a donc besoin
+   de deux choses : le CATALOGUE, et un moyen d'ÉCRIRE la séance.
+
+   Le catalogue est celui du web, `FL_ACT_CAT`, tel quel — pas une copie. Deux
+   listes d'activités finiraient par diverger, et c'est le genre d'écart qu'on
+   ne remarque que le jour où une séance n'a plus d'icône.
+   ========================================================================= */
+window.flCatalogue=function(){try{
+ var last=null;try{last=JSON.parse(localStorage.getItem('flLastAct')||'null');}catch(e){}
+ var L=(typeof FL_ACT_CAT!=='undefined'?FL_ACT_CAT:[]).map(function(a){
+  /* v980 — l'ICÔNE VOYAGE AVEC L'ACTIVITÉ.
+     Le natif la devinait à partir du nom, par mots-clés : « Acupuncture »,
+     « Arbitrage » ou « Art oratoire » ne ressemblent à aucun sport, et toute
+     la liste retombait sur la même silhouette. Le catalogue porte déjà une
+     clé d'icône par activité — on l'envoie, le natif la traduit. */
+  return {nom:a.n, cat:a.cat||'effort', icone:a.ti||'activity'};});
+ L.sort(function(a,b){return a.nom.localeCompare(b.nom,'fr');});
+ return {aDesDonnees:L.length>0, recent:(last&&last.n)?last.n:null, activites:L};
+}catch(e){return {aDesDonnees:false};}};
+
+/* Écriture d'une séance. Mêmes champs que celles créées par le web : c'est ce
+   qui garantit qu'elle apparaîtra partout — frise, effort du jour, écran de
+   détail — sans traitement particulier. */
+window.flCreerActivite=function(nom,debut,duree,intensite){try{
+ var K=tk(window.flDayOff||0);
+ var a=DB.get('sessions_'+K,[])||[];
+ a.push({name:String(nom||'Séance'),
+         start:String(debut||'12:00'),
+         dur:Math.max(5,Math.min(600,Math.round(+duree||45))),
+         int:Math.max(1,Math.min(4,Math.round(+intensite||2))),
+         auto:false});
+ /* Remises en ordre horaire : la frise lit ce tableau tel quel. */
+ a.sort(function(x,y){
+  function m(t){var p=String(t||'0:0').split(':');return (+p[0])*60+(+p[1]||0);}
+  return m(x.start)-m(y.start);});
+ DB.set('sessions_'+K,a);
+ try{localStorage.setItem('flLastAct',JSON.stringify({n:String(nom||''),cat:'effort'}));}catch(e){}
+ if(typeof haptic==='function')haptic();
+ return true;}catch(e){return false;}};
+
 window.flAjouterActivite=function(){try{
  if(typeof flActPick!=='function')return false;
  flActPick(document);
@@ -12242,7 +12297,24 @@ var FL_HEBDO={
  sleepdebt:{col:'#6c4ff0',col2:'#c9bcff',title:'Dette de sommeil',lab:'TA DETTE',heroLab:'DETTE MOYENNE',unit:'',kind:'bars',fmt:flhHM,clamp0:true,tickSteps:[0.5,1,2,3,4,6],tickFmt:function(t){return t===0?'0:00':(t%1===0?t+'h':flhHM(t));}},
  sleepeff:{col:'#6c4ff0',col2:'#c9bcff',title:'Efficacité du sommeil',lab:'TON EFFICACITÉ',unit:'%',kind:'bars',fmt:flhInt,ticks:[100,75,50,25,0],tickFmt:function(t){return t+'%';},pct:true},
  timeinbed:{col:'#6c4ff0',col2:'#c9bcff',title:'Temps passé au lit',lab:'TON TEMPS AU LIT',unit:'',kind:'bars',fmt:flhHM,tickSteps:[0.5,1,2,3,4,6],tickFmt:function(t){return t===0?'0:00':(t%1===0?t+'h':flhHM(t));}},
- sleep:{col:'#6c4ff0',col2:'#c9bcff',title:'Temps de sommeil',lab:'EFFECTIF CONTRE NÉCESSAIRE',heroLab:'SOMMEIL MOYEN',unit:'',kind:'line',colB:'#8a93a3',parts:[['#6c4ff0','Heures de sommeil'],['#8a93a3','Heures nécessaires']],get2:function(off){try{return (getProfile().need)||null;}catch(e){return null;}},fmt:flhHM,tickSteps:[0.5,1,2,3,4,6],tickFmt:function(t){return t===0?'0:00':(t%1===0?t+'h':flhHM(t));}},
+ sleep:{col:'#6c4ff0',col2:'#c9bcff',title:'Temps de sommeil',lab:'EFFECTIF CONTRE NÉCESSAIRE',heroLab:'SOMMEIL MOYEN',unit:'',kind:'line',colB:'#8a93a3',parts:[['#6c4ff0','Heures de sommeil'],['#8a93a3','Heures nécessaires']],get2:function(off){try{
+  /* v996 — LE BESOIN VARIE D'UN JOUR À L'AUTRE.
+     Il renvoyait la valeur de profil, constante : une ligne grise parfaitement
+     plate, qui ne pouvait rien apprendre. Le besoin réel bouge — il monte
+     quand la dette s'accumule et quand la charge de la veille a été forte.
+     C'est la même formule que `sleepNeedCalc`, appliquée AU JOUR demandé au
+     lieu d'aujourd'hui. Bornes : jamais moins que la base, jamais plus de
+     deux heures au-dessus — au-delà on ne conseille plus, on décourage. */
+  var base=(getProfile().need||8)*60;
+  var d=0; try{
+    for(var i=1;i<=14;i++){var sn=sensorOf(tk(off-i));
+      if(sn&&sn.sleepMin)d+=Math.max(0,base-sn.sleepMin);}
+  }catch(e){}
+  var dette=Math.min(75,Math.round(d*0.35/14*7/60*60/60*60/60));
+  var charge=0; try{charge=Math.min(55,Math.round((loadStrain(tk(off-1))||0)*3.2));}catch(e){}
+  var n=base+Math.min(75,Math.round(d*0.035))+charge;
+  return Math.max(base,Math.min(base+120,n))/60;
+ }catch(e){return (getProfile().need)||null;}},fmt:flhHM,tickSteps:[0.5,1,2,3,4,6],tickFmt:function(t){return t===0?'0:00':(t%1===0?t+'h':flhHM(t));}},
  steps:{title:'Pas',lab:'VOS PAS',unit:'pas',kind:'bars',fmt:flhInt,mask:true,tickFmt:function(t){return t>=1000?(t/1000)+'k':''+t;}},
  calories:{title:'Calories',lab:'CALORIES BRÛLÉES',heroLab:'MOYENNE / JOUR',unit:'kcal',kind:'bars',fmt:flhInt,tickFmt:function(t){return t>=1000?(Math.round(t/100)/10).toString().replace('.',',')+'k':''+Math.round(t);}},
  effortrecup:{title:'Effort et récupération',lab:'TON EFFORT',unit:'/ 20',kind:'bars',fmt:flhDec,mask:true,ticks:[20,15,10,5,0],tickFmt:function(t){return ''+t;}},
@@ -17898,7 +17970,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='v962';
+const APP_VERSION='v999';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
