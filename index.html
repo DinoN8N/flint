@@ -5418,7 +5418,11 @@ const tk=(off)=>{const d=new Date();if(off)d.setDate(d.getDate()+off);return d.g
 const tmin=s=>{const a=(s||'07:00').split(':').map(Number);return a[0]*60+a[1]};
 const fmtN=n=>Math.round(n||0).toLocaleString('fr-FR').replace(/[  ]/g,' ');
 const fmtDur=m=>m>=60?Math.floor(m/60)+'H'+String(m%60).padStart(2,'0'):m+' MIN';
-function getProfile(){const o=Object.assign({name:'Arthur',age:28,wake:'07:00',need:8,kcalGoal:2400,protGoal:150,region:'',goal:'recup',gender:''},DB.get('profile',{}));if(typeof o.name!=='string'||!o.name)o.name='Arthur';return o}
+/* v1030 — les défauts MENTEURS sont partis. 'Arthur, 28 ans' faisait croire
+   à un profil rempli ; l'onboarding natif est désormais la seule source du
+   nom et de l'âge. Les filets NUMÉRIQUES restent : need/kcalGoal/protGoal
+   sont des bornes de calcul, pas des identités. */
+function getProfile(){const o=Object.assign({name:'',wake:'07:00',need:8,kcalGoal:2400,protGoal:150,region:'',goal:'recup',gender:''},DB.get('profile',{}));if(typeof o.name!=='string')o.name='';if(o.name==='Arthur')o.name='';return o}
 let toastT;function toast(m){const e=document.getElementById('toast');e.textContent=m;e.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>e.classList.remove('show'),2200)}
 function set(id,v){const e=document.getElementById(id);if(e)e.innerHTML=v}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
@@ -8169,6 +8173,77 @@ window.flProfilSet=function(champ,valeur){try{
  if(champ==='poids'){try{var bl=DB.get('bodylog',{})||{};
   bl[tk(0)]=Object.assign({},bl[tk(0)]||{},{weight:p.weight});DB.set('bodylog',bl);}catch(e){}}
  if(typeof haptic==='function')haptic();
+ return true;
+}catch(e){return false;}};
+
+/* ===== v1030 — L'ONBOARDING NATIF ÉCRIT ICI, EN UNE FOIS =====
+   Le natif collecte les réponses en Swift et les livre d'un bloc au dernier
+   écran. UNE fonction, UN aller-retour : c'est ce qui rend l'écriture
+   sérialisable dans une file (crash WebKit → on rejoue le même appel).
+
+   Les FORMULES ne sont pas recopiées : on passe par flNWizPlan, la seule
+   vérité du plan kcal/protéines (base 2400 ± rate*7700/7, prot 2 ou 2,2 g/kg).
+   On sauvegarde flN.G, on le prête au calcul, on le rend.
+
+   dry:true = calculer sans écrire — l'écran final affiche le plan AVANT le
+   commit, et le mode essai des Réglages ne doit jamais rien enregistrer. */
+window.flOnboardApply=function(j){try{
+ j=j||{};var dry=!!j.dry;
+ if(typeof flNWizPlan!=='function'||typeof flN==='undefined')return {ok:false,raison:'wizard absent'};
+ var lib={seche:'Sèche',maintien:'Maintien',prise:'Prise de masse'};
+ var goal=lib[j.objectif]||'Maintien';
+ var w=(+j.poids>=30&&+j.poids<=250)?Math.round(j.poids*10)/10:null;
+ var t=(+j.poidsCible>=30&&+j.poidsCible<=250)?Math.round(j.poidsCible*10)/10:null;
+ var rate=(+j.rythme>0&&+j.rythme<=1.5)?+j.rythme:0.5;
+ /* Garde-fou du wizard : viser son propre poids, c'est du maintien. */
+ if(goal!=='Maintien'&&(w==null||t==null||Math.abs(t-w)<0.05)){goal='Maintien';t=null;}
+ var sauve=flN.G;flN.G={goal:goal,w:(w!=null?w:76),t:(t!=null?t:(w!=null?w:76)-4),rate:rate};
+ var plan=flNWizPlan();flN.G=sauve;
+ if(dry)return {ok:true,plan:{base:plan.base,prot:plan.prot,delta:plan.delta,date:plan.date}};
+ var p=getProfile();
+ var nom=String(j.prenom||'').trim().slice(0,24);
+ if(nom)p.name=nom;
+ if(j.naissance){p.birth=String(j.naissance);
+  try{var b=new Date(p.birth),n=new Date();if(!isNaN(b)){
+   var a=n.getFullYear()-b.getFullYear(),m=n.getMonth()-b.getMonth();
+   if(m<0||(m===0&&n.getDate()<b.getDate()))a--;
+   if(a>=10&&a<=100)p.age=a;}}catch(e){}}
+ if(j.sexe==='h'||j.sexe==='f')p.gender=j.sexe;
+ if(+j.taille>=120&&+j.taille<=230)p.height=Math.round(j.taille);
+ if(w!=null)p.weight=w;
+ if(/^[0-2]?[0-9]:[0-5][0-9]$/.test(String(j.reveil||'')))p.wake=String(j.reveil);
+ if(+j.besoin>=5&&+j.besoin<=12)p.need=Math.round(j.besoin);
+ p.units='metric';
+ var GM={'Sèche':'seche','Maintien':'maintien','Prise de masse':'prise'};
+ p.goal=GM[goal]||'maintien';
+ /* Sans poids, pas de plan personnalisé : on laisse les filets 2400/150. */
+ if(w!=null){p.kcalGoal=plan.base;p.protGoal=plan.prot;}
+ if(goal!=='Maintien'&&t!=null){p.targetWeight=t;p.rate=rate;}
+ DB.set('profile',p);
+ /* Le poids nourrit LES DEUX journaux — l'un sans l'autre ferait mentir
+    Tendances dès le lendemain (même règle que flProfilSet). */
+ if(w!=null){try{flNWeightLogPush(w);}catch(e){}
+  try{var bl=DB.get('bodylog',{})||{};
+   bl[tk(0)]=Object.assign({},bl[tk(0)]||{},{weight:w});DB.set('bodylog',bl);}catch(e){}}
+ return {ok:true,plan:{base:plan.base,prot:plan.prot,delta:plan.delta,date:plan.date}};
+}catch(e){return {ok:false};}};
+
+/* Le retour au premier jour : ce qu'efface « Réinitialiser comme un nouveau
+   compte » côté web. Le profil toujours ; les journées seulement si demandé.
+   La purge du semis démo est EXPLICITE : le nettoyage automatique teste un
+   numéro de graine périmé (735) et ne se déclenche plus jamais. */
+window.flOnboardingReset=function(o){try{o=o||{};
+ ['profile','bodylog','weightLog','flAvatar','avatarPhoto','savedMeals',
+  'flSince','memberSince','longestStreak'].forEach(function(k){
+  try{localStorage.removeItem(k);}catch(e){}});
+ if(o.donnees){
+  var pre=['meals_','recov_','sensor_','sessions_','watch_','fljrnl_','journal_'],ks=[];
+  for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);
+   for(var p2=0;p2<pre.length;p2++)if(k&&k.indexOf(pre[p2])===0){ks.push(k);break;}}
+  ks.forEach(function(k){try{localStorage.removeItem(k);}catch(e){}});
+  try{DB.set('flDemoSeed',0);}catch(e){}
+  try{localStorage.setItem('flintDemoData','0');}catch(e){}
+ }
  return true;
 }catch(e){return false;}};
 
@@ -18039,7 +18114,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='v1029';
+const APP_VERSION='v1030';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
