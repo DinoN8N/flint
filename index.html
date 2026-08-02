@@ -8497,7 +8497,12 @@ window.flRepasData=function(rang){try{
   jour:(typeof nutDayLabel==='function')?nutDayLabel(K):null,
   kcal:Math.round(m.kcal||0), prot:p, gluc:c, lip:f,
   partProt:pk/tt, partGluc:ck/tt, partLip:fk/tt,
-  photo:m.photo||null};
+  photo:m.photo||null,
+  /* v1033 — la MEME page de detail sert l accueil et Nutrition : elle a
+     besoin de la photo (ph) et de la note, avec la MEME formule que le
+     journal — la part des proteines, honnete et assumee. */
+  ph:m.ph||null,
+  note:(m.kcal?String(Math.max(1,Math.min(10,Math.round(p*4/m.kcal*30)))):null)};
 }catch(e){return {aDesDonnees:false};}};
 
 window.flSupprimerRepas=function(rang){try{
@@ -18130,7 +18135,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='v1032';
+const APP_VERSION='v1033';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
