@@ -8219,6 +8219,14 @@ window.flOnboardApply=function(j){try{
  /* Sans poids, pas de plan personnalisé : on laisse les filets 2400/150. */
  if(w!=null){p.kcalGoal=plan.base;p.protGoal=plan.prot;}
  if(goal!=='Maintien'&&t!=null){p.targetWeight=t;p.rate=rate;}
+ /* v1031 — le sur-mesure du grand onboarding. `onb` est un bloc opaque :
+    les features futures (coach, alertes allergènes, hydratation) se
+    serviront là. kcalChoix ÉCRASE le plan s'il a été choisi à la main —
+    la proposition personnalisée prime sur la formule. */
+ if(j.extra&&typeof j.extra==='object'&&!Array.isArray(j.extra))p.onb=j.extra;
+ if(+j.kcalChoix>=800&&+j.kcalChoix<=6000)p.kcalGoal=Math.round(j.kcalChoix);
+ if(+j.pasObjectif>=1000&&+j.pasObjectif<=40000)p.stepGoal=Math.round(j.pasObjectif);
+ if(/^[0-2]?[0-9]:[0-5][0-9]$/.test(String(j.coucher||'')))p.bedGoal=String(j.coucher);
  DB.set('profile',p);
  /* Le poids nourrit LES DEUX journaux — l'un sans l'autre ferait mentir
     Tendances dès le lendemain (même règle que flProfilSet). */
@@ -18114,7 +18122,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='v1030';
+const APP_VERSION='v1031';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
