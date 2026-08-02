@@ -8358,14 +8358,18 @@ window.flAnalyserRepas=function(url){
 
 /* v1027 — écrire le repas validé. Même enregistrement que le formulaire du
    web : `meals_<jour>` est la seule source, et la frise le relit tel quel. */
-window.flAjouterRepas=function(nom,kcal,prot,carb,fat){try{
+window.flAjouterRepas=function(nom,kcal,prot,carb,fat,ph){try{
  var K=tk(window.flDayOff||0);
  var a=DB.get('meals_'+K,[])||[];
+ /* v1032 — `ph` : l'IDENTIFIANT de la photo, jamais l'image. Le fichier vit
+    côté natif (Application Support) ; ici on ne garde que la clé, sinon des
+    data-URL feraient exploser localStorage en une semaine de repas. */
  a.push({name:String(nom||'Repas'),
          kcal:Math.max(0,Math.round(+kcal||0)),
          prot:Math.max(0,Math.round(+prot||0)),
          carb:Math.max(0,Math.round(+carb||0)),
-         fat:Math.max(0,Math.round(+fat||0))});
+         fat:Math.max(0,Math.round(+fat||0)),
+         ph:(typeof ph==='string'&&ph)?ph:null});
  DB.set('meals_'+K,a);
  try{renderNutrition();}catch(e){}
  return true;
@@ -8704,13 +8708,17 @@ window.flNutritionData=function(){try{
    {nom:'Glucides',  actuel:Math.round(G), cible:butG, couleur:'#3d9b40'},
    {nom:'Lipides',   actuel:Math.round(L), cible:butL, couleur:'#1e6fe0'}
   ],
-  repas: repas.map(function(m){
+  repas: repas.map(function(m,i){
    var mp=Math.round(m.prot||0),mg=Math.round(m.carb||0),ml=Math.round(m.fat||0);
    /* Note simple et honnete : part des proteines dans l apport du repas. */
    var note=(m.kcal)?Math.max(1,Math.min(10,Math.round(mp*4/m.kcal*30))):null;
+   /* v1032 — le detail natif a besoin du BRUT : rang pour supprimer, ph pour
+      la photo, les macros en nombres pour les barres. */
    return {heure:m.time||null, nom:m.name||'Repas',
            ligne:mil(m.kcal)+' kcal · '+mp+' P · '+mg+' G · '+ml+' L',
-           note:note!=null?String(note):null};
+           note:note!=null?String(note):null,
+           rang:i, ph:m.ph||null,
+           kcal:Math.round(m.kcal||0), prot:mp, carb:mg, fat:ml};
   })
  };
 }catch(e){return {aDesDonnees:false};}};
@@ -18122,7 +18130,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='v1031';
+const APP_VERSION='v1032';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
