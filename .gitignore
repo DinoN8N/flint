@@ -1,0 +1,5 @@
+# Aucun binaire compilé dans un dépôt public : ce ne serait plus du code
+# exposé, ce serait le produit, installable par quiconque sans compte.
+*.apk
+*.aab
+*.ipa
