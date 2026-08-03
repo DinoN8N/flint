@@ -1,0 +1,10 @@
+.DS_Store
+.claude/
+export/
+.vercel
+
+# Aucune app compilée dans le dépôt : un binaire installable publié
+# se télécharge et s'installe tel quel.
+*.apk
+*.aab
+*.ipa
