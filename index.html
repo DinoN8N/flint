@@ -10852,7 +10852,7 @@ window.flProfilRecords=function(pi){try{
      var n=x.name||'Séance';
      if(!m[n])m[n]={n:0,e:0,ne:0};
      m[n].n++;
-     var e=(x.eff!=null)?+x.eff:(typeof actStrain==='function'?actStrain(x):null);
+     var e=(x.eff!=null&&!x.auto)?+x.eff:(typeof actStrain==='function'?actStrain(x):null);
      if(e!=null&&!isNaN(e)){m[n].e+=+e;m[n].ne++;}});}
    var L=Object.keys(m).map(function(k){return {nom:k,nombre:m[k].n,
     effort:(m[k].ne?String(Math.round(m[k].e/m[k].ne*10)/10).replace('.',','):null)};});
@@ -11367,7 +11367,7 @@ window.flActiviteData=function(rang,jour,seanceDirecte){try{
    for(var d=1;d<=45;d++){var kk=tk(-d);
     (DB.get('sessions_'+kk,[])||[]).forEach(function(x){
      if(x.type==='nap'||(x.name||'')!==m.name)return;
-     a.push(x.eff!=null?+x.eff:actStrain(x));});}
+     a.push((x.eff!=null&&!x.auto)?+x.eff:actStrain(x));});}
    if(!a.length)return null;
    var v=a.reduce(function(p,c){return p+c;},0)/a.length;
    return String(Math.round(v*10)/10).replace('.',',');}catch(e){return null;}})(),
@@ -21051,6 +21051,38 @@ function flEffData(doc){
      +dur+', serie fine '+(hrT?hrT.length+' points':'non'));
   }
  }catch(e){}}
+ /* ═══ v1559 — LA DENSITE DORMAIT DANS `hrfine_` ══════════════════════════
+    La fiche cherchait la seconde vraie (hrSec, videe des la fermeture) puis
+    les intervalles (rrH, 3 minutes sur 84 sur la seance du 16/08) — et
+    retombait sur la MINUTE, 77 points pour 83 minutes : la courbe de la
+    reference est impossible a cette densite. Or `hrfine_<jour>` garde depuis
+    la v1252 la mesure a ~5 s ({minute:[valeurs]}), et couvrait 74/84 minutes
+    de cette meme seance. On la sert entre les deux, meme exigence de
+    couverture, meme plafond de points. */
+ if(real&&!hrT){try{
+  var hf=DB.get('hrfine_'+K,null);
+  if(hf){
+   var fineH=[],minH={};
+   for(var _m=sm0;_m<=sm0+dur;_m++){
+    var vs=hf[_m]||hf[''+_m];
+    if(!vs||!vs.length)continue;
+    minH[_m]=1;
+    var pasS=60/vs.length;
+    for(var _v=0;_v<vs.length;_v++){
+     var bv=+vs[_v];
+     if(!(bv>25&&bv<240))continue;
+     fineH.push([(_m-sm0)*60+_v*pasS,bv]);
+    }
+   }
+   var couvH=Object.keys(minH).length;
+   if(couvH>=Math.max(5,Math.round(dur*0.75))&&fineH.length>=Math.max(20,dur*4)){
+    hrT=flIdxDense(fineH.length,function(i){return fineH[i][1];},1200)
+         .map(function(i){return fineH[i];});
+   }
+   console.log('[flint] courbe de seance : '+couvH+' minute(s) a 5 s (hrfine) sur '
+     +dur+', serie fine '+(hrT?hrT.length+' points':'non'));
+  }
+ }catch(e){}}
  if(real&&!hrT&&w&&w.rrH&&w.rrH.length){try{
   var PAS_FIN=5;                       /* un point toutes les cinq secondes */
   var seaux={},minutesVues=0;
@@ -21121,7 +21153,13 @@ function flEffData(doc){
  }
  var KC={1:6,2:8,3:10,4:13};var intv=sess.int||2;
  var kcal=Math.round(dur*(KC[intv]||8));
- var strain=(sess.eff!=null?+sess.eff:actStrain(sess));
+ /* v1559 — LE 176/20 : `eff` pose par le DETECTEUR est un TRIMP (~176 sur
+    la seance du 16/08, `eff:Math.round(g.trimp*10)/10`), pas la note sur 20.
+    La fiche le lisait comme un score. Pour une seance auto on calcule donc
+    toujours l effort fenetre (actStrain -> flEffortSeance) ; `eff` ne fait
+    foi que pour une saisie manuelle, ou il est vraiment la note. */
+ var strain=(sess.auto?null:(sess.eff!=null?+sess.eff:null));
+ if(strain==null)strain=actStrain(sess);
  /* ═══ v1311 — LES PAS D'UNE SÉANCE SONT MESURÉS, PAS DÉDUITS ════════════════
     Ils valaient `durée × 104`. Relevé sur la séance de musculation de Félix du
     9 août, 26 minutes : la fiche annonçait 2 704 pas quand la montre en avait
@@ -22873,7 +22911,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='v1558';
+const APP_VERSION='v1559';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
