@@ -1,0 +1,36 @@
+# ═══════════════════════════════════════════════════════════════════════════
+#  LES RÉCEPTACLES : ce que le natif appelle AVANT que le moteur ne l'écrive.
+#
+#  Un nom listé ici est un rendez-vous, pas un oubli. Le natif l'appelle déjà,
+#  l'appel échoue en silence (try/catch), et l'écran reste muet — jusqu'au jour
+#  où Félix pose la fonction. Ce jour-là, il n'y a rien à brancher : ça marche.
+#
+#  RÈGLE : tout ce qui n'est PAS ici et qui manque côté moteur FAIT ÉCHOUER LA
+#  COMPILATION. Ajouter une ligne ici est une décision, pas une formalité —
+#  écris la raison, et ce que l'écran fera quand la fonction arrivera.
+#
+#  Format : <nom>   <raison, sur une ligne>
+# ═══════════════════════════════════════════════════════════════════════════
+
+# `flVisiteContexte` a ete retire d'ici : ecrit en v1406. La visite entoure la
+# PREMIERE ligne du journal, et l'ordre rendu ici est celui de « Ma journee » —
+# test-visite-contexte.js rejoue les deux et verifie qu'ils designent la meme.
+# `flAnalyserPhoto` a ete retire d'ici en v1406, et SANS ECRIRE LA FONCTION.
+#
+#   Ce nom n'a jamais existe nulle part : `git log --all -S flAnalyserPhoto` ne le
+#   trouve dans aucun commit cote moteur. Le natif l'appelait, rien ne repondait,
+#   et l'anneau tournait pour toujours — Dino : « le scan des aliments est
+#   beaucoup trop long », puis « ca bloque ici ».
+#
+#   L'analyse existait depuis la v1027 sous un AUTRE nom, `flAnalyserRepas`. La
+#   v1362 a corrige le chemin galerie qui visait a cote, et la v1366 a sorti
+#   l'appel de la page web : `fetch` n'a aucun delai d'expiration, et une requete
+#   pendue depuis l'origine `flintapp://localhost` ne rejette jamais — un `.catch`
+#   ne rattrape pas ce qui n'echoue pas. C'est URLSession qui appelle maintenant,
+#   avec un delai reel de 45 s, donc un resultat OU une raison, jamais un silence.
+#
+#   Il ne restait donc que cette ligne, qui promettait un rendez-vous que plus
+#   personne n'attendait. Ecrire la fonction aurait ete ajouter un second chemin
+#   la ou le premier marche : la perfection, c'est de retirer.
+# `flEcgTrace` a ete retire d'ici : ecrit en v1404. La liste porte les chiffres,
+# la fonction porte la courbe, et on ne paie que celle qu'on regarde.

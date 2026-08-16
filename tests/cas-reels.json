@@ -1,0 +1,164 @@
+{
+  "_lisez_moi": [
+    "LES SORTIES RÉELLES, AVEC LA VÉRITÉ TERRAIN DE WHOOP À CÔTÉ.",
+    "",
+    "POURQUOI CE FICHIER. Le détecteur de marche a été réglé le 5 août 2026 sur",
+    "UNE soirée, et pas même sur ses vraies tranches : sur une reconstruction",
+    "fabriquée à partir des heures annoncées par WHOOP. Un réglage validé sur un",
+    "cas n'est pas un réglage. Le même jour, une conclusion sur la récupération",
+    "tirée de deux personnes a été démentie par la quatrième, puis une seconde",
+    "fois par la cinquième.",
+    "",
+    "Ce fichier existe pour que ça ne se reproduise pas : chaque sortie comparée",
+    "devient un cas gardé pour toujours. Un réglage qui améliore la sortie du jour",
+    "en cassant celle d'il y a trois semaines se voit immédiatement.",
+    "",
+    "COMMENT AJOUTER UN CAS, EN TROIS GESTES.",
+    "  1. Dans FLINT, console du moteur : flDiagMarche()  (ou flDiagMarche(-1)",
+    "     pour hier). Copier ce qui sort.",
+    "  2. Dans WHOOP, relever les heures de début et de fin de chaque sortie.",
+    "     Ou, mieux, les prendre dans entraînements.csv de l'export.",
+    "  3. Ajouter une entrée ci-dessous. `tranches` vient de l'étape 1,",
+    "     `whoop` de l'étape 2.",
+    "",
+    "LA RÈGLE : on n'ajoute JAMAIS un cas fabriqué sans le dire. Le champ `reel`",
+    "distingue une vraie mesure d'une reconstruction, et le banc affiche la",
+    "différence — un cas reconstruit prouve que le code fait ce qu'on croit, un",
+    "cas réel prouve qu'il décrit le monde. Les deux servent, ils ne valent pas",
+    "la même chose.",
+    "",
+    "════ LA RÈGLE DE L'AVEUGLE ════",
+    "",
+    "Dino, 6 août 2026 : « c'est facile d'équilibrer quand je t'envoie les trucs.",
+    "Ce que je veux, c'est le même résultat AVANT que je te les envoie. »",
+    "",
+    "Il a raison, et jusqu'ici je n'ai fait que de l'ajustement : à chaque cas qui",
+    "cassait la formule, je la recalais en incluant ce cas. Ça ne prouve rien.",
+    "",
+    "DÉSORMAIS, POUR CHAQUE NOUVELLE SORTIE :",
+    "  1. Dino relève ses heures et lance flDiagJour() — SANS donner le score WHOOP.",
+    "  2. On écrit le cas avec `predit` : ce que FLINT annonce, à l'aveugle.",
+    "  3. SEULEMENT ENSUITE il envoie la fiche WHOOP, qui remplit `mesureWhoop`.",
+    "",
+    "Un cas qui porte `predit` vaut infiniment plus que les autres : c'est le seul",
+    "qui teste la formule au lieu de la décrire. Le banc les compte à part.",
+    "",
+    "ET ON NE RECALE PLUS LA FORMULE SUR UN CAS ISOLÉ. Si un cas aveugle rate, on",
+    "le garde tel quel, on en attend d'autres, et on ne touche aux poids que si",
+    "l'écart se répète — pas parce qu'une soirée nous a déplu."
+  ],
+  "cas": [
+    {
+      "nom": "5 août 2026, 20h18 — marche, aller au restaurant",
+      "reel": false,
+      "pourquoi": "Les HEURES, le NOMBRE DE PAS et les MINUTES PAR ZONE viennent de la fiche WHOOP, relevée en capture d'écran : ce sont des mesures. Les TRANCHES de pas, elles, restent reconstruites à cadence constante — le bracelet n'avait pas encore flDiagMarche ce soir-là. Donc `reel: false` : c'est l'entrée du calcul qui décide, pas la sortie.",
+      "largeurCase": 5,
+      "cadence": 67,
+      "fond": 6,
+      "whoop": [
+        [
+          1218,
+          1242
+        ]
+      ],
+      "tolerance": 1,
+      "mesureWhoop": {
+        "dureeSec": 1499,
+        "pas": 1677,
+        "effort": 6.3,
+        "zonesMin": [
+          16.4,
+          3.75,
+          0.47,
+          0.017,
+          0
+        ],
+        "bornesZonesBpm": [
+          106,
+          135,
+          149,
+          162,
+          176
+        ],
+        "note": "Bornes mises à jour automatiquement par WHOOP le 02/06/2026. Résolues en réserve de Karvonen à 40/60/70/80/90 % : repos ~53 bpm, FC max ~190 bpm, les cinq bornes à ±2 bpm.",
+        "zone0Min": 4.3,
+        "kcal": 171,
+        "fcMoy": 118
+      }
+    },
+    {
+      "nom": "5 août 2026, 21h51 — marche, retour du restaurant",
+      "reel": false,
+      "pourquoi": "Heures, pas et minutes par zone relevés sur la fiche WHOOP. Tranches reconstruites à cadence constante.",
+      "largeurCase": 5,
+      "cadence": 70,
+      "fond": 6,
+      "whoop": [
+        [
+          1311,
+          1341
+        ]
+      ],
+      "tolerance": 1,
+      "mesureWhoop": {
+        "dureeSec": 1859,
+        "pas": 2164,
+        "effort": 6.0,
+        "zonesMin": [
+          19.75,
+          1.9,
+          0.183,
+          0,
+          0
+        ],
+        "bornesZonesBpm": [
+          106,
+          135,
+          149,
+          162,
+          176
+        ],
+        "zone0Min": 9.117,
+        "kcal": 167,
+        "fcMoy": 110
+      }
+    },
+    {
+      "nom": "6 août 2026, 22h58 — marche avec un pote",
+      "reel": false,
+      "pourquoi": "LE CAS QUI A CASSÉ LA FORMULE. 40 minutes dont 35 sous le seuil de zone 1 : l'ancienne version, qui donnait un poids nul à la zone 0, sortait 1,86 contre 4,5 chez WHOOP. C'est lui qui a imposé le sixième poids. Heures, pas, zones, calories et FC moyenne relevés sur la fiche ; tranches de pas reconstruites.",
+      "largeurCase": 5,
+      "cadence": 54,
+      "fond": 6,
+      "whoop": [
+        [
+          1378,
+          1417
+        ]
+      ],
+      "tolerance": 2,
+      "mesureWhoop": {
+        "dureeSec": 2398,
+        "pas": 2155,
+        "effort": 4.5,
+        "zonesMin": [
+          4.733,
+          0,
+          0,
+          0,
+          0
+        ],
+        "zone0Min": 35.217,
+        "kcal": 81,
+        "fcMoy": 87,
+        "bornesZonesBpm": [
+          106,
+          135,
+          149,
+          162,
+          176
+        ]
+      }
+    }
+  ]
+}

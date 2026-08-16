@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>Banc des graphiques — semis</title>
+<body style="font:15px/1.5 -apple-system,sans-serif;padding:24px;max-width:640px">
+<h3>Banc des graphiques</h3>
+<p id="etat">semis en cours…</p>
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     LE SEMIS DU BANC — les vraies journées de Dino dans le localStorage.
+
+     À QUOI IL SERT. Une lenteur que ni le simulateur ni ce Mac ne reproduisent
+     — parce qu'elle vient du VOLUME des données et non du code — se mesure en
+     NOMBRE DE LECTURES DE BASE, pas en millisecondes. Ce nombre-là est le même
+     sur un iPhone. Ce fichier pose la matière ; la mesure se fait ensuite dans
+     la console, sur le moteur réel, non modifié.
+
+     COMMENT LE LANCER (le serveur part de la RACINE du dépôt, parce que le
+     relevé vit à côté du moteur et non dedans) :
+
+         cd flint-ios && python3 -m http.server 8777
+         → http://localhost:8777/FLINT/web/tests/banc-graphiques.html
+
+     PUIS, dans la console de la page qui s'ouvre :
+
+         window.__vraiGet = DB.get;
+         var C = {n:0, o:0};
+         DB.get = function(k,d){ C.n++;
+           C.o += (localStorage.getItem(k)||'').length;
+           return window.__vraiGet.call(DB,k,d); };
+         flHebdoDetail('charge','S',0);   C   // lectures et octets analysés
+
+     Avec `new Error().stack` dans l'enveloppe, on obtient DE QUI vient chaque
+     lecture : c'est ce qui a désigné les coupables de la v1411 en une minute.
+
+     LA MATIÈRE EST RÉELLE, et c'est tout l'intérêt (cf. le simulateur, qui est
+     semé de journées inventées) : `releves/donnees-dino-…json` est l'export du
+     téléphone produit par `outils/exporter-donnees.sh`. Il ne porte QUE les
+     courbes — pas les nuits déjà calculées : les nombres de lectures y sont
+     justes, les kilo-octets sont un plancher.
+     ═══════════════════════════════════════════════════════════════════════════ -->
+<script>
+(function(){
+  var etat = document.getElementById('etat');
+  var RELEVE = '../../../releves/donnees-dino-2026-08-11.json';
+  fetch(RELEVE).then(function(r){
+    if(!r.ok) throw new Error('relevé introuvable (' + r.status + ')');
+    return r.json();
+  }).then(function(x){
+    var S = (x && x.donnees) || {}, n = 0;
+    for (var k in S) {
+      if (!Object.prototype.hasOwnProperty.call(S, k)) continue;
+      /* DB.get fait un JSON.parse : le stockage doit contenir du JSON, pas
+         l'objet rendu par String(). */
+      try { localStorage.setItem(k, JSON.stringify(S[k])); n++; } catch(e){}
+    }
+    etat.textContent = n + ' clés semées (' + ((x.meta&&x.meta.jours||[]).length)
+                     + ' journées). → le moteur…';
+    setTimeout(function(){ location.href = '../index.html'; }, 500);
+  }).catch(function(e){
+    etat.innerHTML = '<b>Rien n\'est semé : ' + e.message + '</b><br>'
+      + 'Le serveur doit partir de la RACINE du dépôt — voir le commentaire de '
+      + 'ce fichier. Sans semis, la page suivante mesurerait le vide.';
+  });
+})();
+</script>
+</body>

@@ -1,0 +1,346 @@
+{
+ "_lisez_moi": [
+  "FLINT FACE À WHOOP, MESURE PAR MESURE, JOUR PAR JOUR.",
+  "",
+  "Dino porte WHOOP au poignet gauche et FLINT au droit. Chaque journée produit",
+  "donc une vérité terrain gratuite. Ce fichier la garde.",
+  "",
+  "POURQUOI IL EXISTE. Le 5 août 2026, trois réglages ont été calés trop vite :",
+  "les poids de récupération sur deux personnes (démentis par la quatrième, puis",
+  "par la cinquième), et le détecteur de marche sur une seule soirée — même pas",
+  "sur ses vraies tranches, sur une reconstruction. Un écart mesuré une fois ne",
+  "dit rien. Le même écart sur vingt jours dit quelque chose.",
+  "",
+  "COMMENT AJOUTER UNE JOURNÉE, EN DEUX GESTES.",
+  "  1. Dans FLINT, console du moteur : flDiagJour()  (ou flDiagJour(-1) pour",
+  "     hier). Coller le résultat dans `flint`.",
+  "  2. Relever les mêmes chiffres dans WHOOP — l'app, ou mieux son export",
+  "     (physiological_cycles.csv, sommeil.csv, entraînements.csv). Coller",
+  "     dans `whoop`. Les champs absents restent absents : on ne remplit pas",
+  "     une case qu'on n'a pas mesurée.",
+  "",
+  "CE QUE LE BANC EN FAIT. Pour chaque mesure il calcule l'écart moyen et le",
+  "pire jour, et il ÉCHOUE si l'écart moyen dépasse la tolérance. Il signale",
+  "aussi les mesures jamais comparées : une tolérance qu'on n'a jamais testée",
+  "n'est pas une garantie, c'est un souhait.",
+  "",
+  "LES TOLÉRANCES NE SONT PAS DES OBJECTIFS, CE SONT DES CONSTATS. Celle de la",
+  "récupération vaut 10 points parce qu'on a mesuré un plancher de ~9 sur",
+  "1 275 jours réels : viser mieux serait courir après un signal qu'on n'a pas.",
+  "Celle de l'effort vaut 1,2 parce que l'ajustement sur 1 376 séances laisse",
+  "0,96 d'erreur moyenne. Ne pas les resserrer sans avoir la mesure qui le",
+  "justifie, ni les desserrer pour faire passer un banc rouge."
+ ],
+ "mesures": {
+  "vfc": {
+   "nom": "VFC",
+   "unite": " ms",
+   "tolerance": 4
+  },
+  "fcRepos": {
+   "nom": "FC de repos",
+   "unite": " bpm",
+   "tolerance": 2
+  },
+  "respiration": {
+   "nom": "Respiration",
+   "unite": " /min",
+   "tolerance": 0.6
+  },
+  "sommeilMin": {
+   "nom": "Sommeil",
+   "unite": " min",
+   "tolerance": 15,
+   "heure": false
+  },
+  "tempsAuLit": {
+   "nom": "Temps au lit",
+   "unite": " min",
+   "tolerance": 20
+  },
+  "coucher": {
+   "nom": "Coucher",
+   "unite": " min",
+   "tolerance": 10,
+   "heure": true
+  },
+  "reveil": {
+   "nom": "Réveil",
+   "unite": " min",
+   "tolerance": 10,
+   "heure": true
+  },
+  "efficacite": {
+   "nom": "Efficacité",
+   "unite": " %",
+   "tolerance": 4
+  },
+  "profond": {
+   "nom": "Sommeil profond",
+   "unite": " min",
+   "tolerance": 25
+  },
+  "paradoxal": {
+   "nom": "Sommeil paradoxal",
+   "unite": " min",
+   "tolerance": 25
+  },
+  "reveils": {
+   "nom": "Éveil (durée)",
+   "unite": " min",
+   "tolerance": 10
+  },
+  "recup": {
+   "nom": "Récupération",
+   "unite": " %",
+   "tolerance": 10
+  },
+  "effort": {
+   "nom": "Effort",
+   "unite": "",
+   "tolerance": 1.2
+  },
+  "pas": {
+   "nom": "Pas",
+   "unite": "",
+   "tolerancePct": 8
+  },
+  "scoreSommeil": {
+   "nom": "Score de sommeil",
+   "unite": " %",
+   "tolerance": 8
+  },
+  "besoinMin": {
+   "nom": "Besoin de sommeil",
+   "unite": " min",
+   "tolerance": 30
+  },
+  "detteMin": {
+   "nom": "Dette de sommeil",
+   "unite": " min",
+   "tolerance": 30
+  },
+  "partBesoin": {
+   "nom": "Part du besoin couvert",
+   "unite": " %",
+   "tolerance": 8
+  },
+  "kcal": {
+   "nom": "Calories (depuis minuit)",
+   "unite": " kcal",
+   "tolerancePct": 12
+  },
+  "effortJour": {
+   "nom": "Effort du jour",
+   "unite": "",
+   "tolerance": 1.2
+  }
+ },
+ "jours": [
+  {
+   "jour": "2026-8-6",
+   "reel": true,
+   "note": "Première nuit portée avec les deux bracelets. FLINT relevé à 6h39 pour le sommeil et la récup — le 33 vu à 6h12 était l'ancienne nuit, avant synchronisation. Le score de récup a ensuite DÉRIVÉ (49 à 6h39, 46 à 6h57) : cause trouvée et corrigée en v1224, la variabilité prenait toutes les mesures du jour au lieu de celles de la nuit. Calories relevées AVANT la v1225 : 18 côté FLINT, parce que le poids vivait dans le bodylog et que le calcul ne lisait que le profil. À reprendre après correction.",
+   "flint": {
+    "coucher": 82,
+    "reveil": 372,
+    "sommeilMin": 279,
+    "tempsAuLit": 290,
+    "profond": 68,
+    "paradoxal": 73,
+    "leger": 138,
+    "reveils": 11,
+    "recup": 49,
+    "pas": null,
+    "effort": null,
+    "scoreSommeil": null,
+    "partBesoin": null,
+    "besoinMin": null,
+    "detteMin": null,
+    "effortJour": null,
+    "kcal": 18
+   },
+   "whoop": {
+    "coucher": 82,
+    "reveil": 366,
+    "sommeilMin": 264,
+    "tempsAuLit": 283,
+    "profond": 106,
+    "paradoxal": 43,
+    "leger": 115,
+    "reveils": 19,
+    "recup": 57,
+    "efficacite": 93,
+    "vfc": 72,
+    "fcRepos": 50,
+    "respiration": 13.2,
+    "scoreSommeil": 62,
+    "partBesoin": 51,
+    "besoinMin": 520,
+    "detteMin": 128,
+    "stressSommeil": 0,
+    "effortJour": 0.1,
+    "kcal": 497,
+    "kcalMoyenneMois": 1045,
+    "regularite": null,
+    "note": "Fenêtre 01:22–06:06 telle que WHOOP l'a détectée seul."
+   },
+   "heureReleve": "07:09"
+  },
+  {
+   "jour": "2026-8-6-corrige",
+   "reel": true,
+   "note": "MÊME NUIT, fenêtre corrigée À LA MAIN par Dino à 08:45 : il s'était rendormi et NI WHOOP NI FLINT ne l'avaient vu. Expérience naturelle : le corps n'a pas bougé (VFC +1, FC repos +0, respiration LÉGÈREMENT PIRE), seule la fenêtre de sommeil a changé. À comparer ligne à ligne avec l'entrée 2026-8-6 ci-dessus — c'est la mesure la plus propre qu'on ait de l'effet du sommeil seul.",
+   "flint": {
+    "coucher": null,
+    "reveil": null,
+    "sommeilMin": null,
+    "recup": null
+   },
+   "whoop": {
+    "coucher": 82,
+    "reveil": 525,
+    "sommeilMin": 340,
+    "tempsAuLit": 442,
+    "profond": 111,
+    "paradoxal": 81,
+    "leger": 148,
+    "reveils": 102,
+    "recup": 77,
+    "vfc": 73,
+    "fcRepos": 50,
+    "respiration": 13.5,
+    "scoreSommeil": 64,
+    "partBesoin": 65,
+    "efficacite": 77,
+    "stressSommeil": 0
+   }
+  },
+  {
+   "jour": "2026-8-8",
+   "reel": true,
+   "note": "Nuit reconstituee des DEUX exports du 11 aout, sans relevé à l'écran : côté FLINT l'export du téléphone (`night`, source ble, stades estimés depuis la FC — `_est:true`), côté WHOOP son export CSV. Aucun chiffre recopié à la main. VFC, FC de repos et respiration absentes côté FLINT : l'export ne les emporte pas.",
+   "flint": {
+    "coucher": 1422,
+    "reveil": 526,
+    "sommeilMin": 373,
+    "tempsAuLit": 544,
+    "profond": 83,
+    "paradoxal": 82,
+    "leger": 208,
+    "reveils": 171
+   },
+   "whoop": {
+    "coucher": 0,
+    "reveil": 540,
+    "sommeilMin": 399,
+    "tempsAuLit": 539,
+    "profond": 95,
+    "paradoxal": 69,
+    "leger": 235,
+    "reveils": 140,
+    "efficacite": 73,
+    "scoreSommeil": 49,
+    "respiration": 13.3,
+    "recup": 93,
+    "vfc": 86,
+    "fcRepos": 48
+   }
+  },
+  {
+   "jour": "2026-8-9",
+   "reel": true,
+   "note": "Nuit reconstituee des DEUX exports du 11 aout, sans relevé à l'écran : côté FLINT l'export du téléphone (`night`, source ble, stades estimés depuis la FC — `_est:true`), côté WHOOP son export CSV. Aucun chiffre recopié à la main. VFC, FC de repos et respiration absentes côté FLINT : l'export ne les emporte pas.",
+   "flint": {
+    "coucher": 2,
+    "reveil": 498,
+    "sommeilMin": 466,
+    "tempsAuLit": 496,
+    "profond": 118,
+    "paradoxal": 79,
+    "leger": 269,
+    "reveils": 30,
+    "recup": 73
+   },
+   "whoop": {
+    "coucher": 1,
+    "reveil": 495,
+    "sommeilMin": 437,
+    "tempsAuLit": 494,
+    "profond": 96,
+    "paradoxal": 108,
+    "leger": 233,
+    "reveils": 57,
+    "efficacite": 88,
+    "scoreSommeil": 75,
+    "respiration": 13.7,
+    "recup": 69,
+    "vfc": 67,
+    "fcRepos": 51
+   }
+  },
+  {
+   "jour": "2026-8-10",
+   "reel": true,
+   "note": "Nuit reconstituee des DEUX exports du 11 aout, sans relevé à l'écran : côté FLINT l'export du téléphone (`night`, source ble, stades estimés depuis la FC — `_est:true`), côté WHOOP son export CSV. Aucun chiffre recopié à la main. VFC, FC de repos et respiration absentes côté FLINT : l'export ne les emporte pas.",
+   "flint": {
+    "coucher": 35,
+    "reveil": 537,
+    "sommeilMin": 411,
+    "tempsAuLit": 502,
+    "profond": 78,
+    "paradoxal": 71,
+    "leger": 262,
+    "reveils": 91,
+    "recup": 88
+   },
+   "whoop": {
+    "coucher": 40,
+    "reveil": 537,
+    "sommeilMin": 419,
+    "tempsAuLit": 496,
+    "profond": 112,
+    "paradoxal": 146,
+    "leger": 161,
+    "reveils": 77,
+    "efficacite": 84,
+    "scoreSommeil": 73,
+    "respiration": 13.9,
+    "recup": 60,
+    "vfc": 69,
+    "fcRepos": 50
+   }
+  },
+  {
+   "jour": "2026-8-11",
+   "reel": true,
+   "note": "Nuit reconstituee des DEUX exports du 11 aout, sans relevé à l'écran : côté FLINT l'export du téléphone (`night`, source ble, stades estimés depuis la FC — `_est:true`), côté WHOOP son export CSV. Aucun chiffre recopié à la main. VFC, FC de repos et respiration absentes côté FLINT : l'export ne les emporte pas.",
+   "flint": {
+    "coucher": 94,
+    "reveil": 571,
+    "sommeilMin": 328,
+    "tempsAuLit": 477,
+    "profond": 62,
+    "paradoxal": 55,
+    "leger": 211,
+    "reveils": 149
+   },
+   "whoop": {
+    "coucher": 111,
+    "reveil": 570,
+    "sommeilMin": 339,
+    "tempsAuLit": 458,
+    "profond": 79,
+    "paradoxal": 104,
+    "leger": 156,
+    "reveils": 119,
+    "efficacite": 74,
+    "scoreSommeil": 52,
+    "respiration": 14.0,
+    "recup": 45,
+    "vfc": 62,
+    "fcRepos": 53
+   }
+  }
+ ]
+}

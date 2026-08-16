@@ -1,0 +1,27 @@
+# ═══════════════════════════════════════════════════════════════════════════
+#  LES CLÉS ATTENDUES DU MOTEUR — le pendant de `receptacles-attendus.txt`.
+#
+#  Le garde du pont vérifie que chaque FONCTION appelée par le natif existe.
+#  Il ne voyait rien des CLÉS : un champ que le natif décode et que la charge
+#  n'écrit jamais reste nul en silence, et l'écran affiche un tiret. Aucune
+#  erreur, aucune trace — la même panne muette qu'un branchement mort, un
+#  étage plus bas.
+#
+#  Le cas qui a motivé ce fichier : `latence`. La valeur est MESURÉE, elle
+#  voyage jusqu'à la nuit brute sous le nom `latency`, `flSommeilData` ne la
+#  reporte pas, et le natif décode `latence` par nom exact. L'encart « ENDORMI
+#  EN » affichait donc un tiret pour tout le monde depuis la v1285 — pendant
+#  des jours, sans que rien ne le signale.
+#
+#  CE FICHIER NE FAIT PAS ÉCHOUER LE BUILD. Une clé manquante est un rendez-vous
+#  avec le moteur, pas une faute de livraison : on avertit, on ne bloque pas.
+#  En revanche le garde SIGNALE AUSSI L'INVERSE — le jour où la clé arrive, il
+#  demande qu'on retire sa ligne d'ici. Une liste qui ne se vide jamais finit
+#  par ne plus être lue.
+#
+#  Format : <clé>   <charge>   <ce que l'écran fait tant qu'elle manque>
+# ═══════════════════════════════════════════════════════════════════════════
+
+# `latence` a été retirée d'ici : arrivée avec la v1326, le garde le demandait.
+# `stressNuit` a ete retiree d'ici : arrivee avec la v1403, le garde le demandait.
+# `sourceNuit` a ete retiree d'ici : arrivee avec la v1402, le garde le demandait.
