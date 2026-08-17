@@ -1,4 +1,4 @@
-/* flint-v1562 — service worker RÉSEAU UNIQUEMENT (fin des versions périmées).
+/* flint-v1591 — service worker RÉSEAU UNIQUEMENT (fin des versions périmées).
    Ne met plus rien en cache. À l'activation : efface TOUT ancien cache, prend le
    contrôle et force le rechargement de toutes les fenêtres pour éliminer le vieux
    service worker cache-first qui servait des versions périmées en boucle. */

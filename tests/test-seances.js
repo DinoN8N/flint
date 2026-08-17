@@ -20,14 +20,23 @@ var code=src.slice(i,j+1);
 
 var COURBES=JSON.parse(fs.readFileSync(path.join(__dirname,'courbes-reelles.json'),'utf8'));
 var HR=[];
-var detect=new Function('flFcMax','flFcRepos','watchOf','flPtsEveil','p05',
-  code+';return detectSessions;')(
-  function(){return {v:193};},           /* Tanaka a 21 ans, le profil de Felix */
-  function(){return {v:50};},
+/* v1577 — le moteur lit desormais `DB.get('hrfine_<jour>')` : le banc l'injecte.
+   `HRFINE` vide = l'etat d'avant, et c'est un etat TESTE plus bas : sans
+   echantillons fins, la fonction doit rendre exactement ce qu'elle rendait. */
+var HRFINE={};
+var fabrique=new Function('flFcMax','flFcRepos','watchOf','flPtsEveil','p05','DB',
+  code+';return detectSessions;');
+function detecteur(fcMax,repos){
+ return fabrique(
+  function(){return {v:fcMax};},
+  function(){return {v:repos};},
   function(){return {hr:HR};},
   function(){return HR;},
   function(a){var b=a.map(function(x){return x[1];}).sort(function(x,y){return x-y;});
-             return b[Math.floor(b.length*0.05)];});
+             return b[Math.floor(b.length*0.05)];},
+  {get:function(k,d){return (k in HRFINE)?HRFINE[k]:d;}});
+}
+var detect=detecteur(193,50);            /* Tanaka a 21 ans, le profil de Felix */
 
 function seances(jour){ HR=COURBES[jour]||[]; return detect(jour)||[]; }
 
@@ -78,6 +87,46 @@ v('et son compteur biaisé aussi',                   -1, src.indexOf('g.recus'))
    que Félix dise quels jours il s'est entraîné : sans cette vérité de terrain,
    baisser le seuil serait deviner, pas mesurer. */
 v('le 7 août reste sous le seuil de charge', 0, seances('2026-8-7').length);
+
+/* ═══ v1577 — LA RANDONNÉE DE DINO, LE CAS GARDÉ DU CANAL FIN ════════════════
+   16 août 2026, 09h38-11h00, vérifiée contre WHOOP le 17 (moyenne 154 / max
+   184 — COMPARAISON-WHOOP.md, § 17 août). Les données sont les VRAIES,
+   exportées du téléphone : canal minute (nourri par les médianes v1431) ET
+   `hrfine_<jour>` complet, 7 400 échantillons.
+   Ce que le grain fin doit changer, et rien d'autre :
+   — la vraie pointe (190) remplace la pointe des médianes (≤ 185) ;
+   — la séance reste détectée aux MÊMES bornes, à trois minutes près ;
+   — sans `hrfine`, le verdict d'avant revient à l'identique. */
+var DINO=JSON.parse(fs.readFileSync(path.join(__dirname,'cas-dino-2026-08-16.json'),'utf8'));
+var detectDino=detecteur(193.6,46);      /* le profil de Dino, cf. v1241 */
+function randonnee(liste){
+ return liste.filter(function(s){return s.startMin<660 && s.endMin>578;});
+}
+HRFINE={}; HR=DINO.hr;
+var sans=randonnee(detectDino(DINO.jour)||[]);
+v('16 août SANS hrfine : la randonnée est détectée (état d\'avant intact)', 1, sans.length);
+HRFINE={'hrfine_2026-8-16':DINO.hrfine}; HR=DINO.hr;
+var avec=randonnee(detectDino(DINO.jour)||[]);
+v('16 août AVEC hrfine : la randonnée est détectée', 1, avec.length);
+if(sans.length&&avec.length){
+  var s=avec[0];
+  v('  elle commence bien vers 09h38 (±3 min)', true, Math.abs(s.startMin-578)<=3);
+  /* La vraie pointe du capteur est 190 (une minute isolée) ; la médiane de
+     cette minute en garde 188. Le grain fin doit rendre la pointe ENTIÈRE —
+     et ne peut jamais en rendre moins que le canal minute. */
+  v('  la vraie pointe est retrouvée (190)', 190, s.maxHr);
+  v('  et elle domine celle des médianes', true, s.maxHr>=sans[0].maxHr);
+  /* `avgHr` n'est PAS la moyenne de séance WHOOP (154, fenêtre entière) :
+     c'est la moyenne des points AU-DESSUS du seuil d'effort. Mesurée : 162
+     par les médianes, 165 par le grain fin. On la borne, on ne la vise pas. */
+  v('  la moyenne d\'effort reste dans son couloir (155-175)', true, s.avgHr>=155&&s.avgHr<=175);
+  v('  les bornes sont des minutes entières', true,
+    s.startMin===Math.floor(s.startMin) && s.endMin===Math.floor(s.endMin));
+  /* Le grain fin affine aussi le VERDICT : 162→165 de moyenne d'effort fait
+     franchir 85 % de la FC max — l'intensité passe de 3 à 4. C'est voulu :
+     douze mesures par minute pèsent les pointes que la médiane écrasait. */
+  v('  l\'intensité est jugée sur la vraie densité (4)', 4, s.int);
+}
 
 console.log('\n'+ok+' réussis, '+ko+' échoués');
 if(ko)process.exitCode=1;

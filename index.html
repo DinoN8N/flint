@@ -10113,16 +10113,23 @@ window.flPrechargerGraphiques=function(){try{
     fois. Le préparer d'avance pour vingt-cinq métriques était une dépense que
     personne ne réclamait.
 
-    ET SEULEMENT LES PREMIÈRES. Huit métriques couvrent les quatre cartes à
-    chevron de la page Sommeil et les en-têtes des quatre pages — c'est-à-dire
-    tout ce qu'on touche vraiment. Le reste s'atteint par une page qu'il faut
-    d'abord ouvrir, et il sera préparé à ce moment-là, par les voisines.
+    ET SEULEMENT LES PREMIÈRES. Huit métriques couvraient les quatre cartes à
+    chevron de la page Sommeil et les en-têtes des quatre pages — mais PAS les
+    cartes de tendance des pages Récupération et Effort. v1566, capture de
+    Dino à l'appui : « TON SOMMEIL » (sleeppct) n'était préparée nulle part,
+    et son ouverture à froid sur de vraies données laissait « Un instant. »
+    sous un titre « — ». Les quinze clés ci-dessous couvrent désormais TOUT ce
+    qu'un doigt peut toucher : cartes Sommeil, en-têtes des quatre pages,
+    cartes Récup (sleeppct, hrv, rhr, resp) et cartes Effort (zones13,
+    zones45, strength). Le reste s'atteint par une page qu'il faut d'abord
+    ouvrir, et il sera préparé à ce moment-là, par les voisines.
 
-    Huit pages « S » au lieu de cinquante pages « S » et « M » : le travail de
-    fond passe de plusieurs minutes à quelques secondes, et il redevient ce
-    qu'il aurait toujours dû être — invisible.                               */
+    Quinze pages « S » LÉGÈRES au lieu de cinquante « S » et « M » : le
+    travail de fond reste de l'ordre de quelques secondes — invisible.       */
  var priorite=['sleep','sleepeff','sleepdebt','sleepreg',
-               'charge','recovery','calories','steps'];
+               'charge','recovery','calories','steps',
+               'sleeppct','hrv','rhr','resp',
+               'zones13','zones45','strength'];
  priorite.filter(function(k){return FL_HEBDO[k];})
          .forEach(function(k){file.push([k,'S']);});
  function suivante(){
@@ -11366,6 +11373,9 @@ window.flActiviteData=function(rang,jour,seanceDirecte){try{
   kcal:(m.kcal==null?null:String(m.kcal)),
   moyenne:(m.avg==null?null:String(m.avg)),
   maximum:(m.mx==null?null:String(m.mx)),
+  /* v1583 — combien de minutes le maximum a refusé de croire. La fiche le
+     dit en clair : on écarte, on ne cache pas. */
+  fcSuspect:(m.fcSuspect>0?m.fcSuspect:null),
   /* moyennes personnelles sur 45 jours, MÊME activité — null si trop peu */
   effortMoy:(function(){try{var a=[],KC={1:6,2:8,3:10,4:13};
    for(var d=1;d<=45;d++){var kk=tk(-d);
@@ -20914,6 +20924,57 @@ function genZones(hr,totSec){const n=hr.length,cnt=[0,0,0,0,0,0];hr.forEach(v=>{
 /* ═══ ÉCRAN EFFORT / DÉTAIL ACTIVITÉ (design « standalone (2) », founder 13/07) ═══
    Ouvert au tap d'une activité dans Ma journée. Vraies données + scrub (bpm au milieu,
    même animation) + surlignage de zone façon WHOOP (traits verticaux). */
+/* ═══ v1583 — UNE MINUTE COHÉRENTE, ET POURQUOI ÇA COMPTE ════════════════════
+   Dino, la fiche et WHOOP côte à côte : « à 9h40 selon FLINT j'ai atteint mon
+   pic à 190, alors que WHOOP dit que j'étais encore en phase calme ». Le brut
+   lui donne raison : la minute 09h40 contient [188,190,189,189,190,187, 167,
+   169,174,180,185] — six échantillons à ~189 puis une chute de 20 bpm en cinq
+   secondes. Un cœur ne fait pas ça : ce sont DEUX séries recollées, un
+   fragment mal daté (page de la mémoire de la montre à l'horodatage faux)
+   rangé au mauvais endroit. Le plateau, lui, colle à WHOOP à 3 bpm près.
+
+   La défense : une minute est COHÉRENTE si aucun écart entre échantillons
+   consécutifs ne dépasse 15 bpm (le cœur bouge d'au plus ~10 bpm en 5 s ;
+   15 laisse de l'air). Le MAXIMUM d'une séance ne se lit que sur les minutes
+   cohérentes d'au moins 4 échantillons — un fragment recollé ne peut plus
+   fabriquer un record. On ne corrige RIEN en silence : les minutes écartées
+   sont comptées et la fiche le dit. La courbe continue de montrer tout ce qui
+   a été enregistré. La racine (l'horodatage des pages) est côté pont montre —
+   consigné pour Félix dans COMPARAISON-WHOOP.md, § 17 août. */
+function flMinuteCoherente(vs){
+ if(!vs||vs.length<2)return true;
+ for(var i=1;i<vs.length;i++)if(Math.abs(vs[i]-vs[i-1])>15)return false;
+ return true;}
+/* ═══ v1586 — LE RANGEMENT DES ECHANTILLONS CONTINUS, PUR ET BANCE ═══════════
+   Entree : les groupes du pont [{ts: secondes epoch, hr: [bpm]}], un point
+   toutes les cinq secondes, enregistrements livres du plus recent au plus
+   ancien. Sortie : { jourCle: { minuteDuJour: [bpm ordonnes] } } — chaque
+   echantillon pose a SA case (seconde ÷ 5), l ordre chronologique est donc
+   structurel, jamais dependant de l ordre d arrivee. Une case recue deux fois
+   (resynchronisation) garde la derniere ecriture : meme donnee, meme place. */
+function flConthrSlots(groupes){
+ var cases={};
+ (groupes||[]).forEach(function(g){
+  if(!g||!g.ts||!g.hr||!g.hr.length)return;
+  g.hr.forEach(function(b,i){
+   b=+b; if(!(b>25&&b<240))return;               /* bornes physiologiques */
+   var t=new Date((g.ts+i*5)*1000);
+   var jk=t.getFullYear()+'-'+(t.getMonth()+1)+'-'+t.getDate();
+   var mn=t.getHours()*60+t.getMinutes();
+   var sl=Math.min(11,Math.floor(t.getSeconds()/5));
+   ((cases[jk]=cases[jk]||{})[mn]=cases[jk][mn]||{})[sl]=b;
+  });
+ });
+ var out={};
+ Object.keys(cases).forEach(function(jk){
+  out[jk]={};
+  Object.keys(cases[jk]).forEach(function(mn){
+   var sl=cases[jk][mn];
+   out[jk][mn]=Object.keys(sl).map(Number).sort(function(a,b){return a-b;})
+                .map(function(k){return sl[k];});
+  });
+ });
+ return out;}
 function flEffData(doc){
  var cs=window._flCurSess||null;
  var K=(cs&&cs.K)||tk();
@@ -21063,14 +21124,22 @@ function flEffData(doc){
     la v1252 la mesure a ~5 s ({minute:[valeurs]}), et couvrait 74/84 minutes
     de cette meme seance. On la sert entre les deux, meme exigence de
     couverture, meme plafond de points. */
+ var fcSuspectes=0;
  if(real&&!hrT){try{
   var hf=DB.get('hrfine_'+K,null);
   if(hf){
-   var fineH=[],minH={};
+   var fineH=[],minH={},cohMax=null;
    for(var _m=sm0;_m<=sm0+dur;_m++){
     var vs=hf[_m]||hf[''+_m];
     if(!vs||!vs.length)continue;
     minH[_m]=1;
+    /* v1583 — le maximum se lit sur les minutes cohérentes (cf. l'en-tête de
+       flMinuteCoherente). La courbe, elle, garde tout : on montre ce qui a été
+       enregistré, on refuse juste qu'un fragment recollé signe un record. */
+    if(vs.length>=4&&flMinuteCoherente(vs)){
+     var mLoc=Math.max.apply(null,vs.map(Number).filter(function(b){return b>25&&b<240;}));
+     if(isFinite(mLoc)&&(cohMax==null||mLoc>cohMax))cohMax=mLoc;
+    }else if(vs.length>=4){fcSuspectes++;}
     var pasS=60/vs.length;
     for(var _v=0;_v<vs.length;_v++){
      var bv=+vs[_v];
@@ -21154,6 +21223,11 @@ function flEffData(doc){
   zones=FLEFF_Z.map(function(z,kk){var frac=_zc[kk]/base.length,sec=Math.round(frac*totSec),pct=frac===0?'0 %':(frac<0.01?'<1 %':Math.round(frac*100)+' %');return Object.assign({},z,{pct:pct,dur:hmsFull(sec),frac:frac});});
   avg=Math.round(base.reduce(function(a,b){return a+b;},0)/base.length);
   mx=Math.round(Math.max.apply(null,base));
+  /* v1583 — le record d'une minute incohérente ne fait pas foi : si le canal
+     fin a trouvé des minutes suspectes ET un maximum cohérent plus bas, c'est
+     lui qu'on affiche. Voir flMinuteCoherente. (`cohMax` est hoisté depuis le
+     bloc hrfine ci-dessus — var, portée de fonction.) */
+  if(typeof cohMax!=='undefined'&&cohMax!=null&&fcSuspectes>0&&cohMax<mx)mx=Math.round(cohMax);
  }
  var KC={1:6,2:8,3:10,4:13};var intv=sess.int||2;
  var kcal=Math.round(dur*(KC[intv]||8));
@@ -21190,7 +21264,7 @@ function flEffData(doc){
  var verdict='Effort validé',sub='Une sortie active et régulière.';
  if(strain>=14){verdict='Effort intense';sub='Grosse séance — bravo.';}
  else if(strain<6){verdict='Effort léger';sub='Une séance tranquille.';}
- return {name:name,dur:dur,t0:clk(sm0),t1:clk(sm0+dur),totSec:totSec,base:base,baseFin:baseFin,hrT:hrT,real:real,sansMesure:raisonSansMesure,zones:zones,avg:avg,mx:mx,kcal:kcal,strain:strain,steps:steps,calAvg:av(cH),fcAvgAvg:av(aH),fcMaxAvg:av(xH)};
+ return {name:name,dur:dur,t0:clk(sm0),t1:clk(sm0+dur),totSec:totSec,base:base,baseFin:baseFin,hrT:hrT,real:real,sansMesure:raisonSansMesure,zones:zones,avg:avg,mx:mx,fcSuspect:fcSuspectes,kcal:kcal,strain:strain,steps:steps,calAvg:av(cH),fcAvgAvg:av(aH),fcMaxAvg:av(xH)};
 }
 /* ===== v716 — Détail d'activité de la COQUILLE : zones vides grisées + lecture
    BPM en tête ================================================================
@@ -22915,7 +22989,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(salut|bonjour|hello|coucou|hey|ca va|yo)/.test(n))return 'Salut'+(nm?' '+nm:'')+' ! Ta récup du jour est '+zone+' ('+s+'%). Demande-moi si tu peux pousser, pourquoi ton score, comment a été ta nuit, ou quel effort viser.';
  return 'Je m\'appuie sur tes données du jour (récup <b>'+s+'%</b>). Je peux te dire si tu es prêt à t\'entraîner, pourquoi ton score est comme ça, comment a été ta nuit, ou quel effort viser. Essaie une des suggestions 👇';}
 /* ---------- UPDATE / INIT ---------- */
-const APP_VERSION='v1562';
+const APP_VERSION='v1591';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
@@ -25320,6 +25394,10 @@ window.flEcgTrace=function(cle){try{
      try{wSaveK(jk);}catch(e){}
     });
     if(_n3){console.log('[flint] pas et calories : '+_n3+' jour(s) recalcule(s)');
+     /* v1581 — les pas nourrissent le detecteur de marches : les jours qui
+        viennent d en recevoir se redetectent avant la poussee douce. */
+     try{Object.keys(_a).forEach(function(jk){
+      if(window.flDetecterBientot)flDetecterBientot(jk);});}catch(e){}
      try{if(typeof window.flRafraichirDouce==='function')window.flRafraichirDouce();}catch(e){}}
    }catch(e){}
   }
@@ -25681,17 +25759,20 @@ window.flEcgTrace=function(cle){try{
       cinq secondes. On agrege a la minute, sinon douze points par minute
       feraient exploser le stockage pour aucune precision utile a l ecran. */
    try{
-    var _par={};                                  /* jour -> minute -> valeurs */
-    data.data.forEach(function(g){
-     if(!g||!g.ts||!g.hr||!g.hr.length)return;
-     g.hr.forEach(function(b,i){
-      b=+b; if(!(b>25&&b<240))return;             /* bornes physiologiques */
-      var t=new Date((g.ts+i*5)*1000);
-      var jk=t.getFullYear()+'-'+(t.getMonth()+1)+'-'+t.getDate();
-      var mn=t.getHours()*60+t.getMinutes();
-      (_par[jk]=_par[jk]||{})[mn]=(_par[jk][mn]||[]).concat(b);
-     });
-    });
+    /* ═══ v1586 — CHAQUE ECHANTILLON A SA CASE DE CINQ SECONDES ═════════════
+       AUDIT du 17 aout, trames brutes a l appui (COMPARAISON-WHOOP.md) : la
+       montre livre ses enregistrements de 75 s DU PLUS RECENT AU PLUS ANCIEN,
+       et ce code rangeait les valeurs d une minute DANS L ORDRE D ARRIVEE.
+       Une minute a cheval sur deux enregistrements stockait donc sa FIN avant
+       son DEBUT : [188,190,…,187, 167,169,174,180,185] pour une montee
+       parfaitement lisse — d ou les « sauts de 20 bpm en 5 s » que la v1583
+       prenait pour des fragments mal dates, la courbe en zigzag, et un ordre
+       que rien ne pouvait reparer apres coup.
+
+       La case (seconde ÷ 5) rend l ordre STRUCTUREL : peu importe quand un
+       echantillon arrive, il tombe a sa place. `flConthrSlots` est pure et
+       bancee sur les VRAIES trames de la randonnee (test-hrfine-ordre.js). */
+    var _par=flConthrSlots(data.data);
     /* ═══ v1426 — ON GARDE LES CINQ SECONDES, PAS SEULEMENT LEUR MEDIANE ═══
        Ce qui suit reduit chaque minute a sa mediane et jette les onze autres
        valeurs. Le raisonnement etait juste QUAND IL A ETE ECRIT : a l ecran
@@ -25763,6 +25844,12 @@ window.flEcgTrace=function(cle){try{
         nuits concernees, maintenant qu elles ont enfin une frequence cardiaque. */
      try{if(typeof window.flintSommeilRecalculer==='function')
       Object.keys(_par).forEach(function(jk){window.flintSommeilRecalculer(jk);});}catch(e){}
+     /* v1581 — et le detecteur de seances aussi : c est CETTE courbe qu il lit.
+        Coalesce a 1 s, donc toujours AVANT la poussee douce (1,2 s) : la frise
+        repart au natif avec la seance dedans, sans attendre le rechargement
+        de fin de synchro. */
+     try{Object.keys(_par).forEach(function(jk){
+      if(window.flDetecterBientot)flDetecterBientot(jk);});}catch(e){}
      try{if(typeof window.flRafraichirDouce==='function')window.flRafraichirDouce();}catch(e){}
     }
    }catch(e){}
@@ -26179,9 +26266,49 @@ window.flEcgTrace=function(cle){try{
     HUIT minutes couvrent un vrai repos entre séries, et le filtre de charge
     reste là pour écarter ce qui n'est pas un effort. */
  var TRIMP_MIN=12, TROU_MAX=8, DUREE_MIN=6;
- var segs=[],cur=null,prev=null;
+ /* ═══ v1577 — LA DETECTION LIT LA DENSITE A CINQ SECONDES ══════════════════
+    `hrfine_<jour>` (v1426, doublons retires en v1431) porte jusqu a douze
+    mesures par minute, et la detection n en lisait que la MEDIANE posee dans
+    le canal minute. Sur la randonnee du 16 aout, verifiee contre WHOOP
+    (COMPARAISON-WHOOP.md, § 17 aout) : la vraie pointe etait 190, la mediane
+    n a retenu que 180 — et la charge d un effort hache (fractionne, series)
+    se lisse de la meme facon.
+
+    LE CANAL MINUTE RESTE LE SQUELETTE : memes minutes, meme filtre d eveil
+    (`flPtsEveil`), meme nettoyage. Quand une minute possede ses echantillons
+    fins, ils la REMPLACENT dans le parcours — chacun pese sa vraie duree
+    (1/12 de minute), la ou la mediane pesait la minute entiere. Une minute
+    sans echantillons fins garde sa valeur d avant, au grain d avant : sans
+    `hrfine`, cette fonction rend EXACTEMENT ce qu elle rendait, et le banc
+    (test-seances.js) le verifie dans les deux etats.
+
+    Le lendemain est lu comme dans `flPtsEveil` : la journee logique va du
+    reveil au coucher du lendemain, ses minutes arrivent decalees de +1440. */
+ var fin={},fin2={};
+ try{fin=DB.get('hrfine_'+K,null)||{};}catch(e){}
+ try{
+  var _p=(''+K).split('-'),_d2=new Date(+_p[0],(+_p[1])-1,+_p[2]);
+  _d2.setDate(_d2.getDate()+1);
+  fin2=DB.get('hrfine_'+_d2.getFullYear()+'-'+(_d2.getMonth()+1)+'-'+_d2.getDate(),null)||{};
+ }catch(e){}
+ var pts2=[];
  pts.forEach(function(x){
-  var dt=prev==null?1:Math.min(5,Math.max(1,x[0]-prev));prev=x[0];
+  var ech=x[0]<1440?fin[x[0]]:fin2[x[0]-1440];
+  if(ech&&ech.length>1){
+   var pas=1/ech.length;
+   for(var _i=0;_i<ech.length;_i++){var b=+ech[_i];
+    /* memes bornes physiologiques qu a la reception (v8conthr) */
+    if(b>25&&b<240)pts2.push([x[0]+_i*pas,b,pas]);}
+  }else pts2.push([x[0],x[1],1]);
+ });
+ var segs=[],cur=null,prev=null;
+ pts2.forEach(function(x){
+  /* le plancher du pas suit le GRAIN du point : une minute pleine vaut au
+     moins une minute, un echantillon fin au moins son douzieme — sans quoi
+     chaque echantillon compterait pour une minute et la charge serait douze
+     fois trop grosse. Le plafond a 5 reste : un trou ne credite jamais plus. */
+  var g=x[2]||1;
+  var dt=prev==null?g:Math.min(5,Math.max(g,x[0]-prev));prev=x[0];
   if(x[1]>=SEUIL){
    if(!cur)cur={debut:x[0],fin:x[0],pts:[],trimp:0,recus:0};
    /* Un creux bref ne coupe pas : on reprend le meme effort. */
@@ -26227,7 +26354,11 @@ window.flEcgTrace=function(cle){try{
    var mx=Math.max.apply(null,v);
    /* L intensite affichee suit les zones, pas une echelle inventee. */
    var r=moy/fm.v;
-   return {startMin:g.debut, endMin:g.fin+1,
+   /* v1577 — les bornes redeviennent des minutes ENTIERES : le grain fin fait
+      commencer un segment a 578,42 ; tout l aval (affichage, dedoublonnage,
+      `faconnerSeance`) raisonne en minutes. Le plancher du debut, le plafond
+      de la fin — on n ampute jamais une seance de sa premiere minute. */
+   return {startMin:Math.floor(g.debut), endMin:Math.floor(g.fin)+1,
            avgHr:moy, maxHr:mx,
            eff:Math.round(g.trimp*10)/10,
            int:r>=0.85?4:r>=0.75?3:r>=0.65?2:1};
@@ -27227,6 +27358,29 @@ window.flEcgTrace=function(cle){try{
    }catch(e){}
    DB.set('sessions_'+K,manual.concat(rows));return rows;}catch(e){return [];}}
   window._flSyncSessions=syncSessions;
+  /* ═══ v1581 — LA SEANCE NAIT A L ARRIVEE DES DONNEES, PAS AU PROCHAIN ECRAN ═
+     Dino : « ça doit se faire le plus rapidement possible ». La chaine etait :
+     paquets recus → poussee douce (1,2 s) → frise repoussee au natif. Mais
+     `flAccueilData` LIT `sessions_<jour>` sans jamais redetecter, et personne
+     n appelait la detection a l arrivee des donnees : la frise repartait donc
+     SANS la seance, qui n apparaissait qu au prochain rendu de la frise web
+     ou au rechargement de fin de synchro — quinze a vingt secondes plus tard.
+
+     Ici : les jours qui recoivent de la matiere (FC continue, activite par
+     periode) se redetectent UNE fois, coalesces a une seconde apres le dernier
+     paquet — puis la poussee douce (1,2 s, re-armee par les memes paquets)
+     repart avec la seance dedans. L ordre est garanti par les deux delais.
+     Toutes les gardes de `syncSessions` s appliquent : la montre prime, le
+     manuel vit a part, une detection vide ne detruit rien (v1238). */
+  window.flDetecterBientot=function(jk){try{
+   (window._flDetJours=window._flDetJours||{})[jk]=1;
+   clearTimeout(window._flDetT);
+   window._flDetT=setTimeout(function(){try{
+    var js=Object.keys(window._flDetJours||{});window._flDetJours={};
+    js.forEach(function(k){try{syncSessions(k);}catch(e){}});
+    if(js.length)try{console.log('[flint] seances redetectees a l arrivee des donnees : '+js.join(', '));}catch(e){}
+   }catch(e){}},1000);
+  }catch(e){}};
   /* effort réel : zones de FC du jour (au-dessus de repos+15), échelle 0-21 */
   window./* ---- LA REFERENCE HAUTE DE FREQUENCE CARDIAQUE ----------------------------
      Sans elle, ni l effort ni les zones ne veulent dire quoi que ce soit. Deux

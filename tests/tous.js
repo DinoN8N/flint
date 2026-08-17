@@ -53,6 +53,8 @@ const BANCS = [
   ['test-visite-contexte.js', "Ce que la journee contient deja, pour la visite guidee"],
   ['test-largeur-tranche.js', "La largeur d une tranche : le minimum detruisait les journees denses"],
   ['test-fc-fiable.js', "Le cœur dit s il est fiable — la signature du capteur qui decroche"],
+  ['test-fc-coherente.js', "Le maximum d une seance ne croit que les minutes coherentes — le fragment recolle du 16 aout"],
+  ['test-hrfine-ordre.js', "Chaque echantillon continu a sa case de cinq secondes — l inversion intra-minute du 17 aout"],
   ['test-regularite-sommeil.js', 'La regularite mesure des horaires, pas des durees'],
   ['test-courbe-nuit.js', 'La courbe de la nuit vient de la montre, pas d une sinusoide'],
   ['test-stress-mesure.js', 'Le stress vient de la montre, pas d un generateur'],
