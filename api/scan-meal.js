@@ -196,7 +196,16 @@ module.exports = async function handler(req, res) {
       };
     });
     const total = items.reduce((a, it) => ({ kcal: a.kcal + it.kcal, prot: a.prot + it.prot, carb: a.carb + it.carb, fat: a.fat + it.fat }), { kcal: 0, prot: 0, carb: 0, fat: 0 });
-    const healthScore = Math.max(1, Math.min(10, Math.round(Number(data.healthScore) || 0))) || null;
+    // v1930 — UNE NOTE ABSENTE NE DEVIENT PLUS LA PIRE NOTE.
+    // `Number(undefined) || 0` valait 0, que `Math.max(1, …)` remontait à 1 :
+    // le modèle qui se tait produisait donc un 1/10 AUTHENTIQUE, indiscernable
+    // d'un vrai jugement, et qui partait se figer dans la base du téléphone.
+    // Le `|| null` en fin de ligne ne rattrapait rien — 1 est vrai.
+    // Une impossibilité de juger n'est pas un mauvais jugement.
+    const hsBrut = Number(data.healthScore);
+    const healthScore = Number.isFinite(hsBrut) && hsBrut > 0
+      ? Math.max(1, Math.min(10, Math.round(hsBrut)))
+      : null;
     const healthNote = data.healthNote ? String(data.healthNote).slice(0, 160) : '';
 
     return res.status(200).json({ mealName: String(data.mealName || 'Mon repas'), items, total, healthScore, healthNote });

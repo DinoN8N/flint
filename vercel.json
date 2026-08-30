@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "api/scan-meal.js": {
+      "maxDuration": 120
+    }
+  }
+}
