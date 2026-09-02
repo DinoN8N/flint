@@ -2,6 +2,9 @@
   "functions": {
     "api/scan-meal.js": {
       "maxDuration": 120
+    },
+    "api/coach.js": {
+      "maxDuration": 60
     }
   }
 }
