@@ -28,10 +28,11 @@ console.log('\n2 · Pas de doublon de nom (Gemini refuserait la déclaration)');
   verifie('tous les noms sont uniques', new Set(noms).size === noms.length, noms.join(','));
 }
 
-console.log('\n3 · Le sous-ensemble Phase 1 attendu est bien présent');
+console.log('\n3 · Le sous-ensemble Phase 1 + 2 attendu est bien présent');
 const ATTENDUS = [
   'getUserProfile', 'getCoachPreferences', 'getRecoveryContext',
-  'getSleepHistory', 'getActivityHistory', 'getTrainingLoad', 'getNutritionToday'
+  'getSleepHistory', 'getActivityHistory', 'getTrainingLoad', 'getNutritionToday',
+  'saveMemoryFact'
 ];
 ATTENDUS.forEach(n => {
   verifie(`l'outil "${n}" est déclaré`, OUTILS.some(o => o.name === n));
@@ -43,6 +44,11 @@ console.log('\n4 · Les outils paramétrés déclarent bien leurs paramètres re
   verifie(`"${n}" exige "joursN"`,
     !!o && Array.isArray(o.parameters.required) && o.parameters.required.includes('joursN'));
 });
+{
+  const o = OUTILS.find(x => x.name === 'saveMemoryFact');
+  verifie('"saveMemoryFact" exige "fait"',
+    !!o && Array.isArray(o.parameters.required) && o.parameters.required.includes('fait'));
+}
 
 console.log(`\n${ko === 0 ? '✅' : '❌'} test-coach-outils.js : ${ok} réussis, ${ko} échoués\n`);
 process.exit(ko ? 1 : 0);

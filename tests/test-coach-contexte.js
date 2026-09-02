@@ -59,5 +59,19 @@ console.log('\n5 · Les garde-fous obligatoires sont bien dans le prompt');
   });
 }
 
+console.log('\n6 · La mémoire conversationnelle (Phase 2)');
+{
+  const sansMemoire = promptSysteme({ ton: 'aucun', profilTexte: 'x' });
+  verifie('sans mémoire fournie, le prompt le dit explicitement plutôt que d\'inventer',
+    sansMemoire.includes('rien pour l\'instant'));
+
+  const avecMemoire = promptSysteme({ ton: 'aucun', profilTexte: 'x', memoireTexte: '· déteste les champignons' });
+  verifie('un fait fourni apparaît tel quel dans le prompt',
+    avecMemoire.includes('déteste les champignons'));
+
+  verifie('le prompt pose une règle claire sur QUAND enregistrer un fait (pas n\'importe quelle phrase)',
+    sansMemoire.includes('saveMemoryFact') && /UNIQUEMENT|jamais/i.test(sansMemoire));
+}
+
 console.log(`\n${ko === 0 ? '✅' : '❌'} test-coach-contexte.js : ${ok} réussis, ${ko} échoués\n`);
 process.exit(ko ? 1 : 0);

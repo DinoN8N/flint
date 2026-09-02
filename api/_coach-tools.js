@@ -49,6 +49,15 @@ const OUTILS = [
     name: 'getNutritionToday',
     description: "Nutrition du jour : calories et macros consommées, restantes, budget, repas déjà pris.",
     parameters: { type: 'object', properties: {} }
+  },
+  {
+    name: 'saveMemoryFact',
+    description: "Enregistre UN fait durable que l'utilisateur vient de dire volontairement sur lui-même — une préférence, un objectif à venir, une contrainte. Jamais pour une phrase anodine, une question ponctuelle, ou une donnée déjà disponible via un autre outil.",
+    parameters: {
+      type: 'object',
+      properties: { fait: { type: 'string', description: 'Le fait à retenir, formulé simplement et à la troisième personne (ex. "déteste les champignons", "prépare un semi-marathon en mars").' } },
+      required: ['fait']
+    }
   }
 ];
 

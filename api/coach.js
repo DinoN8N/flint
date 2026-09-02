@@ -1,9 +1,16 @@
 // FLINT Coach — orchestrateur (Gemini function calling), sans état.
 //
 // Contrat (POST, JSON) :
-//   requête  { deviceId, contents: [...tours Gemini déjà échangés...], ton, profilTexte }
+//   requête  { deviceId, contents: [...tours Gemini déjà échangés...], ton, profilTexte, memoireTexte }
 //   réponse  { mode:'outils', appels:[{name,args}], tourModele:{...} }
 //         ou { mode:'reponse', texte:'...', tourModele:{...} }
+//
+// `memoireTexte` (Phase 2) : les faits que l'utilisateur a confiés lors de
+// conversations précédentes (« déteste le poisson », « prépare un semi en
+// mars »). Le client les charge depuis son stockage local (CoachMemoire.swift)
+// et les renvoie en clair à chaque tour — ce serveur ne les stocke toujours
+// pas. Le modèle peut en AJOUTER via l'outil saveMemoryFact ; c'est le
+// téléphone qui écrit, jamais ce serveur.
 //
 // `contents` est entièrement porté par le client (voir CoachReseau.swift) :
 // ce endpoint ne stocke jamais rien — aucune conversation, aucune donnée de
@@ -48,10 +55,11 @@ module.exports = async function handler(req, res) {
 
   const ton = typeof body.ton === 'string' ? body.ton : 'aucun';
   const profilTexte = typeof body.profilTexte === 'string' ? body.profilTexte.slice(0, 4000) : '';
+  const memoireTexte = typeof body.memoireTexte === 'string' ? body.memoireTexte.slice(0, 2000) : '';
 
   const gReq = {
     contents,
-    systemInstruction: { parts: [{ text: promptSysteme({ ton, profilTexte }) }] },
+    systemInstruction: { parts: [{ text: promptSysteme({ ton, profilTexte, memoireTexte }) }] },
     tools: [{ functionDeclarations: OUTILS }],
     generationConfig: { temperature: 0.4, maxOutputTokens: 1024 }
   };

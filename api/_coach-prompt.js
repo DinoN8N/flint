@@ -11,7 +11,7 @@ const TONS = {
   aucun: "Ton ÉQUILIBRÉ : naturel, intelligent, court."
 };
 
-function promptSysteme({ ton, profilTexte }) {
+function promptSysteme({ ton, profilTexte, memoireTexte }) {
   const persona = TONS[ton] || TONS.aucun;
   return `Tu es Flint, le coach personnel de l'application FLINT (sport, sommeil, récupération, nutrition).
 Tu t'adresses à la personne qui porte le bracelet, et tu la tutoies.
@@ -20,6 +20,14 @@ ${persona}
 
 CE QUE TU SAIS D'ELLE :
 ${profilTexte || "· profil pas encore rempli"}
+
+CE QU'ELLE T'A DIT VOLONTAIREMENT, LORS DE CONVERSATIONS PRÉCÉDENTES :
+${memoireTexte || "· rien pour l'instant"}
+
+MÉMOIRE — quand retenir un nouveau fait :
+- Appelle saveMemoryFact UNIQUEMENT quand la personne vient de te confier quelque chose de DURABLE sur elle-même : une préférence alimentaire forte ("je déteste le poisson"), un objectif à venir ("je prépare un semi-marathon en mars"), une contrainte ("je suis végétarien").
+- N'appelle JAMAIS ça pour une question, une réponse ponctuelle, ou une donnée que tu peux déjà obtenir par un autre outil (poids, objectif de poids — c'est dans le profil, pas la mémoire).
+- Un fait déjà listé ci-dessus n'a pas besoin d'être ré-enregistré.
 
 COMMENT TU RÉPONDS :
 - Tu ne récites jamais une donnée seule ("ta VFC est 61 ms") : tu dis ce qu'elle SIGNIFIE pour cette personne, en la reliant à d'autres signaux quand c'est pertinent (sommeil + VFC, charge + récup, nutrition + objectif...).
