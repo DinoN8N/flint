@@ -366,11 +366,28 @@ window.flNutritionData=function(_argJour){try{
  /* `140` etait le dernier corps invente de cette charge. La cible protéique
     suit maintenant le meme etagement que partout : ce qui a ete VOULU, sinon
     ce que le poids donne, sinon rien. */
+ var _gp=null;try{_gp=(typeof flNutGoals==='function')?flNutGoals():null;}catch(e){_gp=null;}
  var butP=+prof.protGoal||null;
- if(butP==null){try{var _gp=(typeof flNutGoals==='function')?flNutGoals():null;
-                    butP=(_gp&&_gp.prot)||null;}catch(e){butP=null;}}
- var butG=(kcalBut!=null)?Math.round(kcalBut*0.45/4):null,
-     butL=(kcalBut!=null)?Math.round(kcalBut*0.3/9):null;
+ if(butP==null)butP=(_gp&&_gp.prot)||null;
+ /* ═══ 14 sept. 2026 — UNE SEULE FORMULE DE CIBLES, CELLE DU PLAN ══════════
+    Il y en avait DEUX. `flNutGoals` répartit ce qui reste APRÈS les protéines,
+    60 % en glucides et 40 % en lipides : les trois macros somment aux kcal du
+    plan, par construction. Ici on servait 45 % et 30 % des kcal du plan, EN
+    PLUS des protéines — trois parts qui ne partagent pas un tout.
+    MESURÉ au harnais Node sur la base du 9 septembre (sèche 0,35 kg/sem, plan
+    2 014 kcal, 183 g de protéines) : 183 P + 227 G + 67 L = 2 243 kcal, soit
+    111,4 % du plan, 229 kcal de trop. `flNutGoals` sur la même base dit 192 g
+    de glucides et 57 g de lipides. Ces cibles voyagent dans
+    `MacroNutrition.cible` et `InstantaneFlint` : qui les atteindrait toutes
+    les trois mangerait 229 kcal au-dessus de son propre objectif.
+    ⚠️ ON NE CHOISIT PAS UN NOUVEAU PARTAGE ICI : on adopte celui qui existe
+    déjà et qui ferme, et on prend au passage `carbGoal`/`fatGoal` si la
+    personne les a voulus — `flNutGoals` les lit, cette charge les ignorait.
+    LE GARDE DU BUDGET INCONNU RESTE : sans kcal, la cible est absente et pas
+    zéro (v2183) ; `flNutGoals` rendrait 0 quand seules les protéines sont
+    connues, et trois barres pleines annonceraient un dépassement inventé. */
+ var butG=(kcalBut!=null&&_gp&&_gp.carb!=null)?_gp.carb:null,
+     butL=(kcalBut!=null&&_gp&&_gp.fat!=null)?_gp.fat:null;
 
  var JJ=['D','L','M','M','J','V','S'];
  var jours=[];
@@ -393,6 +410,13 @@ window.flNutritionData=function(_argJour){try{
   aDesDonnees:true,
   date: JOURS[au.getDay()]+' '+au.getDate()+' '+MOIS[au.getMonth()],
   restantes: mil(reste),
+  /* 14 sept. 2026 — CE QUI A VRAIMENT ETE MANGE, SANS PLAFOND.
+     `restantes` est plafonnee a zero juste au-dessus : passe le budget, elle ne
+     dit plus rien. L hote reconstituait le mange par `budget - restantes`, et le
+     widget carre annoncait donc « 1 993 sur 1 993 kcal » pour 2 600 manges —
+     607 kcal effacees, jauge pleine, et sa branche « au-dessus » injouable.
+     On envoie la VRAIE entree plutot que de la laisser reconstituer. */
+  consommees: mil(pris),
   budget: mil(budget),
   /* 12 septembre 2026 — SANS BUDGET, LA CARTE DIT POURQUOI. Sur un profil sans
      poids, « CALORIES RESTANTES » rendait quatre absences d affilee (« — »,
@@ -952,8 +976,26 @@ window.flDepenseReference=function(){try{
     au montage, la référence est calculée avant que le métabolisme de base ne
     soit connu, et ce null restait servi toute la journée (vu au harnais Node :
     28 journées complètes, référence « null »). */
+ /* 14 sept. 2026 — LA CLÉ PORTE LE PROFIL ENTIER, PAS TROIS CHAMPS SUR CINQ.
+    Elle en portait trois : poids, taille, naissance. Le SEXE et la FRÉQUENCE
+    MAXIMALE SAISIE manquaient, alors que `flCaloriesDetail` — dont cette
+    fonction fait vingt-huit appels — les porte tous les deux dans SA signature
+    (Keytel et `flFcMax` en dépendent). La conséquence se voyait au geste :
+    Profil → Mesures → « FC max mesurée 200 » → « Enregistré », et la référence
+    servie ne bougeait pas jusqu'au lendemain. Le métabolisme, lui, était dans
+    la clé et rattrapait le sexe TANT QUE Mifflin-St Jeor servait ; dès qu'une
+    masse grasse est connue, Katch-McArdle ignore le sexe, le métabolisme ne
+    bouge plus, et la clé non plus.
+    MESURÉ au harnais Node sur la base du 9 septembre (profil 85 kg / 185 cm) :
+    FC max 200 saisie → référence servie 2 430 kcal pour 2 381 réelles, 49 kcal
+    de trop ; sexe h → f avec 20 % de masse grasse → 2 369 servies pour 2 142,
+    227 kcal de trop. Ce sont le plan, le budget de Nutrition et le mot du jour
+    qui en héritaient, une journée durant.
+    LA CLÉ RECOPIE DÉSORMAIS LA SIGNATURE DE `flCaloriesDetail`, champ pour
+    champ : deux caches sur la même entrée doivent tomber ensemble. */
  var _pp={};try{_pp=getProfile()||{};}catch(e){}
- var auj=tk()+'|'+(bmr||0)+'|'+(_pp.weight||0)+'/'+(_pp.height||0)+'/'+(_pp.birth||_pp.age||0);
+ var auj=tk()+'|'+(bmr||0)+'|'+(_pp.weight||0)+'/'+(_pp.height||0)+'/'+(_pp.birth||_pp.age||0)
+        +'/'+(_pp.gender||'')+'/'+(_pp.hrMax||0);
  if(window._flRefCache&&window._flRefCache.jour===auj&&window._flRefCache.v!=null)return window._flRefCache.v;
  var v=null, tot=[], src=null;
  if(typeof flCaloriesDetail==='function'){

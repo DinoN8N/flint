@@ -321,7 +321,7 @@ window.flHebdoAnnee = function (key, recul, leger) {
   var a0 = flhDate(jours[0].off), b0 = flhDate(end);
   var per = FLH_MOIS[a0.getMonth()] + ' ' + a0.getFullYear() + ' – ' + FLH_MOIS[b0.getMonth()] + ' ' + b0.getFullYear();
 
-  return { aDesDonnees: true, cle: key, mode: 'A', recul: r, periode: per, futurBloque: (end >= 0), reculMin: rMin,
+  return { aDesDonnees: true, cle: key, mode: 'A', v2Mesure: !!cfg.v2Mesure, recul: r, periode: per, futurBloque: (end >= 0), reculMin: rMin,   /* 15 sept. 2026 — LE DRAPEAU MANQUAIT ICI, ET LA FENÊTRE « A » RESTAIT DANS L'ANCIENNE RÈGLE. `flHebdoDetail` rend la main à cette fonction AVANT la ligne qui pose `v2Mesure` : la charge de l'année partait sans lui, le Swift le décodait `nil`, et `aUneMesure` refusait de dessiner une année de repas saisis sans bracelet — mesuré, 52 semaines, v nul 52 fois et v2 plein 52 fois, aUneMesure=false, alors que le MÊME mois en fenêtre M dessinait. Le contre-exemple du sommeil tient de ce côté-ci aussi : son `get2` est le besoin calculé, sans `v2Mesure` sur la métrique, donc faux. */
    semaines: W, joursMesures: jv.length,
    plage: !!plg, inverse: !!plg,
    cibleCouche: (plg ? plg.cibleCouche : null), cibleReveil: (plg ? plg.cibleReveil : null),

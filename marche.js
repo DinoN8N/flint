@@ -87,6 +87,11 @@
       var w = null;
       try { w = S.get('watch_' + K, null); } catch (e) { w = null; }
 
+      /* 14 sept. 2026 — une séance mise en pause porte désormais sa fenêtre de MUR.
+         La couverture est donc jugée sur un intervalle qui contient l'arrêt : elle
+         paraît plus basse qu'elle n'est. C'est conservateur (on n'affirme jamais
+         plus que ce qu'on a mesuré) et c'est dit ici plutôt que découvert plus tard.
+         Le remède complet demande de passer `s.pauses` à `couvertureFc`. */
       var couv = couvertureFc(S, K, deb, fin, w);
 
       /* LA CONTRIBUTION À LA JOURNÉE. Les totaux du jour viennent du bracelet

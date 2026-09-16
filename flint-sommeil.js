@@ -2262,8 +2262,34 @@ function restageSleep(dayKey) {
           + ' | source ' + stageSrc + ' (FC ' + Math.round(covFrac * 100) + '% des minutes)'
           + ' | profond ' + Math.round(agg.deep / Math.max(1, asleep) * 100) + '% REM ' + Math.round(agg.rem / Math.max(1, asleep) * 100) + '%');
       /* S14 : l'histogramme de récupération 7 j était vide parce que recov_ des
-         jours passés n'était jamais réécrit. Chaque nuit intégrée recalcule le sien. */
-      
+         jours passés n'était jamais réécrit.
+         ═══ 14 sept. 2026 — CE COMMENTAIRE DÉCRIVAIT UN CODE QUI N'EXISTE PAS ══
+         Il annonçait « chaque nuit intégrée recalcule le sien » ; aucune ligne ne
+         l'a jamais fait ICI, et on ne l'y met toujours pas — le re-staging
+         n'est pas le bon endroit : il tourne à chaque tranche, y compris sur
+         des nuits que personne ne regarde, et il ferait bouger un nombre déjà
+         vu sans que rien ne le déclare.
+         OÙ LA QUESTION S'EST FERMÉE : dans `flRecovLu(off<0)`
+         (flint-recup-cycle.js), c'est-à-dire à la LECTURE, la seule porte que
+         la production emprunte pour un jour passé. Elle écrivait `recov_<K>` au
+         PREMIER score calculé et le figeait ; quand cette première lecture
+         tombait pendant que le bracelet livrait encore la nuit par tranches, le
+         registre gardait la tranche initiale. Mesuré sur la vraie nuit de Dino
+         du 13 sept. (417 min), rejouée en trois tranches : le registre restait
+         à 25 quand cette nuit en vaut 74 — 49 points.
+         CE QU'ELLE FAIT DEPUIS : elle écrit TOUJOURS (refuser trouait le
+         registre sur les jours qu'il est seul à remplir — 25 entrées → 22 et
+         la flamme « N jours de suite » de 13 à 0), et elle estampille à côté
+         la nuit mesurée (`recovNuitReg_<K>`). La lecture suivante CORRIGE
+         l'entrée si cette nuit a bougé de plus que le seuil du cycle (5 min),
+         garde la première valeur vue dans `recovAvant_<K>`, et le déclare
+         (`fige:false`, `etat:'provisoire'`, relayé jusqu'à `scoreEtat`). Bornes :
+         nuit de bracelet, âge 1 à 3 jours, jamais un jour scellé, jamais une
+         entrée sans estampille — donc jamais une entrée d'avant ce jour.
+         SUR CETTE NUIT-CI, RIEN N'EST À FAIRE : `restageSleep` la réécrit, la
+         lecture d'après la verra bougée et corrigera d'elle-même.
+         Banc : FLINT/web/tests/test-recup-jour-passe-en-livraison.js, § 3 à 3 d
+         (§ 3 b garde la non-régression du remède qu'on a refusé). */
     } catch (e) { flsLog('restage: ' + e.message); }
   }
   /* ── Entrée unique, appelée par le natif ──────────────────────────────────

@@ -109,7 +109,11 @@
       var deb = (s.startMin != null) ? +s.startMin : null;
       var fin = (s.endMin != null) ? +s.endMin : (deb != null && s.dur ? deb + (+s.dur) : null);
       if (deb == null || fin == null || fin <= deb) return null;
-      var dur = fin - deb;
+      /* 14 sept. 2026 — LA FENÊTRE VA JUSQU'À LA FIN RÉELLE, ARRÊT COMPRIS.
+         Depuis que les arrêts du tracker voyagent, `endMin` n'est plus
+         `startMin + dur` : la durée d'EFFORT est `s.dur`, et c'est elle qu'on
+         veut ici. Prendre `fin - deb` compterait les minutes assises. */
+      var dur = (+s.dur > 0) ? +s.dur : (fin - deb);
 
       /* LE REPOS DE RÉFÉRENCE — la même source que tout le reste de l'app,
          sinon la fiche décrirait un autre corps que les zones d'effort. */
@@ -224,9 +228,14 @@
          pas de la séance — et l'écran a quelque chose de juste à enseigner. */
       if (out.zones == null && repos != null) out.zones = zonesNues(repos);
 
-      /* LE STRESS AUTOUR DE LA SÉANCE — l'indice de la montre (0-3), moyenné
-         sur la demi-heure qui précède et celle qui suit. Null si la montre n'a
-         pas assez mesuré d'un côté : un effet ne se mesure que des deux côtés. */
+      /* LE STRESS AUTOUR DE LA SÉANCE — l'indice de la montre (0-3), moyenné de
+         45 à 3 min AVANT le début, puis de 3 à 45 min APRÈS la fin : 42 minutes
+         de chaque côté, les 3 minutes collées à la séance mises de côté. Ce
+         commentaire disait « la demi-heure » et la carte de l'écran aussi : tous
+         deux faux, corrigés le 14 sept. 2026 — les bornes, elles, ne bougent
+         pas (changer la fenêtre serait choisir un seuil, et un seuil ne se
+         choisit pas sur un seul corps). Null si la montre n'a pas assez mesuré
+         d'un côté : un effet ne se mesure que des deux côtés. */
       var off = offDe(K);
       var avant = stressMoy(off, deb - 45, deb - 3);
       var apres = stressMoy(off, fin + 3, fin + 45);

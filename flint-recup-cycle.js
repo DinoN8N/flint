@@ -134,6 +134,11 @@
         || d(a.bedMin, b.bedMin) > SEUIL_NUIT_MIN
         || d(a.wakeMin, b.wakeMin) > SEUIL_NUIT_MIN;
   }
+  /* 14 sept. 2026 — `flRecovLu` vit HORS de cette clôture (fin de fichier) et
+     pose exactement la même question sur le registre des jours passés : la nuit
+     a-t-elle bougé depuis la dernière fois ? On expose le juge plutôt que de
+     recopier le seuil — le repli n'est pas un second réglage. */
+  window.flNuitABouge = nuitABouge;
 
   /* ═══ 1 · OÙ EN EST LA NUIT ═══════════════════════════════════════════════ */
   window.flNuitCycle = function (K, maintenant) {
@@ -1025,13 +1030,91 @@ window.flRecovLu=function(off){
  var K=tk(_o);
  var _v=null;
  var _r=DB.get('recov_'+K,null);
- if(_r!=null&&!isNaN(+_r)){ _v={s:Math.round(+_r),fige:true}; }
+ var _reg=(_r!=null&&!isNaN(+_r));
+ /* ═══ 14 sept. 2026 — LE REGISTRE D'UN JOUR PASSÉ SE CORRIGE QUAND SA NUIT A
+    BOUGÉ, ET SEULEMENT LÀ ═══════════════════════════════════════════════════
+
+    LE DÉFAUT : cette branche écrivait `recov_<K>` au PREMIER score calculé et le
+    figeait pour toujours. Quand cette première lecture tombe pendant que le
+    bracelet livre encore la nuit par tranches — le cas de tout jour où l'app
+    n'a pas tourné, et c'est l'accueil préchargeant la veille qui la déclenche —
+    le registre garde la tranche initiale. Mesuré au banc § 3 : 150 min → 15
+    retenu, pour une nuit qui fait 403 et vaut 40.
+
+    CE QU'ON NE FAIT PAS, ET C'EST MESURÉ AUSSI : refuser d'écrire tant que
+    `flNuitCycle` dit « collecte » (essayé le 13, retiré le 14). Il répond
+    « collecte » dès la PREMIÈRE vue d'une nuit ; or ici la première vue, c'est
+    justement le jour que ce registre est SEUL à remplir. Base de Dino,
+    balayage 0..-35 : 25 entrées tombaient à 22, trous sur des nuits pourtant
+    COMPLÈTES (417 min, couverture 100 %), et la flamme « N jours de suite »
+    (`recovStreak`, qui s'arrête au premier jour absent) passait de 13 à 0.
+
+    LA DIFFÉRENCE QUI MANQUAIT EST LÀ : sur un chemin de LECTURE, personne ne
+    revient — `flRafraichirDonnees` sort d'emblée sur un jour passé et
+    `flRecovRejuger` fait `if(r==null) continue`. Attendre, c'est perdre le jour
+    pour de bon ; la seule issue est de CORRIGER. On écrit donc toujours (aucun
+    trou : `recovStreak`, la case du calendrier, `PontJournalMatin` gardent leur
+    jour), et on estampille À CÔTÉ la nuit mesurée — `recovNuitReg_<K>`, jamais
+    dans `recov_<K>` qui doit rester un NOMBRE pour ses 38 sites de lecture
+    (34 dans le web, 4 dans le natif — comptés le 14 sept.). À la
+    lecture suivante, si cette nuit a bougé de plus que le seuil que la maison
+    sanctionne déjà (`flNuitABouge`, 5 min — le seuil du cycle, pas un second
+    réglage), l'entrée décrit une nuit qui n'existe plus : on recalcule, on
+    réécrit, et on garde la première valeur vue dans `recovAvant_<K>` comme le
+    fait déjà le rejugement de génération. Ce n'est pas une doctrine neuve :
+    la gén. 16 (`RECOV_ALGO_GEN`) a été posée le 9 sept. pour « rejuger les
+    jours scelles avant leur nuit complete » — même panne, corrigée à la main.
+
+    LES BORNES, pour qu'un nombre déjà vu ne se mette pas à danser :
+     · une nuit de BRACELET seulement (une nuit saisie ou semée arrive d'un
+       coup, rien ne la fera bouger — même règle que `flNuitCycle`) ;
+     · dans l'horizon d'une livraison en retard que le cycle fixe déjà : 1 à 3
+       jours. Au-delà, l'entrée est figée comme avant ;
+     · jamais un jour SCELLÉ (`recovFige_`) : le sceau a sa propre réouverture
+       contrôlée, et v2184 interdit que les deux divergent (sceau 78 / registre
+       69 le 1er sept., neuf points sous les yeux de Dino) ;
+     · jamais sans estampille : les entrées écrites avant ce jour n'en ont pas,
+       elles ne bougeront donc jamais. La correction ne vaut que vers l'avant.
+
+    ET ON LE DÉCLARE : tant que l'entrée est corrigible, la porte rend
+    `fige:false` et `etat:'provisoire'` — un repli qui ne se déclare pas n'est
+    pas un repli (v1874). `flAccueilData` le relaie dans `scoreEtat`. */
+ var _age=-_o, _sn=null, _corr=false;
+ if(_age>=1&&_age<=3&&DB.get('recovFige_'+K,null)==null){
+  try{ var _sp=(typeof window.sensorOf==='function')?window.sensorOf(K):null;
+   if(_sp&&_sp._watch&&_sp.sleepMin!=null)
+    _sn={sleepMin:_sp.sleepMin,bedMin:_sp.bedMin,wakeMin:_sp.wakeMin};
+  }catch(e){}
+ }
+ if(_sn&&_reg){
+  var _es=null; try{_es=DB.get('recovNuitReg_'+K,null);}catch(e){}
+  try{_corr=!!(_es&&typeof window.flNuitABouge==='function'&&window.flNuitABouge(_es,_sn));}catch(e){_corr=false;}
+ }
+ if(_reg&&!_corr){ _v={s:Math.round(+_r),fige:!_sn}; if(_sn)_v.etat='provisoire'; }
  else {
   _v=(typeof recovery==='function')?recovery(_o):null;
-  if(_v&&_v.s!=null){ try{DB.set('recov_'+K,Math.round(_v.s));
+  if(_v&&_v.s!=null){ try{
+   /* la première valeur vue reste la première, comme au rejugement de
+      génération : sans cette trace, personne ne saurait que 15 a existé. */
+   if(_corr&&Math.round(_v.s)!==Math.round(+_r)&&DB.get('recovAvant_'+K,null)==null)
+    DB.set('recovAvant_'+K,Math.round(+_r));
+   DB.set('recov_'+K,Math.round(_v.s));
+   if(_sn)DB.set('recovNuitReg_'+K,_sn);
    /* v1846 — l'ajustement journal se fige AVEC le score : sans cette trace,
-      l'analyse d'impact corrélerait notre propre malus (doctrine flJournalAjust). */
-   if(_v.journalAjust&&_v.journalAjust.total)DB.set('recovAj_'+K,_v.journalAjust.total);}catch(e){} }
+      l'analyse d'impact corrélerait notre propre malus (doctrine flJournalAjust).
+      À la correction il doit SUIVRE, y compris en redevenant zéro : une trace
+      périmée ferait corréler notre propre malus à la nuit d'à côté (même règle
+      qu'au rejugement de génération). */
+   if(_v.journalAjust&&_v.journalAjust.total)DB.set('recovAj_'+K,_v.journalAjust.total);
+   else if(_corr&&DB.get('recovAj_'+K,null)!=null)DB.set('recovAj_'+K,0);}catch(e){}
+   /* UN JOUR, UNE RÉPONSE : le calcul frais dit la même chose que le registre.
+      Avant, la même journée rendait `fige` absent à la 1re lecture et `true` à
+      la seconde — l'écran aurait lu deux vérités pour un seul chiffre. */
+   _v.fige=!_sn; if(_sn)_v.etat='provisoire';
+  }
+  /* le recalcul n'a rien rendu : on garde l'entrée plutôt que de rendre `null`
+     — une correction qui échoue ne doit pas EFFACER un jour du registre. */
+  else if(_reg){ _v={s:Math.round(+_r),fige:!_sn}; if(_sn)_v.etat='provisoire'; }
  }
  if(_v&&_v.s!=null&&!_v.zone){
   var s=_v.s;

@@ -561,7 +561,16 @@ var FLEXP_ACTIVITES = [
    d'échantillons — la montre échantillonne presque deux fois plus densement à
    l'effort qu'au repos, et compter les points gonflerait les zones hautes de
    près de la moitié. */
-function flExpZones(K, montre, deb, fin) {
+/* ═══ 14 sept. 2026 — L'EXPORT COMPTAIT LES ARRÊTS, L'ÉCRAN NON ══════════
+   Depuis que la fenêtre d'une séance au tracker va jusqu'à sa FIN RÉELLE, arrêt
+   compris, cette fonction lisait le mur entier. Mesuré sur le cas du banc : la
+   fiche rendait 155 bpm et le fichier 123 — **32 bpm d'écart entre l'écran et
+   l'export pour la MÊME séance**. C'est exactement la variante réfutée, rouverte
+   sur ce seul chemin, et ce fichier porte déjà en v2353 la note d'avoir payé
+   cette classe d'écart (34 activités sur 57, jusqu'à 14 points).
+   Les arrêts voyagent donc jusqu'ici, et leurs minutes sortent des deux chemins :
+   la série canonique les reçoit, et le repli à la minute les saute. */
+function flExpZones(K, montre, deb, fin, pauses) {
   var vide = ['', '', '', '', '', ''];
   if (!montre || !montre.hr || !montre.hr.length) return vide;
   if (deb == null || fin == null) return vide;
@@ -594,7 +603,7 @@ function flExpZones(K, montre, deb, fin) {
      vaut, mais il rend un fichier plutôt qu'une colonne vide. */
   var pts = null;
   if (typeof window.flSerieCanonique === 'function') {
-    var sc = window.flSerieCanonique(K, deb, fin);
+    var sc = window.flSerieCanonique(K, deb, fin, pauses);
     /* ═══ LE MÊME PLANCHER QUE LA FICHE : CINQ MINUTES MESURÉES ═════════════
        `flSerieCanonique` accepte trois points à la minute ; la fiche, elle, en
        exige cinq et refuse sinon toute courbe — « Séance trop courte pour une
@@ -616,11 +625,16 @@ function flExpZones(K, montre, deb, fin) {
     var dans = (typeof window.flDansFenetre === 'function')
       ? window.flDansFenetre
       : function (m, d, f) { return m >= d && m < f; };
+    /* Les minutes d'arrêt ne sont pas de l'effort : même retrait que la fiche. */
+    var _ps = (typeof window.flPausesDe === 'function') ? window.flPausesDe(pauses) : null;
+    var enPause = (typeof window.flEnPause === 'function')
+      ? function (m) { return window.flEnPause(m, _ps); }
+      : function () { return false; };
     pts = [];
     var i, hr = montre.hr;
     for (i = 0; i < hr.length; i++) {
       var m = +hr[i][0];
-      if (dans(m, deb, fin) && +hr[i][1] > 0) pts.push([m * 60, +hr[i][1]]);
+      if (dans(m, deb, fin) && +hr[i][1] > 0 && !enPause(m)) pts.push([m * 60, +hr[i][1]]);
     }
   }
   if (pts.length < 2) return vide;
@@ -646,7 +660,7 @@ function flExpLignesActivites(J) {
   var out = [], i, s, zones;
   for (i = 0; i < J.seances.length; i++) {
     s = J.seances[i] || {};
-    zones = flExpZones(J.K, J.montre, s.startMin, s.endMin);
+    zones = flExpZones(J.K, J.montre, s.startMin, s.endMin, s.pauses);
     out.push([
       flExpDate(J.K),
       flExpFuseauTxt(J.fuseau),

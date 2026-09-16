@@ -2984,16 +2984,17 @@ const DB={
    if(!prefixe)return (window._flEcritures||0);
    return ((window._flEcrPar||{})[prefixe]||0);
   }catch(e){return (window._flEcritures||0);}},
+ nuitMarque:(k,v)=>{try{if(String(k||'').indexOf('watch_')!==0)return;var n=(v&&v.night)||{};(window._flNuitVue||(window._flNuitVue={}))[k]=((v&&v.hr&&v.hr.length)||0)+'/'+(n.bedMin==null?'x':n.bedMin)+'/'+(n.wakeMin==null?'x':n.wakeMin);}catch(e){}},   /* 14 sept. 2026 — L EMPREINTE D UNE JOURNEE DE BRACELET, POUR LES CALORIES DE LA VEILLE. `flPtsEveil(K)` rattache a la journee K le debut de K+1 jusqu au coucher (une journee va d un sommeil au suivant) : les calories de K dependent donc de la fenetre de K+1, qui n entrait dans AUCUNE cle de cache. Mesure sur la base du 9 septembre, l app restee ouverte la nuit : tant que la nuit du 7 n est pas stadee alors que sa courbe est la, le 6 vaut 2 563 kcal ; une fois la nuit stadee (coucher 00:20) il en vaut 2 049. Le cache servait le premier jusqu au prochain lancement — 514 kcal, un quart du total, et l ecart va dans les deux sens (0 a 28 kcal les autres jours, -255 le 5). Le compteur de famille (`tampon('watch_')`) ne peut pas servir : il bouge a chaque trame du bracelet et tuerait toute memoire (v1599). Relire `watch_<K+1>` a chaque signature non plus : 101 Ko par jour, 18 Mo pour une boucle de 182 jours. Une empreinte par jour, posee a l ecriture, ne coute pas une lecture. CE QU ELLE NE VOIT PAS : une ecriture qui n emprunte pas `DB.set`. */
  set:(k,v)=>{
   var s;
   try{s=JSON.stringify(v);}catch(e){return false;}
   DB.marque(k);
-  try{localStorage.setItem(k,s);return true;}catch(e){
+  try{localStorage.setItem(k,s);DB.nuitMarque(k,v);return true;}catch(e){   /* l empreinte suit l ECRITURE REUSSIE : posee avant, un stockage plein la ferait mentir — la cle du cache aurait bouge sans que le disque bouge, et la vraie ecriture, identique, ne l aurait plus invalidee */
    /* Plein. On degage du brut ancien, puis UNE seule reprise : si ça echoue
       encore, boucler ne ferait qu empiler les echecs. */
    var fait=false;
    try{fait=!!(window.flFaireDeLaPlace&&window.flFaireDeLaPlace());}catch(e2){}
-   if(fait){try{localStorage.setItem(k,s);return true;}catch(e3){}}
+   if(fait){try{localStorage.setItem(k,s);DB.nuitMarque(k,v);return true;}catch(e3){}}
    try{window._flPlein=(window._flPlein||0)+1;
        if(window._flPlein<6)console.warn('[flint] STOCKAGE PLEIN — '+k+
          ' ('+Math.round(s.length/1024)+' Ko) non enregistre');}catch(e4){}
@@ -3008,6 +3009,10 @@ const DB={
    dans le stockage (banc, ou telephone de dev), jamais par defaut. */
 var FL_TRACE=false;try{FL_TRACE=localStorage.getItem('flTrace')==='1';}catch(e){}
 const tk=(off)=>{const d=new Date();if(off)d.setDate(d.getDate()+off);return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()};
+/* ═══ v2492 — TRIER DES JOURS, PAS DU TEXTE. `tk()` rend `AAAA-M-J` NON PADDÉ : trié comme du TEXTE, `2026-10-1` passe AVANT `2026-9-20`, donc du 1er OCTOBRE au 31 DÉCEMBRE de chaque année « la dernière clé » d'un magasin de jours est une clé d'un mois à un chiffre — le poids du corps s'y figeait sur une pesée de septembre (80 kg au lieu de 72, soit +80 kcal/jour de métabolisme).
+   ON REPREND LA RECETTE DE LA v1606 sur `hrfine_`, où le filet de stockage effaçait AUJOURD'HUI avant le 2 août : lire la clé comme une DATE. Une clé illisible vaut 0 — elle passe en tête, donc elle part la première et n'est jamais prise pour la plus récente. C'est du CALENDRIER, pas de l'horlogerie : aucun fuseau n'est lu, `flMinuitDe` DATE un jour mais ne les ORDONNE pas.
+   ⚠️ LES DEUX `quand()` DE LA v1606 NE PASSENT PAS PAR ICI, ET NE LE DOIVENT PAS. Trois bancs PRÉLÈVENT leur fonction et l'évaluent seule, là où rien de global n'existe : promus, ils rendent « flJourMs is not defined » — mesuré le 15 sept. 2026 sur test-place-seances, test-fenetre-rrh et test-vfc-source, les trois rouges d'un coup. Un comparateur partagé s'arrête à la porte d'une fonction prélevée. Banc : tests/test-jours-tries.js. */
+window.flJoursTries=function(o){var q=function(k){var p=String(k).split('-'),t=Date.UTC(+p[0],(+p[1])-1,+p[2]);return isNaN(t)?0:t;};try{return Object.keys(o||{}).sort(function(a,b){return q(a)-q(b);});}catch(e){return [];}};
 
 /* ═══ v1444 — LA LISTE DES JOURS QUI EXISTENT, AU LIEU DE LES DEMANDER UN PAR UN
    ═══════════════════════════════════════════════════════════════════════════
@@ -3193,7 +3198,7 @@ window.flJours=flJours; window.flJoursVus=flJoursVus;
    mediane 87 % du total final, un releve sur dix seulement complet ; des J+1,
    dix sur dix complets. */
 window.flDiagLatencePas=function(){try{
- var A=DB.get('flPasArrivee',{})||{}, ks=Object.keys(A).sort();
+ var A=DB.get('flPasArrivee',{})||{}, ks=flJoursTries(A);   /* v2492 — par DATE : en texte, l instrument rendait octobre AVANT septembre */
  if(!ks.length)return 'Aucune arrivee notee pour l instant. L instrument part a '
    +'la prochaine synchro du bracelet (v2023).';
  var out=[];
@@ -3336,7 +3341,7 @@ window.flReparerPasDoubles=function(opts){
       var vus={};
       (j.jours||[]).forEach(function(x){if(x&&x.jour)vus[x.jour]=x;});
       r.detail.forEach(function(x){if(x&&x.jour&&!vus[x.jour])vus[x.jour]=x;});
-      j.jours=Object.keys(vus).sort().map(function(k2){return vus[k2];});
+      j.jours=flJoursTries(vus).map(function(k2){return vus[k2];});   /* v2492 — par DATE, sinon le temoin range octobre avant septembre */
       DB.set('flPasRepares',j);}catch(e){}
   /* Les pas nourrissent la detection de marches et toutes les moyennes : les
      jours repares doivent etre relus, pas gardes en cache. */
@@ -4531,13 +4536,10 @@ function baseStat(field,fen,jour){
     secondes mesurées sur une journée passée. */
  var cle=DB.tampon('sensor_')+'|'+tk(0);
  if(cle!==_bsCle){_bsMemo={};_bsCle=cle;}
- /* ═══ v2318 gen.17 — LA MEMOIRE DE baseStat DISTINGUE LA PROVENANCE DE LA CIBLE. Le 10 sept
-    le sceau du matin a compare une VFC RMSSD (68 ms, 83 min) a une normale MELANGEE — 16 nuits
-    puce a 58 + 16 nuits RMSSD a 69 = 63,6 (n 32) — et a rendu 78 quand la normale RMSSD (69 ± 9,
-    n 16) rend 72. La normale avait ete calculee plus tot dans la matinee pour une cible sans
-    provenance (pas encore de VFC : `_srcH` nul, donc aucun filtre, doctrine v2034) et mise en
-    memoire sous la cle field|fen|jour ; la cible RMSSD de 8 h 03 a relu cette entree. Le 8 sept
-    portait la meme trace (bH n 30 pour une VFC RMSSD). La provenance entre dans la cle. */
+ /* ═══ v2318 gen.17 — LA MEMOIRE DE baseStat DISTINGUE LA PROVENANCE. Le 10 sept, une VFC RMSSD
+    (68 ms) a ete jugee sur la normale MELANGEE puce+RMSSD (63,6, n 32) servie par la memoire, calculee
+    plus tot pour une cible sans VFC (`_srcH` nul = aucun filtre, v2034) : 78 pour 72. Elle entre dans
+    la cle. Dossier AUDIT-SCORES-VS-WHOOP-4-SEPT.md §32. */
  var _srcH=null;
  if(field==='hrv'){try{var _s0=(typeof sensorOf==='function')?sensorOf(tk(_j)):DB.get('sensor_'+tk(_j),null);_srcH=(_s0&&_s0.hrvSrc)||null;}catch(e){}}
  var k2=field+'|'+(fen||30)+'|'+_j+'|'+(_srcH||'');
@@ -4569,15 +4571,11 @@ function baseStat(field,fen,jour){
     normale sur la puce, rejet 3 MAD, mediane+MAD, plancher sur les 4 normales :
     outils/essai-normale-vfc.js et AUDIT-SCORES-VS-WHOOP-4-SEPT.md §7. */
  const _minNuit=240;
- /* ═══ v2319 gen.18 — LA NORMALE CARDIO PENCHE VERS LE RECENT. Le 9 sept, VFC 75 et FC repos
-    50 valaient 79 chez nous et 61 chez WHOOP : meme physiologie, deux memoires. La leur est
-    un lissage exponentiel (demi-vie ~7 j, sigma de meme memoire : leur IA, le 9) ; la notre
-    etait plate sur 60 j. Mesure sur 1 262 jours de 4 corps (essai-normale-recente.py, §30) :
-    MAE 7,40 -> 5,88 a demi-vie 7 j, rho 0,876 -> 0,919, biais apres un pic +2,9 -> -2,9, valide
-    C1 sur les 4 corps ; sous 5 j les faux REPOS doublent. Seules la VFC et la FC repos penchent
-    (le reste ne change rien au centieme) : poids 0,5^(i/7) sur la nuit vieille de i jours,
-    moyenne ET ecart-type ponderes, n reste le compte des nuits (le poids _w6 de recovery() le
-    lit). Plancher 4 h, provenance (et sa cle, gen.17) et plancher CV inchanges. */
+ /* ═══ v2319 gen.18 — LA NORMALE CARDIO PENCHE VERS LE RECENT (poids 0,5^(i/7) sur la nuit vieille
+    de i jours, moyenne ET ecart-type ponderes ; n reste le compte des nuits, que lit le poids _w6 de
+    recovery()). Mesure sur 1 262 jours de 4 corps (essai-normale-recente.py, §30) : MAE 7,40 -> 5,88,
+    rho 0,876 -> 0,919, valide C1 ; sous 5 j les faux REPOS doublent. Seules VFC et FC repos penchent.
+    Plancher 4 h, provenance (gen.17) et plancher CV inchanges. */
  const _demiVie=7,_pese=(field==='hrv'||field==='rhr');
  const a=[],w=[];for(let i=0;i<(fen||30);i++){const k=tk(_j-1-i);const s=(typeof sensorOf==='function')?sensorOf(k):DB.get('sensor_'+k,null);if(s&&s[field]!=null){if(field==='hrv'&&s.sleepMin!=null&&s.sleepMin<_minNuit)continue;if(!(_srcH&&s.hrvSrc!==_srcH)){a.push(s[field]);w.push(_pese?Math.pow(0.5,i/_demiVie):1);}}}
  if(a.length<3){_bsMemo[k2]=null;return null;}
@@ -4661,22 +4659,15 @@ function loadAvg(n,off){let t=0,c=0;const d=new Date();d.setDate(d.getDate()-(of
 /* GEN. 10 (v2189) — l ancre de la porte sommeil passe de 70 a SA mediane :
    31 points d amplitude entre corps, 13 apres. La ligne Z n a pas bouge, c est
    une de ses ENTREES qui change — le cas de la gen. 3. CHANTIER-ANCRE-SOMMEIL.md */
-/* GEN. 11 (v2214) — une nuit de moins de 4 h sort de la normale VFC (voir baseStat).
-   GEN. 12-13 (v2246-47) — hors bande RMSSD/puce, la puce servait : REFUTE par l export
-   WHOOP (VFC 81/87/79, nos 81/85/76 justes, puce -13 %). GEN. 14 (v2254) — le
-   desaccord se NOTE, ne remplace plus (flint-vfc-source.js), resumes restaures ;
-   la normale RMSSD etait jeune, pas fausse. GEN. 15 (v2262) — L OUVERTURE DU HAUT :
-   au-dessus de HAUTE (Z0 = logit 0,67) Z s etire de 1,3 avant la logistique, rien
-   ne bouge dessous ; l echelle des moindres carres etait tassee (WHOOP >= 90 -> 85,6
-   sur 1 262 j), le haut seul se repare a MAE/faux REPOS egaux (§26). Ligne Z intacte.
-   GEN. 16 (v2287) — LA BORNE DES 2 H DU SCEAU NE COUPE PLUS UNE LIVRAISON EN COURS
-   (flint-nuit-matin.js) : le 9 sept le bracelet a livre la nuit a 10 h 10, la borne a
-   scelle sur 6 valeurs de puce (83, nuit complete 79). La formule ne change pas : la
-   generation sert a rejuger les jours scelles avant leur nuit complete (§29).
-   GEN. 17 (v2318) — LA MEMOIRE DE baseStat PORTE LA PROVENANCE : le 10 sept une VFC RMSSD
-   a ete jugee sur une normale melangee puce+RMSSD servie par la memoire (78 pour 72). 
-   GEN. 18 (v2319) — LA NORMALE CARDIO PENCHE VERS LE RECENT (baseStat, demi-vie 7 j) : la recup
-   devient l ecart a l etat des deux-trois dernieres semaines. 1 262 jours : MAE 7,40 -> 5,88. */
+/* LES GENERATIONS DE LA RECUP, UNE LIGNE CHACUNE — le detail (mesures et refus) est au dossier
+   AUDIT-SCORES-VS-WHOOP-4-SEPT.md.  GEN. 11 (v2214) une nuit de moins de 4 h sort de la normale VFC (baseStat).
+   GEN. 12-13 (v2246-47) « hors bande, la puce sert » — REFUTE le soir meme par l export WHOOP.
+   GEN. 14 (v2254) le desaccord RMSSD/puce se NOTE, ne remplace plus ; resumes restaures.
+   GEN. 15 (v2262) l ouverture du haut : au-dessus de HAUTE (Z0 = logit 0,67) Z s etire de 1,3.
+   GEN. 16 (v2287) la borne des 2 h du sceau ne coupe plus une livraison en cours.
+   GEN. 17 (v2318) la memoire de baseStat porte la provenance de la cible.
+   GEN. 18 (v2319) la normale cardio penche vers le recent (demi-vie 7 j).
+   La ligne Z n a jamais bouge d un octet. */
 var RECOV_ALGO_GEN=18;
 window.flRecovRejuger=function(){
  try{
@@ -5058,7 +5049,7 @@ function actStrain(s,k){
       à défaut le jour courant. Une séance ancienne, écrite avant que ce champ
       existe, garde donc l'ancien comportement jusqu'à sa prochaine détection —
       elle ne devient pas fausse autrement qu'elle ne l'était déjà. */
-   var r=flEffortSeance(k||s.jour||null,s.startMin,fin);
+   var r=flEffortSeance(k||s.jour||null,s.startMin,fin,(typeof flPausesDe==='function')?flPausesDe(s):null);
    if(r&&r.effort!=null)return r.effort;
   }
  }catch(e){}
@@ -5190,7 +5181,7 @@ window.flNoteSeanceDetail=function(s,k){
  try{
   if(s.startMin!=null&&typeof flEffortSeance==='function'){
    var f=(s.endMin!=null)?s.endMin:(s.startMin+(s.dur||0));
-   var r=flEffortSeance(k||s.jour||null,s.startMin,f);
+   var r=flEffortSeance(k||s.jour||null,s.startMin,f,(typeof flPausesDe==='function')?flPausesDe(s):null);
    if(r&&r.effort!=null)m=r.effort;
   }
  }catch(e){}
@@ -5334,14 +5325,18 @@ window.flEtatActivite=function(s,k,maintenantMin){
     dit si `kcalEtat` vaut `cardio` ou `mixte`. Sur les cinq : trois questions
     (3, 4 et 6 août), deux écartées (17 et 18 août).
     Et une réponse déjà donnée ne se redemande jamais : `srcs.user` la porte. */
+  /* v2504 — UNE « MARCHE » QUE LE CŒUR DEMENT POSE AUSSI LA QUESTION : sur les 132 marches automatiques de
+    Dino, la FC moyenne est a 73 de mediane et UNE SEULE passe 110. Mesure et seuil : PontModeSport.swift et
+    AUDIT-SCORES-VS-WHOOP-4-SEPT.md §42. Le reste du filtre ne bouge pas. */
+ var _fcM=(s.avgHr!=null?s.avgHr:(s.hrMoy!=null?s.hrMoy:null)),_dementie=(String(s.name||'')==='Marche'&&_fcM!=null&&_fcM>=110);
  if(s.auto===true&&!(s.srcs&&s.srcs.user)
-    &&(!s.name||s.name==='Activité'||s.name==='Séance')){
+    &&(!s.name||s.name==='Activité'||s.name==='Séance'||_dementie)){
   var _et=s.kcalEtat;
   if(_et==null&&typeof flMetriquesCanoniques==='function'&&s.startMin!=null&&fin!=null){
-   try{ var _mq=flMetriquesCanoniques(k,s.startMin,fin); if(_mq)_et=_mq.kcalEtat; }catch(e){}
+   try{ var _mq=flMetriquesCanoniques(k,s.startMin,fin,s.pauses); if(_mq)_et=_mq.kcalEtat; }catch(e){}
   }
   if(_et==='cardio'||_et==='mixte')
-   return rendre('needsClassification','détectée sans nom, effort mesuré');
+   return rendre('needsClassification',_dementie?('« Marche » à '+_fcM+' bpm de moyenne — le cœur dit autre chose'):'détectée sans nom, effort mesuré');
   /* Sinon on ne fabrique pas de question : l'activité reste telle que la montre
      l'a annoncée, sans nom et sans effort mesuré, et l'écran le dira. */
  }
@@ -5729,7 +5724,7 @@ function openMeasure(){haptic();var ex=document.getElementById('msheet');if(ex)e
  '<button class="msave" type="button" onclick="saveMeasure()">Enregistrer</button></div></div>';
  document.body.appendChild(d);requestAnimationFrame(function(){d.classList.add('show')});setTimeout(function(){var w=document.getElementById('msW');if(w)w.focus()},260)}
 function closeMeasure(){var d=document.getElementById('msheet');if(d){d.classList.remove('show');setTimeout(function(){if(d)d.remove()},220)}}
-function saveMeasure(){var _pfl=function(id){return parseFloat(String((document.getElementById(id)||{}).value||'').replace(',','.'));};var w=_pfl('msW'),bf=_pfl('msBf');if(!w||w<20||w>400){toast('Entre un poids valide');return}var log=DB.get('bodylog',{}),k=tk(),rec={weight:Math.round(w*10)/10};if(bf>0&&bf<70){rec.bf=Math.round(bf*10)/10;rec.lean=Math.round(w*(1-bf/100)*10)/10}else if(log[k]&&log[k].bf){rec.bf=log[k].bf;rec.lean=Math.round(w*(1-log[k].bf/100)*10)/10}log[k]=rec;DB.set('bodylog',log);closeMeasure();haptic(12);_tSel=null;renderMetrend();toast('Mesure enregistrée')}
+function saveMeasure(){var _pfl=function(id){return parseFloat(String((document.getElementById(id)||{}).value||'').replace(',','.'));};var w=_pfl('msW'),bf=_pfl('msBf');if(!w||w<20||w>400){toast('Entre un poids valide');return}var log=DB.get('bodylog',{}),k=tk(),rec={weight:Math.round(w*10)/10};if(bf>0&&bf<70){rec.bf=Math.round(bf*10)/10;rec.lean=Math.round(w*(1-bf/100)*10)/10}else if(log[k]&&log[k].bf){rec.bf=log[k].bf;rec.lean=Math.round(w*(1-log[k].bf/100)*10)/10}log[k]=rec;DB.set('bodylog',log);if(typeof flRangerLean==='function')flRangerLean();closeMeasure();haptic(12);_tSel=null;renderMetrend();toast('Mesure enregistrée')}
 function daySparkSVG(M,k,on){var vals=[];for(var i=6;i>=0;i--)vals.push(M.val(tk2off(k,-i)));var vv=vals.filter(function(x){return x!=null});if(vv.length<2)return '<div class="mt2sparkph"></div>';var mn=Math.min.apply(null,vv),mx=Math.max.apply(null,vv);if(mn===mx){mn-=1;mx+=1}var W=88,H=34,col='#C2BDB4';var pts=vals.map(function(x,i){return x==null?null:[6+i*(W-12)/6,H-5-(x-mn)/(mx-mn)*(H-12)]}).filter(Boolean);var d=pts.map(function(p,i){return (i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)}).join(' ');var dots=pts.map(function(p){return '<circle cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="1.9" fill="'+col+'"/>'}).join('');return '<svg viewBox="0 0 '+W+' '+H+'" class="mt2spark" preserveAspectRatio="none"><path d="'+d+'" fill="none" stroke="'+col+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'+dots+'</svg>'}
 function buildDayCards(M,b){var host=document.getElementById('tCards');if(!host)return;var todayK=tk(),selK=_tDaySel,list,html='';
  if(_tRange==='6M'){list=[];for(var i=29;i>=0;i--)list.push(tk(-i))}else{list=trendPts(M,_tRange,_tOff).map(function(p){return dkey(p.date)})}
@@ -8072,7 +8067,8 @@ window.flEffortData=function(){try{
     L historique de sept jours, lui, reste civil : une serie a pas variable
     n aurait aucune pente lisible (PLAN-JOURNEE-PHYSIOLOGIQUE §4.4). */
  var str=null;
- try{str=(off===0&&typeof flEffortJour==='function')?flEffortJour(0):loadStrain(K);}
+ var _tr=false; try{_tr=(off===0&&typeof flJourneeEnTraitement==='function')&&flJourneeEnTraitement(K);}catch(e){_tr=false;}   /* 16 sept. 2026 — ET IL SE TAIT QUAND L ACCUEIL SE TAIT : le pave ci-dessus promet une seule fenetre, et le matin celle-ci en portait deux (le 12,9/20 d hier). Meme porte : `flint-nuit-matin.js` ⑨. L historique de sept jours ne bouge pas, il est civil. */
+ if(!_tr)try{str=(off===0&&typeof flEffortJour==='function')?flEffortJour(0):loadStrain(K);}
  catch(e){str=loadStrain(K);}
  var cur=effMetricsOf(K);
  function hist(f){var o=[];for(var i=6;i>=0;i--){var v=null;
@@ -8197,8 +8193,8 @@ window.flEffortData=function(){try{
     croire qu il parle des dernières vingt-quatre heures.
     Les quatre métriques ne bougent pas d un octet : elles portent leur
     historique de sept jours civils et leurs portes vers les tendances. */
- var _zj=null;
- try{_zj=(off===0&&typeof flZonesJourLogique==='function')?flZonesJourLogique(0)
+ var _zj=null;   /* 16 sept. 2026 — ET SA COMPOSITION AVEC LUI : `str` se taisait pendant le traitement pendant que les minutes par zone, sommees sur les MEMES cles, portaient encore deux jours. Un chiffre retenu a cote d une composition qui parle est un troisieme etat de plus. */
+ if(!_tr)try{_zj=(off===0&&typeof flZonesJourLogique==='function')?flZonesJourLogique(0)
         :((typeof flZonesJour==='function')?flZonesJour(K):null);}catch(e){}
  var compo=null;
  if(_zj&&_zj.min){
@@ -8502,6 +8498,10 @@ window.flBalanceData=function(){try{
    }catch(e){return null;}})(),
   bruleesJourneeLogique:(function(){try{
     if(sel.off!==0)return null;
+    /* 16 sept. 2026 — MEME PORTE QUE L ACCUEIL. Ce champ EST la somme des deux
+       cles ; le matin, tant que la journee n a pas de frontiere, c est le
+       3 364 kcal de Dino sous un autre nom. `flint-nuit-matin.js` ⑨. */
+    if(typeof flJourneeEnTraitement==='function'&&flJourneeEnTraitement())return null;
     var _j=(typeof flJourLogique==='function')?flJourLogique():null;
     if(!_j||!_j.traverseMinuit)return null;
     return (typeof flCaloriesJour==='function')?flCaloriesJour(0):null;
@@ -8787,7 +8787,7 @@ window.flHebdoDetail=function(key,mode,recul,leger){
     cibleCoucheTxt:(cib?hh(cib.c):null),cibleReveilTxt:(cib?hh(cib.r):null)};
   }
  }
- return {aDesDonnees:true,cle:key,
+ return {aDesDonnees:true,cle:key,v2Mesure:!!cfg.v2Mesure,   /* 15 sept. 2026 — la métrique dit au natif si sa SECONDE courbe est une mesure ou une référence calculée ; `aUneMesure` (DetailHebdo.swift) s'en sert pour décider si `v2` seul suffit à ouvrir l'écran. Faux par défaut, et absent des réponses d'un moteur plus ancien : le natif retombe alors sur l'ancienne règle, au bit près. Voir le drapeau posé sur `kcalBal`. */
   plage:!!plg,inverse:!!plg,
   cibleCouche:(plg?plg.cibleCouche:null),cibleReveil:(plg?plg.cibleReveil:null),
   cibleCoucheTxt:(plg?plg.cibleCoucheTxt:null),
@@ -9801,14 +9801,14 @@ window.flTendancesData=function(mi,pi){try{
     la moyenne sur sept jours et la comparaison etaient toutes ancrees sur
     aujourd hui : consulter le 8 aout melangeait donc six journees posterieures
     dans chaque chiffre affiche. */
- var _o=Math.min(0,(typeof window.flDayOff==='number'?(window.flDayOff|0):0));
- mi=Math.max(0,Math.min(4,+mi||0)); pi=Math.max(0,Math.min(2,+pi||0));
+ var _o=Math.min(0,(typeof window.flDayOff==='number'?(window.flDayOff|0):0)),_vus=null,_vk='';   /* v2492 — LES JOURS QUI ONT EXISTÉ, UNE FOIS, POUR LA CHARGE. `loadOf` rend un forfait (Σ durée × intensité × 1,7) et rend `0` quand il ne trouve rien : il ne sait pas dire « je n'ai rien ». Les quatre autres métriques rendent `null` dès que `sensor_`/`recov_` manque. Sur l'export du 9 sept. relu le 15 : 180 points, 180 non-nuls, 141 zéros — dont 115 sur des jours dont la base ne porte AUCUNE trace (antérieurs à l'installation, ou postérieurs à l'export). Héros « Moyenne 116 » ; sur les 65 jours connus, 320. Un 0 sur un jour VÉCU sans séance reste HONNÊTE (26 ici) : c'est l'index qui tranche, jamais la valeur. Même grammaire qu'en l. 3422 (journée logique) et l. 10374 (records), index HORS de la boucle. LA MÉMOIRE EST OBLIGATOIRE : `flJoursVus` garde UNE signature pour tout l'index alors qu'il enchaîne quatre familles, donc il ne retient jamais rien — 103 lectures et 226 Ko à CHAQUE appel, mesurés. Signature d'ici : les quatre tampons de famille + le nombre de clés + le jour, exactement la recette de `flJours` (v1599). Index absent (stockage muet) : on retombe sur l'ancien comportement, jamais sur une page vide. */
+ mi=Math.max(0,Math.min(4,+mi||0)); pi=Math.max(0,Math.min(2,+pi||0));  if(mi===4)try{_vk=DB.tampon('watch_')+'|'+DB.tampon('sante_')+'|'+DB.tampon('sessions_')+'|'+DB.tampon('meals_')+'|'+localStorage.length+'|'+tk(0);if(window._flTdCle!==_vk){window._flTdVus=flJoursVus(['watch_','sante_','sessions_','meals_']);window._flTdCle=_vk;}_vus=window._flTdVus;}catch(e){}   /* v2492b — L INDEX NE SERT QU A LA CHARGE : les quatre autres metriques ne le consultent jamais, et l ecran s OUVRE sur la recuperation (PontEcrans.swift:64 appelle flTendancesData(0,0)). Le calculer avant le cadrage faisait payer 97 lectures et 227 Ko a chaque ouverture, pour rien. */
  var METR=[
   ['recov','Récupération','#fb6015',function(k){return DB.get('recov_'+k,null);}],
   ['hrv','HRV (ms)','#6C7BD6',function(k){var s=sensorOf(k);return s?s.hrv:null;}],
   ['rhr','FC repos','#E0723A',function(k){var s=sensorOf(k);return s?s.rhr:null;}],
   ['sleep','Sommeil (h)','#3A4FB0',function(k){var s=sensorOf(k);return (s&&s.sleepMin!=null)?s.sleepMin/60:null;}],
-  ['load','Charge','#3FB57A',function(k){return loadOf(k);}]];
+  ['load','Charge','#3FB57A',function(k){return (_vus&&!_vus[k])?null:loadOf(k);}]];   /* v2492 — un jour que la base ne connaît pas n'a pas une charge nulle : il n'a PAS DE CHARGE. */
  var PER=[[7,'1 sem'],[30,'1 mois'],[180,'6 mois']];
  var m=METR[mi], nd=PER[pi][0];
  var vals=[];
@@ -9830,20 +9830,20 @@ window.flTendancesData=function(mi,pi){try{
   try{v=f(tk(_o-i));}catch(e){}
   if(v!=null&&!isNaN(v)){s+=+v;n++;}}
   if(!n)return null;var r=s/n;return dec?(Math.round(r*10)/10).toFixed(1).replace('.',','):String(Math.round(r));}
- var m7=[
-  {nom:'Récup moy', valeur:a7(METR[0][3]), unite:'%'},
+ var m7=[{nom:'Récup moy', valeur:a7(METR[0][3]), unite:'%'},
   {nom:'Sommeil moy', valeur:a7(METR[3][3],1), unite:'h'},
   {nom:'HRV moy', valeur:a7(METR[1][3]), unite:'ms'},
-  {nom:'Charge', valeur:(function(){var v=loadAvg(7);return v?String(Math.round(v)):null;})(), unite:''}];
+  /* v2492 — LA TUILE CHARGE PASSE PAR `a7`, COMME SES TROIS VOISINES. Elle appelait `loadAvg(7)`, qui repart de `new Date()` : le 15 septembre, flDayOff 0 / -20 / -30 donnaient héros « 21 », « 519 », « 1152 » et tuile « 21 » les trois fois, pendant que Sommeil (7,0→5,7→6,1) et HRV (75→60→58) suivaient. Sur « 1 sem », tuile et héros désignent la MÊME grandeur : ils doivent dire le même nombre. `a7` lit `tk(_o-i)` et ne moyenne que les jours connus — c'est le défaut que le pavé v1461 en tête de cette fonction dit avoir corrigé, et qui avait survécu ici. */
+  {nom:'Charge', valeur:a7(METR[4][3]), unite:''}];
  /* bilan de la semaine — reprend assess(7) */
  var bilan=null;
  try{
-  var rec=0,rn=0,sl=0,sn=0,str=0,ses=0;
+  var rec=0,rn=0,sl=0,sn=0,str=0,st=0,ses=0,vu=0;   /* v2498 — DEUX COMPTEURS QUI MANQUAIENT. La v2494 a rendu honnete le heros de la courbe Charge (`null` sur un jour jamais vecu) et a laisse ce bilan-ci, sur la MEME carte, afficher « EFFORT CUMULE 0 · SEANCES 0 » sur une semaine dont on ne sait rien : mesure a flDayOff=-120 et -200, recup/delta/sommeil rendaient `null` pendant qu'effort et seances rendaient « 0 ». Avant la v2494 les deux mentaient ENSEMBLE, donc c'etait coherent et invisible. Les trois voisins comptent deja leurs jours (`rn`, `sn`) ; `str` et `ses` additionnaient sans jamais compter. `st` et `vu` sont leurs compteurs, et ils ne repondent PAS a la meme question. */
   for(var i=0;i<7;i++){var k=tk(_o-i);
    var r=DB.get('recov_'+k,null);if(r!=null){rec+=r;rn++;}
    var sd=sensorOf(k);if(sd&&sd.sleepMin!=null){sl+=sd.sleepMin/60;sn++;}
-   str+=+loadStrain(k)||0;
-   ses+=(DB.get('sessions_'+k,[])||[]).filter(function(x){return x.type!=='nap';}).length;}
+   var _st=loadStrain(k); if(_st!=null){str+=+_st||0;st++;}   /* `loadStrain` SAIT deja se taire : dans la coquille il rend `null` quand la journee n'a pas de courbe cardiaque (« pas de courbe, pas de chiffre », l. 34408). Le bilan jetait cette reponse — `+null||0` vaut 0 — et rhabillait une ignorance en zero. On ne juge donc rien de neuf ici : on cesse d'ecraser le verdict du moteur, et ca ne coute pas une lecture de plus. */
+   var _ss=(DB.get('sessions_'+k,[])||[]); ses+=_ss.filter(function(x){return x.type!=='nap';}).length; if(_ss.length||DB.get('watch_'+k,null)!=null||DB.get('sante_'+k,null)!=null||DB.get('meals_'+k,null)!=null)vu++;}   /* COMPTER DES SEANCES NE DEMANDE PAS DE COURBE : une journee portee au poignet sans une seule seance vaut vraiment « 0 », c'est l'ignorance qui se tait, jamais le zero. Le critere est celui de l'index de la charge (v2494) — watch_, sante_, sessions_, meals_ — mais lu DANS la boucle, qui parcourt deja ces sept jours : 21 lectures de plus sur les ~700 d'une ouverture, contre 103 et 226 Ko pour `flJoursVus` que rien ne memorise ici. Accord mesure avec l'index sur 400 jours : 399/400, le seul ecart etant AUJOURD'HUI, que la lecture directe voit et que l'index ne porte pas encore. */
   var prec=0,pn=0;
   for(var i=7;i<14;i++){var r=DB.get('recov_'+tk(-i),null);if(r!=null){prec+=r;pn++;}}
   var d=(rn&&pn)?Math.round(rec/rn-prec/pn):null;
@@ -9851,7 +9851,7 @@ window.flTendancesData=function(mi,pi){try{
   bilan={recup:rn?String(Math.round(rec/rn)):null,
    delta:(d==null?null:((d>=0?'+':'')+d+' vs sem. dernière')),
    sommeil:slh==null?null:(Math.floor(slh)+'h'+String(Math.round((slh%1)*60)).padStart(2,'0')),
-   effort:String(Math.round(str)), seances:String(ses)};
+   effort:st?String(Math.round(str)):null, seances:vu?String(ses):null};
  }catch(e){}
  /* corrélations du journal — reprend behaviorCorr */
  var corr=[];
@@ -10169,9 +10169,9 @@ window.flProfilData=function(){try{
     depuis='Sur FLINT depuis '+MOIS[d.getMonth()]+' '+d.getFullYear();break;}}
   }
  }catch(e){}
- var poids=null;
- try{poids=p.weight||null;
-  if(poids==null){var bl=DB.get('bodylog',{})||{},ks=Object.keys(bl);
+ var poids=null; try{poids=p.weight||null;
+  /* v2492 — la DERNIERE pesee, pas la derniere ECRITE. Sans tri, cette ligne rendait l entree inseree en dernier ; `flPoidsCorps`, lui, prend la plus recente. Deux lecteurs du meme kilo qui divergent : c est exactement la v1225. */
+  if(poids==null){var bl=DB.get('bodylog',{})||{},ks=flJoursTries(bl);
    if(ks.length)poids=bl[ks[ks.length-1]].weight;}}catch(e){}
  var but=null,prot=null;
  try{var g=flNutGoals();but=g&&g.kcal;prot=g&&g.prot;}catch(e){}
@@ -10190,7 +10190,7 @@ window.flProfilData=function(){try{
  }
  return {aDesDonnees:true,
   prenom:(p.name||null),
-  age:(p.age!=null?String(p.age):null),
+  age:(function(){var _a=null;try{_a=(typeof flAge==='function')?flAge():null;}catch(e){}return (_a!=null)?String(_a):(p.age!=null?String(p.age):null);})(),   /* 14 sept. 2026 — L AGE SE RECALCULE ICI AUSSI, depuis la date de naissance. `p.age` n est ecrit qu a la saisie (flProfilSet 'naissance', flOnboardApply) : il se perime au prochain anniversaire et personne ne le corrige — c est ce que `flAge` dit depuis le 24 aout, et le moteur, lui, relit `birth` a chaque lecture. Ne le 22/10/2004 et saisi en septembre 2026, le Profil (« 21 ans »), le Coach (« Age 21 ans ») et la Keytel du cockpit (MorphoProfil.depuis, qui prend `Int(p.age)`) auraient dit 21 le 22 octobre pendant que flAge, flFcMax et l age FLINT comptaient 22 : deux ages dans la meme app, pour toujours. L entier saisi reste le repli — une date illisible n efface pas ce qui a ete donne. */
   region:(p.region||'France'),
   depuis:depuis,
   avatar:(function(){try{return localStorage.getItem('flAvatar')||null;}catch(e){return null;}})(),
@@ -10640,9 +10640,9 @@ window.flProfilSet=function(champ,valeur){try{
  }
  DB.set('profile',p);
  /* Le poids alimente aussi le journal corporel, source des courbes de poids.
-    Écrire l'un sans l'autre ferait mentir la page Tendances dès le lendemain. */
+    Écrire l'un sans l'autre ferait mentir la page Tendances dès le lendemain. 14 sept. 2026 — ET IL EMPORTE LE `lean` : 20 % de masse grasse à 85 kg puis le poids corrigé à 80 laissait le cache de la veille (68,0) en base, pilotant Katch-McArdle à 1 839 kcal au lieu de 1 752. La formule n est pas recopiée ici — `flRangerLean` la tient une seule fois, avec `flMasseMaigre`. */
  if(champ==='poids'){try{var bl=DB.get('bodylog',{})||{};
-  bl[tk(0)]=Object.assign({},bl[tk(0)]||{},{weight:p.weight});DB.set('bodylog',bl);}catch(e){}}
+  bl[tk(0)]=Object.assign({},bl[tk(0)]||{},{weight:p.weight});DB.set('bodylog',bl);if(typeof flRangerLean==='function')flRangerLean();}catch(e){}}
  if(typeof haptic==='function')haptic();
  return true;
 }catch(e){return false;}};
@@ -10679,7 +10679,7 @@ window.flOnboardApply=function(j){try{
     plus bas (« sans poids, pas de plan personnalisé ») : on garde l'objectif,
     on n'invente pas de chiffres avec. */
  if(goal!=='Maintien'&&(t==null||(w!=null&&Math.abs(t-w)<0.05))){goal='Maintien';t=null;}
- var sauve=flN.G;flN.G={goal:goal,w:(w!=null?w:76),t:(t!=null?t:(w!=null?w:76)-4),rate:rate};
+ var sauve=flN.G,plan=null;if(w!=null)flN.G={goal:goal,w:w,t:(t!=null?t:w-4),rate:rate};   /* 14 sept. 2026 — LE MODE À BLANC CALCULAIT SON PLAN SUR UN POIDS INVENTÉ. Le `w:(w!=null?w:76)` d'ici servait à qui avait sauté l'écran du poids (bouton « Passer ») : mesuré ce jour sur la base du 9 septembre, sèche à 55 kg SANS poids, `dry:true` rendait base 1 850, prot 167 (2,2 × 76 kg que personne n'a pesés), « −21 kg en ~42 sem », « vers le 5 juil. » — et même en Maintien, prot valait 152 = 2 × 76. Aucun écran ne l'affiche aujourd'hui (`EcranPret` porte le champ sans le montrer), mais promettre une date de fin de régime à qui n'a pas donné son poids est exactement ce que la maison s'interdit. Le mode à blanc suit donc la règle que l'écriture applique déjà plus bas — « sans poids, pas de plan personnalisé » : sans poids on ne CALCULE rien, et les deux retours disent `plan:null`. L'écran qui branchera ce champ montrera les filets du profil, pas un corps moyen. */
  /* 12 sept. 2026 — LE PLAN SE CALCULAIT AVANT L'ÉCRITURE DU CORPS. Pour un nouvel
     utilisateur, `flMetaBase()` ne connaissait donc ni poids ni taille : la
     référence tombait sur 2 400, l'écran final annonçait un plan (2 010 au banc)
@@ -10691,9 +10691,9 @@ window.flOnboardApply=function(j){try{
      if(w!=null)_corps.weight=w; if(+j.taille>0)_corps.height=+j.taille;
      if(j.naissance)_corps.birth=String(j.naissance); if(j.sexe)_corps.gender=j.sexe;
      _gp._brut=_corps;_gp._t=DB.tampon('profile');}catch(e){}
- var plan;try{plan=flNWizPlan();}finally{_gp._brut=_sb;_gp._t=_st;}
+ try{if(w!=null)plan=flNWizPlan();}finally{_gp._brut=_sb;_gp._t=_st;}
  flN.G=sauve;
- if(dry)return {ok:true,plan:{base:plan.base,prot:plan.prot,delta:plan.delta,date:plan.date}};
+ if(dry)return {ok:true,plan:plan&&{base:plan.base,prot:plan.prot,delta:plan.delta,date:plan.date}};
  var p=getProfile();
  var nom=String(j.prenom||'').trim().slice(0,24);
  if(nom)p.name=nom;
@@ -10729,8 +10729,8 @@ window.flOnboardApply=function(j){try{
     Tendances dès le lendemain (même règle que flProfilSet). */
  if(w!=null){try{flNWeightLogPush(w);}catch(e){}
   try{var bl=DB.get('bodylog',{})||{};
-   bl[tk(0)]=Object.assign({},bl[tk(0)]||{},{weight:w});DB.set('bodylog',bl);}catch(e){}}
- return {ok:true,plan:{base:plan.base,prot:plan.prot,delta:plan.delta,date:plan.date}};
+   bl[tk(0)]=Object.assign({},bl[tk(0)]||{},{weight:w});DB.set('bodylog',bl);try{if(typeof flRangerLean==='function')flRangerLean();}catch(e){}}catch(e){}}
+ return {ok:true,plan:plan&&{base:plan.base,prot:plan.prot,delta:plan.delta,date:plan.date}};
 }catch(e){return {ok:false};}};
 
 /* Le retour au premier jour : ce qu'efface « Réinitialiser comme un nouveau
@@ -11082,8 +11082,8 @@ window.flIdSaisie=function(){
  var r='';
  for(var i=0;i<6;i++)r+=Math.floor(Math.random()*36).toString(36);
  return 'm:'+Date.now().toString(36)+r;
-};
-window.flCreerActivite=function(nom,debut,duree,intensite,icone,gps,mesure,jour,manuel,idgeste){try{
+};   /* ═══ 14 sept. 2026 — LES ARRÊTS DU TRACKER, LUS PARTOUT DE LA MÊME FAÇON ═══ Une séance mise en pause portait la fenêtre [début, début + durée d EFFORT) : elle comptait les minutes d arrêt et laissait dehors autant de minutes d effort. Mesuré sur 10:00→11:00 coupé de 20 min d arrêt, 155 bpm d effort réel — la fiche rendait 109 bpm, et la note de la séance 10 au lieu de 12,5. L ÉLARGIR SEULE NE RÉPARE RIEN : jusqu à la fin réelle, sans retirer l arrêt, elle rend 122 bpm — plus l arrêt est long, plus elle empire (mesure du 14 sept.). La fenêtre va donc jusqu à la fin RÉELLE et ces minutes-là en sont RETIRÉES. Bornes en minutes du jour, comme startMin/endMin ; `dur` reste la durée d EFFORT, de sorte que fenêtre − arrêts = `dur` exactement. Banc : test-tracker-pauses.js. */ window.flPausesDe=function(s){var o=[];try{var a=(s&&s.pauses)||[];for(var i=0;i<a.length;i++){var d=Math.round(+a[i][0]),f=Math.round(+a[i][1]);if(isFinite(d)&&isFinite(f)&&f>d)o.push([d,f]);}}catch(e){}return o.sort(function(x,y){return x[0]-y[0];});};window.flEnPause=function(m,ps){if(!ps||!ps.length)return false;for(var i=0;i<ps.length;i++)if(m>=ps[i][0]&&m<ps[i][1])return true;return false;};window.flMinutesDePause=function(ps){var t=0;for(var i=0;i<(ps||[]).length;i++)t+=(ps[i][1]-ps[i][0]);return t;};
+window.flCreerActivite=function(nom,debut,duree,intensite,icone,gps,mesure,jour,manuel,idgeste,pauses){try{
  /* v1730 — LE JOUR PEUT ÊTRE DIT, ET IL DOIT L'ÊTRE À LA REPRISE.
     Cette porte écrivait toujours sur la journée affichée. C'est juste au Stop —
     on arrête ce qu'on vient de faire — mais faux au relevé d'une séance
@@ -11141,7 +11141,7 @@ window.flCreerActivite=function(nom,debut,duree,intensite,icone,gps,mesure,jour,
     titre qu'un battement inventé — et elle se propageait dans les zones, les
     calories et le cumul du jour. Une séance courte reste courte ; c'est à
     l'état de dire ce qu'on en fait, pas à un plancher de la maquiller. */
- var _dur=Math.max(1,Math.min(600,Math.round(+duree||45)));
+ var _durDem=Math.round(+duree||45), _dur=Math.max(1,Math.min(24*60,_durDem)); if(_durDem>_dur){try{console.log('[flint] activite '+K+' : duree de '+_durDem+' min ramenee a '+_dur+' — au-dela d une journee');}catch(e){}}   /* 14 sept. 2026 — CE PLAFOND RACCOURCISSAIT UNE MESURE, EN SILENCE. Dix heures : une randonnee ou une longue sortie velo de 11 h suivie au tracker (660 min) entrait a 600 — fiche native 11 h 00, frise et fenetre web 08:00 → 18:00, et les zones, l effort et les calories avec elles. Une fenetre MESUREE ne se raccourcit pas plus qu elle ne s allonge : c est le plancher de 5 min de la v1706, dans l autre sens. Le plafond devient la JOURNEE (24 h) — le contenant d une seance, pas un reglage : on ne choisit pas un seuil sur un seul corps. Et ce qui le depasse encore est ramene, mais le journal LE DIT. */
  var _hm=_st.split(':'), _dm=(+_hm[0]||0)*60+(+_hm[1]||0);
  var _s={name:String(nom||'Séance'),
          start:_st,
@@ -11196,7 +11196,7 @@ window.flCreerActivite=function(nom,debut,duree,intensite,icone,gps,mesure,jour,
  /* `real` reste absent à dessein : c'est lui qui range une entrée du côté des
     détections dans `syncSessions`, où un recalcul peut la remplacer. Une
     séance écrite par l'utilisateur ou par le tracker ne s'efface jamais. */
- if(mesure){_s.startMin=_dm;_s.endMin=_dm+_dur;}
+ if(mesure){_s.startMin=_dm;var _pz=[];try{(pauses||[]).forEach(function(p){var d=_dm+Math.round(+p[0]),f=_dm+Math.round(+p[1]);if(f>d)_pz.push([d,f]);});}catch(e){}if(typeof flPausesDe==='function')_pz=flPausesDe({pauses:_pz});_s.endMin=_dm+_dur+((typeof flMinutesDePause==='function')?flMinutesDePause(_pz):0);if(_pz.length)_s.pauses=_pz;}   /* 14 sept. 2026 — la fenêtre s ouvre de la durée des arrêts, et les arrêts partent avec elle : sans eux, une fenêtre élargie est PIRE que l ancienne (122 bpm contre 109, pour 155 réels). Sans pause, `endMin` vaut `_dm+_dur` à l octet près — rien ne bouge pour les 168 séances déjà en base. */
  /* v1706 — LA MÊME SORTIE NE S'ÉCRIT QU'UNE FOIS.
     Le tracker écrit désormais DEUX fois : à l'arrêt, pour que l'activité ne
     disparaisse pas le temps du bilan, puis à la validation du bilan, avec le
@@ -11410,13 +11410,13 @@ window.flSemerSortiesGPS=function(liste){try{
    var K=String(s.jour);
    var a=DB.get('sessions_'+K,[])||[];
    if(a.some(function(x){return x&&x.gps===s.gps;})){deja++;return;}
-   var _dur=Math.max(1,Math.min(600,Math.round(+s.dur||1)));
+   var _dur=Math.max(1,Math.min(24*60,Math.round(+s.dur||1)));   /* 14 sept. 2026 — meme plafond qu a la creation : le semis reposait depuis le disque une sortie de 11 h raccourcie a 10 h, a chaque relance */
    var _hm=String(s.start||'12:00').split(':');
-   var _dm=(+_hm[0]||0)*60+(+_hm[1]||0);
+   var _dm=(+_hm[0]||0)*60+(+_hm[1]||0);   /* 14 sept. 2026 — LE FILET RESÈME AUSSI LES ARRÊTS. Ce chemin ne sert que lorsque l écriture web a raté — mais il reposait alors la fenêtre d AVANT, [début, début+durée d effort), pendant que le Stop en pose une juste. Une fenêtre juste par un chemin et fausse par l autre, c est le 7,9 contre le 17,9 du 19 août à l envers. */ var _pz=[];try{(s.pauses||[]).forEach(function(q){var d0=_dm+Math.round(+q[0]),f0=_dm+Math.round(+q[1]);if(f0>d0)_pz.push([d0,f0]);});}catch(e){}if(typeof flPausesDe==='function')_pz=flPausesDe({pauses:_pz});
    a.push({name:sansMoment(s.nom)||'Séance', start:String(s.start||'12:00'),
            dur:_dur, int:Math.max(1,Math.min(4,Math.round(+s.int||2))),
            ti:(s.ti?String(s.ti):null), gps:String(s.gps), auto:false,
-           startMin:_dm, endMin:_dm+_dur, jour:K});
+           pauses:(_pz.length?_pz:undefined), startMin:_dm, endMin:_dm+_dur+((typeof flMinutesDePause==='function')?flMinutesDePause(_pz):0), jour:K});
    a.sort(function(x,y){
     function m(z){var p=String(z.start||'0:0').split(':');return (+p[0])*60+(+p[1]||0);}
     return m(x)-m(y);});
@@ -11484,7 +11484,7 @@ window.flModifierSeance=function(rang,nom,start,dur,intens,jour){try{
  var s=a[rang]; if(!s)return false;
  if(typeof nom==='string'&&nom)s.name=nom;
  if(typeof start==='string'&&/^\d{1,2}:\d{2}$/.test(start))s.start=start;
- if(+dur>0)s.dur=Math.max(5,Math.min(600,Math.round(+dur)));
+ if(+dur>0)s.dur=Math.max(5,Math.min(24*60,Math.round(+dur)));   /* 14 sept. 2026 — et la porte d edition aussi, sinon corriger une randonnee de 11 h la ramenait a 10 h */
  if(+intens>=1)s.int=Math.max(1,Math.min(4,Math.round(+intens)));
  a.sort(function(x,y){
   function m2(t){var p=String(t||'0:0').split(':');return (+p[0])*60+(+p[1]||0);}
@@ -12222,8 +12222,20 @@ window.flAccueilData=function(_argJour){try{
     Un jour PASSE reste civil : on montre ce qui a ete vu ce jour-la, on ne
     recalcule pas retroactivement une journee que l utilisateur a deja
     regardee. */
- var _JL=null;
- try{if(_off===0&&typeof flJourLogique==='function')_JL=flJourLogique();}catch(e){}
+ /* v2184 — LA PASSE DU MATIN, AVANT TOUT CALCUL. Doctrine, etats et raisons :
+    `flint-nuit-matin.js`, section « CE QUE LA PORTE CHANGE ICI ». L ordre est
+    le sujet : apres `flRecovLu`, la charge qui finalise servirait l etat
+    d avant.
+
+    16 sept. 2026 — ET « AVANT TOUT CALCUL » N ETAIT PAS VRAI : `flJourLogique()` etait lu DEVANT cette passe, qui peut finaliser la nuit, donc deplacer la frontiere du jour. La charge qui finalisait decrivait encore la journee de la VEILLE. Histoire, preuve et regle : `flint-nuit-matin.js` ⑨. */
+ var _nuit=null,_nuitOuverte=true;
+ if(_off===0){
+  try{if(typeof flNuitPasse==='function')flNuitPasse('accueil');}catch(e){}
+  try{if(typeof flNuitEtat==='function')_nuit=flNuitEtat(K);}catch(e){_nuit=null;}
+  try{if(typeof flNuitPublicationOuverte==='function')_nuitOuverte=flNuitPublicationOuverte(K);}catch(e){_nuitOuverte=true;}
+ }
+ var _enTraitement=(_off===0&&typeof flJourneeEnTraitement==='function')?flJourneeEnTraitement(K):(_off===0&&!_nuitOuverte);   /* EN TRAITEMENT : la journee n a pas encore de frontiere, donc aucune somme prise sur ses cles ne decrit une journee. Ce n est pas un delai. Metier : `flint-nuit-matin.js` ⑨. */
+ var _JL=null; try{if(_off===0&&typeof flJourLogique==='function')_JL=flJourLogique();}catch(e){}
  var _JLcles=(_JL&&_JL.cles&&_JL.cles.length)?_JL.cles:[K];
  var prof=(typeof getProfile==='function')?getProfile():{};
  /* v1540 — L'ACCUEIL LISAIT UNE AUTRE RÉCUPÉRATION QUE LA PAGE. Il recalculait
@@ -12232,17 +12244,6 @@ window.flAccueilData=function(_argJour){try{
     que la page disait 27. La v1463 l'avait pourtant écrit : « la carte de
     l'accueil et la page affichent le même nombre, par construction — elles
     lisent la même case ». C'est enfin vrai : même porte, `flRecovLu`. */
- /* v2184 — LA PASSE DU MATIN, AVANT TOUT CALCUL. Doctrine, etats et raisons :
-    `flint-nuit-matin.js`, section « CE QUE LA PORTE CHANGE ICI ». L ordre est
-    le sujet : apres `flRecovLu`, la charge qui finalise servirait l etat
-    d avant. */
- var _nuit=null,_nuitOuverte=true;
- if(_off===0){
-  try{if(typeof flNuitPasse==='function')flNuitPasse('accueil');}catch(e){}
-  try{if(typeof flNuitEtat==='function')_nuit=flNuitEtat(K);}catch(e){_nuit=null;}
-  try{if(typeof flNuitPublicationOuverte==='function')_nuitOuverte=flNuitPublicationOuverte(K);}
-  catch(e){_nuitOuverte=true;}
- }
  var rv=(typeof flRecovLu==='function')?flRecovLu(_off):((typeof recovery==='function')?recovery(_off):null);
  /* v2037 — UNE SEULE INTERROGATION DU CYCLE PAR CHARGE. `flAccueilData` part a
     chaque poussee douce ; demander deux fois l etat du cycle ferait relire le
@@ -12255,7 +12256,8 @@ window.flAccueilData=function(_argJour){try{
     session n est pas FINALIZED : ni nuit du jour a moitie calculee, ni score,
     ni repli sur la veille. Le pourquoi, les sept interdits de Dino et la
     machine sont dans `flint-nuit-matin.js`. */
- if(_off===0){if(!_nuitOuverte){n=null;rv=null;}else if(typeof flNuitServir==='function')n=flNuitServir(K,n);}  /* v2184 — soit la porte retient tout, soit on sert la nuit SCELLEE et non le calcul vivant : sceller sans servir laissait la tuile suivre le re-staging (±3 min par synchro) pendant que le score restait fige. Doctrine sur `flNuitServir`. */
+ if(_off===0){if(!_nuitOuverte){n=null;rv=null;}else if(typeof flNuitServir==='function')n=flNuitServir(K,n);}
+ /* v2184 — soit la porte retient tout, soit on sert la nuit SCELLEE et non le calcul vivant : sceller sans servir laissait la tuile suivre le re-staging (±3 min par synchro) pendant que le score restait fige. Doctrine sur `flNuitServir`. */
  /* REPLI SUR LA DERNIERE NUIT, comme l ecran Sommeil.
     Une nuit appartient au jour du REVEIL : entre minuit et la premiere synchro
     du matin, le jour courant n en a pas encore, et l accueil affichait des
@@ -12330,13 +12332,10 @@ window.flAccueilData=function(_argJour){try{
     s applique une seule fois. Un effort ne repart donc plus de zero a minuit
     quand personne n a dormi. */
  var _zonesJ=null;
- try{if(_off===0&&typeof flZonesJourLogique==='function')_zonesJ=flZonesJourLogique(0);}catch(e){}
- if(!_zonesJ){try{if(typeof flZonesJour==='function')_zonesJ=flZonesJour(K);}catch(e){}}
+ if(!_enTraitement){try{if(_off===0&&typeof flZonesJourLogique==='function')_zonesJ=flZonesJourLogique(0);}catch(e){}   /* les minutes par zone se somment sur les memes cles que l effort qu elles nourrissent : elles se taisent avec lui */
+  if(!_zonesJ){try{if(typeof flZonesJour==='function')_zonesJ=flZonesJour(K);}catch(e){}}}
  var eff=null;
- try{
-  eff=(_off===0&&typeof flEffortJour==='function')?flEffortJour(0)
-      :((typeof loadStrain==='function')?loadStrain(K):null);
- }catch(e){eff=null;}
+ if(!_enTraitement)try{eff=(_off===0&&typeof flEffortJour==='function')?flEffortJour(0):((typeof loadStrain==='function')?loadStrain(K):null);}catch(e){eff=null;}   /* 16 sept. 2026 — le 12,9/20 d hier : `flEffortJour(0)` somme TOUTES les cles de la journee logique. Un nombre qu on jetterait est un nombre qu on risque d afficher. */
  var cible=(typeof strainTarget==='function')?strainTarget():null;
  var eMot=null,eEtat=null;
  if(eff!=null&&cible){
@@ -12348,10 +12347,7 @@ window.flAccueilData=function(_argJour){try{
     Meme regle : la somme sur les cles de la journee logique. A minuit le
     compteur ne retombe pas a zero, il continue de monter. */
  var kcal=null;
- try{
-  kcal=(_off===0&&typeof flCaloriesJour==='function')?flCaloriesJour(0)
-       :((typeof caloriesBurned==='function')?caloriesBurned(K):null);
- }catch(e){kcal=null;}
+ if(!_enTraitement)try{kcal=(_off===0&&typeof flCaloriesJour==='function')?flCaloriesJour(0):((typeof caloriesBurned==='function')?caloriesBurned(K):null);}catch(e){kcal=null;}   /* 16 sept. 2026 — 3 364 kcal = 2 800 hier + 563 ce matin, meme cause */
  /* 12 sept. 2026 — le repère est la dépense de référence (voir flCaloriesRepere) : l'arc
     se remplit vers ce que ce corps brûle un jour ordinaire, et le mot se lit contre le
     prorata de la journée. */
@@ -12362,9 +12358,8 @@ window.flAccueilData=function(_argJour){try{
     « Faible » toute la journée, sur une installation neuve, à quelqu'un dont
     RIEN n'a été mesuré. Le chiffre reste zéro ; le mot se tait, comme l'effort
     qui rend déjà `etat:null` faute de cible. */
- var _calVide=false;
- try{var _cd=(typeof flCaloriesDetail==='function')?flCaloriesDetail(K):null;_calVide=!!(_cd&&_cd.vide);}catch(e){_calVide=false;}
- var cEtat=_calVide?null:flCaloriesMot(kcal,_off);
+ var _calVide=false; if(!_enTraitement)try{var _cd=(typeof flCaloriesDetail==='function')?flCaloriesDetail(K):null;_calVide=!!(_cd&&_cd.vide);}catch(e){_calVide=false;}
+ var cEtat=(_calVide||_enTraitement)?null:flCaloriesMot(kcal,_off); var _cSea=0;/* 16 sept. 2026 — la depense d une seance saisie se somme elle aussi sur les cles de la journee logique : elle se tait avec les autres, sinon la tuile calories reparlerait seule pendant le traitement. */if(_calVide&&!_enTraitement)try{var _cl=(_off===0&&typeof flJourLogiqueCles==='function')?flJourLogiqueCles(0):[K];for(var _ci=0;_ci<_cl.length;_ci++){var _cx=(typeof flCaloriesDetail==='function')?flCaloriesDetail(_cl[_ci]):null;if(!_cx||!_cx.vide){_cSea=0;break;}if(_cx.seances&&_cx.seances.length)_cSea+=(+_cx.actives||0);}}catch(e){_cSea=0;}var _cKc=(_cSea>0)?_cSea:kcal;   /* 14 sept. 2026 — UNE SÉANCE SAISIE BRÛLE, MÊME SANS BRACELET. Mesuré sur base vierge (profil 62 kg / 168 cm / femme) plus une course d'une heure déclarée à 07:00 : `flCaloriesDetail` créditait 544 kcal d'effort par sa passe 2, et l'accueil affichait « 0 » — `vide` ne regarde que les sources MESURÉES (FC, tranches, kcal montre, nuit, Santé), jamais une séance déclarée. ON NE TOUCHE NI `vide` NI `caloriesBurned` : « brûlées » continue de valoir `totalJour` partout, la Balance garde son contrat et un jour dont AUCUN métabolisme n'a été observé n'en invente pas (le défaut de Félix, l'invariant D3 `mesureAbsente`). C'est la TUILE qui nomme autrement ce qu'elle montre — « en séance », et son état le redit — le chiffre ne contient QUE la dépense du mouvement (forfait déjà net du métabolisme), jamais un métabolisme fantôme. Somme sur les clés de la journée logique, et SEULEMENT si aucune d'elles n'est mesurée : une seule clé mesurée et on retombe sur le total, sans mélange. Épinglé par tests/test-calories-mot-depense.js. */
 
  return {
   /* Ce drapeau decide si l ecran montre ses chiffres ou son etat vide. Il ne
@@ -12378,6 +12373,7 @@ window.flAccueilData=function(_argJour){try{
   /* v2184 — une nuit EN TRAITEMENT est une donnee : sans ce terme, l accueil
      bascule en etat vide et la carte n a plus de page ou se poser. */
   aDesDonnees: !!(rv||n||eff!=null||kcal!=null||(_nuit&&_nuit.etat&&_nuit.etat!=='SANS_NUIT')),
+  enTraitement: (_enTraitement===true),   /* 16 sept. 2026 — LA CHARGE DIT LEQUEL DES DEUX ETATS ELLE PORTE : « il ne doit pas exister de troisieme etat ». Le natif le devinait a la forme de la charge, et une charge mi-figue mi-raisin se lisait comme une journee. `true` = « ce que je te donne n est pas encore la journee » : ce qui depend de la frontiere vaut `null` ICI MEME — pas cache, pas calcule. Banc : tests/test-accueil-coherent.js. */
   /* ═══ v1919 — POURQUOI L ANNEAU EST VIDE, ET PAS SEULEMENT QU IL L EST ═══
      Le score de recuperation se debloque apres quatre nuits portees. Le web le
      DIT depuis toujours — « En calibration · 2/4 nuits, Flint apprend ta
@@ -12423,7 +12419,7 @@ window.flAccueilData=function(_argJour){try{
      Les deux sont OPTIONNELS : `nil` vaut « le web ne le dit pas » (charge
      ancienne), jamais « tout va bien ». */
   scoreEnAttente: (_cyc==null?null:(_cyc.attente===true)),
-  scoreEtat: (_off!==0?'finale':(_cyc==null?null:(_cyc.etat||null))),
+  scoreEtat: (_off!==0?((rv&&rv.etat)||'finale'):(_cyc==null?null:(_cyc.etat||null))),  /* 14 sept. 2026 : un jour passe dont le registre est encore corrigible (nuit du bracelet, 1 a 3 j) DIT 'provisoire' ; sans ca la charge annoncait 'finale' sur un nombre qui pouvait encore bouger */
   /* v2184 — l etat de la nuit du matin voyage avec la charge : l ecran ne
      deduit plus rien. Nul sur un jour passe, une nuit saisie, un bracelet muet
      ou un web ancien — le natif retombe alors sur son comportement d avant. */
@@ -12580,9 +12576,9 @@ window.flAccueilData=function(_argJour){try{
               if(_JL&&_JL.traverseMinuit&&_JL.dureeMin>840)_den=_JL.dureeMin;
               return Math.max(0,Math.min(1,+(_zonesJ.couvertureMin/_den).toFixed(2)))}catch(e){return null}})(),
             fcMaxSource:(function(){try{var f=flFcMax();return f?f.src:null}catch(e){return null}})()},
-  calories:{valeur:kcal!=null?String(kcal).replace(/\B(?=(\d{3})+(?!\d))/g,' '):null,
-            sous:'brûlées', part:(kcal!=null)?Math.max(0,Math.min(1,kcal/but)):null,
-            etat:cEtat,
+  calories:{valeur:_cKc!=null?String(_cKc).replace(/\B(?=(\d{3})+(?!\d))/g,' '):null,
+            sous:(_cSea>0)?'en séance':'brûlées', part:(_cKc!=null)?Math.max(0,Math.min(1,_cKc/but)):null,
+            etat:(_cSea>0)?'Séance saisie':cEtat,
             /* v1220 — DIRE QUAND ON NE COMPTE QUE LA MOITIE.
                `caloriesBurned` rend le TOTAL — metabolisme de base au prorata
                plus l actif. Mais `flMetaBase()` a besoin du poids, de la taille
@@ -14909,7 +14905,7 @@ var FLEF_TREND=[
   series:function(){return flEfSeries(function(k){return flStepsOf(k);});}},
  {key:'calories',hb:'calories',trend:'calories',title:'CALORIES',kind:'bars',col:'#fb6015',col2:'#ffc191',
   fmt:function(v){return fmtNum(v);},tick:function(v){return fmtNum(Math.max(0,v));},
-  series:function(){return flEfSeries(function(k){return caloriesBurned(k);});}},
+  series:function(){return flEfSeries(function(k){return flCalVue(k)?caloriesBurned(k):null;});}},   /* 15 sept. 2026 — TROISIÈME LECTEUR DE LA MÊME GRANDEUR, ET IL LUI FAUT LA MÊME PORTE. Cette carte ne passe ni par `mdGet` ni par `FL_HEBDO` : elle appelle `caloriesBurned` toute nue, donc elle récoltait le zéro de politesse (`_d.vide?0:…`) que la Balance et le Tableau de bord viennent d'apprendre à taire. Mesuré avant la correction, mer 9 → mar 15 : « 1 052 | 0 | 0 | 0 | 0 | 0 | 0 » ici contre « 1 052 | — | — | — | — | — | — » sur les deux autres écrans — six jours de contradiction, c'est-à-dire le défaut simplement DÉPLACÉ. `flCalVue` accepte une clé parce que `flEfSeries` n'a pas d'offset ; `null` traverse sans être touché et le filtre `p.v!=null` de la carte en fait un trou, jamais une barre à zéro. */
  {key:'strength',hb:'strength',trend:'strength',title:'TEMPS DE MUSCULATION',emptyMax:60,kind:'bars',col:FLEF_BLUE,col2:'#8FC7F2',   /* v1630 — bleu, voir les pas */
   fmt:function(v){return minToHM(v);},tick:function(v){return minToHM(Math.max(0,v));},
   series:function(){return flEfSeries(function(k){var m=0;
@@ -16851,7 +16847,7 @@ var FL_HEBDO={
     qu'on avait faits ». Les siens sont les sparklines des bulles : des lignes,
     dans la couleur de la bulle. On reprend ces couleurs à l'identique. */
  kcalOut:{title:'Calories brûlées',lab:'TES CALORIES BRÛLÉES',heroLab:'MOYENNE / JOUR',unit:'kcal',col:'#f2870f',kind:'line',fmt:flhInt,tickFmt:function(t){return ''+Math.round(t);},
-  get:function(off){try{return caloriesBurned(tk(off));}catch(e){return null;}}},
+  get:function(off){try{return flCalVue(off)?caloriesBurned(tk(off)):null;}catch(e){return null;}}},   /* 15 sept. — la garde est DANS le `get`, pas un drapeau de config : `flint-tendances.js` (_flhGet) préfère lui aussi `cfg.get` et court-circuite `flhSeries`. Voir `flCalVue`. */
  kcalIn:{title:'Calories consommées',lab:'TES CALORIES CONSOMMÉES',heroLab:'MOYENNE / JOUR',unit:'kcal',col:'#f4231d',kind:'line',fmt:flhInt,tickFmt:function(t){return ''+Math.round(t);},
   get:function(off){try{var t=nutTotals(tk(off));return (t&&t.kcal)?t.kcal:null;}catch(e){return null;}}},
  /* La balance n'est pas une série de plus : c'est l'ÉCART entre les deux
@@ -16860,8 +16856,8 @@ var FL_HEBDO={
     légende : le branchement des barres empilées teste kind==='bars'. */
  kcalBal:{title:'Balance calorique',lab:'BRÛLÉES CONTRE CONSOMMÉES',heroLab:'BRÛLÉES / JOUR',unit:'kcal',col:'#f2870f',colB:'#D6455B',kind:'line',fmt:flhInt,tickFmt:function(t){return ''+Math.round(t);},
   parts:[['#f2870f','Brûlées'],['#D6455B','Consommées']],
-  get:function(off){try{return caloriesBurned(tk(off));}catch(e){return null;}},
-  get2:function(off){try{var t=nutTotals(tk(off));return (t&&t.kcal)?t.kcal:null;}catch(e){return null;}}},
+  get:function(off){try{return flCalVue(off)?caloriesBurned(tk(off)):null;}catch(e){return null;}},   /* 15 sept. — même garde que `kcalOut` : la courbe orange de la Balance est LA MÊME grandeur, elle ne peut pas tomber à zéro là où l'autre écran se tait. */
+  v2Mesure:true,get2:function(off){try{var t=nutTotals(tk(off));return (t&&t.kcal)?t.kcal:null;}catch(e){return null;}}},   /* 15 sept. 2026 — `v2Mesure` : LA SECONDE COURBE DE CETTE MÉTRIQUE EST UNE MESURE, ET C'EST LA SEULE DE LA MAISON. `get2` vaut ici `nutTotals`, c'est-à-dire des repas que quelqu'un a SAISIS : une observation, au même titre que les brûlées. Le natif refuse de charger un graphique qui n'a aucune mesure dedans (`aUneMesure`, DetailHebdo.swift) et ne regardait que la PREMIÈRE courbe : depuis que les brûlées savent se taire faute de source, douze repas photographiés sans bracelet ne suffisaient plus à ouvrir l'écran — mesuré, `v` nul 30 fois sur 30 et `v2` plein 12 fois. Ce drapeau le rouvre, et il est posé ICI, sur la métrique, parce que la réponse dépend de la métrique et d'elle seule (pavé v1553). CONTRE-EXEMPLE MESURÉ, ET C'EST LUI QUI INTERDIT DE GÉNÉRALISER LE JETON CÔTÉ NATIF : le `get2` du SOMMEIL est le besoin en heures, CALCULÉ depuis le profil, jamais observé ; il vaut un nombre même sur une fenêtre sans une seule nuit mesurée — 8 fenêtres dans la base du 9 septembre (S7, S8, M3 à M8). Sans ce drapeau, le sommeil aurait ouvert un graphique ne contenant QUE la ligne grise du besoin : un cadre qui ressemble à une panne, ce que le pavé v1553 interdit. Une seconde courbe n'autorise le dessin que là où elle est elle-même une mesure. */
  hrv:{title:'VFC',lab:'TA VFC',unit:'ms',kind:'line',fmt:flhInt},
  rhr:{title:'FC au repos',lab:'TA FC AU REPOS',unit:'bpm',kind:'line',fmt:flhInt},
  /* v684 — métriques de la page Effort : elles ouvrent désormais la MÊME page de
@@ -17022,7 +17018,7 @@ var FL_HEBDO={
   return Math.max(base,Math.min(base+120,n))/60;
  }catch(e){return (getProfile().need)||null;}},fmt:flhHM,tickSteps:[0.5,1,2,3,4,6],tickFmt:function(t){return t%1===0?t+'h':flhHM(t);}},
  steps:{title:'Pas',lab:'VOS PAS',unit:'pas',col:FLEF_BLUE,kind:'bars',fmt:flhInt,vide0:true,   /* v1630 — bleu */tickFmt:function(t){return t>=1000?(t/1000)+'k':''+t;}},
- calories:{title:'Calories',lab:'CALORIES BRÛLÉES',heroLab:'MOYENNE / JOUR',unit:'kcal',kind:'bars',fmt:flhInt,vide0:true,tickFmt:function(t){return t>=1000?(Math.round(t/100)/10).toString().replace('.',',')+'k':''+Math.round(t);}},
+ calories:{title:'Calories',lab:'CALORIES BRÛLÉES',heroLab:'MOYENNE / JOUR',unit:'kcal',kind:'bars',fmt:flhInt,tickFmt:function(t){return t>=1000?(Math.round(t/100)/10).toString().replace('.',',')+'k':''+Math.round(t);}},   /* 15 sept. — `vide0` est PARTI d'ici : il effaçait aussi bien le zéro de politesse que le zéro MESURÉ. La disponibilité se décide maintenant dans `mdGet` (cas 'calories'), donc pour les lecteurs QUI PASSENT PAR LUI — ce graphique et `openMetricDetail` — et non plus pour ce seul graphique. MESURÉ, ET CE N'EST PAS « TOUS » : la tuile « Calories » du Tableau de bord est `DASH.calories.v()`, qui appelle `caloriesBurned(tk())` en direct et ne traverse jamais `mdGet` ; elle rend « 0 kcal » avant ce lot comme après, sur le jour muet du 15 septembre. Elle N'EST PAS couverte ici, et c'est délibéré : la rendre muette la mettrait en désaccord avec la tuile d'ACCUEIL, qui sur ce même jour rend `{valeur:"0", etat:null}` par une décision datée du 13 septembre — « le chiffre reste zéro ; le mot se tait » — qu'on ne rouvre pas en passant. Deux tuiles de calories qui se contrediraient, ce serait ce lot-ci à l'envers. Voir `flCalVue`. */
  effortrecup:{title:'Effort et récupération',lab:'TON EFFORT',unit:'/ 20',kind:'bars',fmt:flhDec,vu:true,ticks:[20,15,10,5,0],tickFmt:function(t){return ''+t;}},
  vo2:{title:'VO₂ max',lab:'TA VO₂ MAX',unit:'',kind:'line',fmt:flhInt},
  fcavg:{title:'FC moyenne',lab:'TA FC MOYENNE',unit:'bpm',kind:'line',fmt:flhInt},
@@ -17070,7 +17066,7 @@ function flhJourVu(off){try{
  if(flStepsOf(tk(off))>0)return true;                             /* pas comptés */
  if((DB.get('sessions_'+tk(off),[])||[]).length)return true;      /* une séance */
  return false;}catch(e){return false;}}
-
+/* 15 sept. 2026 — LES CALORIES DÉCLARENT ENFIN LEUR PROPRE DISPONIBILITÉ, ET C'EST LE PAVÉ CI-DESSUS QUI L'EXIGE. TROIS écrans lisaient `caloriesBurned` pour LA MÊME grandeur et se contredisaient DANS LES DEUX SENS, mesuré sur `releves/donnees-dino-2026-09-09.json` (profil de Dino posé) : ① `kcalOut`/`kcalBal` — la page Balance — prenaient pour argent comptant le ZÉRO DE POLITESSE de `caloriesBurned` (`_d.vide?0:…`), qui vaut « je n'ai rien vu » et non « tu n'as rien brûlé » : 55 jours sur 120 sans la moindre source, 19 zéros sur les 30 jours du recul 2, héros « MOYENNE / JOUR » à 675 kcal quand les seuls jours mesurés de cette fenêtre valent 1 840, et à 0 kcal tout rond au recul 3 — alors que le métabolisme de base de ce corps vaut 1 906 kcal et qu'aucune journée vécue ne peut coûter zéro ; ② `calories` — le Tableau de bord — était barrée par `watchHas`, c'est-à-dire par la disponibilité du BRACELET, exactement la faute que le pavé v1553 nomme dix lignes plus haut : 65 journées, du 27 juin au 9 septembre, qu'une source avait bel et bien comptées (285 à 3 713 kcal) sans que le bracelet ait rien dit, rendaient « — » ; ③ `FLEF_TREND` — la carte « CALORIES » des Tendances de la page EFFORT, servie au natif par `flEffortData` — n'a NI `mdGet` NI `FL_HEBDO` : elle appelle `caloriesBurned` en direct à travers `flEfSeries`, et restait donc au zéro de politesse pendant que les deux autres se taisaient (mesuré mer 9 → mar 15 : « 1 052 | 0 | 0 | 0 | 0 | 0 | 0 » contre « 1 052 | — | — | — | — | — | — »). Fermer deux écrans sur trois n'aurait pas corrigé le défaut, ça l'aurait DÉPLACÉ. LA SEULE QUESTION HONNÊTE est « une source a-t-elle parlé ce jour-là ? », et `flCaloriesDetail.vide` la pose DÉJÀ pour tout le monde, sans interroger la voisine : FC, tranches d'activité, kcal de la montre, nuit, pas d'Apple Santé. Aucune source : « — ». UNE SOURCE QUI A PARLÉ ET COMPTÉ ZÉRO RESTE UN VRAI ZÉRO — c'est pour cela que ce n'est pas `vide0`, qui efface les deux populations sans les distinguer (bracelet à `kcal:0`, profil incomplet : la dépense mesurée vaut 0 et doit s'afficher 0). ELLE PREND UN RECUL **OU UNE CLÉ** : `flEfSeries` n'a pas d'offset et ne manipule que des clés de jour ; `null` y traverse sans être touché et le filtre `p.v!=null` de la carte en fait un trou. JUSQU'OÙ VA « PLUS AUCUN DÉSACCORD ENTRE ÉCRANS », ET OÙ ELLE S'ARRÊTE. La phrase vaut pour ces TROIS lecteurs-là, jour par jour, et pour eux seuls. Les DEUX TUILES de calories restent branchées sur `caloriesBurned` tout nu et disent encore « 0 » le 2026-9-15 là où les trois graphiques disent « — » : la tuile d'ACCUEIL par une décision datée du 13 septembre (« le chiffre reste zéro ; le mot se tait », l. ~12360) et celle du Tableau de bord (`DASH.calories.v()`) pour rester d'accord avec elle. L'écart entre les deux familles est donc ASSUMÉ, pas résorbé, et le banc l'épingle tel quel. IL RESTE CINQ LECTEURS AU ZÉRO DE POLITESSE — LE COMPTE A ÉTÉ FAUX DEUX FOIS (deux, puis quatre), ON L'ÉCRIT DONC AVEC LA RÈGLE QUI LE FERME : est un lecteur restant TOUTE fonction qui appelle `caloriesBurned` en BOUCLE SUR DES JOURS et en montre le résultat. Ils sont cinq : `TREND.calories.val` et `calBuildModel` (flint-tendances.js, pages `metrend` et `caltrend`) ; `flCalBars` (l. ~19775, les neuf barres de l'accueil) ; `effCalSpk` (l. ~21055, la sparkline 7 jours de la page Effort) — mesuré mer 9 → mar 15, « 1 052 | 0 | 0 | 0 | 0 | 0 | 0 » pour ces deux-là — et `ngHero`/`renderNutGraph` (l. ~19946), la moyenne « Dépensé » de la page `nutgraph`, qui boucle sur 7, 30 ou 365 jours : mesuré en posant des repas sur 30 jours muets, elle annonce « Consommé 2 100 · Dépensé 0 » quand les trois écrans disent « — » sur les trente. NE SONT PAS DE CE COMPTE, ET C'EST LA RÈGLE QUI LE DIT : les additions (le total des badges l. ~10310, qui somme — ajouter 0 à une somme ne fabrique aucune barre), les tuiles d'un seul jour (`flCaloriesJour` l. ~3605, `DASH.calories`, l'accueil) et l'EXPORT (flint-export.js:315), qui doit rendre la valeur brute. ON LES LAISSE, ET POUR DEUX RAISONS MESURÉES, PAS PAR FATIGUE. ① LEUR DESSIN NE CHANGERAIT PAS : `flCalBarsSVG` fait `vals[i]||0` et `effSpark` laisse l'arithmétique convertir `null` en 0 ; rejoués sur la série fermée, les deux SVG sont IDENTIQUES caractère par caractère à ceux de la série à zéro — la barre resterait un moëllon au plancher, la ligne resterait collée à l'axe. Un trou n'existe pas sans réécrire les deux dessinateurs. (`ngHero` n'a pas cet argument-là : sa moyenne CHANGERAIT, de 0 à « — ». C'est la seconde raison seule qui la laisse ouverte, et c'est dit ici plutôt que caché.) ② AUCUN DES TROIS NE SORT DE LA WEBVIEW : ils finissent en `set(…)`/`innerHTML`, aucun .swift ne nomme `flCalBars`, `effCalSpk`, `nutgraph` ni `ngEB`, et la page est montée sous les écrans natifs en `allowsHitTesting(false)` depuis la v947. Le banc épingle les deux faits, et redeviendra rouge le jour où un .swift les nommera. HORS COQUILLE, ON NE JUGE RIEN — ET C'EST LA GRAMMAIRE DE LA MAISON, PAS UNE COMMODITÉ. `flCaloriesDetail` vit dans `if(SHELL){…}` (l. ~27729) et peut aussi rendre `null` par son propre `catch` (l. ~35040) : dans les deux cas on rend `true`, « je ne juge pas », comme `flBalanceData` l. 16504 (`if(!_d||!_d.vide)burn=caloriesBurned(k)`) et la tuile d'accueil l. 12371 (`_calVide=!!(_cd&&_cd.vide)`). Une panne ne devient jamais une page vide — même règle que `flJours` l. 3102. MESURÉ, et c'est pourquoi ce n'est plus `!!caloriesBurned(k)` : moteur monté SANS `window.webkit`, témoin et lot côte à côte dans le MÊME processus (hors coquille `caloriesBurned` vaut un forfait qui contient la minute courante : deux processus lancés l'un après l'autre ne sont pas comparables) — 200 jours de `mdGet('calories')` et neuf charges (S0, M0, M3, A0, kcalOut, kcalBal, flEffortData, flBalanceData, flAccueilData) identiques AU BIT PRÈS, seule la clé neuve `v2Mesure` apparaît. Et sur le `catch` de `flCaloriesDetail`, forcé au banc, 200 jours, TROIS MESURES ET PAS UNE : l'ancien repli `!!(d&&!d.vide)` les cachait TOUS LES 200, alors que `caloriesBurned` rendait encore un chiffre sur les 200 (dont 160 valant ZÉRO — et la règle d'avant ce lot, barrée par `watchHas`, n'en affichait que 42). Le repli neuf n'en cache aucun PAR LUI-MÊME : 200 sur 200 rendus, index retiré. MAIS CE N'EST PAS CE QUI EST LIVRÉ, ET IL FAUT L'ÉCRIRE : avec l'index, il en rend 65 et en tait 135 — et ces 135 sont EXACTEMENT les jours qui ne portent aucune source, donc le MÊME verdict que lorsque le détail répond. Ce que cette règle garantit n'est donc pas « aucune page ne se vide », c'est « AUCUN DES 65 JOURS QUI PORTENT UNE SOURCE ne disparaît quand le détail tombe en panne » — 65 sur 65, mesuré, et c'est exactement ce que le banc épingle. LE COÛT, MESURÉ, ET CE QUI LE PAIE. Moteur NEUF, premier appel, un moteur par scénario, en lectures de localStorage : la question honnête coûte un `flCaloriesDetail` PAR JOUR là où `watchHas` court-circuitait ~300 journées pour une lecture chacune, et l'année de `calories` passait de 1 337 à 5 511 (×4,1). L'INDEX `flJoursVus(['watch_','sante_'])` NE SERT QU'À DIRE « NON » : un jour absent de l'index n'a ni clé `watch_` ni `sante_` non vide, donc `vide` est vrai par construction ; un jour PRÉSENT n'est jamais cru sur parole, on lui pose quand même la question. Résultat : `calories` A0 1 337 → 2 256 (×1,7 au lieu de ×4,1), et les deux années de la Balance, DÉJÀ les plus chères avant ce lot, tombent — `kcalOut` A0 5 447 → 951, `kcalBal` A0 5 810 → 1 307. Le prix fixe est de 62 lectures payées UNE fois, et LA MÉMOIRE EST OBLIGATOIRE : `flJoursVus` enchaîne deux familles alors que `flJours` n'a qu'une signature, donc il ne retient rien — cinq appels de suite coûtent 310 lectures, mesuré (v2492 a rencontré le même mur). Signature d'ici : les deux tampons de famille, le nombre de clés, le jour. Ce que l'index coûte sur une fenêtre courte est écrit aussi : +31 sur `calories` M0 (807 → 838), +31 sur S0, +29 sur `kcalOut` M0, +27 sur `flEffortData` (669 à l'origine, 670 sans index, 697 avec). LA CONDITION, ET ELLE EST ABSOLUE : PAS UN VERDICT DE JOUR NE CHANGE. Mesuré jour par jour contre le juge honnête (un `flCaloriesDetail` par jour, sans index), 5 relevés × 400 jours, 0 désaccord ; et sur deux cas FABRIQUÉS où la clé existe sans source (`watch_` qui ne porte que des pas, `sante_` qui ne porte qu'un poids) le juge naïf « la clé existe » répond « vu » quand l'honnête répond « muet », et celui-ci suit l'honnête. C'est pour cela que l'index est un FILTRE et jamais une RÉPONSE. Sentinelle : tests/test-calories-deux-ecrans.js. */ function flCalVue(o){var k=(typeof o==='string')?o:tk(o);try{if(typeof flCaloriesDetail!=='function')return true;var _c=DB.tampon('watch_')+'|'+DB.tampon('sante_')+'|'+localStorage.length+'|'+tk(0);if(window._flCvCle!==_c){window._flCvVus=flJoursVus(['watch_','sante_']);window._flCvCle=_c;}if(window._flCvVus&&!window._flCvVus[k])return false;var d=flCaloriesDetail(k);return d?!d.vide:true;}catch(e){return true;}}
 function flhSeries(key,end,n){var cfg=FL_HEBDO[key],a=[];
  for(var i=n-1;i>=0;i--){var off=end-i,v=null;
   try{v=cfg.get?cfg.get(off):mdGet(key,off);}catch(e){}
@@ -17722,8 +17718,7 @@ window._nutOff=window._nutOff||0;
    descend pas sous ce que le corps brûle immobile. Écriture seulement si le
    chiffre bouge d'au moins 10 kcal, pour ne pas réécrire le profil en boucle. */
 function flPlanSuivreReference(){try{
- var p=getProfile()||{};
- if(p.kcalSrc==='choix')return null;
+ var p=getProfile()||{}, _choix=(p.kcalSrc==='choix');   /* 14 sept. 2026 — LE CHOIX MANUEL GELAIT AUSSI LES PROTEINES. Ce renoncement etait pose AVANT le calcul des proteines, vingt lignes plus bas : qui choisit son apport a l onboarding (`kcalSrc:'choix'`) gardait 2,2 g/kg de seche apres etre passe en « Prise de masse » (2 g/kg attendu), et 183 g a 95 kg la ou le plan en donne 209. La feuille native « Ton objectif » promet de fixer « tes cibles de calories ET de proteines » et n en fixait aucune. Ce qui est CHOISI reste intouche — l apport, et lui seul ; le reste suit le corps et l objectif, comme pour tout le monde. */
  var goal=p.goal; if(!goal)return null;
  /* 12 sept. 2026, le soir — DEUX VOCABULAIRES POUR UN OBJECTIF. L'assistant
     nutrition écrit seche / maintien / prise ; la feuille native « Ton objectif »
@@ -17744,10 +17739,10 @@ function flPlanSuivreReference(){try{
  if(!(w>0))w=+p.weight||0;
  var prot=w>0?Math.round((goal==='seche'?2.2:2)*w):(+p.protGoal||0);
  var bouge=false;
- if(Math.abs((+p.kcalGoal||0)-kcal)>=10){p.kcalGoal=kcal;bouge=true;}
+ if(!_choix&&Math.abs((+p.kcalGoal||0)-kcal)>=10){p.kcalGoal=kcal;bouge=true;}
  if(prot>0&&(+p.protGoal||0)!==prot){p.protGoal=prot;bouge=true;}
- if(bouge){p.kcalSrc='plan';DB.set('profile',p);}
- return {kcal:kcal,prot:prot,ref:ref,daily:daily,bouge:bouge};
+ if(bouge){if(!_choix)p.kcalSrc='plan';DB.set('profile',p);}   /* un apport choisi ne se requalifie pas en « plan » parce que ses proteines ont bouge */
+ return {kcal:(_choix?(+p.kcalGoal||kcal):kcal),prot:prot,ref:ref,daily:daily,bouge:bouge,choix:_choix};
 }catch(e){return null;}}
 function flNutGoals(){try{flPlanSuivreReference();}catch(e){}
  var p=getProfile();
@@ -19569,7 +19564,7 @@ function mdGet(key,off){var s=sensorOf(tk(off));function n(x){return (x==null?nu
   case 'fcavg':{var cj=flCardioJour(off);return cj&&cj.moyenne!=null?Math.round(cj.moyenne):null;}
   case 'sleep':return s&&s.sleepMin?+(s.sleepMin/60).toFixed(1):null;
   case 'steps':return flStepsOf(tk(off));
-  case 'calories':return caloriesBurned(tk(off));
+  case 'calories':return flCalVue(off)?caloriesBurned(tk(off)):null;   /* 15 sept. — LE ZÉRO DE POLITESSE S'ARRÊTE ICI, à la porte de la métrique. `caloriesBurned` rend 0 quand rien n'a été mesuré (son contrat, inchangé : la Balance et la tuile en dépendent) ; un GRAPHIQUE, lui, ne doit pas dessiner une barre à 0 kcal sur un jour où l'app n'existait pas. `flCalVue` demande à `flCaloriesDetail` si une source a parlé — jamais si le bracelet était là. */
   /* 14 sept. — UNE ABSENCE SE REND, ELLE NE SE JETTE PAS : `loadStrain` vaut
      null sans courbe cardiaque et cette ligne l'appelait `.toFixed`. Le matin
      qui la déclenche est celui d'une nuit non portée, bracelet pas encore remis. */
@@ -20400,6 +20395,7 @@ function stepDay(d){window._stepDay=Math.min(0,(window._stepDay||0)+d);if(typeof
 function stepCalOpen(){if(typeof haptic==='function')haptic();window._calMode='steps';slpCalOpen();}
 function stepsHeroHTML(){
  var off=window._stepDay||0,k=tk(off),steps=flStepsOf(k),goal=stpGoal(),pct=Math.round(steps/goal*100);
+ /* 14 sept. 2026 — CES TROIS CONSTANTES NE LISENT NI LA TAILLE NI LE POIDS, et ça se mesure : à 10 000 pas, la distance affichée s'écarte de +2 % pour Dino et de +18 % pour une femme de 155 cm ; les calories, de +38 % pour lui et de +153 % pour elle (test-nouveaux-venus.js §3). RIEN N'EST CORRIGÉ ICI, et c'est délibéré : remplacer 0,00076 et 0,0415 par une foulée et un coût au kilo demande une référence MESURÉE — des couples (pas, distance) et (pas, kcal de marche) relevés le même jour sur PLUSIEURS corps de tailles et de masses différentes. Nous n'en avons qu'un, Dino, et l'export WHOOP n'a pas de colonne de pas : une calibration sur un seul corps est interdite. La ligne reste donc ouverte, et le banc la garde nommée plutôt que de choisir un coefficient. */
  var dist=steps*0.00076,kcal=Math.round(steps*0.0415),act=Math.round(steps/121),pc=pct>=100?'#2FA86A':'#F0492E';
  var h='<div class="stp2">';
  h+='<button class="s2back" type="button" onclick="goBack(\'today\')" aria-label="Retour"><i class="ti ti-chevron-left"></i></button>';
@@ -21053,11 +21049,11 @@ function renderLoad(){var off=_effDay||0,K=tk(off);
   var ds=document.getElementById('effDurSpk');if(ds)ds.innerHTML=effSpark(durArr,'#F0653E');
  })();
  (function(){
-  var s=sensorOf(K)||sensorOf(tk())||{},rhr=s.rhr||50,hrmax=effHRmax(),fem=getProfile().gender==='f';
-  var vo2=Math.round(15.3*hrmax/rhr);
-  set('effVo2',vo2);
+  var fem=getProfile().gender==='f';
+  var vo2=(typeof flVo2Max==='function')?flVo2Max(off):null;   /* ═══ 14 sept. 2026 — LA SECONDE FORMULE DE VO₂ A SURVÉCU À LA v1553, qui n'avait corrigé qu'un de ses deux porteurs. Celle-ci valait « 15,3 × effHRmax() ÷ (repos du capteur, ou 50) » : trois inventions d'un coup — une maximale de trentenaire quand l'âge manque (le profil de Dino n'a pas de date de naissance : l'écran disait 187 quand `flFcMax` MESURE 190 sur sa pointe), un repos de 50 quand la nuit n'a rien donné, et un coefficient 15,3 là où `flVo2Max` emploie le 15 d'Uth et Sørensen. La carte et la tuile d'accueil affichaient donc DEUX VO₂ pour le même jour — rejoué sur le relevé du 9 sept. : 57 contre 62 le 9, 62 contre 66 le 8, 52 contre 58 le 2. Elle lit désormais la seule source, celle qui honore un test en salle, prend le repos NOCTURNE et rend `null` plutôt qu'un chiffre de manuel : sans courbe cardiaque du jour, « — » remplace un 57 qui ne mesurait rien. `effHRmax` part avec elle, cette carte était son unique lecteur. */
+  set('effVo2',vo2==null?'—':vo2);
   var br=fem?[33,38,44,49]:[37,43,51,56];
-  var lvl=vo2>=br[3]?'Supérieur':vo2>=br[2]?'Excellent':vo2>=br[1]?'Bon':vo2>=br[0]?'Correct':'À renforcer';
+  var lvl=vo2==null?'—':(vo2>=br[3]?'Supérieur':vo2>=br[2]?'Excellent':vo2>=br[1]?'Bon':vo2>=br[0]?'Correct':'À renforcer');
   /* ═══ 13 sept. 2026 — « POUR TON ÂGE » ÉTAIT FAUX ═════════════════════════
      `br` ne lit que le SEXE : les quatre bornes sont les mêmes à vingt ans et
      à soixante-dix. Trouvé par `test-nouveaux-venus.js` — un banc présent au
@@ -21069,8 +21065,8 @@ function renderLoad(){var off=_effDay||0,K=tk(off);
      manque est nommé au registre (section F) plutôt que caché derrière une
      phrase qui rassure. */
   set('effVo2Lvl',lvl);
-  var lo=br[0]-7,hi=br[3]+6,pos=Math.max(3,Math.min(97,(vo2-lo)/(hi-lo)*100));
-  var mk=document.getElementById('effVo2Mark');if(mk)mk.style.left=pos.toFixed(1)+'%';
+  var lo=br[0]-7,hi=br[3]+6,pos=(vo2==null)?null:Math.max(3,Math.min(97,(vo2-lo)/(hi-lo)*100));
+  var mk=document.getElementById('effVo2Mark');if(mk){mk.style.opacity=(pos==null)?'0':'1';if(pos!=null)mk.style.left=pos.toFixed(1)+'%';}
   var strain=loadStrain(K),rec=(recovery()&&recovery().s)||60;
   var hrs=Math.max(0,Math.round(strain*2.6-rec*0.12)),ready=hrs<=1;
   var ic=document.getElementById('effRecIc');
@@ -21087,7 +21083,6 @@ var EFF_ZONES=[
  {n:'VO₂max',c:'#E0533B',ic:'ti-bolt',lo:90,hi:100,desc:'Intensité maximale. Développe ta VO₂max et ta puissance — à doser, très fatigant.'}
 ];
 function lighten(h,amt){h=h.replace('#','');var r=parseInt(h.substr(0,2),16),g=parseInt(h.substr(2,2),16),b=parseInt(h.substr(4,2),16);r=Math.round(r+(255-r)*amt);g=Math.round(g+(255-g)*amt);b=Math.round(b+(255-b)*amt);return '#'+[r,g,b].map(function(x){return ('0'+x.toString(16)).slice(-2)}).join('');}
-function effHRmax(){var p=getProfile(),a=p.age||30;return Math.round(p.gender==='f'?(206-0.88*a):(208-0.7*a));}
 /* v1558 — les bornes affichees sont les bornes ABSOLUES du decoupage
    (flZonesBpm), plus un pourcentage de FCmax : le texte de la legende dit
    exactement ce que le comptage fait. */
@@ -22182,8 +22177,8 @@ function flEffData(doc){
     On demande donc une COUVERTURE — la moitié des minutes, avec un plancher de
     cinq points — et on ne fabrique plus rien : sans mesure, on ne dit rien. */
  var couverture=null,winT=null,nPts=0;
- if(w&&w.hr&&startMin!=null){var _hp=(typeof flHrPropre==='function')?flHrPropre(w.hr):w.hr;
-  var _wt=_hp.filter(function(x){return x[0]>=startMin&&x[0]<=startMin+dur;});
+ if(w&&w.hr&&startMin!=null){var _hp=(typeof flHrPropre==='function')?flHrPropre(w.hr):w.hr;var _pz=(typeof flPausesDe==='function')?flPausesDe(sess):[],_fw=startMin+dur+((typeof flMinutesDePause==='function')?flMinutesDePause(_pz):0);   /* 14 sept. 2026 — LES MINUTES D APRÈS LA PAUSE RENTRENT, CELLES DE L ARRÊT SORTENT. La fenêtre s arrêtait à `startMin+dur`, or `dur` est la durée d EFFORT : une séance de 10:00 à 11:00 coupée de 20 min ne montrait que 10:00→10:40, dont 20 min de repos. Mesuré : 109 bpm de moyenne pour 155 bpm d effort réel. Sans arrêt connu, `_fw` vaut exactement l ancienne borne. `dur` ne change pas, donc `couverture` compte toujours sur les minutes d EFFORT — et vaut 1 quand la montre les a toutes vues. */
+  var _wt=_hp.filter(function(x){return x[0]>=startMin&&x[0]<=_fw&&!(typeof flEnPause==='function'&&flEnPause(x[0],_pz));});
   var win=_wt.map(function(x){return x[1];});
   nPts=win.length;
   couverture=dur>0?win.length/dur:0;
@@ -23444,7 +23439,7 @@ function pfxBodyClose(){var bg=document.getElementById('pfxSheetBg');bg.classLis
 try{(function(){var p=document.querySelector('#pfxSheetBg .pfx-sheet');if(p&&!p._flDrag){p._flDrag=1;flSheetDrag(p,pfxBodyClose);}})();}catch(e){}
 function pfxBodySave(){var v=pfxWheelVal(),p=getProfile();
  if(PFX.kind==='w'){p.weight=v;DB.set('profile',p);try{flNWeightLogPush(v);}catch(e){}
-  var bl=DB.get('bodylog',{});bl[tk()]=Object.assign({},bl[tk()]||{},{weight:v});DB.set('bodylog',bl);
+  var bl=DB.get('bodylog',{});bl[tk()]=Object.assign({},bl[tk()]||{},{weight:v});DB.set('bodylog',bl);try{if(typeof flRangerLean==='function')flRangerLean();}catch(e){}
   toast('Poids '+v+' kg enregistré ✓');}
  else{p.height=v;DB.set('profile',p);toast('Taille '+v+' cm enregistrée ✓');}
  try{haptic(12);}catch(e){}pfxBodyClose();pfxFill();}
@@ -23622,7 +23617,7 @@ function wipeData(){if(!confirm('Vider TOUTES les données (démo incluse) et re
 function exportData(){const dump={};Object.keys(localStorage).forEach(k=>dump[k]=localStorage.getItem(k));const t=JSON.stringify(dump,null,2);try{const blob=new Blob([t],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='flint-data.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},1500);toast('⬇️ Données exportées (flint-data.json)')}catch(e){try{navigator.clipboard.writeText(t);toast('📋 Données copiées')}catch(e2){toast('Export impossible')}}}
 
 /* ===== Coach IA (réponses fondées sur les données du jour) ===== */
-const APP_VERSION='v2461';
+const APP_VERSION='v2504';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
@@ -25235,7 +25230,7 @@ document.addEventListener('visibilitychange',function(){if(document.hidden)retur
 function flPfP(){try{return getProfile()||{};}catch(e){return {};}}
 function flPfSaveP(p){try{DB.set('profile',p);}catch(e){}}
 function flPfWeight(){var p0=flPfP();if(p0.weight!=null&&p0.weight>0)return p0.weight;
- try{var bl=DB.get('bodylog',{})||{};var ks=Object.keys(bl).sort();for(var i=ks.length-1;i>=0;i--){if(bl[ks[i]]&&bl[ks[i]].weight!=null)return bl[ks[i]].weight;}}catch(e){}return null;}
+ /* v2492 — par DATE : trie en texte, ce lecteur rendait la pesee de septembre du 1er octobre au 31 decembre. */ try{var bl=DB.get('bodylog',{})||{};var ks=flJoursTries(bl);for(var i=ks.length-1;i>=0;i--){if(bl[ks[i]]&&bl[ks[i]].weight!=null)return bl[ks[i]].weight;}}catch(e){}return null;}
 function flPfHeight(){return flPfP().height||null;}
 function flPfName(){var n=(flPfP().name||'').trim().split(' ')[0];return n==='Arthur'?'':n;}
 function flPfSince(){var s=null;try{s=DB.get('flSince',null);if(!s){s=Date.now();DB.set('flSince',s);}}catch(e){}
@@ -25316,7 +25311,7 @@ function flPfMesure(doc,kind){var isW=kind==='poids';var val=isW?(flPfWeight()!=
    el.querySelector('.pfm-p').addEventListener('click',function(){v=Math.min(isW?250:230,+(v+step).toFixed(1));paint();});
    el.querySelector('.pfm-ok').addEventListener('click',function(){
     var p=flPfP();
-    if(isW){p.weight=v;flPfSaveP(p);try{flNWeightLogPush(v);}catch(e){}try{var bl=DB.get('bodylog',{})||{};bl[tk()]=Object.assign(bl[tk()]||{},{weight:v});DB.set('bodylog',bl);}catch(e){}}
+    if(isW){p.weight=v;flPfSaveP(p);try{flNWeightLogPush(v);}catch(e){}try{var bl=DB.get('bodylog',{})||{};bl[tk()]=Object.assign(bl[tk()]||{},{weight:v});DB.set('bodylog',bl);if(typeof flRangerLean==='function')flRangerLean();}catch(e){}}
     else{p.height=v;flPfSaveP(p);}
     close();flPfMain(doc);
     try{flOkShow('Enregistré',(isW?v+' kg':v+' cm'));}catch(e){}});});}
@@ -27144,7 +27139,7 @@ window.flMetriquesCourse=function(id,debutSec,finSec,estCourse){
           _l.push([Math.floor(Date.now()/1000),tr.length,_t]);
           if(_l.length>40)_l=_l.slice(-40);
           _arr[jk]=_l;
-          var _kk=Object.keys(_arr).sort();
+          var _kk=flJoursTries(_arr);   /* v2492 — par DATE : trie en texte, la taille a douze jours effacait OCTOBRE et gardait septembre (le piege de la v1606) */
           while(_kk.length>12)delete _arr[_kk.shift()];
           DB.set('flPasArrivee',_arr);}}catch(e){}
      if(sp>0){dj.steps=Math.round(sp);_n3++;}
@@ -28479,7 +28474,7 @@ window.flMetriquesCourse=function(id,debutSec,finSec,estCourse){
   /* historiques : un jour sans données montre = null (trou dans le graphe, pas une fausse barre) */
   var _mdGet=window.mdGet;
   if(typeof _mdGet==='function')window.mdGet=function(key,off){
-   if(off!==0&&['steps','calories','effortrecup','fcavg','vo2'].indexOf(key)>=0&&!watchHas(tk(off)))return null;
+   if(off!==0&&['steps','effortrecup','fcavg','vo2'].indexOf(key)>=0&&!watchHas(tk(off)))return null;   /* 15 sept. — 'calories' A QUITTÉ CETTE LISTE. `watchHas` interroge le BRACELET (kcal, pas, FC, nuit de la montre) ; or Apple Santé alimente aussi les calories, et ce garde-là effaçait des journées RÉELLES — mesuré sur `donnees-dino-2026-09-09.json`, profil posé : 65 journées, du 27 juin au 9 septembre, où une source a bel et bien compté (285 à 3 713 kcal) sans que le bracelet ait rien dit. C'est la faute même que le pavé v1553 condamne. Sa disponibilité est désormais posée par `flCalVue` dans le `case 'calories'` de `mdGet`, qui vaut pour les DEUX modes et pour tous les offsets, aujourd'hui compris. */
    return _mdGet(key,off);};
   window.flNActive=function(off){var w=watchOf(tk(off||0));return (w&&w.kcal)?w.kcal:0;};
   /* détection de séances réelles depuis la FC (bins 5 min ≥ repos+25, ≥15 min) */
@@ -32663,26 +32658,26 @@ window.flFenetreValide=function(k,s){
 
    La série se demande donc ici, et `flMetriquesCanoniques` est son premier
    client. Le nom dit ce qu'il garantit : deux appelants, la même réponse. */
-window.flSerieCanonique=function(k,d,f){
+window.flSerieCanonique=function(k,d,f,ps){
  try{
   if(k==null||d==null||f==null||f<=d)return null;
-  var duree=f-d, pts=null, source=null, couv=null;
-  try{
-   var fine=(typeof flHrFine==='function')?flHrFine(k,d,duree):null;
+  var _ps=(typeof flPausesDe==='function')?flPausesDe({pauses:ps}):[],_mur=f-d;   /* 14 sept. 2026 — LES ARRÊTS DU TRACKER SORTENT DE LA SÉRIE. La fenêtre d une séance avec pause va jusqu à la fin RÉELLE ; ses minutes d arrêt n en font pas partie. `_mur` reste la fenêtre à BALAYER (le canal fin se demande par sa longueur), `duree` devient le temps d EFFORT — c est lui le dénominateur de la couverture. Sans arrêt, les deux sont le même nombre et rien ne bouge. */
+  var duree=Math.max(1,_mur-((typeof flMinutesDePause==='function')?flMinutesDePause(_ps):0)), pts=null, source=null, couv=null;  try{
+   var fine=(typeof flHrFine==='function')?flHrFine(k,d,_mur):null;
    /* v1764 — ON LIT LE DRAPEAU, PAS LE NOMBRE DE POINTS. Depuis que `points`
       existe même sous le seuil, compter les points ferait basculer ce calcul
       vers une série que `flHrFine` vient précisément de juger insuffisante —
       33 activités de la base de Dino, avec leur moyenne, leur maximum, leurs
       zones et leurs calories. La règle est la même qu'avant ; sa lecture, non. */
    if(fine&&fine.fiable&&fine.points&&fine.points.length){
-    pts=fine.points; source='5s'; couv=fine.couverture;
+    pts=_ps.length?fine.points.filter(function(x){return !flEnPause(d+x[0]/60,_ps);}):fine.points; source='5s'; couv=fine.couverture;
    }
   }catch(e){}
   if(!pts){
    var w=(typeof watchOf==='function')?watchOf(k):null;
    if(w&&w.hr&&w.hr.length){
     var hp=(typeof flHrPropre==='function')?flHrPropre(w.hr):w.hr;
-    var dans=hp.filter(function(x){return flDansFenetre(x[0],d,f);});
+    var dans=hp.filter(function(x){return flDansFenetre(x[0],d,f)&&!(_ps.length&&flEnPause(x[0],_ps));});
     if(dans.length>=3){
      pts=dans.map(function(x){return [(x[0]-d)*60,x[1]];});
      source='minute'; couv=duree>0?dans.length/duree:0;
@@ -32693,12 +32688,12 @@ window.flSerieCanonique=function(k,d,f){
  }catch(e){return null;}
 };
 
-window.flMetriquesCanoniques=function(k,d,f){
+window.flMetriquesCanoniques=function(k,d,f,ps){
  try{
   if(k==null||d==null||f==null||f<=d)return null;
-  var duree=f-d;
+  var duree=f-d, _ps=(typeof flPausesDe==='function')?flPausesDe({pauses:ps}):[];   /* 14 sept. 2026 — les minutes d ARRÊT du tracker ne portent ni moyenne, ni calorie, ni couverture : elles ne sont pas la séance. Sans arrêt, `_ps` est vide et pas une seule ligne ne change de valeur. */
   /* ── la série, sur la fenêtre canonique et rien d'autre ─────────────────── */
-  var _sc=(typeof flSerieCanonique==='function')?flSerieCanonique(k,d,f):null;
+  var _sc=(typeof flSerieCanonique==='function')?flSerieCanonique(k,d,f,_ps):null;
   var pts=_sc?_sc.pts:null, source=_sc?_sc.source:null, couv=_sc?_sc.couverture:null;
   var out={avgHr:null,maxHr:null,pas:null,kcal:null,couvHR:null,nHR:0,sourceHR:source||null};
   if(pts&&pts.length){
@@ -32773,7 +32768,7 @@ window.flMetriquesCanoniques=function(k,d,f){
     for(var i2=0;i2<pts2.length;i2++){
      var m2=pts2[i2][0], v2=pts2[i2][1];
      var dt2=(prev2==null)?1:Math.min(cad2,Math.max(1,m2-prev2)); prev2=m2;
-     if(!flDansFenetre(m2,d0,f0))continue;
+     if(!flDansFenetre(m2,d0,f0)||(_ps.length&&flEnPause(m2,_ps)))continue;
      /* UNE MINUTE OÙ LE CŒUR A ÉTÉ MESURÉ EST UNE MINUTE MESURÉE, même s'il
         battait doucement. On note donc la COUVERTURE avant de regarder si elle
         donne une calorie : c'est ce qui sépare « mesuré à zéro » de « non
@@ -32785,7 +32780,7 @@ window.flMetriquesCanoniques=function(k,d,f){
         cadence, garde de la v1711 contre le point isolé qui s'attribuerait
         cinq minutes */
      for(var z2=m2-dt2+1;z2<=m2;z2++){
-      if(!flDansFenetre(z2,d0,f0))continue;
+      if(!flDansFenetre(z2,d0,f0)||(_ps.length&&flEnPause(z2,_ps)))continue;
       vuFC[z2]=1;
       if(net2!=null){ kcMin[z2]=net2; srcMin[z2]='cardio'; }
      }
@@ -32805,7 +32800,7 @@ window.flMetriquesCanoniques=function(k,d,f){
       var fin3=(t3+1<a3.length)?Math.round((a3[t3+1][0]-minuit2)/60):deb3+10;
       var dur3=Math.max(1,fin3-deb3), parMin=kc3/dur3;
       for(var mm3=deb3;mm3<fin3;mm3++){
-       if(!flDansFenetre(mm3,d0,f0))continue;
+       if(!flDansFenetre(mm3,d0,f0)||(_ps.length&&flEnPause(mm3,_ps)))continue;
        if(srcMin[mm3])continue;          /* le cardio a déjà parlé : pas deux fois */
        kcMin[mm3]=parMin; srcMin[mm3]='mouvement';
       }
@@ -32830,7 +32825,7 @@ window.flMetriquesCanoniques=function(k,d,f){
       lit, on n'en invente pas une deuxième. Aucun seuil neuf, aucun bpm. */
    var effPremier=null, effDernier=null, effN=0;
    for(var q3=d0;q3<f0;q3++){
-    if(srcMin[q3]==='cardio'){actC+=kcMin[q3];nC++;}
+    if(_ps.length&&flEnPause(q3,_ps))continue;  if(srcMin[q3]==='cardio'){actC+=kcMin[q3];nC++;}
     else if(srcMin[q3]==='mouvement'){actM+=kcMin[q3];nM++;}
     else if(vuFC[q3])nZ++;               /* MESURÉE, et sa dépense active vaut 0 */
     if(srcMin[q3]==='cardio'||srcMin[q3]==='mouvement'){
@@ -32839,7 +32834,7 @@ window.flMetriquesCanoniques=function(k,d,f){
     }
    }
    out.effort={premier:effPremier, dernier:effDernier, minutes:effN};
-   var nTot=Math.max(0,f0-d0);
+   var nTot=Math.max(0,f0-d0-((typeof flMinutesDePause==='function')?flMinutesDePause(_ps):0));
    var nA=nTot-nC-nM-nZ;
    out.kcalSrc={cardio:Math.round(actC),mouvement:Math.round(actM),
                 minCardio:nC,minMouvement:nM,minRepos:nZ,minAucune:nA,minTotal:nTot};
@@ -32877,7 +32872,7 @@ window.flMetriquesCanoniques=function(k,d,f){
    if(pm&&pm.m){
     var tot=0,vus=0;
     for(var mn=Math.max(0,Math.round(d));mn<Math.min(1440,Math.round(f));mn++){
-     if(pm.vu[mn]){tot+=(pm.m[mn]||0);vus++;}
+     if(_ps.length&&flEnPause(mn,_ps))continue;  if(pm.vu[mn]){tot+=(pm.m[mn]||0);vus++;}
     }
     if(vus)out.pas=tot;
    }
@@ -32939,7 +32934,7 @@ window.flKcalActivite=function(k,s,debut,fin){try{
   if(fige&&window._flKcMemo[cle]!==undefined){
    if(window._flKcMemo[cle]!==null)return window._flKcMemo[cle];
   }else{
-   var _m=null; try{_m=flMetriquesCanoniques(k,sm,sm+du);}catch(e){}
+   var _m=null; try{_m=flMetriquesCanoniques(k,sm,sm+du,(s&&s.pauses));}catch(e){}   /* 14 sept. 2026 — la séance porte ses arrêts : on les passe plutôt que de facturer le repos. */
    var _v=(_m&&_m.kcal!=null)?Math.round(_m.kcal):null;
    if(fige)window._flKcMemo[cle]=_v;
    if(_v!=null)return _v;
@@ -32999,12 +32994,17 @@ window.flKcalSorties=function(){try{
    (`auto:false`) n'y entre jamais, et une réponse déjà donnée non plus. */
 window.flActivitesAClasser=function(){try{
  var out=[];
- for(var j=0;j<=30;j++){
+ /* SEPT JOURS, PAS TRENTE, et JAMAIS DEUX FOIS LA MEME : `classDemande` garde les identifiants demandes.
+    Fermer sans repondre n'ecrit pas de reponse — une absence n'est pas une mesure — mais ferme la question :
+    c'etait le trou de la v1864 (PontModeSport.swift porte l'histoire). */
+ var _deja=DB.get('classDemande',{})||{};
+ for(var j=0;j<=7;j++){
   var k=tk(-j), L=DB.get('sessions_'+k,[])||[];
   for(var i=0;i<L.length;i++){
    var s=L[i]; if(!s||s.type==='nap')continue;
    var e=null; try{e=flEtatActivite(s,k,null);}catch(x){}
    if(!e||e.etat!=='needsClassification')continue;
+   if(_deja[s.id||flIdActivite(s,k)])continue;
    /* v1733 — DE QUOI DESSINER LA LIGNE, pas seulement la nommer. La feuille
       montre l'activité comme `Ma journée` la montre — même composant, même
       jeton, mêmes heures — pour qu'on voie DE QUELLE activité on parle avant
@@ -33047,6 +33047,9 @@ window.flPoserQuestionClassement=function(){try{
     semaines, et « c'était quoi ? » sans dire quand n'est pas une question. */
  var nt=window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint;
  if(!nt)return 'pont absent · '+L.length+' en attente';
+ /* ET UNE SEULE PAR JOUR (les valeurs sont des jours) : la cadence que la v1864 n'avait pas. */
+ try{var _d=DB.get('classDemande',{})||{};for(var _q in _d)if(_d[_q]===tk(0))return 'une par jour · '+L.length+' en attente';
+     _d[a.id]=tk(0);DB.set('classDemande',_d);}catch(e){}
  nt.postMessage({cmd:'unknownActivityDetected',
                  id:a.id, debutMin:a.debutMin, dureeS:a.dureeS, jour:a.jour,
                  nom:a.nom, debut:a.debut, fin:a.fin, ti:a.ti,
@@ -33205,7 +33208,7 @@ window.flDeriverMetriques=function(k,liste){
     return;
    }
    delete s.fenetreOk; delete s.fenetreRaison;
-   var m=flMetriquesCanoniques(k||s.jour,s.startMin,f);
+   var m=flMetriquesCanoniques(k||s.jour,s.startMin,f,s.pauses);
    /* Le moteur n'a rien pu dire de cette fenêtre : on n'y laisse rien non
       plus, calories comprises. */
    if(!m){ delete s.avgHr; delete s.maxHr; delete s.pas; delete s.couvHR;
@@ -33612,7 +33615,7 @@ window.flDeriverMetriques=function(k,liste){
        divergeaient un jour, le banc de hiérarchie le dirait avant l'écran. */
     var _sn=null;
     [usr,exp,trk,mtr,aut].some(function(x){ if(x&&x.name!=null&&x.name!==''){_sn=x;return true;} return false; });
-    f.startMin=sM; f.endMin=eM; f.dur=Math.max(1,eM-sM);
+    var _fp=(borne&&borne===trk&&typeof flPausesDe==='function')?flPausesDe(trk):[];  /* 14 sept. 2026 — ET LA RÉCONCILIATION NE REND PAS SES ARRÊTS À LA DURÉE. `dur` se RECALCULE ici depuis la fenêtre : sans cette ligne, la première réconciliation rendait à une séance avec pause la durée du MUR (60 min pour 40 min d effort), et la frise, la fiche et les calories forfaitaires avec elle. Les arrêts ne sont repris que si la fenêtre vient bien du tracker qui les a mesurés. */ f.startMin=sM; f.endMin=eM; f.dur=Math.max(1,eM-sM-((typeof flMinutesDePause==='function')?flMinutesDePause(_fp):0)); if(_fp.length)f.pauses=_fp;
     var _c=((sM%1440)+1440)%1440;
     f.start=String(Math.floor(_c/60)).padStart(2,'0')+':'+String(_c%60).padStart(2,'0');
     /* ═══ v1828 — L'ICÔNE SUIT LE NOM, JAMAIS UNE AUTRE SOURCE ══════════
@@ -34255,8 +34258,8 @@ window.flDeriverMetriques=function(k,liste){
       var _v=null; try{_v=flFenetreValide(k,s);}catch(e){}
       if(_v&&_v.ok===false)return;
      }
-     var f=(s.endMin!=null)?s.endMin:(s.startMin+(s.dur||0));
-     if(f>s.startMin)fen.push([s.startMin,f]);});}catch(e){}
+     var f=(s.endMin!=null)?s.endMin:(s.startMin+(s.dur||0));   /* 14 sept. 2026 — UNE SÉANCE MISE EN PAUSE EST PLUSIEURS FENÊTRES. La zone 0 ne compte QUE dans une séance (v1215) : laisser l arrêt dedans créditerait vingt minutes assis comme de l effort doux, le défaut exact que cette règle ferme. On pousse donc les segments d EFFORT, pas la fenêtre entière. Sans arrêt connu, c est la fenêtre entière, à la ligne près. */
+     if(f>s.startMin){var _ps=(typeof flPausesDe==='function')?flPausesDe(s):[],_c=s.startMin;_ps.forEach(function(p){var d=Math.max(_c,Math.min(p[0],f));if(d>_c)fen.push([_c,d]);_c=Math.max(_c,Math.min(p[1],f));});if(f>_c)fen.push([_c,f]);}});}catch(e){}
    function dansUneSeance(m){
     for(var q=0;q<fen.length;q++)if(m>=fen[q][0]&&m<=fen[q][1])return true;
     return false;}
@@ -34342,7 +34345,7 @@ window.flDeriverMetriques=function(k,liste){
      on applique les six poids. Repli sur `actStrain` quand la courbe manque :
      une estimation grossiere vaut mieux qu une case vide, mais elle se declare
      (`effortSource`). */
-  window.flEffortSeance=function(k,debutMin,finMin){
+  window.flEffortSeance=function(k,debutMin,finMin,pauses){
    try{
     k=k||tk();
     var fm=flFcMax(); if(!fm)return null;
@@ -34352,7 +34355,7 @@ window.flDeriverMetriques=function(k,liste){
     /* v1743 — SEMI-OUVERTE : la minute `finMin` commence quand l'activité
        finit. Voir `flDansFenetre`. */
     var pts=(typeof flHrPropre==='function'?flHrPropre(w.hr):w.hr)
-             .filter(function(x){return flDansFenetre(x[0],debutMin,finMin);});
+             .filter(function(x){return flDansFenetre(x[0],debutMin,finMin)&&!(typeof flEnPause==='function'&&flEnPause(x[0],pauses));});   /* 14 sept. 2026 — les minutes d ARRÊT du tracker sortent : `dansUneSeance` fait compter la zone 0 pendant l effort, et vingt minutes assis la recevraient comme du sport. La note passait de 12,5 à 10 sur le cas mesuré. */
     if(pts.length<3)return null;
     /* v1666 — LA PONDERATION VIENT DE `flPoids`. Ce bloc plafonnait son ecart a
        cinq minutes : un silence de quatre minutes apres un passage en zone 4
@@ -34372,7 +34375,7 @@ window.flDeriverMetriques=function(k,liste){
        secondes pour que flPoids pese dans l unite de la fine. */
     var _serieFine=null;
     try{var _fn=(typeof window.flHrFine==='function')?window.flHrFine(k,debutMin,Math.max(1,(finMin||0)-(debutMin||0))):null;
-     if(_fn&&_fn.fiable&&_fn.points&&_fn.points.length>=3)_serieFine=_fn.points.map(function(x){return [x[0],x[1]];});
+     if(_fn&&_fn.fiable&&_fn.points&&_fn.points.length>=3){var _pf=_fn.points.filter(function(x){return !(typeof flEnPause==='function'&&flEnPause(debutMin+x[0]/60,pauses));});if(_pf.length>=3)_serieFine=_pf.map(function(x){return [x[0],x[1]];});}   /* la fine porte des SECONDES depuis `debutMin` (flHrFine) : on repasse en minute du jour pour lui appliquer la même règle qu à la minute. Le seuil de trois points se REJUGE après le retrait : une série que l arrêt a vidée n est pas une série fine, c est un reste. */
     }catch(_e){}
     var min=[0,0,0,0,0,0];
     var _serie=_serieFine||pts.map(function(x){return [x[0]*60,x[1]];});
@@ -34532,14 +34535,10 @@ window.flDeriverMetriques=function(k,liste){
    var p=(typeof getProfile==='function'?getProfile():null)||{};
    var w=+p.weight||0;
    if(w>=30&&w<=250)return w;
-   /* La derniere pesee connue, celle de l ecran « Tes mesures ». Les cles du
-      bodylog sont des jours : la derniere par ordre alphabetique est la plus
-      recente, la convention AAAA-M-J le garantit sur un meme mois. */
-   var bl=DB.get('bodylog',{})||{}, ks=Object.keys(bl).sort();
-   for(var i=ks.length-1;i>=0;i--){
-    var v=+((bl[ks[i]]||{}).weight)||0;
-    if(v>=30&&v<=250)return v;
-   }
+   /* La derniere pesee connue, celle de l ecran « Tes mesures ». Les cles du bodylog sont des JOURS, et l ordre ALPHABETIQUE les ment
+      du 1er octobre au 31 decembre — `2026-10-1` y passe avant `2026-9-20`, et le poids se figeait sur une pesee de septembre : 80 kg au lieu de 72, metabolisme +80 kcal/jour (v2492). On trie par DATE. */
+   var bl=DB.get('bodylog',{})||{}, ks=flJoursTries(bl);
+   for(var i=ks.length-1;i>=0;i--){var v=+((bl[ks[i]]||{}).weight)||0; if(v>=30&&v<=250)return v;}
    return 0;
   }catch(e){return 0;}};
 
@@ -34577,17 +34576,20 @@ window.flDeriverMetriques=function(k,liste){
   /* La masse maigre du dernier releve connu, en kilos. Meme regle que le poids :
      une composition corporelle ne change pas d un jour a l autre, et se taire
      parce qu on ne s est pas pese ce matin n aurait pas de sens. Soixante jours,
-     au dela on ne sait plus. */
-  window.flMasseMaigre=function(){try{
-   var j=DB.get('bodylog',{})||{};
-   for(var i=0;i<60;i++){
-    var e=j[tk(-i)];
-    if(e&&e.lean>0)return +e.lean;
-    /* le pourcentage suffit s il est accompagne d un poids */
-    if(e&&e.bf>0&&e.weight>0)return Math.round(e.weight*(1-e.bf/100)*10)/10;
-   }
-   return 0;
-  }catch(e){return 0;}};
+     au dela on ne sait plus.
+     14 sept. 2026 — UN `lean` RANGE NE BAT PLUS LES DEUX NOMBRES QUI LE PRODUISENT. Il rendait celui de la veille (68,0, calcule sur 85 kg) apres une correction de poids a 80 : Katch 1 839 kcal au lieu de 1 752. On croise desormais la DERNIERE composition connue avec la DERNIERE pesee, et le cache n est plus qu un repli. LA FENETRE SE PARCOURT EN ENTIER AVANT DE CONCLURE : une premiere ecriture sortait des la premiere entree portant un bf et rendait ZERO quand celle-la n avait ni poids ni lean, alors qu une entree plus ANCIENNE portait le poids qu il fallait (rejoue : 0 et Mifflin 1 569, au lieu de 68,0 et Katch 1 839). Elle regardait vers l avant, jamais vers l arriere. `det` rend {kg, src} — src 'bf' quand les deux nombres produisent le chiffre, 'lean' quand on retombe sur le cache ; seul `flRangerLean` ci-dessous le demande, pour ne RANGER que le derive. ⚠️ CHOIX DE MODELE non mesure, reserve comprise : tests/test-mesures-corps.js. */
+  window.flMasseMaigre=function(det){try{
+   var j=DB.get('bodylog',{})||{}, kg=0, bf=0, ln=0;
+   for(var i=0;i<60;i++){var e=j[tk(-i)]; if(!e)continue;
+    if(!(kg>0)&&+e.weight>0)kg=+e.weight; if(!(bf>0)&&+e.bf>0)bf=+e.bf; if(!(ln>0)&&+e.lean>0)ln=+e.lean;}   /* la pesee et la composition les plus RECENTES ; le cache, en repli seulement */
+   var derive=(bf>0&&kg>0), v=derive?Math.round(kg*(1-bf/100)*10)/10:(ln>0?+ln:0);
+   return det?{kg:v,src:derive?'bf':(ln>0?'lean':null)}:v;
+  }catch(e){return det?{kg:0,src:null}:0;}};
+  /* LA MEME MAIN RANGE LE `lean` DERRIERE LES SIX PORTES (14 sept. 2026). `lean` n est pas une mesure, c est un cache de `poids x (1 - bf/100)`, et TROIS ecrans le lisent TEL QUEL sans passer par `flMasseMaigre` : la courbe « Masse corporelle maigre » (flint-tendances.js:129), la tuile du tableau de bord (5615) et `mdGet('leanmass')` (19587). Corriger la seule LECTURE fabriquait donc la divergence inverse — Profil 64,0, dernier point trace 68,0, mesure. Les trois portes d ecriture (`saveMeasure`, `flProfilSet`, `flSaisirMesures`) rangent maintenant ce que la lecture vient de rendre. ON NE RANGE QUE CE QUI EST DERIVE D UNE MASSE GRASSE (src 'bf'), jamais un cache recopie : un vieux `lean` se propagerait de jour en jour et finirait par ressembler a une mesure. Rien n est ecrit si le chiffre ne bouge pas. */
+  window.flRangerLean=function(){try{
+   var j=DB.get('bodylog',{})||{}, k=tk(), e=j[k], m=(e&&+e.weight>0)?flMasseMaigre(true):null;
+   if(!m||m.src!=='bf'||!(m.kg>0)||e.lean===m.kg)return false;
+   e.lean=m.kg; j[k]=e; DB.set('bodylog',j); return true;}catch(e){return false;}};
 
   /* Cache par SIGNATURE plutot que par cle de jour : la signature porte tout ce
      qui peut changer le resultat, donc elle s invalide toute seule quand la
@@ -34613,7 +34615,7 @@ window.flDeriverMetriques=function(k,liste){
       qui porte les photos — dans une boucle de cent quatre-vingt-deux jours
       couterait un gel de demarrage pour rien (memoire fil-principal). */
    var _sesA=[]; try{_sesA=DB.get('sessions_'+k,[])||[];}catch(e){}
-   sig+='|s'+_sesA.length;
+   var _kd=(''+k).split('-'),_kj=new Date(+_kd[0],+_kd[1]-1,+_kd[2]);_kj.setDate(_kj.getDate()+1);sig+='|s'+_sesA.length+'|d'+((window._flNuitVue||{})['watch_'+(_kj.getFullYear()+'-'+(_kj.getMonth()+1)+'-'+_kj.getDate())]||'');   /* LA FENETRE DU LENDEMAIN, que `flPtsEveil` lit et que la cle ignorait : voir `DB.nuitMarque`. La cle du lendemain se calcule ICI, a la main comme dans `flPtsEveil`, et non par `tk2off` : la fonction est prelevee seule par les bancs, et une globale manquante la ferait rendre null sans un mot. */
 
    if(_flCalCache[sig])return _flCalCache[sig];
 
@@ -36040,14 +36042,14 @@ window.flDeriverMetriques=function(k,liste){
   window.flMesuresData=function(){try{
    var p=(typeof getProfile==='function'?getProfile():null)||{};
    var j=DB.get('bodylog',{})||{};
-   var dernier=null, quand=null;
-   for(var i=0;i<60;i++){var e=j[tk(-i)];if(e&&(e.weight!=null||e.bf!=null)){dernier=e;quand=tk(-i);break;}}
+   var dPoids=null,qPoids=null,dBf=null,qBf=null;   /* 14 sept. 2026 — DEUX MESURES, DEUX DATES : la boucle s arretait a la premiere entree portant l un OU l autre, si bien qu une correction de poids MASQUAIT la masse grasse de la veille (« A saisir » pour un chiffre saisi). Chacune se cherche dans SON entree. */
+   for(var i=0;i<60;i++){var e=j[tk(-i)];if(!e)continue;if(qPoids==null&&e.weight!=null){dPoids=e.weight;qPoids=tk(-i);}if(qBf==null&&e.bf!=null){dBf=e.bf;qBf=tk(-i);}if(qPoids!=null&&qBf!=null)break;}
    var fm=flFcMax();
    return {
-    poids:(dernier&&dernier.weight!=null)?dernier.weight:(+p.weight||null),
-    masseGrasse:(dernier&&dernier.bf!=null)?dernier.bf:null,
+    poids:(dPoids!=null)?dPoids:(+p.weight||null),
+    masseGrasse:dBf,
     masseMaigre:flMasseMaigre()||null,
-    dateMesure:quand,
+    dateMesure:qPoids||qBf, dateMasseGrasse:qBf,   /* la date du bf n est pas celle de la pesee */
     fcMax:fm?fm.v:null,
     fcMaxMesuree:(+p.hrMax||null),
     fcMaxSource:fm?fm.src:null,
@@ -36071,7 +36073,7 @@ window.flDeriverMetriques=function(k,liste){
     if(bf>2&&bf<70){r.bf=Math.round(bf*10)/10;faits.push('masse grasse');}
     var pw=r.weight||(+((getProfile()||{}).weight)||0);
     if(r.bf>0&&pw>0)r.lean=Math.round(pw*(1-r.bf/100)*10)/10;
-    j[k]=r; DB.set('bodylog',j);
+    j[k]=r; DB.set('bodylog',j); flRangerLean();   /* une pesee sans nouvelle impedance reconduit le pourcentage : le cache suit la lecture */
    }
    var p=getProfile()||{}, chg=false;
    var fx=+o.fcMaxMesuree;

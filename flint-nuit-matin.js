@@ -1718,6 +1718,69 @@
     } catch (e) { return true; }
   };
 
+  /* ─────────────────────────────────────────────────────────────────────────
+     ⑨ LA FRONTIÈRE DU JOUR — « cette journée est-elle constituée ? »
+
+     La porte ⑧ répond « a-t-on le droit d'afficher un chiffre de CE MATIN ».
+     Celle-ci répond à l'autre moitié, et elle a coûté le 16 septembre :
+     « la journée d'aujourd'hui a-t-elle une frontière ». Elle vit ICI parce
+     que c'est le même métier — ce que les écrans ont le droit de montrer au
+     réveil — et parce que `index.html` a un cliquet de lignes. */
+  /* ═══ 16 sept. 2026 — LA JOURNEE D AUJOURD HUI A-T-ELLE UNE FRONTIERE ? ══════
+
+     LA QUESTION EXISTE PARCE QUE TROIS MAGASINS DECRIVENT LA MEME NUIT et ne se
+     remplissent pas a la meme seconde :
+       · `nuitSess_<jour>`       — la SESSION, que lit la porte de publication ;
+       · `sensor_<jour>`         — le CAPTEUR, que lit `sleepNight`, donc la tuile ;
+       · `watch_<jour>.sommeils` — le REGISTRE, que lit `flJourLogique`.
+     Une journee FLINT va d un sommeil au suivant : c est le REGISTRE qui pose sa
+     frontiere. Tant qu il n a pas la nuit, la journee est celle ouverte la
+     veille — DEUX cles civiles — et tout ce qui se somme sur ces cles (effort,
+     calories, minutes par zone) porte deux jours. Pendant ce temps la session
+     peut deja etre FINALIZED : la porte s ouvre, le score sort, les sommes
+     mentent.
+
+     CE QUE CA A DONNE, le 16 septembre au matin, en une seule image :
+     Recuperation 85 et Sommeil 7h48 — ceux du matin — a cote d un effort de
+     12,9/20 et de 3 364 kcal, qui etaient ceux d hier ajoutes a ceux du matin
+     (2 800 + 563). Dino : « il ne doit pas exister de troisieme etat ».
+
+     ELLE NE MORD QUE SUR UN DESACCORD, JAMAIS SUR UNE ABSENCE. Quand aucune nuit
+     n existe pour aujourd hui — la nuit blanche du 14 aout, 00 h 21, « AOUT 13 A
+     AUJOURD HUI » — l ancre reste hier A BON DROIT et cette porte repond « non ».
+
+     UNE SEULE PORTE, ET C EST LE SUJET. `flAccueilData` et `flEffortData`
+     affichent LE MEME effort, et `flEffortData` le dit depuis toujours : « deux
+     ecrans qui liraient deux fenetres differentes finiraient par afficher deux
+     nombres, et c est exactement ce que la source unique existe pour empecher ».
+     Deux tests ecrits chacun de son cote finiraient par diverger ; il y en a un.
+     Epinglee par `tests/test-accueil-coherent.js` et `tests/garde-journee-coherente.js`. */
+  window.flJourneeEnTraitement=function(K){try{
+   K=K||tk(0);
+   if(K!==tk(0))return false;            /* un jour passe n a pas de matin en cours */
+   var ouverte=true;
+   try{if(typeof flNuitPublicationOuverte==='function')ouverte=flNuitPublicationOuverte(K);}catch(e){}
+   if(!ouverte)return true;              /* la nuit est due, detectee ou en cours : rien n est constitue */
+   var n=null; try{if(typeof sleepNight==='function')n=sleepNight(K);}catch(e){}
+   if(!n)return false;                   /* aucune nuit aujourd hui : la journee d hier continue */
+   var J=null; try{if(typeof flJourLogique==='function')J=flJourLogique();}catch(e){}
+   if(!(J&&J.cleAncre&&J.cleAncre!==K))return false;
+   /* LE DESACCORD S ECRIT AU JOURNAL, UNE FOIS PAR JOUR. Il doit etre BREF — la
+      charge qui finalise range aussi la nuit au registre, et la suivante retombe
+      d aplomb. S il durait, l ecran resterait sur son carton « traitement en
+      cours » sans que personne sache pourquoi, et une panne muette est ce que
+      cette maison refuse. Une seule ligne : ce chemin part a chaque poussee
+      douce, et le journal du telephone est deja le premier poste de depense. */
+   try{ if(DB.get('flFrontiereDite',null)!==K){ DB.set('flFrontiereDite',K);
+    var _fm='accueil ⚠ la nuit du '+K+' est servie mais la journee est encore '
+           +'ancree au '+J.cleAncre+' — effort et calories retenus';
+    try{console.log('[flint] '+_fm);}catch(e){}
+    var _fn=window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint;
+    if(_fn)_fn.postMessage({cmd:'journal',texte:_fm});
+   } }catch(e){}
+   return true;
+  }catch(e){return false;}};
+
   /* ═══════════════════════════════════════════════════════════════════════════
      UNE ESTIMATION NE TIENT PAS DEVANT UNE MESURE — v2210
 
