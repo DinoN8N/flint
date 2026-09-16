@@ -1,4 +1,4 @@
-/* flint-v2504 — service worker RÉSEAU UNIQUEMENT (fin des versions périmées).
+/* flint-v2505 — service worker RÉSEAU UNIQUEMENT (fin des versions périmées).
    Ne met plus rien en cache. À l'activation : efface TOUT ancien cache, prend le
    contrôle et force le rechargement de toutes les fenêtres pour éliminer le vieux
    service worker cache-first qui servait des versions périmées en boucle. */

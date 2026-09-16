@@ -190,7 +190,8 @@ window.flRespirationNuit=function(K){
  var _calcul=function(K){try{
  var memo=window._flRespMemo=window._flRespMemo||{};
  var w=watchOf(K); if(!w)return null;
- var rh=w.rrH||[]; if(!rh.length)return null;
+ var rh=w.rrH||[]; if(!rh.length)return {ok:false, blocs:0, refuses:0,
+   motif:"Le bracelet n'a enregistré aucun battement cette nuit."};
  var n=w.night||null;
  if(!n||n.sleepStart==null||n.sleepEnd==null)return null;
  var cle=K+'|'+rh.length+'|'+n.sleepStart+'|'+n.sleepEnd;
@@ -213,8 +214,23 @@ window.flRespirationNuit=function(K){
     arbitrage qu'à la v1781 pour les mesures de SpO₂, et le même chiffre.
     (C'était 20 en v2048, dérivé sur la bande large où l'estimateur était plus
     bruyant. La bande propre coûte moins de blocs pour la même certitude.) */
+ /* ═══ 16 SEPT. 2026 — L'ABSENCE DIT SA RAISON ══════════════════════════
+    Ce matin-là, la carte de Dino était vide et la fiche annonçait « Pas de
+    mesure cette nuit ». C'ÉTAIT FAUX : le bracelet avait mesuré toute la nuit
+    — 485 battements, un sommeil complet en stades, couverture 92 %. Ce qui
+    manquait était la DENSITÉ, pas la mesure.
+
+    Mesuré sur sa base vive : la cadence des relevés R-R était tombée à UN PAR
+    HEURE au lieu d'un toutes les cinq minutes (9 blocs au lieu de 211, et tous
+    les canaux fins avec — `hrvMontre` 216→9, SpO2 65→18). Sur ces 9 blocs, 4
+    seulement passent l'estimateur.
+
+    Une phrase qui accuse le capteur envoie chercher une panne là où il n'y en
+    a pas. On rend donc le compte, et l'appelant le porte jusqu'à l'écran. */
  if(vals.length<12)
-  return (memo[cle]={ok:false, blocs:vals.length, refuses:refuses});
+  return (memo[cle]={ok:false, blocs:vals.length, refuses:refuses,
+    motif:vals.length+" relevé"+(vals.length>1?"s":"")+" exploitable"
+          +(vals.length>1?"s":"")+" cette nuit — il en faut 12."});
  vals.sort(function(x,y){return x-y;});
  var med=vals.length%2?vals[vals.length>>1]:(vals[vals.length/2-1]+vals[vals.length/2])/2;
  return (memo[cle]={ok:true, resp:Math.round(med*10)/10,
