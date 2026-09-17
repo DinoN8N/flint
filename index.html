@@ -4250,7 +4250,7 @@ function getProfile(){
     provenance posé à côté (`flBesoinDuJour`) ne pouvait donc jamais être faux.
     Un objectif inventé partait à l'écran Balance annoncé comme un CHOIX.
     Les autres restent : ils ne parlent pas du corps. CHANTIER-PREMIERE-SEMAINE.md §2 */
- const o=Object.assign({name:'',wake:'07:00',need:8,region:'',goal:'recup',gender:''},moi._brut);if(typeof o.name!=='string')o.name='';if(o.name==='Arthur')o.name='';return o}
+ const o=Object.assign({name:'',wake:'07:00',need:8,region:'',goal:'recup',gender:''},moi._brut);/* v2513 — DEUX CONVENTIONS POUR UN SEXE : le natif ecrit 'h', le Profil web ecrivait 'm'. Mifflin-St Jeor prenait donc le repli « non declare » (-78) pour tout homme venu de l onboarding, quand le natif prend +5 : 83 kcal/j d ecart entre deux autorites. On normalise a la porte UNIQUE, les bases existantes comprises. Dossier §46. */if(o.gender==='m')o.gender='h';if(typeof o.name!=='string')o.name='';if(o.name==='Arthur')o.name='';return o}
 let toastT;function toast(m){const e=document.getElementById('toast');e.textContent=m;e.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>e.classList.remove('show'),2200)}
 function set(id,v){const e=document.getElementById(id);if(e)e.innerHTML=v}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
@@ -12720,9 +12720,9 @@ window.flAccueilData=function(_argJour){try{
          la mediane encaisse ces derives mieux qu une moyenne. */
       /* v2181 — `bas` est ce qui JUGE (10e centile de la nuit), `valeur` ce qui
          se LIT (mediane). Voir la note sur `flSpo2BasNuitDe`. */
-      (function(){var _l={libelle:'Oxygénation du sang', cle:'spo2',
-                          valeur:nb(flSpo2Nuit()), unite:'%', fleche:true};
-       var _b=(typeof flSpo2BasNuit==='function')?flSpo2BasNuit():null;
+      (function(){var _b=(typeof flSpo2BasNuit==='function')?flSpo2BasNuit():null;
+       /* v2514 — ON AFFICHE CE QU'ON JUGE : le bas de la nuit, pas la mediane. MoniteurSante.swift et §45. */
+       var _l={libelle:'Oxygénation du sang', cle:'spo2', valeur:nb(_b!=null?_b:flSpo2Nuit()), unite:'%', fleche:true};
        if(_b!=null)_l.bas=_b;
        /* v2199 — LA PLAGE INFORMATIVE, SUR LE MEME BAS QUE LE VERDICT.
           Vingt-deux nuits, comme les trois cartes du Moniteur — mais ici pour
@@ -23410,7 +23410,7 @@ function pfxFill(){try{
  set('pfxWSub',wAgo==null?'aucune mesure — ajoute la première':(wAgo===0?'mesuré aujourd\'hui':'mesuré il y a '+wAgo+' j'));
  set('pfxH',p.height?p.height+' cm':'—');
  set('pfxA',p.age?p.age+' ans':'—');
- set('pfxG',p.gender==='f'?'Femme':(p.gender==='m'?'Homme':'—'));
+ set('pfxG',p.gender==='f'?'Femme':(p.gender==='h'?'Homme':'—'));
  var GO=(typeof PFA_GOALS!=='undefined')?(PFA_GOALS.filter(function(x){return x.k===(p.goal||'recup')})[0]||{}):{};
  set('pfxGoalV',GO.t||'Mieux récupérer');
  set('pfxGoalSub',(p.kcalGoal||2400)+' kcal · '+(p.protGoal||150)+' g de protéines / j');
@@ -23617,7 +23617,7 @@ function wipeData(){if(!confirm('Vider TOUTES les données (démo incluse) et re
 function exportData(){const dump={};Object.keys(localStorage).forEach(k=>dump[k]=localStorage.getItem(k));const t=JSON.stringify(dump,null,2);try{const blob=new Blob([t],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='flint-data.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},1500);toast('⬇️ Données exportées (flint-data.json)')}catch(e){try{navigator.clipboard.writeText(t);toast('📋 Données copiées')}catch(e2){toast('Export impossible')}}}
 
 /* ===== Coach IA (réponses fondées sur les données du jour) ===== */
-const APP_VERSION='v2505';
+const APP_VERSION='v2514';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
@@ -25374,7 +25374,7 @@ function flPfMain(doc){var el=flPfScr(doc,'screen-fl-profil',85);
   if(bSyncEtat==='fraiche'){bSyncCol='#2FAE67';return 'Montre synchronisée à '+h+' ✓';}
   return 'Montre synchronisée à '+h;
  })();
- var sexeLab=p.gender==='f'?'Femme':(p.gender==='m'?'Homme':'Choisir');
+ var sexeLab=p.gender==='f'?'Femme':(p.gender==='h'?'Homme':'Choisir');
  var wake=p.wake||'07:00',need=p.need||8;
  var APPV='';try{APPV=APP_VERSION||'';}catch(e){}
  function kicker(t){return '<div style="font-family:-apple-system,system-ui,sans-serif;font-size:12px;font-weight:700;letter-spacing:.16em;color:#14110f;text-transform:uppercase;margin:30px 4px 14px">'+t+'</div>';}
@@ -25474,12 +25474,12 @@ function flPfMain(doc){var el=flPfScr(doc,'screen-fl-profil',85);
  el.querySelector('.pf-taille').addEventListener('click',function(){flPfMesure(doc,'taille');});
  el.querySelector('.pf-sexe').addEventListener('click',function(){
   flPfSheet(doc,'Ton sexe','<div style="display:flex;gap:12px">'
-   +'<button class="pfx-h" style="flex:1;padding:16px;border-radius:16px;border:1.5px solid '+(p.gender==='m'?'#fb6015':'#ece7df')+';background:'+(p.gender==='m'?'#fff3ef':'#fff')+';font-family:Archivo,sans-serif;font-size:15px;font-weight:700;color:#14110f;cursor:pointer">Homme</button>'
+   +'<button class="pfx-h" style="flex:1;padding:16px;border-radius:16px;border:1.5px solid '+(p.gender==='h'?'#fb6015':'#ece7df')+';background:'+(p.gender==='h'?'#fff3ef':'#fff')+';font-family:Archivo,sans-serif;font-size:15px;font-weight:700;color:#14110f;cursor:pointer">Homme</button>'
    +'<button class="pfx-f" style="flex:1;padding:16px;border-radius:16px;border:1.5px solid '+(p.gender==='f'?'#fb6015':'#ece7df')+';background:'+(p.gender==='f'?'#fff3ef':'#fff')+';font-family:Archivo,sans-serif;font-size:15px;font-weight:700;color:#14110f;cursor:pointer">Femme</button></div>'
    +'<div style="font-family:-apple-system,system-ui,sans-serif;font-size:12px;font-weight:300;color:#a7a29a;margin-top:12px">Utilisé pour le calcul de tes besoins caloriques.</div>',
    function(el2,close){
     function pick(g){var p2=flPfP();p2.gender=g;flPfSaveP(p2);try{haptic(6);}catch(e){}close();flPfMain(doc);}
-    el2.querySelector('.pfx-h').addEventListener('click',function(){pick('m');});
+    el2.querySelector('.pfx-h').addEventListener('click',function(){pick('h');});
     el2.querySelector('.pfx-f').addEventListener('click',function(){pick('f');});});});
  el.querySelector('.pf-obj').addEventListener('click',function(){try{flNGoalsHub();}catch(e){}});
  el.querySelector('.pf-sleepg').addEventListener('click',function(){
@@ -28430,7 +28430,7 @@ window.flMetriquesCourse=function(id,debutSec,finSec,estCourse){
       jamais le corps d un autre ; sexe non declare : le milieu des deux constantes
       de Mifflin, pas l hypothese homme. */
    if(!(p.weight>0)||!(p.height>0)||!(p.age>0))return 1600;
-   var sx=(p.gender==='f')?-161:((p.gender==='m')?5:-78);
+   var sx=(p.gender==='f')?-161:((p.gender==='h')?5:-78);
    return Math.round(10*p.weight+6.25*p.height-5*p.age+sx);}
   function watchHas(k){var w=watchOf(k);return !!(w&&(w.kcal!=null||w.steps!=null||(w.hr&&w.hr.length)||w.night));}
   /* Les calories ACTIVES seules, pour qui veut distinguer les deux. */
@@ -33123,8 +33123,10 @@ window.flFixerFenetreSeance=function(id,debutMin,finMin){try{
    if(!u.name)u.name=s.name;
    s.srcs.user=u;
    s.startMin=d; s.endMin=f; s.start=_hm; s.dur=f-d;   /* la vue plate, tout de suite */
-   if(!DB.set('sessions_'+k,L))return 'écriture refusée · '+k;
+   /* ⚠️ DÉRIVER PUIS ÉCRIRE (17 sept.) : l'inverse recalculait kcal/pas/avgHr
+      dans un `L` que personne n'écrivait — 75 kcal gardés au lieu de 36. */
    try{if(typeof flDeriverMetriques==='function')flDeriverMetriques(k,L);}catch(e){}
+   if(!DB.set('sessions_'+k,L))return 'écriture refusée · '+k;
    return 'fenêtre fixée · '+k+' · '+sid+' → '+d+'→'+f+' ('+(f-d)+' min)';
   }
  }
