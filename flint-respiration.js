@@ -233,7 +233,19 @@ window.flRespirationNuit=function(K){
           +(vals.length>1?"s":"")+" cette nuit — il en faut 12."});
  vals.sort(function(x,y){return x-y;});
  var med=vals.length%2?vals[vals.length>>1]:(vals[vals.length/2-1]+vals[vals.length/2])/2;
+ /* ═══ 20 SEPT. 2026 — DIRE AUSSI SUR QUOI ON S'APPUIE ═══════════════════
+    Le 16 on a appris à dire POURQUOI la carte se tait. Le cas symétrique
+    restait muet : le matin du 20, la carte annonçait 12,9 /min sur QUATORZE
+    relevés — deux de plus que le plancher — et le chiffre a bougé à 13,4
+    quelques minutes plus tard, la nuit continuant d'arriver. Un demi-souffle,
+    soit l'écart même qu'on cherchait à comprendre avec WHOOP.
+    Mesuré aussi : la nuit du 19 ramenée à cette densité passe de 12,9 à 13,3.
+    Une valeur posée sur 14 relevés n'est pas du même ordre qu'une posée sur 80,
+    et l'écran ne le disait pas. Seuil à 24 — le double du plancher ; au-delà,
+    une nuit normale (51 à 100 relevés) ne dit rien de plus. */
+ var _maigre = vals.length < 24;
  return (memo[cle]={ok:true, resp:Math.round(med*10)/10,
+                    assise: _maigre ? ("sur " + vals.length + " relevés") : null,
                     blocs:vals.length, refuses:refuses,
                     etendue:[Math.round(vals[0]*10)/10,
                              Math.round(vals[vals.length-1]*10)/10]});

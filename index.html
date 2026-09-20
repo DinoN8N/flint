@@ -9276,7 +9276,7 @@ window.flRecupData=function(_argJour){try{
    dir:flRcDir(s0&&s0.rhr,hR), spark:hR, couleur:mcol(1)},
   {cle:'resp', libelle:'FRÉQUENCE\nRESPIRATOIRE',
    valeur:(s0&&s0.resp!=null)?String(Math.round(s0.resp*10)/10).replace('.',','):null, unite:' /min',
-   dir:flRcDir(s0&&s0.resp,hP), spark:hP, couleur:mcol(3), motifAbsence:(s0&&s0.resp==null&&typeof flRespirationNuit==='function')?((flRespirationNuit(K)||{}).motif||null):null},
+   dir:flRcDir(s0&&s0.resp,hP), spark:hP, couleur:mcol(3), motifAbsence:(s0&&s0.resp==null&&typeof flRespirationNuit==='function')?((flRespirationNuit(K)||{}).motif||null):null, assise:(function(){if(!(s0&&s0.resp!=null))return null;var _a=(typeof flRespirationNuit==='function')?((flRespirationNuit(K)||{}).assise||null):null;if(!_a)return null;var _e=(typeof flNuitCycle==='function')?((flNuitCycle(K)||{}).etat||null):null;return _e&&_e!=='finale'?(_a+' · la nuit arrive encore'):_a;})()},
   {cle:'sleep', libelle:'SOMMEIL PAR RAPPORT\nAU BESOIN',
    valeur:sPct!=null?String(sPct):null, unite:'%',
    dir:flRcDir(sPct,hS), spark:hS, couleur:mcol(2)}
@@ -23618,7 +23618,7 @@ function wipeData(){if(!confirm('Vider TOUTES les données (démo incluse) et re
 function exportData(){const dump={};Object.keys(localStorage).forEach(k=>dump[k]=localStorage.getItem(k));const t=JSON.stringify(dump,null,2);try{const blob=new Blob([t],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='flint-data.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},1500);toast('⬇️ Données exportées (flint-data.json)')}catch(e){try{navigator.clipboard.writeText(t);toast('📋 Données copiées')}catch(e2){toast('Export impossible')}}}
 
 /* ===== Coach IA (réponses fondées sur les données du jour) ===== */
-const APP_VERSION='v2542';
+const APP_VERSION='v2544';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
@@ -28798,11 +28798,6 @@ window.flMetriquesCourse=function(id,debutSec,finSec,estCourse){
      que declarer du sport a quelqu un qui range sa cuisine. */
   var MARCHE_FORTE=40, MARCHE_FAIBLE=18, MARCHE_MIN_MIN=10,
       MARCHE_MIN_PAS=Math.round(MARCHE_FORTE*MARCHE_MIN_MIN*0.75);
-  /* LE NOM SE MERITE. « Marche » seulement si le segment TIENT la cadence qu il
-     a fallu pour le declarer ; sinon le doute se dit : « Activite ». Le detecteur
-     PROLONGE a 18 pas/min, donc une seance de salle devient une fenetre juste
-     sous une etiquette fausse. Mesures : CHANTIER-ACTIVITE-DETECTEE.md */
-  function nomDetecte(pas,dur){return (dur>0&&pas>0&&(pas/dur)>=MARCHE_FORTE)?'Marche':'Activité';}
   /* ═══ D OU VIENNENT LES TRANCHES : LE POIGNET D ABORD ═════════════════════
 
      LE BRACELET PASSE DEVANT APPLE SANTE, ET CE N EST PAS UN DETAIL. WHOOP n a
@@ -29708,8 +29703,7 @@ window.flDansFenetre=function(m,d,f){ return m>=d && m<f; };
     ss=ss.filter(function(x){
      return !(x&&x.auto&&x.source==='pas'&&x.startMin!=null&&Math.abs(x.startMin-a.debut)<=6);
     });
-    var _nm=nomDetecte(a.pas,a.dureeMin);
-    ss.push({name:_nm, icon:(_nm==='Marche'?'🚶':'✨'),
+    ss.push({name:'Marche', icon:'🚶',
              start:String(Math.floor(_m/60)).padStart(2,'0')+':'+String(_m%60).padStart(2,'0'),
              dur:a.dureeMin, int:1, auto:false, real:true,
              startMin:a.debut, endMin:a.fin, pas:a.pas,
@@ -30223,8 +30217,8 @@ window.flDansFenetre=function(m,d,f){ return m>=d && m<f; };
        minutes. C'est ce qui rend la descente du 23 août à sa journée — voir
        `flPartitionnerMarches`. */
     var marchesRows=marches.map(function(m){
-     var _mB=m.startMin%1440, _nm=nomDetecte(m.pasTotal,m.endMin-m.startMin);
-     return {name:_nm,icon:(_nm==='Marche'?'🚶':'✨'),
+     var _mB=m.startMin%1440;
+     return {name:'Marche',icon:'🚶',
              start:String(Math.floor(_mB/60)).padStart(2,'0')+':'+String(_mB%60).padStart(2,'0'),
              dur:m.endMin-m.startMin,int:m.int,auto:true,real:true,
              avgHr:m.avgHr,maxHr:m.maxHr,endMin:m.endMin,startMin:m.startMin,
