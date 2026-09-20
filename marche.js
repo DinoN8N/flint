@@ -76,7 +76,14 @@
   window.flMarcheDetail = function (s, K, DBref) {
     try {
       if (!s || s.type === 'nap') return null;
-      if (String(s.name || s.nom || '') !== 'Marche') return null;
+      /* 20 sept. 2026 — LA FICHE SUIT LA MATIÈRE, PAS LE MOT. Le détecteur
+         nomme « Activité » ce dont il doute. C'est le MÊME segment, mesuré de la
+         même façon — durée, pas, calories, cœur — et il n'y a rien d'autre à
+         en montrer : surtout pas la fiche d'effort, dont la courbe mentirait
+         sur 34 % de couverture cardiaque. Les deux noms ouvrent donc cette
+         fiche-ci ; le titre, lui, dit lequel des deux c'est. */
+      var _nom = String(s.name || s.nom || '');
+      if (_nom !== 'Marche' && _nom !== 'Activité') return null;
 
       var deb = (s.startMin != null) ? +s.startMin : null;
       var fin = (s.endMin != null) ? +s.endMin : (deb != null && s.dur ? deb + (+s.dur) : null);

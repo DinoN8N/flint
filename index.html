@@ -2879,6 +2879,7 @@ body.stepsview header{display:none}
 <script src="marche.js"></script>
 <script src="recup.js"></script>
 <script src="flint-zones.js"></script>
+<script src="flint-classement.js"></script>
 <script src="flint-fuseau.js"></script>
 <script src="flint-equilibre.js"></script>
 <script src="flint-oxygene.js"></script>
@@ -3780,7 +3781,7 @@ window.flEntreesJour=function(off){try{
              srcs:(_et&&_et.sources&&_et.sources.length?_et.sources.join('+'):null),
              valeur:sieste?hm(o.dur||0)
                    :((_et&&_et.note!=null)?String(_et.note).replace('.',','):null),
-             source:'seance', rang:idx, jour:K, veille:(K!==_civil),
+             source:'seance', rang:idx, jour:K, veille:(K!==_civil), pas:(sieste?null:(o.pas!=null?o.pas:null)), avgHr:(sieste||o.avgHr==null?null:Math.round(o.avgHr)),
              tri:(d0==null?9999:d0)+dec});
   });
   var mm=[];try{mm=DB.get('meals_'+K,[])||[];}catch(x){}
@@ -5335,7 +5336,7 @@ window.flEtatActivite=function(s,k,maintenantMin){
   if(_et==null&&typeof flMetriquesCanoniques==='function'&&s.startMin!=null&&fin!=null){
    try{ var _mq=flMetriquesCanoniques(k,s.startMin,fin,s.pauses); if(_mq)_et=_mq.kcalEtat; }catch(e){}
   }
-  if(_et==='cardio'||_et==='mixte')
+  if(_et==='cardio'||_et==='mixte'||s.source==='pas')   /* flint-classement.js, § la porte */
    return rendre('needsClassification',_dementie?('« Marche » à '+_fcM+' bpm de moyenne — le cœur dit autre chose'):'détectée sans nom, effort mesuré');
   /* Sinon on ne fabrique pas de question : l'activité reste telle que la montre
      l'a annoncée, sans nom et sans effort mesuré, et l'écran le dira. */
@@ -23618,7 +23619,7 @@ function wipeData(){if(!confirm('Vider TOUTES les données (démo incluse) et re
 function exportData(){const dump={};Object.keys(localStorage).forEach(k=>dump[k]=localStorage.getItem(k));const t=JSON.stringify(dump,null,2);try{const blob=new Blob([t],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='flint-data.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},1500);toast('⬇️ Données exportées (flint-data.json)')}catch(e){try{navigator.clipboard.writeText(t);toast('📋 Données copiées')}catch(e2){toast('Export impossible')}}}
 
 /* ===== Coach IA (réponses fondées sur les données du jour) ===== */
-const APP_VERSION='v2563';
+const APP_VERSION='v2564';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
@@ -29314,8 +29315,8 @@ window.flDansFenetre=function(m,d,f){ return m>=d && m<f; };
      var cad=g.pas/Math.max(1,g.fin-g.debut);
      it=cad>=100?2:1;
     }
-    return {startMin:g.debut,endMin:g.fin,pasTotal:g.pas,
-            avgHr:moy,maxHr:mx,int:it,fcFiable:(q?q.fiable:null),
+    return {startMin:g.debut,endMin:g.fin,pasTotal:g.pas,partForte:(typeof flPartMinutesTenues==='function'?flPartMinutesTenues(p,g.debut,g.fin,MARCHE_FORTE):null),
+            avgHr:moy,maxHr:mx,int:it,fcFiable:(q?q.fiable:null),fcIncoherent:(q?!!q.incoherent:null),
             source:'pas',capteur:(src&&src.src)||'bracelet',
             /* La finesse est une propriété de la mesure : on la dit, pour que le
                jour où deux journées se comparent, on sache si elles ont été lues
@@ -29500,8 +29501,8 @@ window.flDansFenetre=function(m,d,f){ return m>=d && m<f; };
        le premier pour retirer ces seances sans toucher aux autres, le second
        pour savoir, le jour ou une marche manquera, s il faut regarder du cote du
        bracelet ou du telephone. */
-    return {startMin:g.debut,endMin:g.fin,pasTotal:g.pas,
-            avgHr:moy,maxHr:mx,int:it,fcFiable:(q?q.fiable:null),
+    return {startMin:g.debut,endMin:g.fin,pasTotal:g.pas,partForte:(typeof flPartTranchesTenues==='function'?flPartTranchesTenues(g.tr,pas,MARCHE_FORTE):null),
+            avgHr:moy,maxHr:mx,int:it,fcFiable:(q?q.fiable:null),fcIncoherent:(q?!!q.incoherent:null),
             source:'pas',capteur:src.src};
    });
   }
@@ -29562,9 +29563,8 @@ window.flDansFenetre=function(m,d,f){ return m>=d && m<f; };
       var c=JSON.parse(JSON.stringify(m));
       c.startMin=d;c.endMin=f;
       c.avgHr=null;c.maxHr=null;                 /* la fenêtre a changé */
-      var s=0;
-      for(var i=Math.max(0,d);i<Math.min(1440,f);i++)if(p.vu[i])s+=p.m[i];
-      c.pasTotal=s;
+      var s=0; for(var i=Math.max(0,d);i<Math.min(1440,f);i++)if(p.vu[i])s+=p.m[i];
+      c.pasTotal=s; c.partForte=(typeof flPartMinutesTenues==='function')?flPartMinutesTenues(p,d,f,MARCHE_FORTE):null;
       out.push(c);
      });
      /* chaque résiduel repasse par les MÊMES critères, sur SES minutes */
@@ -29699,11 +29699,11 @@ window.flDansFenetre=function(m,d,f){ return m>=d && m<f; };
     k=k||tk();
     var a=flActiviteEnCours(k); if(!a)return {ok:false,raison:'aucune'};
     var ss=DB.get('sessions_'+k,[])||[];
-    var _m=a.debut%1440;
+    var _m=a.debut%1440, _nm=(typeof flNomDetecte==='function')?flNomDetecte(a,a.pas,a.dureeMin,k,MARCHE_FORTE):'Activité';
     ss=ss.filter(function(x){
      return !(x&&x.auto&&x.source==='pas'&&x.startMin!=null&&Math.abs(x.startMin-a.debut)<=6);
     });
-    ss.push({name:'Marche', icon:'🚶',
+    ss.push({name:_nm, icon:(_nm==='Marche'?'🚶':'✨'),
              start:String(Math.floor(_m/60)).padStart(2,'0')+':'+String(_m%60).padStart(2,'0'),
              dur:a.dureeMin, int:1, auto:false, real:true,
              startMin:a.debut, endMin:a.fin, pas:a.pas,
@@ -30217,8 +30217,8 @@ window.flDansFenetre=function(m,d,f){ return m>=d && m<f; };
        minutes. C'est ce qui rend la descente du 23 août à sa journée — voir
        `flPartitionnerMarches`. */
     var marchesRows=marches.map(function(m){
-     var _mB=m.startMin%1440;
-     return {name:'Marche',icon:'🚶',
+     var _mB=m.startMin%1440, _nm=(typeof flNomDetecte==='function')?flNomDetecte(m,m.pasTotal,m.endMin-m.startMin,K,MARCHE_FORTE):'Activité';
+     return {name:_nm,icon:(_nm==='Marche'?'🚶':'✨'),
              start:String(Math.floor(_mB/60)).padStart(2,'0')+':'+String(_mB%60).padStart(2,'0'),
              dur:m.endMin-m.startMin,int:m.int,auto:true,real:true,
              avgHr:m.avgHr,maxHr:m.maxHr,endMin:m.endMin,startMin:m.startMin,
