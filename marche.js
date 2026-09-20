@@ -60,6 +60,52 @@
     return null;
   }
 
+  /* ═══ LE TOTAL DE PAS D'UNE JOURNÉE — CELUI QUE L'ACCUEIL AFFICHE ══════
+
+     Une part se rapporte au total que l'écran d'accueil montre, sinon la fiche
+     et l'accueil parlent de deux journées différentes pour la même date. Ce
+     total a un seul auteur dans la maison : `window.flStepsOf`, qui somme les
+     blocs du bracelet par `flPas.journee` et arbitre avec Apple Santé
+     (index.html, 4 sept. 2026). On ne le recalcule pas, on le lui demande.
+
+     TROIS MARCHES, DU PLUS SU AU MOINS SU. Sans le lecteur de l'app — module
+     rejoué hors navigateur, web servi périmé — on somme les blocs soi-même ;
+     sans pas.js, il ne reste que le compteur du bracelet, l'ancien
+     comportement, qui vaut mieux qu'une fiche muette.
+
+     ET LE COMPTEUR EN DERNIER, PARCE QUE C'EST LUI LE DÉFAUT DU 20 SEPTEMBRE
+     2026. Dino : « à chaque fois que je marche, on me dit que les pas
+     représentent 100 % de ma journée ». `watch_<K>.steps` est un RÉSUMÉ que le
+     bracelet pousse de loin en loin, pas la somme de ce qu'il a mesuré, et sur
+     le jour EN COURS il traîne. Mesuré sur les relevés, compteur contre blocs
+     `actDet` :
+
+       2 sept. à 12h51 — compteur 1, blocs 1 690
+       3 sept. à 14h42 — compteur 767, blocs 2 689
+       16 sept. au matin — compteur 1, blocs 25
+
+     Une marche de 2 000 pas divisée par 767 sature le `min(1, …)` : la fiche
+     annonçait « 100 % · sur 767 pas dans la journée ». Les journées FINIES,
+     elles, s'accordent à moins de 1 % (452 journées-bracelet, 7 désaccords) —
+     c'est pourquoi le banc, qui ne rejoue que du fini, ne voyait rien.
+     `flStepsOf` avait été corrigé le 4 septembre ; cette fiche-ci, non.
+
+     ON PASSE PAR `window.` : un identifiant libre déclaré dans un AUTRE fichier
+     est invisible au garde de portée, la propriété se lit. */
+  function totalPasDuJour(w, K) {
+    if (typeof window.flStepsOf === 'function') {
+      try { var n = +window.flStepsOf(K); if (n > 0) return n; } catch (e) {}
+    }
+    if (window.flPas && typeof window.flPas.journee === 'function'
+        && w && w.actDet && w.actDet.length) {
+      try {
+        var j = window.flPas.journee(w.actDet, K);
+        if (j && j.pas > 0) return j.pas;
+      } catch (e) {}
+    }
+    return (w && w.steps > 0) ? +w.steps : 0;
+  }
+
   /* ══════════════════════════════════════════════════════════════════════════
      LE DÉTAIL D'UNE MARCHE. Rend `null` pour tout le reste — et c'est LUI qui
      décide de la fiche : une charge qui porte `marche` ouvre la fiche Marche,
@@ -94,17 +140,24 @@
          Le remède complet demande de passer `s.pauses` à `couvertureFc`. */
       var couv = couvertureFc(S, K, deb, fin, w);
 
-      /* LA CONTRIBUTION À LA JOURNÉE. Les totaux du jour viennent du bracelet
-         (`steps`, `kcal`) : on ne les recalcule pas, on s'y rapporte. Sans eux,
-         pas de part — une part sur un total supposé ne veut rien dire. */
+      /* LA CONTRIBUTION À LA JOURNÉE. Le total des pas vient de `totalPasDuJour`
+         — celui de l'accueil — et jamais du compteur brut du bracelet : c'est la
+         correction du 20 septembre 2026, et elle vaut surtout pour le jour en
+         cours. Les calories gardent le compteur : rien ne les affiche encore,
+         et leur total a son propre moteur (`flCaloriesDetail`) qu'on n'ira pas
+         appeler à l'aveugle d'ici. Sans total, pas de part — une part sur un
+         total supposé ne veut rien dire. */
       var pasSeance = (s.pas != null) ? +s.pas : null;
+      var pasJour = totalPasDuJour(w, K);
       var jour = null;
-      if (w && (w.steps > 0 || w.kcal > 0)) {
+      if (pasJour > 0 || (w && w.kcal > 0)) {
         jour = {
-          pasJour: (w.steps > 0 ? w.steps : null),
-          kcalJour: (w.kcal > 0 ? w.kcal : null),
-          partPas: (w.steps > 0 && pasSeance != null) ? Math.min(1, pasSeance / w.steps) : null,
-          partKcal: (w.kcal > 0 && s.kcal != null) ? Math.min(1, (+s.kcal) / w.kcal) : null
+          pasJour: (pasJour > 0 ? pasJour : null),
+          kcalJour: (w && w.kcal > 0 ? w.kcal : null),
+          partPas: (pasJour > 0 && pasSeance != null)
+                     ? Math.min(1, pasSeance / pasJour) : null,
+          partKcal: (w && w.kcal > 0 && s.kcal != null)
+                     ? Math.min(1, (+s.kcal) / w.kcal) : null
         };
       }
 
