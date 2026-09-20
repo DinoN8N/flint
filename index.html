@@ -4250,7 +4250,7 @@ function getProfile(){
     provenance posé à côté (`flBesoinDuJour`) ne pouvait donc jamais être faux.
     Un objectif inventé partait à l'écran Balance annoncé comme un CHOIX.
     Les autres restent : ils ne parlent pas du corps. CHANTIER-PREMIERE-SEMAINE.md §2 */
- const o=Object.assign({name:'',wake:'07:00',need:8,region:'',goal:'recup',gender:''},moi._brut);/* v2513 — DEUX CONVENTIONS POUR UN SEXE : le natif ecrit 'h', le Profil web ecrivait 'm'. Mifflin-St Jeor prenait donc le repli « non declare » (-78) pour tout homme venu de l onboarding, quand le natif prend +5 : 83 kcal/j d ecart entre deux autorites. On normalise a la porte UNIQUE, les bases existantes comprises. Dossier §46. */if(o.gender==='m')o.gender='h';if(typeof o.name!=='string')o.name='';if(o.name==='Arthur')o.name='';return o}
+ const o=Object.assign({name:'',wake:'07:00',need:8,region:'',goal:'recup',gender:''},moi._brut);/* v2513 — DEUX CONVENTIONS POUR UN SEXE : le natif ecrit 'h', le Profil web ecrivait 'm'. Mifflin-St Jeor prenait donc le repli « non declare » (-78) pour tout homme venu de l onboarding, quand le natif prend +5 : 83 kcal/j d ecart entre deux autorites. On normalise a la porte UNIQUE, les bases existantes comprises. Dossier §46. */if(o.gender==='m')o.gender='h';if(typeof o.name!=='string')o.name='';return o}
 let toastT;function toast(m){const e=document.getElementById('toast');e.textContent=m;e.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>e.classList.remove('show'),2200)}
 function set(id,v){const e=document.getElementById(id);if(e)e.innerHTML=v}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
@@ -5448,7 +5448,7 @@ window._hmInfo={
     toutes les 20 minutes quand une desaturation dure quelques secondes. On dit
     ce qu on a, et ce qu on n a pas. */
  spo2:['Oxygène du sang (SpO₂)','<p>La saturation en oxygène, c\'est le pourcentage d\'oxygène transporté par ton sang.</p><p><b>Ton bracelet ne sait pas vraiment la mesurer.</b> Il faut au moins deux longueurs d\'onde de lumière pour comparer deux absorptions ; il n\'en a qu\'une. Résultat : la nuit, quand ton poignet ne bouge plus, il se colle à 100 % et n\'en redescend plus — 60 % de ses lectures nocturnes valent exactement 100, contre 6 % en journée.</p><p>On affiche donc le chiffre, sans le juger, et il ne compte pas dans ton bilan. Un bracelet équipé de plusieurs longueurs d\'onde donne 3 à 4 points de moins que nous, et surtout il <i>varie</i> d\'une nuit à l\'autre — c\'est cette variation qui nous manque, pas le niveau.</p>'],
- temp:['Température cutanée','<p>FLINT compare ta température de peau de la nuit à ta moyenne des 30 dernières nuits — pas à une valeur «&nbsp;standard&nbsp;». Un écart de +0,3&nbsp;°C ou plus, plusieurs nuits de suite, peut annoncer de la fatigue, ton cycle ou un début d\'infection. C\'est l\'un des signaux les plus précoces de ton corps.</p>']
+ temp:['Température cutanée','<p>FLINT compare ta température de peau de la nuit à ta moyenne des 30 dernières nuits — pas à une valeur «&nbsp;standard&nbsp;». Un écart de +0,3&nbsp;°C ou plus, plusieurs nuits de suite, accompagne souvent la fatigue, ton cycle ou une nuit où ton corps a plus travaillé que d\'habitude. C\'est un signal à écouter, pas un diagnostic : FLINT n\'est pas un dispositif médical.</p>']
 };
 function flInfoHM(k){var d=window._hmInfo[k];if(d)flInfo(d[0],d[1]);}
 function renderHealth(off){off=off||0;var host=document.getElementById('healthCard');if(!host)return;var t=sensorOf(tk(off));
@@ -13543,7 +13543,7 @@ var el=ev.target;var a=el;for(var d1=0;d1<7&&a;d1++,a=a.parentElement){if(!a.que
    var tn=best.childNodes[0];if(tn&&tn.nodeType===3){if(tn.nodeValue.trim()!==''+val)tn.nodeValue=val;}else if(best.textContent!==''+val)best.textContent=val;
    if(col)best.style.setProperty('color',col,'important');else best.style.removeProperty('color');
   }catch(e){}}
-  var nm=((getProfile().name||'').trim().split(' ')[0])||'';if(nm==='Arthur')nm='';
+  var nm=((getProfile().name||'').trim().split(' ')[0])||'';
   if(!setText('Bonjour Dino',nm?('Bonjour '+nm):'Bonjour'))setText('Dino',nm);
   var t=sensorOf(K),slMin=(t&&t.sleepMin)||0;
   setTile('SOMMEIL',slMin?(Math.floor(slMin/60)+'h'+String(slMin%60).padStart(2,'0')):'—');
@@ -23618,7 +23618,7 @@ function wipeData(){if(!confirm('Vider TOUTES les données (démo incluse) et re
 function exportData(){const dump={};Object.keys(localStorage).forEach(k=>dump[k]=localStorage.getItem(k));const t=JSON.stringify(dump,null,2);try{const blob=new Blob([t],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='flint-data.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},1500);toast('⬇️ Données exportées (flint-data.json)')}catch(e){try{navigator.clipboard.writeText(t);toast('📋 Données copiées')}catch(e2){toast('Export impossible')}}}
 
 /* ===== Coach IA (réponses fondées sur les données du jour) ===== */
-const APP_VERSION='v2526';
+const APP_VERSION='v2541';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
@@ -23924,7 +23924,7 @@ try{
    repasserait un jour — par un chemin qu'on n'a pas encore trouvé — ne laisse
    pas de traces durables. */
 try{
- (function(){
+ (function(){try{if(DB.get('flDemoSession',0)===1)return;}catch(e){}/* 14 sept. 2026 (v2332) — SAUF PENDANT UNE SESSION DE DÉMO : au premier rechargement après flDemoOuvrir ce balayage retirait tous les repas et séances semés (Nutrition vide, effort « — » chez le testeur d'Apple). La session (v2131) est la seule porte des marques demo, et elle purge elle-même à sa fermeture. */
   var retires=0;
   for(var _b=0;_b<=400;_b++){
    var _kb=tk(-_b);
@@ -23947,8 +23947,7 @@ try{
  }
 }catch(e){}
 
-try{
- [0,-1].forEach(function(_dj){
+try{ if(DB.get('flDemoSession',0)!==1)[0,-1].forEach(function(_dj){/* 14 sept. 2026 (v2332) — sauf pendant une session de démo, même raison que le balayage plus haut : ce ménage retirait courbe, pas et calories d'aujourd'hui et d'hier au premier rechargement après l'ouverture de la démo. */
   var _kj=tk(_dj),_cj=null;
   try{_cj=DB.get('watch_'+_kj);}catch(e){}
   if(!_cj||typeof _cj!=='object')return;
@@ -25233,7 +25232,7 @@ function flPfSaveP(p){try{DB.set('profile',p);}catch(e){}}
 function flPfWeight(){var p0=flPfP();if(p0.weight!=null&&p0.weight>0)return p0.weight;
  /* v2492 — par DATE : trie en texte, ce lecteur rendait la pesee de septembre du 1er octobre au 31 decembre. */ try{var bl=DB.get('bodylog',{})||{};var ks=flJoursTries(bl);for(var i=ks.length-1;i>=0;i--){if(bl[ks[i]]&&bl[ks[i]].weight!=null)return bl[ks[i]].weight;}}catch(e){}return null;}
 function flPfHeight(){return flPfP().height||null;}
-function flPfName(){var n=(flPfP().name||'').trim().split(' ')[0];return n==='Arthur'?'':n;}
+function flPfName(){return (flPfP().name||'').trim().split(' ')[0];}
 function flPfSince(){var s=null;try{s=DB.get('flSince',null);if(!s){s=Date.now();DB.set('flSince',s);}}catch(e){}
  var d=new Date(s||Date.now());var M=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
  return 'Sur FLINT depuis '+M[d.getMonth()]+' '+d.getFullYear();}

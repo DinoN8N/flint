@@ -1082,6 +1082,36 @@
      ⚠️ ON N'AUTO-FINALISE PAS EN `grace`. Un geste de l'utilisateur vaut
      déclaration (« ma nuit est finie », doctrine de TRAITER depuis la v1236) ;
      une absence de geste ne vaut rien du tout. */
+  /* ═══ 20 sept. 2026 — LA DÉCISION AUTOMATIQUE PARLE ENFIN ══════════════════
+
+     Elle refusait en silence. Le 20 septembre, pour savoir POURQUOI le matin de
+     Dino n'avait pas de sortie automatique, il a fallu rapatrier sa base et
+     rejouer le moteur en Node — une heure, pour une phrase que la fonction
+     connaissait déjà et jetait. Le journal du téléphone, lui, ne montrait qu'un
+     refus SANS RAPPORT, sur un autre diagnostic (« la montre rend encore »),
+     qui a d'abord envoyé chercher au mauvais endroit.
+
+     C'est la même faute que `garde-build.sh` le 16 septembre — un mécanisme qui
+     échoue sans nommer sa raison — et elle coûte la même chose : du temps, et
+     une conclusion fausse en chemin.
+
+     UNE LIGNE PAR JOUR ET PAR RAISON, pas plus : cette décision est prise à
+     chaque charge d'accueil, à chaque fin de synchro et à chaque retour au
+     premier plan. Le journal n'est pas une trace d'appel (règle v1335). */
+  function direLaDecision(K, raison) {
+    try {
+      if (!raison) return;
+      var cle = 'nuitAutoDite_' + K;
+      var vu = null; try { vu = DB.get(cle, null); } catch (e) {}
+      if (vu === raison) return;
+      try { DB.set(cle, raison); } catch (e) {}
+      var m = 'MATIN · automatique refusé (' + K + ') : ' + raison;
+      try { console.log('[flint] ' + m); } catch (e) {}
+      var n = window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.flint;
+      if (n) n.postMessage({ cmd: 'journal', texte: m });
+    } catch (e) {}
+  }
+
   window.flNuitAutoDecision = function (K, maintenant) {
     K = K || tk(0);
     var now = maintenant || Date.now();
@@ -1099,14 +1129,51 @@
       var cyc = cycleDe(K);
       var debout = !!(cyc && cyc.etat === 'grace' && cyc.depuisReveil != null
                       && cyc.depuisReveil >= AUTO_APRES_REVEIL_MIN);
-      if (!cyc || (cyc.etat !== 'finale' && !debout)) {
+      /* ═══ 20 sept. 2026 — LE DERNIER RECOURS NE DEMANDE RIEN AU CYCLE ═════
+
+         CE MATIN-LÀ, la session est restée WAITING_FOR_USER de 08:32 à 09:55 —
+         83 minutes — et `tFinal0` n'a été posé qu'à 09:55 : la finalisation
+         n'a JAMAIS été lancée. Donc cette décision-ci a répondu « non » à
+         chaque passe, et personne ne peut dire pourquoi : elle n'écrivait
+         rien. Rejouée sur la base rapatriée elle répond « oui », donc l'état
+         du cycle à cet instant-là ne s'y retrouve plus — la seule chose
+         certaine est qu'elle a refusé.
+
+         LE FILET NE PEUT PAS DÉPENDRE DE CE QU'ON N'ARRIVE PAS À RELIRE. Les
+         deux conditions ci-dessus interrogent toutes les deux le CYCLE ; si le
+         cycle n'est pas là, ou n'est pas dans l'état attendu, le matin n'a plus
+         aucune sortie automatique et tout repose sur le doigt de Dino — c'est
+         exactement ce qui a fait de ma régression du bouton un mur de 83
+         minutes au lieu d'une gêne.
+
+         ON AJOUTE DONC UNE SORTIE QUI NE DEMANDE RIEN À PERSONNE : la nuit est
+         détectée depuis plus d'une heure et elle n'est toujours pas finalisée.
+         Aucune constante neuve — c'est la même heure que `debout`, celle que
+         Dino a dictée le 11 septembre (« Traiter c'est vraiment quand tu viens
+         de te réveiller »).
+
+         CE QUE ÇA NE CONTOURNE PAS, et c'est ce qui rend la règle sûre : la
+         MATIÈRE (`flNuitMatiere`, deuxième porte) et le plafond d'attente de
+         trois minutes restent devant. On ne scelle donc jamais sur une nuit
+         dont les intervalles arrivent encore — on cesse seulement d'attendre
+         un état de cycle qu'on ne sait pas lire. Et si la nuit s'allonge
+         vraiment ensuite, le rendormissement garde son unique réouverture.
+         Mesuré sur la base du 20 septembre : finalisation à 09:25, et le score
+         est 68 — le même que celui qu'il a fini par obtenir. */
+      var detectDepuis = (rec.tDetect != null) ? Math.round((now - rec.tDetect) / 60000) : null;
+      var recours = (detectDepuis != null && detectDepuis >= AUTO_APRES_REVEIL_MIN);
+      if (!recours && (!cyc || (cyc.etat !== 'finale' && !debout))) {
         out.raison = 'la nuit peut encore bouger (' + (cyc ? cyc.etat : 'cycle absent') + ')';
+        direLaDecision(K, out.raison);
         return out;
       }
       var pret = window.flNuitMatiere(K, now);
-      if (!pret.pret) { out.raison = pret.raison; return out; }
+      if (!pret.pret) { out.raison = pret.raison; direLaDecision(K, out.raison); return out; }
       out.auto = true;
-      out.raison = (debout ? 'debout depuis ' : 'levé depuis ') + cyc.depuisReveil + ' min — ' + pret.raison;
+      out.raison = (recours && !debout && !(cyc && cyc.etat === 'finale'))
+        ? ('détectée depuis ' + detectDepuis + ' min, sans attendre le cycle — ' + pret.raison)
+        : ((debout ? 'debout depuis ' : 'levé depuis ')
+           + ((cyc && cyc.depuisReveil != null) ? cyc.depuisReveil : detectDepuis) + ' min — ' + pret.raison);
       return out;
     } catch (e) { out.raison = 'décision : ' + e.message; return out; }
   };

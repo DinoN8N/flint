@@ -160,12 +160,47 @@ function flSeedDemoDays(n,fut){if(flRefuseSemis('flSeedDemoDays'))return;
    var night=(t<wakeMin||t>wakeMin+16*60);
    var bpm=rhr+(night?-2:8)+Math.round(r('hd'+t)*7)+up+(up?Math.round(r('hp'+t)*7):0);
    hrDay.push([t,Math.max(38,Math.min(190,bpm))]);}
-  DB.set('watch_'+k,{hr:hrDay,rr:rr,
+  /* 14 sept. 2026 — LA VARIABILITÉ DE LA MONTRE, SINON LA NUIT N'A PAS DE
+     SCORE. Mesuré sur le simulateur, build Release, session de démo ouverte :
+     « 0/4 nuits », récupération « — » sur 40 jours semés. En coquille,
+     `sensorOf` ne lit plus `sensor_` : il lit `watch_`, et sa variabilité
+     vient de `hrvMontre` (mesures de la puce, [minute, ms]) ou de `rrH`.
+     Cette maquette ne semait ni l'un ni l'autre : `rr` ci-dessus est un
+     format d'avant la v1358, que plus personne ne lit. Six mesures dans la
+     fenêtre de la nuit, autour de la valeur semée : la médiane la rend. */
+  var hrvMontre=[];
+  for(var _m=0;_m<6;_m++){
+   var _mn=(bedMin+30+_m*Math.max(20,Math.floor(Math.max(60,sleepMin-60)/6)))%1440;
+   hrvMontre.push([_mn,Math.max(5,hrv+Math.round((r('hm'+_m)-0.5)*6))]);}
+  var _wr={hr:hrDay,rr:rr,hrvMontre:hrvMontre,
    steps:2500+Math.round(r('sp')*11000)+(rest?0:1500),
    kcal:180+Math.round(r('kc')*520)+(rest?0:260),
    night:{sleepMin:sleepMin,deep:deep,rem:rem,light:light,awake:awake,
-    bedMin:bedMin,wakeMin:wakeMin,timeInBed:timeInBed,lowestHr:rhr-3},
-   demo:true});
+    bedMin:bedMin,wakeMin:wakeMin,timeInBed:timeInBed,lowestHr:rhr-3,
+    stages:flStageSegs({deep:deep,rem:rem,light:light,awake:awake,sleepMin:sleepMin}),
+    /* 14 sept. 2026 — la courbe de la nuit lit `night.hrSamples` (une valeur
+       par minute) ; sans elle, l'écran Sommeil de la démo montrait un cadre
+       vide : `hrDay` n'a qu'un point toutes les cinq minutes, trop clairsemé
+       pour la reconstruction qui exige la moitié de la nuit couverte. */
+    hrSamples:flHrSamples(rhr,rhr-3,timeInBed)},
+   demo:true};
+  DB.set('watch_'+k,_wr);
+  /* 14 sept. 2026 — ON ÉCRIT AUSSI DANS LA COPIE VIVANTE, sinon elle gagne.
+     Le moteur garde chaque journée du bracelet en mémoire (`wGet`) et rend le
+     MÊME objet à tous ses écrivains ; `wSaveK` réécrit le disque depuis cette
+     copie. Mesuré : la journée d'aujourd'hui était déjà en mémoire quand la
+     démo s'est ouverte (vide, créée au montage), le semis a écrit le disque,
+     puis la passe du matin a resservi la copie vide, y a DÉDUIT une nuit de
+     18 h (13:25 → 07:25) depuis rien, et l'a réécrite par-dessus le semis.
+     C'est le défaut v1329/v1824, dans son troisième costume. La règle de la
+     maison : on MUTE l'objet, on ne le jette pas. */
+  try{
+   var _live=(typeof window.flJourMontre==='function')?window.flJourMontre(k):null;
+   if(_live&&_live!==_wr&&typeof _live==='object'){
+    Object.keys(_live).forEach(function(f){delete _live[f];});
+    Object.keys(_wr).forEach(function(f){_live[f]=_wr[f];});
+   }
+  }catch(e){}
 
   /* --- Repas : journées complètes, partielles, ou rien --- */
   /* v728 : aujourd'hui a TOUJOURS une journée alimentaire complète — c'est

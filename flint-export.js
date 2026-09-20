@@ -175,8 +175,18 @@ function flExpDecal(K, n) {
    qui ne portent rien. Le futur est refusé ici, en amont : une date à venir
    dans un export de santé n'est pas une donnée, c'est une trace de
    pré-remplissage. */
+/* ⚠️ v2528 — « DEMAIN » TOLÉRAIT DEMAIN, et c'est le calendrier qui l'a dit.
+   La borne valait `Date.now() + 24 h` : une clé datée du lendemain tombait
+   AVANT elle et sortait dans l'export. Invisible tant que le banc datait son
+   jour à venir à plus d'un jour ; rouge le 19 septembre 2026, quand sa date
+   `2026-9-20` est devenue « demain ». Un commentaire qui dit « le futur est
+   refusé ici » et un code qui en laisse passer vingt-quatre heures : c'est le
+   commentaire qui avait raison. La borne est désormais MINUIT CE SOIR, dérivée
+   de la clé du jour — jamais de l'horloge, qui dérive avec le fuseau. */
 function flExpJours() {
-  var vus = {}, i, k, m, a = [], demain = Date.now() + 86400000;
+  var vus = {}, i, k, m, a = [];
+  var minuitCeSoir = flExpSur(function () { return flExpMs(tk(0)); }, null);
+  var demain = (minuitCeSoir === null ? Date.now() : minuitCeSoir) + 86400000;
   var FAM = /^(watch|sensor|sessions|meals|recov|sante|journal|hrfine)_(\d{4}-\d{1,2}-\d{1,2})$/;
   try {
     for (i = 0; i < localStorage.length; i++) {
@@ -190,7 +200,7 @@ function flExpJours() {
   } catch (e) { }
   for (k in vus) {
     if (!Object.prototype.hasOwnProperty.call(vus, k)) continue;
-    if (flExpMs(k) > demain) continue;
+    if (flExpMs(k) >= demain) continue;
     a.push(k);
   }
   /* Le plus récent en premier — c'est l'ordre de WHOOP, et c'est celui qu'on
