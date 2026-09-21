@@ -382,11 +382,15 @@
      On corrige donc la CONTRIBUTION `auto` — celle qui a dit « Marche » — et la
      vue plate avec elle.
 
-     PERSONNE NE L'APPELLE, ET C'EST DÉLIBÉRÉ. Réécrire soixante journées de
-     données rangées n'est pas une décision de code. Elle s'appelle à la main
-     (`flRejugerNomsDetectes()` à la console, `flRejugerNomsDetectes(0)` pour le
-     seul jour courant), elle rend un compte rendu, et elle est annulable par la
-     redétection normale. Cf. CHANTIER-ACTIVITE-DETECTEE.md. */
+     ELLE EST APPELÉE UNE FOIS, PAR `flCorrigerAnciensNoms` (plus bas). Le
+     20 septembre elle ne l'était par personne : réécrire soixante journées de
+     données rangées n'était pas une décision de code, et ce n'en est toujours
+     pas une — c'est Dino qui l'a prise, le 21 : « branche flRejugerNomsDetectes
+     pour que mes anciennes marches se corrigent ».
+     Elle reste appelable à la main (`flRejugerNomsDetectes()` à la console,
+     `flRejugerNomsDetectes(0)` pour le seul jour courant), elle rend un compte
+     rendu, et elle est annulable par la redétection normale.
+     Cf. CHANTIER-ACTIVITE-DETECTEE.md. */
   window.flRejugerNomsDetectes = function (jours) {
     try {
       var haut = (jours == null) ? 30 : Math.max(0, Math.min(120, jours | 0));
@@ -423,6 +427,48 @@
       return 'rejugé · ' + vus + ' marches lues · ' + changes + ' devenues Activité · '
         + sansPreuve + ' sans preuve (inchangées)'
         + (details.length ? '\n  ' + details.join('\n  ') : '');
+    } catch (e) { return 'ECHEC · ' + (e && e.message ? e.message : '?'); }
+  };
+
+  /* ═══ LA PASSE QUI CORRIGE L'HISTORIQUE — UNE FOIS, ET ELLE SE MARQUE ═════
+
+     Dino, 21 septembre : « branche flRejugerNomsDetectes pour que mes anciennes
+     marches se corrigent ».
+
+     CE QU'ELLE AJOUTE À `flRejugerNomsDetectes`, ET RIEN DE PLUS : un drapeau.
+     Le rejugement lui-même ne change pas d'un octet — mêmes gardes, même sens
+     unique, mêmes exclusions. Ce qui était une décision à prendre à la main
+     devient une passe qui s'exécute UNE fois et se souvient de l'avoir fait.
+
+     LE DRAPEAU PORTE SA VERSION, comme `flSommeilRecalculV1910`. Le jour où la
+     règle du nom bougera encore, un drapeau neuf rejouera la passe sur la
+     nouvelle règle ; celui-ci restera, témoin de ce qui a déjà été corrigé.
+
+     ON N'ESSAIE PAS DE RATTRAPER CE QU'ON NE PEUT PAS PROUVER. Les journées
+     dont les pas à la minute ont quitté le disque sont comptées « sans preuve »
+     et laissées telles quelles — elles gardent « Marche » sans qu'on sache si
+     elles le méritent. Les rejuger sur rien serait pire que de ne rien faire.
+
+     ELLE NE SE RELANCE PAS À CHAQUE LANCEMENT, et c'est tout l'objet du
+     drapeau : la passe lit trente journées et écrit celles qu'elle corrige.
+     Répétée à chaque montage, elle coûterait ce prix pour zéro changement — et
+     le troisième symptôme de la v1910 nous a déjà appris que « rien à faire »
+     ne se découvre qu'après avoir tout lu. */
+  var CLE_REJUGE = 'flNomsRejugesV2566';
+
+  window.flCorrigerAnciensNoms = function () {
+    try {
+      var fait = false;
+      try { fait = !!DB.get(CLE_REJUGE, false); } catch (e) {}
+      if (fait) return 'déjà fait';
+      var r = window.flRejugerNomsDetectes(120);
+      /* LE DRAPEAU SE POSE APRÈS, ET SEULEMENT SI LA PASSE A ABOUTI. Une
+         écriture refusée (quota) doit pouvoir être retentée au lancement
+         suivant — sinon la correction serait perdue sans que personne ne le
+         sache. `flRejugerNomsDetectes` dit « ECHEC · … » dans ce cas. */
+      if (/^ECHEC/.test(String(r))) return r;
+      try { DB.set(CLE_REJUGE, true); } catch (e) {}
+      return r;
     } catch (e) { return 'ECHEC · ' + (e && e.message ? e.message : '?'); }
   };
 
