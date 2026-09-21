@@ -30,7 +30,7 @@
 const { cors, rateLimited, identiteRequete, ipRequete,
         verifierSecret, verifierSignature, corpsJSON, corpsBrut } = require('./_lib');
 const { OUTILS } = require('./_coach-tools');
-const { promptSysteme } = require('./_coach-prompt');
+const { promptSysteme, LANGUES } = require('./_coach-prompt');
 
 const MODEL = 'gemini-2.5-flash';
 const RL_MAX = 40;
@@ -82,12 +82,18 @@ module.exports = async function handler(req, res) {
   if (contents.length > 60) return res.status(400).json({ error: 'conversation trop longue' });
 
   const ton = typeof body.ton === 'string' ? body.ton : 'aucun';
+  // La langue de l'APP (fr/en/es), envoyée par le client depuis la v2584. On la
+  // ramène à la table fermée ICI, et pas seulement dans le prompt : ce code part
+  // aussi au journal, et on ne veut pas y écrire dix kilo-octets choisis par
+  // l'appelant. Une app plus ancienne n'envoie rien : repli français, c'est-à-
+  // dire exactement ce qu'elle faisait déjà.
+  const langue = Object.prototype.hasOwnProperty.call(LANGUES, body.langue) ? body.langue : 'fr';
   const profilTexte = typeof body.profilTexte === 'string' ? body.profilTexte.slice(0, 4000) : '';
   const memoireTexte = typeof body.memoireTexte === 'string' ? body.memoireTexte.slice(0, 2000) : '';
 
   const gReq = {
     contents,
-    systemInstruction: { parts: [{ text: promptSysteme({ ton, profilTexte, memoireTexte }) }] },
+    systemInstruction: { parts: [{ text: promptSysteme({ ton, profilTexte, memoireTexte, langue }) }] },
     tools: [{ functionDeclarations: OUTILS }],
     generationConfig: { temperature: 0.4, maxOutputTokens: 1024 }
   };
@@ -117,7 +123,7 @@ module.exports = async function handler(req, res) {
 
     const texte = parts.map(p => p.text || '').join('').trim();
     if (!texte) return res.status(502).json({ error: 'réponse Gemini sans texte ni outil' });
-    journal(req, 'reponse', t0, { tours: contents.length, sortie: texte.length });
+    journal(req, 'reponse', t0, { tours: contents.length, sortie: texte.length, lang: langue });
     return res.status(200).json({ mode: 'reponse', texte, tourModele: content });
   } catch (e) {
     journal(req, 'panne', t0, { message: String((e && e.message) || e).slice(0, 120) });

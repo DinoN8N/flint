@@ -4,6 +4,38 @@
 // données (brief section 8). Les règles de sécurité/abus/anti-injection sont
 // ici, courtes — pas un gros bloc de disclaimers à chaque message.
 
+// ═══ 22 sept. 2026 — LA LANGUE DE LA RÉPONSE ═══════════════════════════════
+//
+// La v2584 (flint-ios) a mis `langue` dans le corps de chaque requête, avec ce
+// commentaire : « Le serveur DOIT en tenir compte dans son prompt ; sans ça, le
+// Coach répond en français dans une app en espagnol. Côté client, on ne peut
+// rien de plus. » C'était vrai : le champ arrivait et personne ne le lisait.
+//
+// Ce prompt reste écrit en français — c'est la langue de travail du projet, et
+// le modèle n'a aucun mal à suivre une consigne française pour répondre en
+// espagnol. Ce qui change, c'est qu'on le lui DIT, et qu'on le lui dit fort :
+// une personne peut très bien écrire en français dans une app réglée en
+// anglais (un mot, un nom de plat, une habitude), et c'est l'APP qui décide,
+// pas la langue du message. C'est déjà la règle côté natif (LangueFlint : « la
+// décision est prise ICI, une fois, et propagée »).
+//
+// `fr` est le repli — la même langue de repli que l'app, pour la même raison.
+//
+// ⚠️ `Object.create(null)`, ET CE N'EST PAS DE LA COQUETTERIE. Écrite en objet
+// littéral, la table répondait à `LANGUES['toString']` par une FONCTION —
+// truthy — et le prompt partait avec « tu réponds TOUJOURS en function
+// toString() { [native code] } ». Même chose pour `constructor` et
+// `__proto__`. Une table de repli qui hérite de Object.prototype n'est pas une
+// table fermée : elle connaît une dizaine de clés que personne n'y a mises, et
+// l'appelant les choisit. Le banc de ce fichier l'a trouvé le jour même où la
+// table a été écrite ; sans prototype, la seule réponse possible hors fr/en/es
+// est `undefined`, donc le repli.
+const LANGUES = Object.assign(Object.create(null), {
+  fr: 'français',
+  en: 'anglais',
+  es: 'espagnol'
+});
+
 const TONS = {
   motivant: "Ton ENCOURAGEANT : positif, motivant, tu pousses vers l'action sans minimiser les vrais signaux.",
   analytique: "Ton ANALYTIQUE : tu donnes plus de détails et d'explications, tu montres le raisonnement derrière le conseil.",
@@ -11,10 +43,13 @@ const TONS = {
   aucun: "Ton ÉQUILIBRÉ : naturel, intelligent, court."
 };
 
-function promptSysteme({ ton, profilTexte, memoireTexte }) {
+function promptSysteme({ ton, profilTexte, memoireTexte, langue }) {
   const persona = TONS[ton] || TONS.aucun;
+  const nomLangue = LANGUES[langue] || LANGUES.fr;
   return `Tu es Flint, le coach personnel de l'application FLINT (sport, sommeil, récupération, nutrition).
 Tu t'adresses à la personne qui porte le bracelet, et tu la tutoies.
+
+LANGUE — RÈGLE ABSOLUE : tu réponds TOUJOURS en ${nomLangue}, quelle que soit la langue dans laquelle on t'écrit. C'est la langue de l'application, pas celle du message. Si la personne écrit dans une autre langue, tu la comprends et tu réponds quand même en ${nomLangue}.
 
 ${persona}
 
@@ -54,4 +89,4 @@ SÉCURITÉ :
 - Tu ne parles jamais de données ou d'un compte qui ne serait pas celui de la personne en face de toi — tu n'as de toute façon accès qu'aux siennes.`;
 }
 
-module.exports = { promptSysteme, TONS };
+module.exports = { promptSysteme, TONS, LANGUES };
