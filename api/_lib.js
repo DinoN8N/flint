@@ -239,6 +239,20 @@ function corpsBrut(req) {
   try { return canonique(req.body); } catch (e) { return ''; }
 }
 
+// ── Gemini 3 : les réponses d'outils portent le rôle « user » ─────────────
+//
+// 23 sept. 2026, 19 h 55 — première conversation sur `gemini-3.6-flash` :
+// le tour d'outils passe, le tour suivant rend 400 « Role 'function' is not
+// supported. Please use a valid role: … USER, MODEL ». L'app (CoachReseau.swift)
+// renvoie les réponses d'outils dans un tour `role: "function"`, la forme des
+// premières versions de l'API que les 2.x toléraient. Normaliser ICI, et non
+// dans l'app : un correctif natif ne voyage pas, et chaque paquet déjà posé
+// ou sur l'App Store enverrait « function » jusqu'à sa prochaine version.
+function roleFonctionVersUser(contents) {
+  if (!Array.isArray(contents)) return contents;
+  return contents.map(c => (c && typeof c === 'object' && c.role === 'function') ? Object.assign({}, c, { role: 'user' }) : c);
+}
+
 // ── Gemini : réessai, puis modèle de secours ────────────────────────────────
 //
 // ═══ 23 sept. 2026 — UN SEUL MODÈLE, ZÉRO REPLI : LE SCAN ET LE COACH TOMBAIENT
@@ -272,7 +286,7 @@ function corpsBrut(req) {
 const REESSAYABLES = new Set([429, 500, 502, 503, 504]);
 
 async function appelerGemini({ key, modeles, corps, delaiMs, tentativesParModele, attenteMs }) {
-  const liste = Array.isArray(modeles) && modeles.length ? modeles : ['gemini-2.5-flash'];
+  const liste = Array.isArray(modeles) && modeles.length ? modeles : ['gemini-3.6-flash'];
   const essaisMax = Math.max(1, tentativesParModele || 2);
   const attentes = Array.isArray(attenteMs) && attenteMs.length ? attenteMs : [600, 1500];
   const delai = Math.max(1000, delaiMs || 25000);
@@ -378,5 +392,5 @@ async function plafondJournalier({ id, portee, max }) {
 module.exports = {
   cors, rateLimited, identiteRequete, ipRequete,
   verifierSecret, verifierSignature, corpsJSON, corpsBrut, canonique, egalConstant,
-  appelerGemini, plafondJournalier
+  appelerGemini, plafondJournalier, roleFonctionVersUser
 };

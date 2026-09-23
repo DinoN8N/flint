@@ -28,7 +28,7 @@
 // changer le contrat côté iOS (même forme de réponse).
 
 const { cors, rateLimited, identiteRequete, ipRequete,
-        verifierSecret, verifierSignature, corpsJSON, corpsBrut, appelerGemini,
+        verifierSecret, verifierSignature, corpsJSON, corpsBrut, appelerGemini, roleFonctionVersUser,
         plafondJournalier } = require('./_lib');
 const { OUTILS } = require('./_coach-tools');
 const { promptSysteme, LANGUES } = require('./_coach-prompt');
@@ -38,7 +38,18 @@ const { promptSysteme, LANGUES } = require('./_coach-prompt');
 // plus d'une demi-heure ce jour-là, en même temps que sur le scan). Les deux
 // savent appeler des outils (`functionDeclarations`), donc le pont ne change
 // pas. Pas de troisième : le Coach a 60 s, pas 120.
-const MODELES = ['gemini-2.5-flash', 'gemini-2.5-flash-lite'];
+// ═══ 23 sept. 2026, 19 h 20 — LA CHAÎNE DE SECOURS ÉTAIT MORTE CÔTÉ GOOGLE ═══
+//
+// Journal Vercel, troisième question de la soirée : `gemini-2.5-flash` → 429
+// deux fois (« accès limité » : Google ne le sert plus qu'aux comptes qui
+// l'utilisaient déjà, au compte-gouttes), puis le secours `gemini-2.5-flash-lite`
+// → 404 « no longer available to new users, use gemini-3.5-flash-lite ». Le
+// réessai + secours posé à 16 h ne réessayait plus rien : les deux maillons
+// étaient périmés. Doc Google (deprecations, 23 sept.) : 2.0-flash éteint
+// depuis le 1er juin ; remplaçants officiels 3.6-flash (pour 2.5-flash) et
+// 3.1/3.5-flash-lite (pour 2.5-flash-lite). Le premier est celui qu'on veut,
+// les deux autres ceux qu'on accepte — tous trois « stable », aucun 2.x.
+const MODELES = ['gemini-3.6-flash', 'gemini-3.5-flash-lite', 'gemini-3.1-flash-lite'];
 const RL_MAX = 40;
 
 // ═══ 22 sept. 2026 — LA PORTE D'ENTRÉE ═════════════════════════════════════
@@ -108,15 +119,31 @@ module.exports = async function handler(req, res) {
   const memoireTexte = typeof body.memoireTexte === 'string' ? body.memoireTexte.slice(0, 2000) : '';
 
   const gReq = {
-    contents,
+    // Gemini 3 : « function » n'est plus un rôle, les réponses d'outils sont
+    // un tour « user » (voir `roleFonctionVersUser`). `contents.length` et
+    // le journal restent calculés sur ce qu'a envoyé l'app.
+    contents: roleFonctionVersUser(contents),
     systemInstruction: { parts: [{ text: promptSysteme({ ton, profilTexte, memoireTexte, langue }) }] },
     tools: [{ functionDeclarations: OUTILS }],
-    generationConfig: { temperature: 0.4, maxOutputTokens: 1024 }
+    // Gemini 3 : Google demande de LAISSER la température par défaut (1,0) —
+    // « lower values may lead to looping or degraded performance » sur les
+    // tâches de raisonnement, et le Coach en est une (outils, chiffres). Et
+    // le plafond de sortie compte aussi les jetons de réflexion : 1 024
+    // pouvait rendre une réponse vide (502 « sans texte ») ; 4 096 laisse
+    // la place, la longueur du texte reste tenue par le prompt.
+    generationConfig: { maxOutputTokens: 4096 }
   };
 
   try {
-    // Deux modèles × deux tentatives × 12 s : sous les 60 s de la fonction.
-    const g = await appelerGemini({ key, modeles: MODELES, corps: gReq, delaiMs: 12000 });
+    // 23 sept., 20 h — mesuré sur gemini-3.6-flash : 6,5 à 10 s par tour, et
+    // une réponse longue à 22,5 s au journal = un essai COUPÉ à 12 s puis un
+    // second réussi en 10 s. Le couperet à 12 s faisait payer deux appels et
+    // doublait l'attente. Donc 28 s par essai, UN essai par modèle (un 429 ou
+    // 5xx passe au suivant sans attendre) : trois modèles × 28 s = 84 s, sous
+    // les 90 s de la fonction (vercel.json) — et l'app, elle, attend 45 s
+    // (`delaiMaxS`, CoachReseau.swift) : le deuxième modèle n'a que 17 s de
+    // patience côté client, les deux suivants servent surtout le journal.
+    const g = await appelerGemini({ key, modeles: MODELES, corps: gReq, delaiMs: 28000, tentativesParModele: 1 });
     if (!g.ok) {
       journal(req, 'gemini-indisponible', t0, { statut: g.status, tentatives: g.tentatives, modele: g.modele || '-' });
       return res.status(502).json({ error: 'Le Coach est indisponible à l\'instant. Réessaie dans un moment.',

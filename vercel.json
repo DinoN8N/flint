@@ -1,10 +1,10 @@
 {
   "functions": {
     "api/scan-meal.js": {
-      "maxDuration": 120
+      "maxDuration": 160
     },
     "api/coach.js": {
-      "maxDuration": 60
+      "maxDuration": 90
     }
   }
 }

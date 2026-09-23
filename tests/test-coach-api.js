@@ -257,5 +257,24 @@ console.log('\n═══ ⑨ LA DEUXIÈME QUESTION : DES FLOTTANTS, ET LES OCTET
   delete process.env.COACH_SIG_SECRET;
 }
 
+console.log('\n═══ ⑩ GEMINI 3 : LE RÔLE « function » DEVIENT « user » ═══');
+{
+  // 23 sept., 19 h 55 — 400 « Role 'function' is not supported » au tour qui
+  // suit les outils, sur gemini-3.6-flash. L'app envoie « function » ; on
+  // normalise ici pour tous les paquets, posés ou à venir.
+  const contents = [
+    { role: 'user', parts: [{ text: 'salut' }] },
+    { role: 'model', parts: [{ functionCall: { name: 'getRecoveryContext', args: {} } }] },
+    { role: 'function', parts: [{ functionResponse: { name: 'getRecoveryContext', response: { s: 57 } } }] }
+  ];
+  const n = lib.roleFonctionVersUser(contents);
+  v('le tour « function » repart en « user », parts intactes',
+    n[2].role === 'user' && n[2].parts === contents[2].parts);
+  v('  … les autres tours ne bougent pas, et l\'entrée n\'est pas modifiée',
+    n[0].role === 'user' && n[1].role === 'model' && contents[2].role === 'function');
+  v('  … et une valeur qui n\'est pas un tableau ressort telle quelle',
+    lib.roleFonctionVersUser(null) === null && lib.roleFonctionVersUser('x') === 'x');
+}
+
 console.log('\n' + vert + ' vert(s), ' + rouge + ' rouge(s)\n');
 process.exitCode = rouge ? 1 : 0;

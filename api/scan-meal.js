@@ -13,7 +13,11 @@
 // Ce fichier n'importait rien de `_lib.js` (il a son propre rate-limit, plus
 // ancien) : l'aide de réessai est la première chose qu'il partage avec le Coach.
 const { appelerGemini, plafondJournalier, identiteRequete } = require('./_lib');
-const MODELES = ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.0-flash'];
+// 23 sept. 2026, 19 h 20 — les trois maillons d'avant étaient périmés côté
+// Google (2.5 « accès limité » → 429, 2.5-lite → 404, 2.0-flash éteint depuis
+// le 1er juin) ; voir la note dans coach.js. Même chaîne que le Coach, tous
+// « stable », remplaçants officiels des 2.x.
+const MODELES = ['gemini-3.6-flash', 'gemini-3.5-flash-lite', 'gemini-3.1-flash-lite'];
 
 const SCHEMA = {
   type: 'object',
@@ -196,8 +200,9 @@ module.exports = async function handler(req, res) {
     };
 
     // 23 sept. 2026 — réessai puis modèle de secours (voir `appelerGemini`
-    // dans _lib.js). Deux modèles × deux tentatives × 25 s tiennent sous les
-    // 120 s de la fonction. Le message rendu à l'app reste le même qu'avant
+    // dans _lib.js). Trois modèles × deux tentatives × 25 s = 150 s, sous les
+    // 160 s de la fonction (vercel.json, relevé le 23 sept. au soir : avec
+    // trois maillons, 120 s ne couvraient plus le pire cas). Le message rendu à l'app reste le même qu'avant
     // quand TOUT a échoué : « L'analyse est en panne à l'instant », qu'elle
     // sait déjà afficher — plus le statut brut de Gemini, qui n'est pas une
     // phrase pour l'utilisateur.
