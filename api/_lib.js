@@ -177,7 +177,9 @@ function verifierSignature(req, corpsBrut, options) {
   // les octets bruts de la requête ne sont pas accessibles derrière l'analyse
   // JSON de Vercel. On accepte donc l'une OU l'autre écriture du même corps.
   const corps = corpsBrut || '';
-  const variantes = [corps, corps.replace(/\//g, '\\/')];
+  // Des octets bruts se signent tels quels ; une canonique (corps parsé) se
+  // tente dans les deux écritures du slash.
+  const variantes = Buffer.isBuffer(corps) ? [corps] : [corps, corps.replace(/\//g, '\\/')];
   const valide = variantes.some(v => {
     const empreinte = crypto.createHash('sha256').update(v).digest('hex');
     const attendu = crypto.createHmac('sha256', secret)
@@ -190,23 +192,37 @@ function verifierSignature(req, corpsBrut, options) {
 
 function corpsJSON(req) {
   let body = req.body;
+  if (Buffer.isBuffer(body)) body = body.toString('utf8');
   if (typeof body === 'string') { try { body = JSON.parse(body); } catch (e) { body = {}; } }
   return body && typeof body === 'object' ? body : {};
 }
 
 // ═══ LA CHAÎNE QUE LES DEUX BORDS SIGNENT ══════════════════════════════════
 //
-// ⚠️ ON NE PEUT PAS SIGNER « LE CORPS REÇU » : Vercel a déjà parsé le JSON
-// quand la fonction s'exécute, et re-sérialiser ne redonne pas les octets du
-// client (ordre des clés, espaces). Les deux bords calculent donc la même forme
-// CANONIQUE : clés triées à tous les niveaux, aucun espace. Côté app c'est
-// `JSONSerialization` avec `.sortedKeys` ; ici c'est le tri récursif ci-dessous.
+// ═══ 23 sept. 2026, 19 h — LA DEUXIÈME QUESTION RENDAIT « signature refusée »
 //
-// Le choix tient parce que le corps du Coach ne contient que des chaînes, des
-// tableaux et des objets — aucun flottant, seul cas où les deux langages
-// pourraient écrire le même nombre différemment. Si un champ numérique
-// non entier apparaît un jour, cette hypothèse est à revérifier : le banc
-// `test-coach-api.js` compare une sortie Swift RÉELLE à celle-ci.
+// La première question passait (depuis le remède du slash, plus bas), la
+// deuxième non : son historique porte les RÉPONSES DES OUTILS, et elles
+// contiennent des flottants. Mesuré sur ce Mac, `JSONSerialization` contre
+// `JSON.stringify` : `0.57` → `0.56999999999999995` (dix-sept chiffres),
+// `1e-7` → `9.9999999999999995e-08`, `-0` → `-0` contre `0` ; et `.sortedKeys`
+// trie par collation Unicode (`a` < `A` < `a_` < `a1`), pas par code-unit
+// comme `Object.keys().sort()`. Le paragraphe qui suivait ici affirmait
+// « aucun flottant » : c'était vrai du corps d'UNE question, pas d'une
+// conversation. Émuler Foundation ici (%.17g, collation CF) serait une
+// quatrième hypothèse à trahir.
+//
+// Le remède : SIGNER LES OCTETS REÇUS, ce que l'app a toujours voulu (« la
+// signature couvre les octets ENVOYÉS », CoachReseau.swift). L'aide Node de
+// Vercel parse le JSON quand le Content-Type est `application/json` — mais
+// rend le Buffer INTACT pour `application/octet-stream` (et la chaîne pour
+// `text/plain`). L'app envoie donc son JSON en octet-stream, et `corpsBrut`
+// rend ces octets tels quels : aucune canonique, aucune hypothèse sur le
+// sérialiseur d'en face. La forme canonique ci-dessous reste pour les corps
+// parsés (application/json : bancs, anciennes apps), avec ses limites.
+//
+// ⚠️ Ce qu'on NE PEUT PAS faire : retrouver les octets derrière un `req.body`
+// déjà objet — d'où le Content-Type côté app, et non un réglage serveur.
 function canonique(v) {
   if (v === null || typeof v !== 'object') return JSON.stringify(v);
   if (Array.isArray(v)) return '[' + v.map(canonique).join(',') + ']';
@@ -215,12 +231,11 @@ function canonique(v) {
 }
 
 function corpsBrut(req) {
-  if (typeof req.body === 'string') {
-    try { return canonique(JSON.parse(req.body)); } catch (e) { return req.body; }
-  }
-  if (Buffer.isBuffer(req.body)) {
-    try { return canonique(JSON.parse(req.body.toString('utf8'))); } catch (e) { return ''; }
-  }
+  // Octets ou chaîne : le client les a envoyés tels quels (octet-stream,
+  // text/plain), la signature les couvre tels quels. On ne les re-sérialise
+  // PAS — c'était précisément le trou.
+  if (Buffer.isBuffer(req.body)) return req.body;
+  if (typeof req.body === 'string') return req.body;
   try { return canonique(req.body); } catch (e) { return ''; }
 }
 

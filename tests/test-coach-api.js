@@ -161,8 +161,11 @@ console.log('\n═══ ⑥ LES DEUX BORDS SIGNENT LA MÊME CHAÎNE ═══')
   // Et le chemin réellement emprunté par la fonction : req.body déjà parsé.
   v('  … y compris par `corpsBrut`, qui part du corps déjà parsé par Vercel',
     lib.corpsBrut({ body: objet }) === SWIFT);
-  v('  … et depuis une chaîne brute, si la plateforme la laisse passer',
-    lib.corpsBrut({ body: JSON.stringify(objet) }) === SWIFT);
+  // 23 sept., 19 h — une chaîne ou un Buffer sont les OCTETS ENVOYÉS
+  // (text/plain, octet-stream) : `corpsBrut` les rend tels quels, sans les
+  // re-canoniser — voir ⑨.
+  v('  … et une chaîne brute (text/plain) est rendue TELLE QUELLE, pas re-canonisée',
+    lib.corpsBrut({ body: '{"b":1, "a":2}' }) === '{"b":1, "a":2}');
 
   // ═══ 23 sept. 2026 — LE SLASH, QUE CE BANC N'AVAIT PAS ══════════════════
   //
@@ -200,6 +203,57 @@ console.log('\n═══ ⑥ LES DEUX BORDS SIGNENT LA MÊME CHAÎNE ═══')
   const r3 = requete(SWIFT_SLASH.replace('88', '89'));
   v('  … et refuse toujours une signature sur un AUTRE corps',
     lib.verifierSignature(r3, lib.corpsBrut(r3)).ok === false);
+  delete process.env.COACH_SIG_SECRET;
+}
+
+console.log('\n═══ ⑨ LA DEUXIÈME QUESTION : DES FLOTTANTS, ET LES OCTETS BRUTS ═══');
+{
+  // 23 sept., 19 h. La première question passait (⑧), la deuxième rendait
+  // « signature refusée » : son historique porte la réponse d'un outil, avec
+  // un flottant. SWIFT_FLOTTANT sort de `JSONSerialization` `.sortedKeys` sur
+  // ce Mac (`swift js-flottant.swift`) : 0.57 y devient 0.56999999999999995.
+  // Aucune canonique côté serveur ne retrouve ça ; on signe les octets reçus.
+  const SWIFT_FLOTTANT = '{"contents":[{"parts":[{"functionResponse":{"name":"getRecoveryContext",'
+                       + '"response":{"qualite":"good","ratio":0.56999999999999995,"s":57,"zone":"jaune"}}}],'
+                       + '"role":"function"}],"deviceId":"ABC","langue":"fr","memoireTexte":"",'
+                       + '"profilTexte":"score 57\\/100","ton":"aucun"}';
+  const objet = JSON.parse(SWIFT_FLOTTANT);
+  v('avec un flottant, la canonique diverge des octets de Swift MÊME slash compris (c\'est le défaut)',
+    lib.canonique(objet).replace(/\//g, '\\/') !== SWIFT_FLOTTANT
+    && lib.canonique(objet).includes('0.57') && SWIFT_FLOTTANT.includes('0.56999999999999995'));
+
+  const crypto = require('crypto');
+  process.env.COACH_SIG_SECRET = 'secret-de-papier';
+  const signer = (octets, dev, ts) => crypto.createHmac('sha256', 'secret-de-papier')
+    .update(dev + '.' + ts + '.' + crypto.createHash('sha256').update(octets).digest('hex')).digest('hex');
+  const requete = (octetsSignes, corps) => {
+    const ts = String(Date.now());
+    return { headers: { 'x-flint-device': 'ABC', 'x-flint-ts': ts, 'x-flint-sig': signer(octetsSignes, 'ABC', ts) }, body: corps };
+  };
+  // Corps PARSÉ (application/json) : le serveur ne peut que canoniser, et
+  // les octets de Swift ne sont pas retrouvés — refus, comme dans l'app.
+  const rParse = requete(SWIFT_FLOTTANT, objet);
+  v('  … un corps parsé par Vercel (application/json) signé sur les octets de Swift est REFUSÉ',
+    lib.verifierSignature(rParse, lib.corpsBrut(rParse)).ok === false);
+  // Corps BRUT (application/octet-stream → Buffer) : ce sont les octets
+  // envoyés, hachés tels quels — accepté.
+  const brut = Buffer.from(SWIFT_FLOTTANT, 'utf8');
+  const rBrut = requete(brut, brut);
+  v('  … le MÊME corps reçu en Buffer (octet-stream) est ACCEPTÉ',
+    lib.verifierSignature(rBrut, lib.corpsBrut(rBrut)).ok === true);
+  v('  … corpsBrut rend le Buffer tel quel, sans le re-sérialiser',
+    lib.corpsBrut(rBrut) === brut);
+  v('  … et corpsJSON lit le Buffer comme du JSON (contents, profilTexte)',
+    lib.corpsJSON(rBrut).profilTexte === 'score 57/100' && lib.corpsJSON(rBrut).contents.length === 1
+    && lib.corpsJSON(rBrut).contents[0].parts[0].functionResponse.response.ratio === 0.57);
+  const altere = Buffer.from(SWIFT_FLOTTANT.replace('"s":57', '"s":97'), 'utf8');
+  const rAltere = { headers: rBrut.headers, body: altere };
+  v('  … un Buffer altéré sous la même signature est REFUSÉ',
+    lib.verifierSignature(rAltere, lib.corpsBrut(rAltere)).ok === false);
+  // text/plain → chaîne : même traitement, les octets tels quels.
+  const rChaine = requete(SWIFT_FLOTTANT, SWIFT_FLOTTANT);
+  v('  … une chaîne (text/plain) se signe aussi telle quelle',
+    lib.verifierSignature(rChaine, lib.corpsBrut(rChaine)).ok === true);
   delete process.env.COACH_SIG_SECRET;
 }
 
