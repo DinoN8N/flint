@@ -159,6 +159,15 @@ module.exports = async function handler(req, res) {
     let image = body && body.image;
     const text = (body && typeof body.text === 'string') ? body.text.trim().slice(0, 800) : '';
     if (!image && !text) return res.status(400).json({ error: 'champ "image" ou "text" manquant' });
+    // 23 sept. 2026 — UN PLAFOND SUR LA PHOTO, PARCE QUE RIEN NE LA BORNAIT.
+    // L'app envoie du 1280 px à 0,85 (≈ 200 à 400 Ko en base64) ; rien côté
+    // serveur n'empêchait un client de pousser 10 Mo, que Gemini facture au
+    // tuile et que la fonction paie en mémoire. 3 Mo de base64 ≈ 2,2 Mo de
+    // JPEG : dix fois ce que l'app envoie, et aucune vraie photo de repas
+    // n'a besoin de plus. Au-delà : 413, et une phrase que l'app sait afficher.
+    if (typeof image === 'string' && image.length > 3 * 1024 * 1024) {
+      return res.status(413).json({ error: 'Photo trop lourde pour être analysée. Réessaie avec une photo plus petite.' });
+    }
 
     let parts;
     if (image) {
