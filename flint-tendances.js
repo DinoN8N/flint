@@ -66,7 +66,7 @@ const TREND={
   barFn:function(v){return v>18?'#F0492E':v>14?'#F5A623':v>10?'#3FA0E0':'#6C7BD6'},
   verdict:function(v){return v>18?{t:'Très intense',c:'#C0492C'}:v>14?{t:'Vigoureux',c:'#C8901A'}:v>10?{t:'Modéré',c:'#2E78B5'}:{t:'Léger',c:'#5A52B5'}},
   bd:{title:'Analyse de l\'effort',bands:[{l:'Léger (<10)',f:function(v){return v<10},c:'#6C7BD6'},{l:'Modéré (10-14)',f:function(v){return v<=14},c:'#3FA0E0'},{l:'Vigoureux (14-18)',f:function(v){return v<=18},c:'#F5A623'},{l:'Très intense (>18)',f:function(v){return true},c:'#F0492E'}]},
-  sent:function(av,a30,r){return 'Ton effort moyen '+(r==='M'?'ce mois-ci':r==='S'?'cette semaine':'sur cette période')+' ('+(Math.round(av*10)/10).toString().replace('.',',')+') '+(a30!=null?(av<a30?'est inférieur':'est supérieur')+' à ta moyenne de '+(Math.round(a30*10)/10).toString().replace('.',',')+' des 30 derniers jours.':'.')},
+  sent:function(av,a30,r){return 'Ton effort moyen '+(r==='M'?'ce mois-ci':r==='S'?'cette semaine':'sur cette période')+' ('+(Math.round(av*10)/10).toString().replace('.',flSeparateurDecimal())+') '+(a30!=null?(av<a30?'est inférieur':'est supérieur')+' à ta moyenne de '+(Math.round(a30*10)/10).toString().replace('.',flSeparateurDecimal())+' des 30 derniers jours.':'.')},
   explT:'L\'effort du jour, qu\'est-ce que c\'est ?',
   explP:'L\'effort mesure la charge totale imposée à ton corps sur la journée, cardio et musculaire, sur une échelle de 0 à 20 inspirée de l\'échelle de Borg. Léger (0-9) : récupération active. Modéré (10-13) : bon équilibre. Élevé (14-17) : progrès mais récup plus lente. Intense (18-20) : gains maximaux, mais risque accru — à alterner avec du repos.'},
  resp:{label:'Fréquence respiratoire',unit:'/min',  /* 11 sept. 2026 — voir la rangée du Tableau de bord (index.html) */icon:'ti-lungs',field:'resp',short:'fréquence respiratoire',chart:'line',color:'#3FA0E0',dec:true,lowerIsBetter:true,
@@ -122,17 +122,17 @@ const TREND={
   explP:'La VO₂ max est la quantité maximale d\'oxygène que ton corps peut utiliser à l\'effort. C\'est l\'indicateur de référence de la condition physique et de la longévité. FLINT l\'estime à partir de ta FC au repos (une FC repos basse ↔ une VO₂ max haute). Elle baisse naturellement avec l\'âge, mais l\'endurance et le fractionné la maintiennent — chaque point gagné, c\'est de la résilience en plus.'},
  weight:{label:'Poids',unit:'kg',icon:'ti-scale',short:'poids',chart:'line',color:'#8A8580',dec:true,addData:true,addLabel:'Ajouter une mesure',
   val:function(k){var b=DB.get('bodylog',{})[k];return b&&b.weight!=null?b.weight:null},
-  sent:function(av,a30,r){return 'Ton poids moyen sur cette période est de '+(Math.round(av*10)/10).toString().replace('.',',')+' kg'+(a30!=null?', '+(av>a30?'au-dessus':av<a30?'en dessous':'au niveau')+' de tes '+(Math.round(a30*10)/10).toString().replace('.',',')+' kg habituels.':'.')},
+  sent:function(av,a30,r){return 'Ton poids moyen sur cette période est de '+(Math.round(av*10)/10).toString().replace('.',flSeparateurDecimal())+' kg'+(a30!=null?', '+(av>a30?'au-dessus':av<a30?'en dessous':'au niveau')+' de tes '+(Math.round(a30*10)/10).toString().replace('.',flSeparateurDecimal())+' kg habituels.':'.')},
   explT:'Le poids : un indicateur parmi d\'autres',
   explP:'Le poids fluctue avec l\'hydratation, l\'alimentation, le glycogène et le cycle — une variation d\'un jour ne veut rien dire, c\'est la tendance sur plusieurs semaines qui compte. Pèse-toi au même moment (le matin, à jeun) pour comparer ce qui est comparable. Et garde en tête : à la salle, gagner du muscle peut faire monter le chiffre alors que tu t\'affines.'},
  leanmass:{label:'Masse corporelle maigre',unit:'kg',icon:'ti-stretching',short:'masse maigre',chart:'line',color:'#6C7BD6',dec:true,addData:true,addLabel:'Ajouter une mesure',
   val:function(k){var b=DB.get('bodylog',{})[k];return b&&b.lean!=null?b.lean:null},
-  sent:function(av,a30,r){return 'Ta masse maigre moyenne est de '+(Math.round(av*10)/10).toString().replace('.',',')+' kg'+(a30!=null?', '+(av>=a30?'en hausse':'en baisse')+' vs tes '+(Math.round(a30*10)/10).toString().replace('.',',')+' kg habituels.':'.')+' C\'est ta masse hors graisse : muscles, os, organes, eau.'},
+  sent:function(av,a30,r){return 'Ta masse maigre moyenne est de '+(Math.round(av*10)/10).toString().replace('.',flSeparateurDecimal())+' kg'+(a30!=null?', '+(av>=a30?'en hausse':'en baisse')+' vs tes '+(Math.round(a30*10)/10).toString().replace('.',flSeparateurDecimal())+' kg habituels.':'.')+' C\'est ta masse hors graisse : muscles, os, organes, eau.'},
   explT:'Qu\'est-ce que la masse maigre ?',
   explP:'La masse maigre, c\'est tout ce qui n\'est pas de la graisse : muscle, os, organes, eau. La suivre est bien plus parlant que le poids seul — elle te dit si tu construis du muscle ou si tu en perds. En sèche, l\'objectif est de faire baisser le poids SANS toucher à la masse maigre. En prise de masse, c\'est elle qui doit monter. FLINT la calcule à partir de ton poids et de ton taux de masse grasse.'}
 };
 
-function tFmtV(M,v){if(v==null)return '—';if(M&&M.timefmt)return hHM(v);if(M&&M.dec)return (Math.round(v*10)/10).toString().replace('.',',');if(M&&M.fmt)return fmtN(Math.round(v));return Math.round(v)}
+function tFmtV(M,v){if(v==null)return '—';if(M&&M.timefmt)return hHM(v);if(M&&M.dec)return (Math.round(v*10)/10).toString().replace('.',flSeparateurDecimal());if(M&&M.fmt)return fmtN(Math.round(v));return Math.round(v)}
 
 function bkCardHTML(title,items,tot){tot=tot||items.reduce(function(a,b){return a+b.c},0)||1;
  var bar=items.map(function(it){return it.c>0?'<i style="width:'+(it.c/tot*100).toFixed(1)+'%;background:'+it.col+'"></i>':''}).join('');
@@ -246,7 +246,7 @@ function trendChartSVG(pts,bLo,bHi,range,coral){coral=coral||'#F0492E';var W=330
  var dd='',stt=false;pts.forEach(function(p,i){if(p.v==null)return;dd+=(stt?'L':'M')+X(i).toFixed(1)+' '+Y(p.v).toFixed(1)+' ';stt=true});
  var line='<path d="'+dd+'" fill="none" stroke="'+coral+'" stroke-width="'+(range==='6M'?1.1:2.2)+'" stroke-linejoin="round" stroke-linecap="round" opacity="'+(range==='6M'?'.45':'1')+'"/>';
  var xlab='';
- if(range==='S'){pts.forEach(function(p,i){var wd=['dim','lun','mar','mer','jeu','ven','sam'][p.date.getDay()];xlab+='<text x="'+X(i).toFixed(1)+'" y="'+(H-13)+'" text-anchor="middle" font-size="9.5" fill="#9A988F">'+wd+'</text><text x="'+X(i).toFixed(1)+'" y="'+(H-2)+'" text-anchor="middle" font-size="9.5" fill="#9A988F">'+p.date.getDate()+'</text>'})}
+ if(range==='S'){pts.forEach(function(p,i){var wd=flJoursCourts()[p.date.getDay()];xlab+='<text x="'+X(i).toFixed(1)+'" y="'+(H-13)+'" text-anchor="middle" font-size="9.5" fill="#9A988F">'+wd+'</text><text x="'+X(i).toFixed(1)+'" y="'+(H-2)+'" text-anchor="middle" font-size="9.5" fill="#9A988F">'+p.date.getDate()+'</text>'})}
  else if(range==='6M'){var sn={};pts.forEach(function(p,i){var m=p.date.getMonth();if(!sn[m]&&p.date.getDate()<=6){sn[m]=1;xlab+='<text x="'+X(i).toFixed(1)+'" y="'+(H-8)+'" text-anchor="middle" font-size="9.5" fill="#9A988F">'+T_MONL[m]+'</text>'}})}
  else{for(var i=0;i<pts.length;i+=7){xlab+='<text x="'+X(i).toFixed(1)+'" y="'+(H-8)+'" text-anchor="middle" font-size="9.5" fill="#9A988F">'+T_MONL[pts[i].date.getMonth()]+' '+pts[i].date.getDate()+'</text>'}}
  var ph='';
@@ -352,7 +352,7 @@ function renderCalTrend(){var period=window._calPeriod||'M',off=window._calOff||
 
 function lockInsightH(id){var p=document.getElementById(id);if(!p)return;p.style.minHeight='';var h=p.offsetHeight;if(h)p.style.minHeight=h+'px'}
 
-function trFmtV(cfg,v){return cfg.fmt==='dec'?(Math.round(v*10)/10).toFixed(1).replace('.',','):cfg.fmt==='hm'?minToHM(v):calNum(v)}
+function trFmtV(cfg,v){return cfg.fmt==='dec'?(Math.round(v*10)/10).toFixed(1).replace('.',flSeparateurDecimal()):cfg.fmt==='hm'?minToHM(v):calNum(v)}
 
 /* ═══ v2133 — LA TABLE TR NE PORTE PLUS AUCUN CHIFFRE INVENTE ══════════════
    Chaque metrique gardait sept valeurs ecrites a la main (`weekly`), une
@@ -440,7 +440,7 @@ function trBuildModel(id,period){var cfg=TR[id];period=period||'S';
     dans la barre et n'entre PAS dans la moyenne ; six mois = moyenne
     journaliere par semaine mesuree. */
  var anchor=new Date(),isLine=period==='6M',lineMode=isLine||cfg.kind==='line'||cfg.kind==='dualline',pts=[];
- var _JN=['dim','lun','mar','mer','jeu','ven','sam'];
+ var _JN=flJoursCourts();
  function _p(d,v){pts.push({v:(v==null?0:v),vraie:(v!=null),parts:null,day:_JN[d.getDay()],date:String(d.getDate()),dlabel:trDlab(d)});}
  if(period==='S'){for(var i=0;i<7;i++){var d=new Date();d.setDate(d.getDate()-(6-i));_p(d,trVal(id,-(6-i)));}}
  else if(!isLine){for(var i2=0;i2<30;i2++){var d2=new Date();d2.setDate(d2.getDate()-(29-i2));_p(d2,trVal(id,-(29-i2)));}}

@@ -120,6 +120,19 @@ window.flPoserFuseauCourant=function(w,K){
  }catch(e){return w;}
 };
 
+/* ═══ 21 sept. 2026 — LE FUSEAU A CHANGÉ SOUS LE MOTEUR ═══════════════════
+   Appelé par le natif (`ShellBridge.changementDeTemps`) quand iOS signale un
+   changement de fuseau, d heure d ete ou d horloge. Le moteur ne detecte rien
+   lui-meme : `new Date()` suit deja le telephone, mais ce qu il a MEMORISE
+   (la journee logique, l ecran rendu) porte encore l ancien minuit.
+   On oublie, on redessine. Rien n est ecrit : les journees etiquetees `tz`
+   gardent leur minuit d enregistrement, et celle d aujourd hui, non encore
+   etiquetee, se relit au fuseau du lieu — c est le contrat de la v1766. */
+window.flFuseauChange=function(){
+ try{if(typeof flJourLogiqueOublier==='function')flJourLogiqueOublier();}catch(e){}
+ try{if(typeof renderToday==='function')renderToday();}catch(e){}
+};
+
 /* RETROUVER LE FUSEAU D UN JOUR — le filet de l historique ancien.
 
    ⚠ CE QU IL RETROUVE EXACTEMENT, ET C EST PLUS ETROIT QUE JE NE L AI D ABORD

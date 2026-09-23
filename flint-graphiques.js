@@ -69,7 +69,7 @@ window.flHebdoNuit = function () {
       mesure (elle reste un entier partout) : c'est la graduation qui dit sa vraie
       hauteur, à la décimale, quand elle n'est pas ronde. */
    tickFmt:function(t){var r=Math.round(t*10)/10;
-    return (r===Math.round(r)?String(Math.round(r)):String(r).replace('.',','))+' %';},
+    return (r===Math.round(r)?String(Math.round(r)):String(r).replace('.',flSeparateurDecimal()))+' %';},
    get:function(off){try{return (typeof flSpo2Nuit==='function')?flSpo2Nuit(off):null;}catch(e){return null;}}}
   };
  } catch (e) { return {}; }

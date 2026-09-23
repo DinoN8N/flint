@@ -73,6 +73,47 @@
      une propriété de `window`. Le banc, lui, posait `global.DB` — il mesurait un
      monde qui n'existe pas.
      ══════════════════════════════════════════════════════════════════════════ */
+  /* LA MONTRE ÉTAIT-ELLE EN MODE SPORT ? Vrai quand quelqu'un a OUVERT la
+     séance — la montre elle-même (`src:'montre'`), le tracker (`gps`), ou Dino
+     (`auto:false`, une saisie). Une séance FUSIONNÉE garde ses provenances
+     dans `srcs` : `srcs.user` est la réponse au menu « c'était quoi ? », ce
+     n'est pas un lancement, elle ne compte pas. */
+  function suivie(s) {
+    if (!s) return false;
+    if (s.src === 'montre' || s.gps || s.auto === false) return true;
+    var r = s.srcs;
+    if (r && typeof r === 'object' && (r.montre || r.tracker || r.saisie)) return true;
+    return false;
+  }
+  /* Détectée par le moteur, et par personne d'autre. */
+  function sansSuivi(s) {
+    if (!s || suivie(s)) return false;
+    return s.auto === true || !!(s.srcs && typeof s.srcs === 'object' && s.srcs.auto);
+  }
+  function hhmm(m) {
+    m = Math.max(0, Math.round(m)) % 1440;
+    return String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
+  }
+  /* LE PLUS HAUT ET LE PLUS BAS, sur la série de la MINUTE — la même que la
+     couverture compte, nettoyée par `flHrPropre` quand le moteur la sert
+     (les minutes recollées, celles dont les échantillons se contredisent, en
+     sortent : c'est le filtre du maximum de la fiche d'effort). Chacun porte
+     son heure : un maximum sans son instant se lit comme une moyenne. */
+  function extremes(w, debMin, finMin) {
+    if (!w || !w.hr || !w.hr.length) return null;
+    var hr = w.hr;
+    try { if (typeof window.flHrPropre === 'function') hr = window.flHrPropre(hr) || hr; } catch (e) {}
+    var hi = null, lo = null;
+    hr.forEach(function (x) {
+      if (!x || x.length < 2 || !(x[1] > 0) || x[0] < debMin || x[0] >= finMin) return;
+      if (!hi || x[1] > hi[1]) hi = x;
+      if (!lo || x[1] < lo[1]) lo = x;
+    });
+    if (!hi) return null;
+    return { max: Math.round(hi[1]), maxHeure: hhmm(hi[0]),
+             min: Math.round(lo[1]), minHeure: hhmm(lo[0]) };
+  }
+
   window.flMarcheDetail = function (s, K, DBref) {
     try {
       if (!s || s.type === 'nap') return null;
@@ -83,7 +124,30 @@
          sur 34 % de couverture cardiaque. Les deux noms ouvrent donc cette
          fiche-ci ; le titre, lui, dit lequel des deux c'est. */
       var _nom = String(s.name || s.nom || '');
-      if (_nom !== 'Marche' && _nom !== 'Activité') return null;
+      /* ═══ 22 sept. 2026 — LA FICHE SUIT LA PROVENANCE, PAS LE MOT ═══════════
+         La règle du 20 sept. disait « la fiche suit la matière » et jugeait
+         encore sur le NOM : une séance détectée sans mode sport, nommée
+         « Musculation » par le menu « c'était quoi ? », perdait cette fiche et
+         retrouvait la courbe et les six zones — sur la même mesure, faite de
+         la même façon. Dino, deux captures à l'appui : trois grappes de pics
+         en seize minutes, cinq zones à 0 %. « Ne pas mettre de courbe, ne pas
+         mettre les zones sur les sessions où le mode sport n'était pas activé.
+         Mais un truc qui est quand même relevant de l'effort : le point le
+         plus haut, le plus bas, les calories. »
+
+         LA PROVENANCE EST UN FAIT, PAS UN SEUIL. Une séance porte d'où elle
+         vient : `src:'montre'` (la montre l'a enregistrée en mode sport),
+         `gps` (le tracker), `auto:false` (lancée ou saisie par Dino), ou
+         `auto:true` / `srcs.auto` (détectée par le moteur, montre au régime
+         ordinaire). Sur l'export du 15 sept. les quatre familles se séparent
+         sans un seul cas ambigu. Un seuil de couverture aurait été un nombre
+         choisi — et la couverture à la minute d'une séance détectée est
+         souvent BONNE (85 % de médiane) : ce n'est pas elle qui manque, c'est
+         la mesure continue que seul le mode sport garantit.
+
+         Le nom reste une porte : une « Marche » saisie à la main garde sa
+         fiche, comme avant. */
+      if (_nom !== 'Marche' && _nom !== 'Activité' && !sansSuivi(s)) return null;
 
       var deb = (s.startMin != null) ? +s.startMin : null;
       var fin = (s.endMin != null) ? +s.endMin : (deb != null && s.dur ? deb + (+s.dur) : null);
@@ -100,6 +164,7 @@
          plus que ce qu'on a mesuré) et c'est dit ici plutôt que découvert plus tard.
          Le remède complet demande de passer `s.pauses` à `couvertureFc`. */
       var couv = couvertureFc(S, K, deb, fin, w);
+      var ext = extremes(w, deb, fin);
 
       /* LA CONTRIBUTION À LA JOURNÉE. Les totaux du jour viennent du bracelet
          (`steps`, `kcal`) : on ne les recalcule pas, on s'y rapporte. Sans eux,
@@ -125,6 +190,14 @@
         fcCouverture: couv ? Math.round(couv.part * 100) / 100 : null,
         fcCanal: couv ? couv.canal : null,
         fcPoints: couv ? couv.points : null,
+        /* 22 sept. 2026 — la montre n'était pas en mode sport : la fiche le
+           DIT, et c'est ce qui lui interdit courbe et zones. Faux pour une
+           Marche saisie à la main ; l'écran ne change alors rien. */
+        sansSuivi: sansSuivi(s),
+        fcMax: ext ? ext.max : null,
+        fcMaxHeure: ext ? ext.maxHeure : null,
+        fcMin: ext ? ext.min : null,
+        fcMinHeure: ext ? ext.minHeure : null,
         jour: jour
       };
     } catch (e) {

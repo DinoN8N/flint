@@ -397,9 +397,8 @@ window.flNutritionData=function(_argJour){try{
   var d=new Date();d.setDate(d.getDate()+_off-i);
   jours.push({lettre:JJ[d.getDay()],numero:String(d.getDate()),actif:i===0});
  }
- var MOIS=['janvier','février','mars','avril','mai','juin','juillet','août',
-           'septembre','octobre','novembre','décembre'];
- var JOURS=['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];
+ var MOIS=flMois();
+ var JOURS=flJoursLongs();
  /* v1459 — LA DATE AFFICHEE EST CELLE QU ON REGARDE. Elle lisait `new Date()`,
     c est-a-dire toujours aujourd hui : la page pouvait montrer les repas du 8
     sous le titre « jeudi 13 aout ». Un chiffre juste presente au mauvais jour
@@ -1359,14 +1358,14 @@ window.flHydroObjectif=function(){try{
 }catch(e){return 8;}};
 function renderHydro(){var n=DB.get(hydroKey(),0)||0,
  goal=(typeof flHydroObjectif==='function')?flHydroObjectif():8;
- var L=(n*0.25).toFixed(2).replace('.',',');
+ var L=(n*0.25).toFixed(2).replace('.',flSeparateurDecimal());
  var sub=document.getElementById('hydroSub');
  /* v2000 — UN REFUS SE RESPECTE JUSQU'AU BOUT. Quand la personne a répondu
     « pas d'objectif », la carte compte toujours ses verres — c'est utile — mais
     elle cesse d'annoncer une cible, et n'affiche donc ni « objectif 0,0 L » ni
     coche de réussite. Montrer un zéro serait pire que ne rien montrer. */
  if(sub){
-  if(goal>0){var gL=(goal*0.25).toFixed(1).replace('.',',');
+  if(goal>0){var gL=(goal*0.25).toFixed(1).replace('.',flSeparateurDecimal());
    sub.textContent=L+' L · objectif '+gL+' L'+(n>=goal?' ✓':'');}
   else sub.textContent=L+' L bus aujourd\'hui';
  }

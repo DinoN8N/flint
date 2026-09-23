@@ -57,7 +57,7 @@ window.flEquilibreCharge=function(off){
  try{
   off=Math.min(0,(off|0));
   if(typeof loadStrain!=='function')return {manque:'le calcul de l\'effort n\'est pas charge',jours:[]};
-  var JJ=['dim','lun','mar','mer','jeu','ven','sam'];
+  var JJ=flJoursCourts();
   var jours=[],sa=0,na=0,sc=0,nc=0,avant=0;
   for(var i=FL_EQUILIBRE.chronique-1;i>=0;i--){
    var o=off-i,k=tk(o),m=flChargeJourMesure(k),v=m?loadStrain(k):null;
@@ -99,7 +99,7 @@ function effBalChart(off){
  w.forEach(function(d,i){var x=X(i),today=!!d.auj;
   if(d.mesure){var v=d.v,y=Y(v);
    s+='<rect x="'+(x-bw/2).toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+bw+'" height="'+Math.max(0,y0-y).toFixed(1)+'" rx="5" fill="'+(today?'#DC481F':'#F0926A')+'"/>';
-   s+='<text x="'+x.toFixed(1)+'" y="'+(y-5).toFixed(1)+'" text-anchor="middle" font-size="8.5" font-weight="800" fill="#56514B" font-family="Inter,sans-serif">'+(Math.round(v*10)/10).toFixed(1).replace('.',',')+'</text>';
+   s+='<text x="'+x.toFixed(1)+'" y="'+(y-5).toFixed(1)+'" text-anchor="middle" font-size="8.5" font-weight="800" fill="#56514B" font-family="Inter,sans-serif">'+(Math.round(v*10)/10).toFixed(1).replace('.',flSeparateurDecimal())+'</text>';
   }else{
    s+='<text x="'+x.toFixed(1)+'" y="'+(y0-4).toFixed(1)+'" text-anchor="middle" font-size="9" fill="#B4ADA1" font-family="Inter,sans-serif">–</text>';
   }

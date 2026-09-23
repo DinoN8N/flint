@@ -418,6 +418,22 @@
      réveil déclaré, en silence. Le banc l'a dit en une ligne ; une relecture
      ne l'aurait pas vu. */
   var ATTENTE_NUIT_DUE_MS = 2 * 60 * 60 * 1000;
+  /* ═══ 22 sept. 2026 — ON SE RÉVEILLE AVANT SON RÉVEIL ══════════════════════
+     Dino a ouvert l'app à 07:59:18 ; son réveil déclaré au profil est 08:00.
+     Quarante-deux secondes trop tôt, et la porte du matin l'a traité comme une
+     soirée ordinaire : `MATIN · nuit SANS_NUIT · sommeil 5h31 (veille) · score
+     67`. Il a vu les chiffres de la VEILLE pendant les secondes qu'il a fallu
+     au bracelet pour livrer la nuit.
+     L'heure déclarée est une ESTIMATION, pas un fait — personne ne se réveille
+     à la minute de son alarme. On lui donne donc une marge avant, du même ordre
+     que les deux heures qu'elle a déjà après.
+     CE QUE ÇA NE CHANGE PAS : rien de la RÈGLE. Le pavé de `flNuitAttendue` le
+     dit — cette fenêtre horaire est là pour le COÛT, « elle passe devant les
+     quatre lectures de base ». Ce qui décide vraiment vient après : la journée
+     ouverte un autre jour civil (②) et le bracelet qui dort avec nous (③).
+     Élargir la fenêtre laisse seulement la fonction ATTEINDRE ses vraies
+     conditions une heure plus tôt. */
+  var AVANT_REVEIL_MS = 60 * 60 * 1000;
 
   /* Le réveil DÉCLARÉ au profil, en minutes depuis minuit. `getProfile` porte
      déjà son propre défaut ('07:00') ; on ne le redouble pas, on refuse plutôt
@@ -518,7 +534,10 @@
       var d = new Date(now);
       var nowMin = d.getHours() * 60 + d.getMinutes();
       out.depuisReveilMin = nowMin - rev;
-      if (nowMin < rev) { out.raison = 'avant le réveil déclaré'; return out; }
+      if ((rev - nowMin) * 60000 > AVANT_REVEIL_MS) {
+        out.raison = 'plus d\'une heure avant le réveil déclaré';
+        return out;
+      }
       if ((nowMin - rev) * 60000 > ATTENTE_NUIT_DUE_MS) {
         out.raison = 'deux heures après le réveil déclaré, la montre n\'a rien livré';
         return out;
@@ -530,10 +549,50 @@
 
       /* Et la montre a peut-être déjà dit qu'elle n'avait rien. On l'écoute
          APRÈS la mesure, jamais avant : un marqueur ne prime pas un fait. */
+      /* ═══ 23 sept. 2026 — UN « PAS DE NUIT » NE SE DÉCIDE PAS À MINUIT ════
+
+         Dino, trois matins de suite : « j'ai encore les stats de la veille
+         pendant cinq secondes, alors qu'on est censé juste rien avoir ». Sa
+         base, le 23 :
+
+             nuitSommeilLivre_2026-9-23  posé à 00:03:38
+             la nuit détectée             à 09:09:34
+
+         À trois minutes après minuit, pendant qu'il DORMAIT, le canal sommeil
+         a fini une passe sans rien livrer pour le jour qui venait de
+         commencer — évidemment, la nuit n'était pas finie — et l'app en a
+         conclu « la montre a tout donné, il n'y a pas de nuit aujourd'hui ».
+         Ce verdict tenait ensuite toute la matinée : la porte restait ouverte,
+         et le repli sur la veille jouait jusqu'à l'arrivée de la vraie nuit.
+         Ce n'est pas un cas isolé : le 21 le marqueur est posé à 00:48, le 20
+         à 22:45 — la veille au soir.
+
+         LE MARQUEUR RESTE VRAI, C'EST SA LECTURE QUI ÉTAIT FAUSSE. Il dit « la
+         montre a vidé sa mémoire de sommeil ». Cette phrase ne devient un
+         VERDICT SUR LA JOURNÉE qu'une fois le réveil déclaré passé : avant, la
+         nuit du jour n'a simplement pas encore eu lieu, et « rien livré » ne
+         veut rien dire.
+
+         ON CORRIGE LA LECTURE, PAS L'ÉCRITURE, et c'est délibéré : la règle
+         vaut aussi pour les marqueurs DÉJÀ posés dans la base — celui de ce
+         matin y est encore. Changer seulement l'écriture aurait laissé le
+         défaut jusqu'à demain.
+
+         LA NUIT BLANCHE EST INTACTE : à 09:00 pour un réveil déclaré à 08:00,
+         un marqueur posé après 08:00 est honoré, la porte s'ouvre, et la
+         journée d'hier continue de compter — c'est l'arbitrage du 10 sept. */
       try {
-        if (DB.get(CLE_LIVRE + K, null)) {
-          out.raison = 'la montre a tout donné, et il n\'y a pas de nuit';
-          return out;
+        var mrq = DB.get(CLE_LIVRE + K, null);
+        if (mrq) {
+          var mMin = null;
+          try { var dm = new Date(mrq.ts || 0); mMin = dm.getHours() * 60 + dm.getMinutes(); }
+          catch (e) { mMin = null; }
+          if (mrq.ts && mMin != null && mMin < rev) {
+            /* posé avant le réveil déclaré : il ne dit rien de cette journée */
+          } else {
+            out.raison = 'la montre a tout donné, et il n\'y a pas de nuit';
+            return out;
+          }
         }
       } catch (e) {}
 
