@@ -28,7 +28,8 @@
 // changer le contrat côté iOS (même forme de réponse).
 
 const { cors, rateLimited, identiteRequete, ipRequete,
-        verifierSecret, verifierSignature, corpsJSON, corpsBrut, appelerGemini } = require('./_lib');
+        verifierSecret, verifierSignature, corpsJSON, corpsBrut, appelerGemini,
+        plafondJournalier } = require('./_lib');
 const { OUTILS } = require('./_coach-tools');
 const { promptSysteme, LANGUES } = require('./_coach-prompt');
 
@@ -68,6 +69,16 @@ module.exports = async function handler(req, res) {
     return res.status(429).json({ error: 'Trop de requêtes, réessaie dans une minute.' });
   }
   if (!verifierSecret(req, res)) return;
+
+  // 23 sept. 2026 — le plafond par personne et par jour (voir `_lib.js`).
+  // Dormant sans magasin partagé ; 200 tours par appareil et par jour quand
+  // il est allumé — trois fois l'usage soutenu qu'on projette, aucun vrai
+  // client n'y arrive, un script si.
+  const plafond = await plafondJournalier({ id, portee: 'coach', max: process.env.COACH_PLAFOND_JOUR || 200 });
+  if (plafond.atteint) {
+    journal(req, 'plafond', t0, { compte: plafond.compte, max: plafond.max });
+    return res.status(429).json({ error: 'Tu as beaucoup parlé au Coach aujourd\'hui — on reprend demain.' });
+  }
 
   const exigeSig = process.env.COACH_EXIGE_SIGNATURE === '1';
   const aSignature = !!(req.headers['x-flint-sig'] || req.headers['x-flint-ts']);

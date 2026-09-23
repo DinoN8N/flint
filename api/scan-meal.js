@@ -12,7 +12,7 @@
 // contraint par `responseSchema`, donc le reste de ce fichier ne change pas.
 // Ce fichier n'importait rien de `_lib.js` (il a son propre rate-limit, plus
 // ancien) : l'aide de réessai est la première chose qu'il partage avec le Coach.
-const { appelerGemini } = require('./_lib');
+const { appelerGemini, plafondJournalier, identiteRequete } = require('./_lib');
 const MODELES = ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.0-flash'];
 
 const SCHEMA = {
@@ -145,6 +145,16 @@ module.exports = async function handler(req, res) {
   // 1) Rate-limit par IP (cap les abus / le coût)
   const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || 'unknown';
   if (rateLimited(ip)) return res.status(429).json({ error: 'Trop de requêtes, réessaie dans une minute.' });
+
+  // 23 sept. 2026 — le plafond par personne et par jour (voir `_lib.js`).
+  // Dormant sans magasin partagé. Quand il est allumé : 60 analyses par
+  // appareil et par jour — le natif ne se nomme pas encore (`x-flint-device`
+  // absent d'AnalyseRepasNatif), donc le compte tombe sur l'IP en attendant,
+  // ce qui est plus large, jamais plus étroit, pour une vraie personne.
+  const plafond = await plafondJournalier({ id: identiteRequete(req), portee: 'scan', max: process.env.SCAN_PLAFOND_JOUR || 60 });
+  if (plafond.atteint) {
+    return res.status(429).json({ error: 'Beaucoup d\'analyses aujourd\'hui — on reprend demain.' });
+  }
 
   // 2) Secret d'app (si FLINT_APP_SECRET est défini en env, on l'exige). Soft-secret : dissuade l'abus passant.
   const secret = process.env.FLINT_APP_SECRET;

@@ -279,8 +279,68 @@ async function appelerGemini({ key, modeles, corps, delaiMs, tentativesParModele
   return dernier;
 }
 
+// ── Le plafond par personne et par jour — DORMANT tant qu'aucun magasin ──────
+//
+// ═══ 23 sept. 2026 — PRÉPARÉ POUR 10 000 PRÉCOMMANDES, PAS ENCORE ALLUMÉ ═══
+//
+// Le rate-limit ci-dessus vit en mémoire d'une instance Vercel : à dix
+// instances il vaut dix fois moins, et il s'efface au démarrage à froid. Il
+// protège contre une rafale, pas contre une facture — un client qui scanne
+// mille fois dans la journée, à un rythme sage, ne rencontre aucun garde.
+//
+// Un plafond QUOTIDIEN exige un compteur partagé entre instances. Ici :
+// Upstash Redis, par son API REST — un `fetch`, pas de paquet, comme tout le
+// reste du dépôt. Deux variables d'environnement l'allument :
+//
+//     UPSTASH_REDIS_REST_URL     https://<nom>.upstash.io
+//     UPSTASH_REDIS_REST_TOKEN   le jeton REST du magasin
+//
+// SANS elles, la fonction rend « pas de plafond » et ne coûte rien : c'est le
+// choix de Dino (« on attend d'avoir vraiment le problème ») — le code est
+// posé, l'interrupteur est une variable d'env, le jour J est un clic.
+//
+// Deux décisions qui ne se devinent pas :
+// · FAIL-OPEN. Si le magasin est injoignable ou répond de travers, on laisse
+//   PASSER et on l'écrit au journal. Un compteur en panne ne doit pas éteindre
+//   le scan de tout le monde ; le plafond de dépense de Google reste derrière.
+// · La journée est UTC. Le compteur porte la date dans sa clé et expire seul
+//   au bout de 48 h ; personne n'a à le remettre à zéro.
+//
+// Rendu : { atteint, compte, max, actif }. `atteint` vrai = refuser (429).
+async function plafondJournalier({ id, portee, max }) {
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const jeton = process.env.UPSTASH_REDIS_REST_TOKEN;
+  const plafond = Number(max) || 0;
+  if (!url || !jeton || plafond <= 0) return { atteint: false, compte: 0, max: plafond, actif: false };
+
+  const jour = new Date().toISOString().slice(0, 10);
+  const cle = `flint:jour:${jour}:${portee}:${String(id).slice(0, 160)}`;
+  try {
+    const r = await fetch(url.replace(/\/$/, '') + '/pipeline', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + jeton, 'Content-Type': 'application/json' },
+      body: JSON.stringify([['INCR', cle], ['EXPIRE', cle, 172800, 'NX']])
+    });
+    if (!r.ok) {
+      console.log(`[plafond] magasin ${r.status} — on laisse passer (${portee})`);
+      return { atteint: false, compte: 0, max: plafond, actif: true };
+    }
+    const j = await r.json();
+    const compte = Number(Array.isArray(j) && j[0] && j[0].result);
+    if (!Number.isFinite(compte)) {
+      console.log(`[plafond] réponse illisible — on laisse passer (${portee})`);
+      return { atteint: false, compte: 0, max: plafond, actif: true };
+    }
+    if (compte > plafond) console.log(`[plafond] ${portee} ${compte}/${plafond} — refusé pour ${String(id).slice(0, 12)}`);
+    return { atteint: compte > plafond, compte, max: plafond, actif: true };
+  } catch (e) {
+    console.log(`[plafond] panne ${String((e && e.message) || e).slice(0, 80)} — on laisse passer (${portee})`);
+    return { atteint: false, compte: 0, max: plafond, actif: true };
+  }
+}
+
 module.exports = {
   cors, rateLimited, identiteRequete, ipRequete,
   verifierSecret, verifierSignature, corpsJSON, corpsBrut, canonique, egalConstant,
-  appelerGemini
+  appelerGemini, plafondJournalier
 };
