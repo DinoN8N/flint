@@ -28,7 +28,7 @@
 // changer le contrat côté iOS (même forme de réponse).
 
 const { cors, rateLimited, identiteRequete, ipRequete,
-        verifierSecret, verifierSignature, corpsJSON, corpsBrut, appelerGemini, roleFonctionVersUser,
+        verifierSecret, verifierSignature, corpsJSON, corpsBrut, appelerGemini, roleFonctionVersUser, extraireSuites,
         plafondJournalier } = require('./_lib');
 const { OUTILS } = require('./_coach-tools');
 const { promptSysteme, LANGUES } = require('./_coach-prompt');
@@ -166,10 +166,14 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ mode: 'outils', appels: appelsFn, tourModele: content });
     }
 
-    const texte = parts.map(p => p.text || '').join('').trim();
-    if (!texte) return res.status(502).json({ error: 'réponse Gemini sans texte ni outil' });
-    journal(req, 'reponse', t0, { tours: contents.length, sortie: texte.length, lang: langue });
-    return res.status(200).json({ mode: 'reponse', texte, tourModele: content });
+    const brut = parts.map(p => p.text || '').join('').trim();
+    if (!brut) return res.status(502).json({ error: 'réponse Gemini sans texte ni outil' });
+    // La ligne « Suites : … » quitte le texte et devient un tableau (voir
+    // `extraireSuites`). `tourModele` garde le texte brut : c'est l'historique
+    // que le modèle relira, pas l'écran.
+    const { texte, suites } = extraireSuites(brut);
+    journal(req, 'reponse', t0, { tours: contents.length, sortie: texte.length, suites: suites.length, lang: langue });
+    return res.status(200).json({ mode: 'reponse', texte, suites, tourModele: content });
   } catch (e) {
     journal(req, 'panne', t0, { message: String((e && e.message) || e).slice(0, 120) });
     return res.status(500).json({ error: String((e && e.message) || e) });

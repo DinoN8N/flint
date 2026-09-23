@@ -276,5 +276,21 @@ console.log('\n═══ ⑩ GEMINI 3 : LE RÔLE « function » DEVIENT « user 
     lib.roleFonctionVersUser(null) === null && lib.roleFonctionVersUser('x') === 'x');
 }
 
+console.log('\n═══ ⑪ LES SUITES : LA DERNIÈRE LIGNE DEVIENT UN TABLEAU ═══');
+{
+  const r1 = lib.extraireSuites('**Récup à 57.**\n- Sommeil : 5 h 45 pour 10 h.\n\nSuites : Un plan sur 3 jours ? | Et ce soir ? | Ma VFC en détail');
+  v('« Suites : a | b | c » est retirée du texte et rendue en tableau',
+    r1.texte === '**Récup à 57.**\n- Sommeil : 5 h 45 pour 10 h.' && r1.suites.length === 3 && r1.suites[1] === 'Et ce soir ?');
+  const r2 = lib.extraireSuites('Texte.\n**Suggestions :** a | b');
+  v('  … étiquette « Suggestions », en gras, acceptée', r2.texte === 'Texte.' && r2.suites.join('/') === 'a/b');
+  const r3 = lib.extraireSuites('Rien à extraire ici.\nSuites : au milieu ?\nEncore une ligne.');
+  v('  … seule la DERNIÈRE ligne compte : une « Suites : » au milieu reste dans le texte',
+    r3.suites.length === 0 && r3.texte === 'Rien à extraire ici.\nSuites : au milieu ?\nEncore une ligne.');
+  const r4 = lib.extraireSuites('Suites : a | b | c | d | e');
+  v('  … au plus trois suites, et un texte vide ne devient pas vide (la ligne reste)',
+    r4.suites.length === 3 && r4.texte === 'Suites : a | b | c | d | e');
+  v('  … sans ligne : texte intact, tableau vide', lib.extraireSuites('Bonne nuit.').suites.length === 0 && lib.extraireSuites(null).texte === '');
+}
+
 console.log('\n' + vert + ' vert(s), ' + rouge + ' rouge(s)\n');
 process.exitCode = rouge ? 1 : 0;

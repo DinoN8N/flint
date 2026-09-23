@@ -239,6 +239,29 @@ function corpsBrut(req) {
   try { return canonique(req.body); } catch (e) { return ''; }
 }
 
+// ── Les suites : ce que la personne pourrait demander ensuite ─────────────
+//
+// 23 sept. 2026, 20 h 30 — « améliore drastiquement l'interface de discussion
+// avec le coach ». Une discussion, c'est aussi ce qu'on peut dire APRÈS : le
+// prompt demande au modèle de finir par une ligne « Suites : a | b | c » (deux
+// ou trois questions courtes qui prolongent SA réponse). Cette ligne n'est pas
+// du texte pour l'écran : on la retire ici et on la rend à part (`suites`),
+// l'app la montre en petites lignes sous la réponse, un doigt et c'est posé.
+// Tolérant sur l'étiquette (Suites, Suggestions, Ensuite, Next, Siguientes…)
+// et sur le gras que le modèle met parfois autour. Rien trouvé → texte
+// intact, tableau vide : une réponse sans suites reste une réponse.
+function extraireSuites(texte) {
+  const t = String(texte || '').trimEnd();
+  const m = t.match(/(?:^|\n)[ \t]*(?:\*\*)?[ \t]*(?:suites?|suggestions?|ensuite|next|siguientes?|a continuación)[ \t]*(?:\*\*)?[ \t]*[:：][ \t]*(.+)$/i);
+  if (!m) return { texte: t, suites: [] };
+  const suites = m[1].split('|')
+    .map(x => x.replace(/\*\*/g, '').replace(/^[\s\-–•]+/, '').trim())
+    .filter(x => x.length > 0 && x.length <= 80)
+    .slice(0, 3);
+  const corps = t.slice(0, m.index).trimEnd();
+  return { texte: corps || t, suites };
+}
+
 // ── Gemini 3 : les réponses d'outils portent le rôle « user » ─────────────
 //
 // 23 sept. 2026, 19 h 55 — première conversation sur `gemini-3.6-flash` :
@@ -392,5 +415,5 @@ async function plafondJournalier({ id, portee, max }) {
 module.exports = {
   cors, rateLimited, identiteRequete, ipRequete,
   verifierSecret, verifierSignature, corpsJSON, corpsBrut, canonique, egalConstant,
-  appelerGemini, plafondJournalier, roleFonctionVersUser
+  appelerGemini, plafondJournalier, roleFonctionVersUser, extraireSuites
 };

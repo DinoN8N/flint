@@ -19,12 +19,12 @@ const OUTILS = [
   },
   {
     name: 'getRecoveryContext',
-    description: "Récupération du jour : score, HRV, fréquence cardiaque au repos, zone (haute/modérée/basse).",
+    description: "Récupération du jour : score (s, sur 100), zone, VFC de la nuit (vfc, ms) et FC au repos (fcRepos, bpm) avec leurs normales personnelles sur 30 jours (normales.vfc, normales.fcRepos) — compare toujours la valeur du jour à sa normale.",
     parameters: { type: 'object', properties: {} }
   },
   {
     name: 'getSleepHistory',
-    description: 'Historique de sommeil sur N derniers jours : score, durée, coucher/réveil, régularité, dette.',
+    description: 'Historique de sommeil sur N derniers jours, une entrée par nuit : score, durée dormie, besoin, dette, coucher/réveil, réveils, et la VFC (vfc, ms), la FC au repos (fcRepos, bpm) et la respiration de chaque nuit — pour voir une tendance sur plusieurs jours, pas un seul.',
     parameters: {
       type: 'object',
       properties: { joursN: { type: 'integer', description: 'Nombre de jours à remonter (1 à 30).' } },
