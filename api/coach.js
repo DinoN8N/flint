@@ -28,11 +28,16 @@
 // changer le contrat côté iOS (même forme de réponse).
 
 const { cors, rateLimited, identiteRequete, ipRequete,
-        verifierSecret, verifierSignature, corpsJSON, corpsBrut } = require('./_lib');
+        verifierSecret, verifierSignature, corpsJSON, corpsBrut, appelerGemini } = require('./_lib');
 const { OUTILS } = require('./_coach-tools');
 const { promptSysteme, LANGUES } = require('./_coach-prompt');
 
-const MODEL = 'gemini-2.5-flash';
+// 23 sept. 2026 — le premier est celui qu'on veut ; le second est celui qu'on
+// accepte quand Google déclare le premier saturé (503 « high demand », mesuré
+// plus d'une demi-heure ce jour-là, en même temps que sur le scan). Les deux
+// savent appeler des outils (`functionDeclarations`), donc le pont ne change
+// pas. Pas de troisième : le Coach a 60 s, pas 120.
+const MODELES = ['gemini-2.5-flash', 'gemini-2.5-flash-lite'];
 const RL_MAX = 40;
 
 // ═══ 22 sept. 2026 — LA PORTE D'ENTRÉE ═════════════════════════════════════
@@ -99,13 +104,15 @@ module.exports = async function handler(req, res) {
   };
 
   try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${key}`;
-    const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(gReq) });
-    if (!r.ok) {
-      const t = await r.text();
-      return res.status(502).json({ error: 'Gemini ' + r.status, detail: t.slice(0, 400) });
+    // Deux modèles × deux tentatives × 12 s : sous les 60 s de la fonction.
+    const g = await appelerGemini({ key, modeles: MODELES, corps: gReq, delaiMs: 12000 });
+    if (!g.ok) {
+      journal(req, 'gemini-indisponible', t0, { statut: g.status, tentatives: g.tentatives, modele: g.modele || '-' });
+      return res.status(502).json({ error: 'Le Coach est indisponible à l\'instant. Réessaie dans un moment.',
+                                    gemini: g.status, detail: g.detail });
     }
-    const j = await r.json();
+    if (g.modele !== MODELES[0]) journal(req, 'secours', t0, { modele: g.modele, tentatives: g.tentatives });
+    const j = g.json;
     const cand = j && j.candidates && j.candidates[0];
     const content = cand && cand.content;
     const parts = (content && content.parts) || [];

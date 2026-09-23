@@ -6,7 +6,14 @@
 //      ou POST { text: "2 œufs au plat, une tranche de pain complet, un café au lait" }
 // Retour: { mealName, items:[{name,grams,kcal,prot,carb,fat,confidence}], total:{kcal,prot,carb,fat} }
 
-const MODEL = 'gemini-2.5-flash';
+// 23 sept. 2026 — le premier est celui qu'on veut ; les suivants sont ceux
+// qu'on accepte quand Google le déclare saturé (503 « high demand », mesuré
+// pendant plus d'une demi-heure ce jour-là). Les trois savent rendre du JSON
+// contraint par `responseSchema`, donc le reste de ce fichier ne change pas.
+// Ce fichier n'importait rien de `_lib.js` (il a son propre rate-limit, plus
+// ancien) : l'aide de réessai est la première chose qu'il partage avec le Coach.
+const { appelerGemini } = require('./_lib');
+const MODELES = ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.0-flash'];
 
 const SCHEMA = {
   type: 'object',
@@ -164,18 +171,25 @@ module.exports = async function handler(req, res) {
       parts = [{ text: PROMPT_TEXT + text }];
     }
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${key}`;
     const gReq = {
       contents: [{ parts }],
       generationConfig: { responseMimeType: 'application/json', responseSchema: SCHEMA, temperature: 0.1 }
     };
 
-    const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(gReq) });
-    if (!r.ok) {
-      const t = await r.text();
-      return res.status(502).json({ error: 'Gemini ' + r.status, detail: t.slice(0, 400) });
+    // 23 sept. 2026 — réessai puis modèle de secours (voir `appelerGemini`
+    // dans _lib.js). Deux modèles × deux tentatives × 25 s tiennent sous les
+    // 120 s de la fonction. Le message rendu à l'app reste le même qu'avant
+    // quand TOUT a échoué : « L'analyse est en panne à l'instant », qu'elle
+    // sait déjà afficher — plus le statut brut de Gemini, qui n'est pas une
+    // phrase pour l'utilisateur.
+    const g = await appelerGemini({ key, modeles: MODELES, corps: gReq, delaiMs: 25000 });
+    if (!g.ok) {
+      console.log(`[scan] échec après ${g.tentatives} tentative(s), dernier statut ${g.status} (${g.modele || '-'})`);
+      return res.status(502).json({ error: "L'analyse est en panne à l'instant. Réessaie dans un moment.",
+                                    gemini: g.status, detail: g.detail });
     }
-    const j = await r.json();
+    if (g.modele !== MODELES[0]) console.log(`[scan] servi par le modèle de secours ${g.modele} (${g.tentatives} tentatives)`);
+    const j = g.json;
     const txt = j && j.candidates && j.candidates[0] && j.candidates[0].content && j.candidates[0].content.parts && j.candidates[0].content.parts[0] && j.candidates[0].content.parts[0].text;
     if (!txt) return res.status(502).json({ error: 'réponse Gemini vide' });
 

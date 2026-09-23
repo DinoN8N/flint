@@ -203,7 +203,84 @@ function corpsBrut(req) {
   try { return canonique(req.body); } catch (e) { return ''; }
 }
 
+// ── Gemini : réessai, puis modèle de secours ────────────────────────────────
+//
+// ═══ 23 sept. 2026 — UN SEUL MODÈLE, ZÉRO REPLI : LE SCAN ET LE COACH TOMBAIENT
+// ═══ ENSEMBLE
+//
+// Mesuré à 15 h 45 puis à 16 h 10, à un quart d'heure d'écart : `gemini-2.5-flash`
+// répondait 503 « This model is currently experiencing high demand » aux deux
+// endpoints, et chacun rendait un 502 sans rien tenter d'autre. Côté app, la
+// chaîne brute « Gemini 503 » s'affichait à l'utilisateur. Dino, le même jour :
+// « le scan alimentaire et la prise en photo de repas ne marchent pas ».
+//
+// Ce que fait cette fonction, et ce qu'elle ne fait PAS :
+//
+// · elle RÉESSAIE un statut passager (429, 500, 502, 503, 504, ou une panne
+//   réseau) — deux tentatives par modèle, avec une attente courte entre les
+//   deux, parce que la doc de Google dit elle-même que ces pointes sont
+//   « usually temporary » ;
+// · si le modèle reste indisponible, elle passe au SUIVANT de la liste, dans
+//   l'ordre donné par l'appelant : le premier est celui qu'on veut, les autres
+//   sont ceux qu'on accepte. La réponse dit quel modèle a fini par répondre ;
+// · elle ne réessaie JAMAIS un 400, 401, 403 ou 404 : ceux-là disent que
+//   c'est la requête qui est fausse (ou la clé), et le refaire trois fois sur
+//   trois modèles ne ferait qu'aggraver une facture et masquer le défaut ;
+// · chaque appel porte son propre délai : la fonction Vercel a un plafond
+//   (120 s pour le scan, 60 s pour le Coach), et une tentative qui pend ne
+//   doit pas manger le temps des suivantes.
+//
+// Rendu : { ok, status, json, texte, modele, tentatives, detail }. `ok` vaut
+// vrai quand un modèle a rendu un 2xx ; sinon `status` et `detail` sont ceux de
+// la DERNIÈRE réponse, pour que l'endpoint la remonte telle quelle.
+const REESSAYABLES = new Set([429, 500, 502, 503, 504]);
+
+async function appelerGemini({ key, modeles, corps, delaiMs, tentativesParModele, attenteMs }) {
+  const liste = Array.isArray(modeles) && modeles.length ? modeles : ['gemini-2.5-flash'];
+  const essaisMax = Math.max(1, tentativesParModele || 2);
+  const attentes = Array.isArray(attenteMs) && attenteMs.length ? attenteMs : [600, 1500];
+  const delai = Math.max(1000, delaiMs || 25000);
+  let dernier = { ok: false, status: 0, texte: '', detail: 'aucune tentative' };
+  let tentatives = 0;
+
+  for (const modele of liste) {
+    for (let essai = 0; essai < essaisMax; essai++) {
+      tentatives++;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${modele}:generateContent?key=${key}`;
+      const ctrl = new AbortController();
+      const minuteur = setTimeout(() => ctrl.abort(), delai);
+      try {
+        const r = await fetch(url, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(corps), signal: ctrl.signal
+        });
+        const texte = await r.text();
+        if (r.ok) {
+          let json = null;
+          try { json = JSON.parse(texte); } catch (e) { json = null; }
+          return { ok: true, status: r.status, json, texte, modele, tentatives };
+        }
+        dernier = { ok: false, status: r.status, texte, modele, tentatives,
+                    detail: texte.slice(0, 400) };
+        if (!REESSAYABLES.has(r.status)) return dernier;   // requête fausse : on ne s'acharne pas
+      } catch (e) {
+        dernier = { ok: false, status: 0, texte: '', modele, tentatives,
+                    detail: (e && e.name === 'AbortError') ? `délai de ${delai} ms dépassé`
+                                                           : String((e && e.message) || e).slice(0, 200) };
+      } finally {
+        clearTimeout(minuteur);
+      }
+      if (essai < essaisMax - 1) {
+        await new Promise(res => setTimeout(res, attentes[Math.min(essai, attentes.length - 1)]));
+      }
+    }
+    console.log(`[gemini] ${modele} indisponible après ${essaisMax} tentative(s) — statut ${dernier.status}, on passe au suivant`);
+  }
+  return dernier;
+}
+
 module.exports = {
   cors, rateLimited, identiteRequete, ipRequete,
-  verifierSecret, verifierSignature, corpsJSON, corpsBrut, canonique, egalConstant
+  verifierSecret, verifierSignature, corpsJSON, corpsBrut, canonique, egalConstant,
+  appelerGemini
 };
