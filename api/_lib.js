@@ -160,10 +160,31 @@ function verifierSignature(req, corpsBrut, options) {
   if (Math.abs(Date.now() - n) > fenetre) return { ok: false, raison: 'horodatage périmé' };
 
   const dev = (req.headers['x-flint-device'] || '').toString();
-  const empreinte = crypto.createHash('sha256').update(corpsBrut || '').digest('hex');
-  const attendu = crypto.createHmac('sha256', secret)
-    .update(dev + '.' + ts + '.' + empreinte).digest('hex');
-  if (!egalConstant(sig, attendu)) return { ok: false, raison: 'signature invalide' };
+  // ═══ 23 sept. 2026 — « signature refusée » SUR CHAQUE VRAIE QUESTION ═══════
+  //
+  // Dino, 18 h 40 : « le coach me répond signature refusée ». Mesuré dans la
+  // foulée, trois requêtes signées avec la clé de l'app : un corps sans « / »
+  // → 200 ; un corps avec « / » signé sur la canonique Node → 200 ; le MÊME
+  // corps signé sur les octets que produit l'app → 401 « signature invalide ».
+  //
+  // La cause : `JSONSerialization` échappe le slash (« score 88\/100 »), pas
+  // `JSON.stringify`. Le banc reproduisait `.sortedKeys` « octet pour octet »
+  // sur un corps qui n'avait aucun slash — et `profilTexte` en porte toujours
+  // un (« score \(s)/100 », CoachFlint.swift). Donc l'app hachait `\/`, le
+  // serveur `/`, et le Coach n'a jamais répondu à personne.
+  //
+  // Le remède vit ICI, pas dans l'app : un correctif natif ne voyage pas, et
+  // les octets bruts de la requête ne sont pas accessibles derrière l'analyse
+  // JSON de Vercel. On accepte donc l'une OU l'autre écriture du même corps.
+  const corps = corpsBrut || '';
+  const variantes = [corps, corps.replace(/\//g, '\\/')];
+  const valide = variantes.some(v => {
+    const empreinte = crypto.createHash('sha256').update(v).digest('hex');
+    const attendu = crypto.createHmac('sha256', secret)
+      .update(dev + '.' + ts + '.' + empreinte).digest('hex');
+    return egalConstant(sig, attendu);
+  });
+  if (!valide) return { ok: false, raison: 'signature invalide' };
   return { ok: true };
 }
 

@@ -163,6 +163,44 @@ console.log('\n═══ ⑥ LES DEUX BORDS SIGNENT LA MÊME CHAÎNE ═══')
     lib.corpsBrut({ body: objet }) === SWIFT);
   v('  … et depuis une chaîne brute, si la plateforme la laisse passer',
     lib.corpsBrut({ body: JSON.stringify(objet) }) === SWIFT);
+
+  // ═══ 23 sept. 2026 — LE SLASH, QUE CE BANC N'AVAIT PAS ══════════════════
+  //
+  // Le cas ci-dessus était vert et le Coach refusait TOUTES les vraies
+  // questions (« signature refusée » chez Dino, 18 h 40). `JSONSerialization`
+  // échappe le slash (« 88\/100 »), `JSON.stringify` non — et `profilTexte`
+  // porte toujours « score N/100 ». Un corps sans slash ne pouvait pas le voir.
+  //
+  // La chaîne SWIFT_SLASH sort de `JSONSerialization` `.sortedKeys` exécuté
+  // sur ce Mac le 23 sept. (`swift js-slash.swift`) : ce n'est pas une
+  // hypothèse sur ce que fait Swift, c'est ce qu'il a fait.
+  const SWIFT_SLASH = '{"contents":[{"parts":[{"text":"salut"}],"role":"user"}],'
+                    + '"deviceId":"ABC","memoireTexte":"",'
+                    + '"profilTexte":"score 88\\/100 · FC 52 b\\/min","ton":"aucun"}';
+  const objetSlash = { ton: 'aucun', deviceId: 'ABC',
+                       contents: [{ role: 'user', parts: [{ text: 'salut' }] }],
+                       memoireTexte: '', profilTexte: 'score 88/100 · FC 52 b/min' };
+  v('avec un slash, la canonique du serveur et les octets de Swift DIVERGENT (c\'est le défaut)',
+    lib.canonique(objetSlash) !== SWIFT_SLASH && lib.canonique(objetSlash).replace(/\//g, '\\/') === SWIFT_SLASH);
+
+  const crypto = require('crypto');
+  process.env.COACH_SIG_SECRET = 'secret-de-papier';
+  const signer = (octets, dev, ts) => crypto.createHmac('sha256', 'secret-de-papier')
+    .update(dev + '.' + ts + '.' + crypto.createHash('sha256').update(octets).digest('hex')).digest('hex');
+  const requete = (octetsSignes) => {
+    const ts = String(Date.now());
+    return { headers: { 'x-flint-device': 'ABC', 'x-flint-ts': ts, 'x-flint-sig': signer(octetsSignes, 'ABC', ts) }, body: objetSlash };
+  };
+  const r1 = requete(SWIFT_SLASH);
+  v('  … et le serveur ACCEPTE la signature calculée sur les octets de Swift (\\/)',
+    lib.verifierSignature(r1, lib.corpsBrut(r1)).ok === true);
+  const r2 = requete(lib.canonique(objetSlash));
+  v('  … comme celle calculée sur sa propre canonique (/)',
+    lib.verifierSignature(r2, lib.corpsBrut(r2)).ok === true);
+  const r3 = requete(SWIFT_SLASH.replace('88', '89'));
+  v('  … et refuse toujours une signature sur un AUTRE corps',
+    lib.verifierSignature(r3, lib.corpsBrut(r3)).ok === false);
+  delete process.env.COACH_SIG_SECRET;
 }
 
 console.log('\n' + vert + ' vert(s), ' + rouge + ' rouge(s)\n');
