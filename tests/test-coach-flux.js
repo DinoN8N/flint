@@ -176,6 +176,27 @@ console.log('\n═══ ⑤ UN TOUR D\'OUTILS NE DIFFUSE AUCUN TEXTE ═══'
   v('le tourModele porte les functionCall', fin(evs).tourModele.parts.length === 2);
 }
 
+console.log('\n═══ ⑤ bis LE TOUR D\'OUTILS GARDE SA thoughtSignature ═══');
+{
+  // 24 sept. 2026, 18 h 45 — AUCUNE réponse diffusée n'avait abouti en
+  // production (zéro `flux-reponse` en dix heures de journal). Le tour
+  // d'outils était rebâti en `{ functionCall }` seul : la signature que
+  // Gemini 3 pose sur le PREMIER appel d'un lot parallèle disparaissait, et le
+  // tour suivant rendait 400 « Function call is missing a thought_signature »
+  // (mesuré sur une préproduction, avant/après). Le faux Gemini de ⑤ ne
+  // posait pas de signature — il ne prouvait que la forme qu'on lui avait
+  // donnée, pas celle que Google envoie.
+  const lot = JSON.stringify({ candidates: [{ content: { parts: [
+    { functionCall: { name: 'getRecoveryContext', args: {} }, thoughtSignature: 'sig-du-lot' },
+    { functionCall: { name: 'getSleepHistory', args: {} } }
+  ] } }] });
+  const res = await jouer([lot]);
+  const parts = fin(evenements(res)).tourModele.parts;
+  v('la signature revient avec le premier appel', parts[0].thoughtSignature === 'sig-du-lot',
+    JSON.stringify(parts[0]));
+  v('  … et le second appel reste tel que Gemini l\'a rendu', !('thoughtSignature' in parts[1]));
+}
+
 console.log('\n═══ ⑥ UNE PANNE D\'OUVERTURE RÉPOND DU JSON, PAS DU SSE ═══');
 {
   // C'est ce qui permet au repli de l'app de marcher sans rien savoir du flux :

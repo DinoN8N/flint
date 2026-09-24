@@ -270,7 +270,10 @@ async function repondreEnFlux({ req, res, t0, key, gReq, contents, langue }) {
       for (const p of parts) {
         if (p.functionCall) {
           appelsFn.push({ name: p.functionCall.name, args: p.functionCall.args || {} });
-          partsModele.push({ functionCall: p.functionCall });
+          // La part ENTIÈRE, pas `{ functionCall }` : Gemini 3 y pose une
+          // `thoughtSignature` qu'il exige au tour suivant (400 sans elle).
+          // Voir le banc ⑤ bis (test-coach-flux.js).
+          partsModele.push(p);
         } else if (typeof p.text === 'string' && p.text) {
           brut += p.text;
         }
