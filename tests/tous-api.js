@@ -20,6 +20,7 @@ const BANCS = [
   ['test-coach-contexte.js',  'ce que le prompt système reçoit, et ce qu\'il ne reçoit jamais'],
   ['test-coach-scenarios.js', 'des conversations entières, de la question au rangement'],
   ['test-coach-flux.js',      'la diffusion par jeton : SSE recollé, « Suites » retenue, repli en JSON'],
+  ['test-coach-securite.js',  'les 5 000 : rejeu, taille, device, erreurs muettes, en-têtes, bornes, clé'],
 ];
 
 let rouges = 0;

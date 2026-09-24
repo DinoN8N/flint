@@ -21,11 +21,31 @@ const crypto = require('crypto');
 // navigateur. On ne l'ouvre donc qu'à qui en a besoin, explicitement.
 function cors(res, options) {
   const o = options || {};
+  entetesSurete(res);
   if (o.origine) res.setHeader('Access-Control-Allow-Origin', o.origine);
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers',
     'Content-Type, x-flint-key, x-flint-device, x-flint-ts, x-flint-sig'
     + (o.extra ? ', ' + o.extra : ''));
+}
+
+// ── Les en-têtes de sûreté, sur TOUTE réponse d'api/ ────────────────────────
+//
+// 24 sept. 2026 — préparation des 5 000 utilisateurs. Deux en-têtes que rien
+// ne posait :
+// · `Cache-Control: no-store` : une réponse du Coach porte des chiffres de
+//   santé et une réponse du scan porte un repas ; aucun cache intermédiaire
+//   (CDN, proxy d'entreprise, navigateur) n'a le droit d'en garder une copie,
+//   ni de la servir à la requête suivante. Le flux SSE pose le sien (voir
+//   `repondreEnFlux`), sur le même principe.
+// · `X-Content-Type-Options: nosniff` : un navigateur ne doit jamais deviner
+//   qu'une réponse JSON « ressemble » à autre chose. Sans effet pour l'app
+//   native, sans coût, et c'est la ligne qu'un audit cherche en premier.
+// Posés au plus tôt (dans `cors`, donc avant tout `status()`), pour que même
+// un 405 ou un 429 les porte.
+function entetesSurete(res) {
+  res.setHeader('Cache-Control', 'no-store');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
 }
 
 // ── Rate-limit ──────────────────────────────────────────────────────────────
@@ -46,18 +66,38 @@ function cors(res, options) {
 // dépendance et une clé, elle est notée au registre, elle n'est pas ici.
 const RL = new Map();
 const RL_WINDOW = 60000;
+// 24 sept. 2026 — LA TABLE A UN PLAFOND DUR. Le ménage d'avant ne retirait
+// que les clés VIDES : un client qui invente un device par requête pose une
+// clé vivante (un horodatage de moins d'une minute) à chaque appel, et rien
+// ne la retirait avant la minute — à mille requêtes par seconde, 60 000
+// entrées par instance. L'IP le bloque bien avant (voir `rateLimited`), mais
+// la mémoire, elle, grossissait quand même. Au-delà de RL_MAX_CLES on jette
+// les plus anciennes (un `Map` itère dans l'ordre d'insertion) : perdre le
+// compteur d'un device inventé n'a aucun coût — c'est l'IP qui le tient.
+const RL_MAX_CLES = 20000;
 
 function compter(cle, max, now) {
   const arr = (RL.get(cle) || []).filter(t => now - t < RL_WINDOW);
   arr.push(now);
+  RL.delete(cle);           // réinséré en queue : les plus anciennes restent en tête
   RL.set(cle, arr);
   if (RL.size > 5000) {
     for (const k of RL.keys()) {
       if (!(RL.get(k) || []).some(t => now - t < RL_WINDOW)) RL.delete(k);
     }
   }
+  if (RL.size > RL_MAX_CLES) {
+    let aJeter = RL.size - RL_MAX_CLES;
+    for (const k of RL.keys()) {
+      if (aJeter-- <= 0) break;
+      if (k !== cle) RL.delete(k);
+    }
+  }
   return arr.length > max;
 }
+
+/** Le nombre de clés vivantes — pour le banc, pas pour le service. */
+function tailleRateLimit() { return RL.size; }
 
 function rateLimited(id, max, options) {
   const o = options || {};
@@ -74,9 +114,36 @@ function rateLimited(id, max, options) {
 // l'IP — plusieurs utilisateurs derrière un même NAT ne se gênent plus),
 // sinon l'IP en repli.
 function identiteRequete(req) {
-  const dev = (req.headers['x-flint-device'] || '').toString().trim();
-  if (dev) return 'dev:' + dev.slice(0, 128);
+  const dev = deviceRequete(req);
+  if (dev) return 'dev:' + dev;
   return 'ip:' + ipRequete(req);
+}
+
+// ── Le device : une forme fermée, ou rien ──────────────────────────────────
+//
+// 24 sept. 2026 — `x-flint-device` est choisi par l'appelant, et il sert de
+// clé de rate-limit, de clé de plafond journalier ET il part au journal
+// (tronqué). L'app envoie un `UUID().uuidString` (36 caractères, majuscules
+// et tirets, DeviceIdentite.swift) ; les bancs envoient « banc ». On accepte
+// donc une chaîne COURTE d'un alphabet fermé — pas un UUID strict, pour ne
+// couper ni les bancs ni une app qui changerait de forme — et rien d'autre :
+// pas d'espace, pas de saut de ligne (une ligne de journal ne se forge pas),
+// pas plus de 128 caractères (une clé Redis ne gonfle pas).
+//
+// Deux usages, deux verdicts : `deviceRequete` rend '' pour un en-tête absent
+// OU illisible (repli : l'identité tombe sur l'IP, comme sans en-tête) ;
+// `deviceIllisible` dit si un en-tête PRÉSENT est refusé, pour que le Coach
+// réponde 400 au lieu de faire semblant.
+const DEVICE_FORME = /^[A-Za-z0-9._:-]{1,128}$/;
+
+function deviceRequete(req) {
+  const dev = (req.headers['x-flint-device'] || '').toString().trim();
+  return DEVICE_FORME.test(dev) ? dev : '';
+}
+
+function deviceIllisible(req) {
+  const brut = (req.headers['x-flint-device'] || '').toString();
+  return brut.trim().length > 0 && !DEVICE_FORME.test(brut.trim());
 }
 
 function ipRequete(req) {
@@ -187,8 +254,57 @@ function verifierSignature(req, corpsBrut, options) {
     return egalConstant(sig, attendu);
   });
   if (!valide) return { ok: false, raison: 'signature invalide' };
+  // Valide, mais déjà vue : c'est un rejeu. On ne l'inscrit qu'APRÈS l'avoir
+  // jugée valide — une signature fausse ne mérite pas une place en mémoire.
+  if (signatureDejaVue(sig, Date.now(), fenetre)) return { ok: false, raison: 'signature rejouée' };
   return { ok: true };
 }
+
+// ── Le rejeu : une signature ne sert qu'une fois ───────────────────────────
+//
+// 24 sept. 2026 — la fenêtre de 300 s disait « une requête capturée ne se
+// rejoue pas » ; c'était vrai à six minutes, faux à quatre. Une signature
+// valide interceptée (un proxy, un journal de réseau d'entreprise) se
+// renvoyait telle quelle pendant cinq minutes, chaque envoi coûtant un tour
+// Gemini. La signature couvre le corps, le device et l'horodatage : deux
+// requêtes honnêtes ne portent JAMAIS la même (l'horodatage est à la
+// milliseconde), donc une signature revue est un rejeu, sans exception.
+//
+// ⚠️ CE QUE ÇA NE FAIT PAS : la mémoire est celle d'UNE instance. À N
+// instances Vercel, un rejeu qui tombe sur une autre instance que l'original
+// passe — la protection vaut 1/N, et un démarrage à froid l'efface. C'est
+// exactement la limite du rate-limit au-dessus, pour la même raison. Le
+// partage passerait par Upstash (`SET sig 1 NX PX <fenêtre>` par REST, comme
+// `plafondJournalier`) ; la clé n'est pas posée, on ne le branche pas encore.
+// Le pire cas du neuf = l'ancien comportement : rien n'est refusé de plus
+// qu'avant, sauf un vrai rejeu.
+//
+// Bornée : au plus SIG_MAX_VUES entrées ; passé ça on purge les expirées, et
+// s'il en reste trop on jette les plus anciennes (ordre d'insertion). Une
+// signature oubliée trop tôt redevient rejouable — c'est le repli, pas une
+// panne : jamais un refus en trop.
+const SIG_VUES = new Map();
+const SIG_MAX_VUES = 20000;
+
+function signatureDejaVue(sig, now, fenetreMs) {
+  const cle = String(sig).slice(0, 128);
+  const expire = SIG_VUES.get(cle);
+  if (expire !== undefined && expire > now) return true;
+  SIG_VUES.delete(cle);
+  SIG_VUES.set(cle, now + (fenetreMs || 300000));
+  if (SIG_VUES.size > SIG_MAX_VUES) {
+    for (const [k, e] of SIG_VUES) if (e <= now) SIG_VUES.delete(k);
+    let aJeter = SIG_VUES.size - SIG_MAX_VUES;
+    for (const k of SIG_VUES.keys()) {
+      if (aJeter-- <= 0) break;
+      if (k !== cle) SIG_VUES.delete(k);
+    }
+  }
+  return false;
+}
+
+/** Le nombre de signatures retenues — pour le banc. */
+function tailleSignaturesVues() { return SIG_VUES.size; }
 
 function corpsJSON(req) {
   let body = req.body;
@@ -317,6 +433,22 @@ function roleFonctionVersUser(contents) {
 // la DERNIÈRE réponse, pour que l'endpoint la remonte telle quelle.
 const REESSAYABLES = new Set([429, 500, 502, 503, 504]);
 
+// ── La clé Gemini ne sort jamais d'ici ──────────────────────────────────────
+//
+// 24 sept. 2026 — la clé voyage dans l'URL (`?key=`), la forme que Google
+// documente et que la production a prouvée ; on ne la déplace pas dans un
+// en-tête sans pouvoir le jouer contre le vrai Google. Ce qu'on garantit à la
+// place : AUCUNE chaîne qui quitte ces deux fonctions (le `detail` rendu à
+// l'app, ce qui part au journal) ne la contient. Le texte d'erreur de Google
+// ne la répète pas aujourd'hui ; un message d'exception réseau, lui, peut
+// citer l'URL — d'où ce masque sur tout ce qui sort, et pas seulement sur ce
+// qu'on a vu fuir. Les `console.log` de ce fichier n'écrivent jamais l'URL.
+function sansCle(texte, key) {
+  const t = String(texte == null ? '' : texte);
+  if (!key) return t;
+  return t.split(String(key)).join('[clé]');
+}
+
 async function appelerGemini({ key, modeles, corps, delaiMs, tentativesParModele, attenteMs }) {
   const liste = Array.isArray(modeles) && modeles.length ? modeles : ['gemini-3.6-flash'];
   const essaisMax = Math.max(1, tentativesParModele || 2);
@@ -357,13 +489,13 @@ async function appelerGemini({ key, modeles, corps, delaiMs, tentativesParModele
           return { ok: true, status: r.status, json, texte, modele, tentatives };
         }
         dernier = { ok: false, status: r.status, texte, modele, tentatives,
-                    detail: texte.slice(0, 400), parcours };
+                    detail: sansCle(texte.slice(0, 400), key), parcours };
         parcours.push(modele + ':' + r.status);
         if (!REESSAYABLES.has(r.status)) return dernier;   // requête fausse : on ne s'acharne pas
       } catch (e) {
         dernier = { ok: false, status: 0, texte: '', modele, tentatives,
                     detail: (e && e.name === 'AbortError') ? `délai de ${delai} ms dépassé`
-                                                           : String((e && e.message) || e).slice(0, 200),
+                                                           : sansCle(String((e && e.message) || e).slice(0, 200), key),
                     parcours };
         parcours.push(modele + ':' + ((e && e.name === 'AbortError') ? 'délai' : 'panne'));
       } finally {
@@ -406,7 +538,28 @@ async function appelerGemini({ key, modeles, corps, delaiMs, tentativesParModele
 //   au bout de 48 h ; personne n'a à le remettre à zéro.
 //
 // Rendu : { atteint, compte, max, actif }. `atteint` vrai = refuser (429).
-async function plafondJournalier({ id, portee, max }) {
+//
+// 24 sept. 2026 — LA PANNE DU MAGASIN S'ÉCRIT UNE FOIS PAR MINUTE, pas à
+// chaque requête. Le fail-open est gardé (décision de Dino) ; mais un
+// magasin en panne pendant qu'on sert 5 000 personnes, c'était une ligne de
+// journal PAR REQUÊTE — des milliers de lignes identiques qui noient la seule
+// information utile (« il est en panne depuis quand ? ») et qui coûtent en
+// journalisation Vercel. `journalRare` garde l'heure du dernier message par
+// motif ET par portée, et se tait entre deux. La première panne s'écrit tout
+// de suite ; un banc peut avancer l'horloge par `now`.
+const JOURNAL_RARE = new Map();
+const JOURNAL_RARE_MS = 60000;
+
+function journalRare(cle, message, now) {
+  const t = now || Date.now();
+  const dernier = JOURNAL_RARE.get(cle) || 0;
+  if (t - dernier < JOURNAL_RARE_MS) return false;
+  JOURNAL_RARE.set(cle, t);
+  console.log(message);
+  return true;
+}
+
+async function plafondJournalier({ id, portee, max, now }) {
   const url = process.env.UPSTASH_REDIS_REST_URL;
   const jeton = process.env.UPSTASH_REDIS_REST_TOKEN;
   const plafond = Number(max) || 0;
@@ -421,19 +574,22 @@ async function plafondJournalier({ id, portee, max }) {
       body: JSON.stringify([['INCR', cle], ['EXPIRE', cle, 172800, 'NX']])
     });
     if (!r.ok) {
-      console.log(`[plafond] magasin ${r.status} — on laisse passer (${portee})`);
+      journalRare('plafond-statut:' + portee, `[plafond] magasin ${r.status} — on laisse passer (${portee})`, now);
       return { atteint: false, compte: 0, max: plafond, actif: true };
     }
     const j = await r.json();
     const compte = Number(Array.isArray(j) && j[0] && j[0].result);
     if (!Number.isFinite(compte)) {
-      console.log(`[plafond] réponse illisible — on laisse passer (${portee})`);
+      journalRare('plafond-illisible:' + portee, `[plafond] réponse illisible — on laisse passer (${portee})`, now);
       return { atteint: false, compte: 0, max: plafond, actif: true };
     }
     if (compte > plafond) console.log(`[plafond] ${portee} ${compte}/${plafond} — refusé pour ${String(id).slice(0, 12)}`);
     return { atteint: compte > plafond, compte, max: plafond, actif: true };
   } catch (e) {
-    console.log(`[plafond] panne ${String((e && e.message) || e).slice(0, 80)} — on laisse passer (${portee})`);
+    // Le message d'exception peut citer l'URL du magasin, jamais le jeton
+    // (il est dans un en-tête) ; on le tronque quand même.
+    journalRare('plafond-panne:' + portee,
+                `[plafond] panne ${String((e && e.message) || e).slice(0, 80)} — on laisse passer (${portee})`, now);
     return { atteint: false, compte: 0, max: plafond, actif: true };
   }
 }
@@ -493,13 +649,13 @@ async function ouvrirGeminiFlux({ key, modeles, corps, delaiMs }) {
       }
       const texte = await r.text().catch(() => '');
       dernier = { ok: false, status: r.status, modele, tentatives,
-                  detail: texte.slice(0, 400), parcours };
+                  detail: sansCle(texte.slice(0, 400), key), parcours };
       parcours.push(modele + ':' + r.status);
       if (!REESSAYABLES.has(r.status)) return dernier;
     } catch (e) {
       dernier = { ok: false, status: 0, modele, tentatives,
                   detail: (e && e.name === 'AbortError') ? `délai de ${delai} ms dépassé`
-                                                         : String((e && e.message) || e).slice(0, 200),
+                                                         : sansCle(String((e && e.message) || e).slice(0, 200), key),
                   parcours };
       parcours.push(modele + ':' + ((e && e.name === 'AbortError') ? 'délai' : 'panne'));
     } finally {
@@ -570,8 +726,10 @@ async function* partsDuFlux(reponse) {
 }
 
 module.exports = {
-  cors, rateLimited, identiteRequete, ipRequete,
-  verifierSecret, verifierSignature, corpsJSON, corpsBrut, canonique, egalConstant,
+  cors, entetesSurete, rateLimited, tailleRateLimit, identiteRequete, ipRequete,
+  deviceRequete, deviceIllisible,
+  verifierSecret, verifierSignature, signatureDejaVue, tailleSignaturesVues,
+  corpsJSON, corpsBrut, canonique, egalConstant, sansCle,
   appelerGemini, ouvrirGeminiFlux, partsDuFlux,
-  plafondJournalier, roleFonctionVersUser, extraireSuites
+  plafondJournalier, journalRare, roleFonctionVersUser, extraireSuites
 };
