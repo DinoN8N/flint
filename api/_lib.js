@@ -421,8 +421,133 @@ async function plafondJournalier({ id, portee, max }) {
   }
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// LA DIFFUSION PAR JETON — 24 sept. 2026
+//
+// POURQUOI, ET C'EST MESURÉ : le cycle du Coach fait toujours deux allers
+// (un tour d'outils, puis la rédaction), et c'est le SECOND qui pèse. Trois
+// chronos sur ce serveur, requêtes signées depuis le Mac :
+//
+//   « la VFC en détail »      → 3,5 s d'outils + 10,5 s de rédaction = 14,1 s
+//   « ma récup aujourd'hui »  → 1,8 s          + 1,4 s               =  3,2 s
+//
+// 75 % du temps dans la rédaction, et un facteur 7 d'écart d'une question à
+// l'autre. À l'écran, 14,8 s de trois points mesurés à la rafale. Aucun
+// correctif dans l'app ne raccourcit ça : le texte n'existe pas encore.
+//
+// `generateContent` rend tout d'un bloc à la fin. `streamGenerateContent`
+// avec `alt=sse` rend les morceaux au fil de l'écriture — le premier arrive
+// en une à deux secondes. C'est le même modèle, le même corps de requête, la
+// même facture : seule l'URL change.
+//
+// ⚠️ CE QUI EST DIFFÉRENT DE `appelerGemini`, ET QUI COMMANDE LA FORME :
+// on ne peut réessayer QU'AVANT d'avoir écrit le premier octet. Cette
+// fonction s'arrête donc à l'OUVERTURE du flux : elle essaie les modèles
+// l'un après l'autre tant qu'aucun n'a répondu 2xx, et rend la réponse
+// ouverte sans lire une ligne. Tout ce qui casse APRÈS casse au milieu d'une
+// réponse déjà commencée, et se dit à l'appelant, pas au modèle suivant.
+async function ouvrirGeminiFlux({ key, modeles, corps, delaiMs }) {
+  const liste = Array.isArray(modeles) && modeles.length ? modeles : ['gemini-3.6-flash'];
+  const delai = Math.max(1000, delaiMs || 25000);
+  let dernier = { ok: false, status: 0, detail: 'aucune tentative' };
+  let tentatives = 0;
+
+  for (const modele of liste) {
+    tentatives++;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modele}`
+              + `:streamGenerateContent?alt=sse&key=${key}`;
+    const ctrl = new AbortController();
+    // Le minuteur couvre l'OUVERTURE, pas la lecture : une réponse longue met
+    // légitimement plus de temps à finir qu'à commencer, et l'abandonner en
+    // cours de flux jetterait du texte déjà écrit. Il est désarmé dès que les
+    // en-têtes sont là (voir le `clearTimeout` du chemin heureux).
+    const minuteur = setTimeout(() => ctrl.abort(), delai);
+    try {
+      const r = await fetch(url, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(corps), signal: ctrl.signal
+      });
+      if (r.ok && r.body) {
+        clearTimeout(minuteur);
+        return { ok: true, status: r.status, reponse: r, modele, tentatives };
+      }
+      const texte = await r.text().catch(() => '');
+      dernier = { ok: false, status: r.status, modele, tentatives, detail: texte.slice(0, 400) };
+      if (!REESSAYABLES.has(r.status)) return dernier;
+    } catch (e) {
+      dernier = { ok: false, status: 0, modele, tentatives,
+                  detail: (e && e.name === 'AbortError') ? `délai de ${delai} ms dépassé`
+                                                         : String((e && e.message) || e).slice(0, 200) };
+    } finally {
+      clearTimeout(minuteur);
+    }
+    console.log(`[gemini] flux ${modele} indisponible — statut ${dernier.status}, on passe au suivant`);
+  }
+  return dernier;
+}
+
+/// Lit le SSE de Gemini et rend les `candidates[0].content.parts` au fur et à
+/// mesure. Un `data:` de Gemini porte un objet `GenerateContentResponse`
+/// entier ; on ne rend donc pas des caractères mais des PARTS — un fragment
+/// de texte, ou un `functionCall` complet.
+///
+/// ⚠️ LE TAMPON EST OBLIGATOIRE. Un morceau du réseau ne s'aligne pas sur une
+/// ligne SSE : une ligne `data:` peut arriver en trois paquets, et deux
+/// lignes dans un seul. Découper APRÈS avoir recollé est la seule lecture qui
+/// ne perde ni ne mélange rien.
+///
+/// ⚠️ ET ON NORMALISE LES FINS DE LIGNE AVANT DE DÉCOUPER — 24 sept. 2026,
+/// et ça a coûté une production muette. La première version cherchait « \n\n »
+/// et rien d'autre. Le banc passait (il fabriquait du « \n\n »), la vraie
+/// réponse ne rendait RIEN : un séparateur CRLF s'écrit « \r\n\r\n », qui ne
+/// contient pas « \n\n » — `indexOf` ne trouvait jamais un seul bloc, le texte
+/// restait vide, et le serveur annonçait « Flint n'a rien répondu ».
+///
+/// La leçon vaut plus que le correctif : un banc qui FABRIQUE l'entrée ne
+/// prouve que ce qu'on a pensé à fabriquer. Les CRLF sont maintenant au banc,
+/// mais la vraie garantie est ailleurs — voir le repli de `repondreEnFlux`,
+/// qui rend cette lecture incapable de faire pire que l'ancien chemin.
+async function* partsDuFlux(reponse) {
+  const lecteur = reponse.body.getReader();
+  const decodeur = new TextDecoder();
+  let tampon = '';
+  let blocs = 0;
+  const rendre = function* (bloc) {
+    for (const ligne of bloc.split('\n')) {
+      if (!ligne.startsWith('data:')) continue;
+      const charge = ligne.slice(5).trim();
+      if (!charge || charge === '[DONE]') continue;
+      let j = null;
+      try { j = JSON.parse(charge); } catch (e) { continue; }
+      const parts = j && j.candidates && j.candidates[0]
+                 && j.candidates[0].content && j.candidates[0].content.parts;
+      if (Array.isArray(parts)) yield parts;
+    }
+  };
+  while (true) {
+    const { done, value } = await lecteur.read();
+    if (done) break;
+    // Les CR disparaissent ici, une fois : après ça, tout le reste du fichier
+    // ne connaît qu'un monde en « \n ».
+    tampon += decodeur.decode(value, { stream: true }).replace(/\r\n?/g, '\n');
+    let coupe;
+    while ((coupe = tampon.indexOf('\n\n')) >= 0) {
+      const bloc = tampon.slice(0, coupe);
+      tampon = tampon.slice(coupe + 2);
+      blocs++;
+      yield* rendre(bloc);
+    }
+  }
+  // Un flux qui se termine sans ligne blanche finale garde son dernier
+  // événement dans le tampon. Il est complet — c'est la FIN du corps qui l'a
+  // clos, pas un séparateur — donc on le rend.
+  if (tampon.trim()) { blocs++; yield* rendre(tampon); }
+  if (!blocs) console.log('[gemini] flux : aucun bloc SSE lu — séparateur inattendu ?');
+}
+
 module.exports = {
   cors, rateLimited, identiteRequete, ipRequete,
   verifierSecret, verifierSignature, corpsJSON, corpsBrut, canonique, egalConstant,
-  appelerGemini, plafondJournalier, roleFonctionVersUser, extraireSuites
+  appelerGemini, ouvrirGeminiFlux, partsDuFlux,
+  plafondJournalier, roleFonctionVersUser, extraireSuites
 };

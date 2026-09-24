@@ -28,7 +28,8 @@
 // changer le contrat côté iOS (même forme de réponse).
 
 const { cors, rateLimited, identiteRequete, ipRequete,
-        verifierSecret, verifierSignature, corpsJSON, corpsBrut, appelerGemini, roleFonctionVersUser, extraireSuites,
+        verifierSecret, verifierSignature, corpsJSON, corpsBrut, appelerGemini,
+        ouvrirGeminiFlux, partsDuFlux, roleFonctionVersUser, extraireSuites,
         plafondJournalier } = require('./_lib');
 const { OUTILS } = require('./_coach-tools');
 const { promptSysteme, LANGUES } = require('./_coach-prompt');
@@ -134,6 +135,15 @@ module.exports = async function handler(req, res) {
     generationConfig: { maxOutputTokens: 4096 }
   };
 
+  // ═══ 24 SEPT. 2026 — LA DIFFUSION, SUR DEMANDE DU CLIENT ════════════════
+  //
+  // `flux: true` est ENVOYÉ PAR L'APP, il n'est pas décidé ici : une app déjà
+  // posée ne l'envoie pas et reçoit exactement le JSON d'avant, au bit près.
+  // C'est ce qui permet de déployer ce fichier sans attendre personne.
+  if (body.flux === true) {
+    return await repondreEnFlux({ req, res, t0, key, gReq, contents, langue });
+  }
+
   try {
     // 23 sept., 20 h — mesuré sur gemini-3.6-flash : 6,5 à 10 s par tour, et
     // une réponse longue à 22,5 s au journal = un essai COUPÉ à 12 s puis un
@@ -179,6 +189,164 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({ error: String((e && e.message) || e) });
   }
 };
+
+// ═══════════════════════════════════════════════════════════════════════════
+// LA RÉPONSE EN FLUX
+//
+// Même travail que la branche d'au-dessus — mêmes modèles, même corps, même
+// `extraireSuites` — mais le texte part au fil de l'écriture au lieu d'attendre
+// le point final. Le contrat de FIN est identique à l'octet : c'est voulu, le
+// client range la conversation avec le même code des deux côtés.
+//
+// LE PROTOCOLE, TROIS FORMES ET PAS UNE DE PLUS (un seul canal `data:`, pas de
+// `event:` nommé — un `switch` sur une clé se lit mieux qu'un aiguillage SSE
+// des deux côtés) :
+//
+//   {"d":"…"}      un morceau de texte, à coller au bout de ce qu'on a
+//   {"fin":{…}}    le tour complet : `mode`/`texte`/`suites`/`tourModele`,
+//                  ou `mode:"outils"`/`appels`/`tourModele`
+//   {"erreur":"…"} une panne APRÈS le premier octet (avant, c'est du JSON)
+//
+// ⚠️ LES EN-TÊTES SSE NE SONT POSÉS QU'APRÈS UNE OUVERTURE RÉUSSIE. Tant
+// qu'aucun octet n'est parti, une panne se dit en JSON avec son vrai statut —
+// donc exactement ce que l'app sait déjà lire, et son repli marche sans rien
+// savoir du flux.
+//
+// ⚠️ ET SI L'HÉBERGEMENT TAMPONNE, RIEN NE CASSE. Un proxy qui retient tout
+// jusqu'à la fin livre les mêmes événements dans le même ordre, tous à la
+// dernière seconde : le client les applique à la suite et l'écran se comporte
+// comme avant ce lot. C'est la propriété qui rend ce déploiement sûr — le pire
+// cas est le comportement d'aujourd'hui, jamais une régression.
+async function repondreEnFlux({ req, res, t0, key, gReq, contents, langue }) {
+  const g = await ouvrirGeminiFlux({ key, modeles: MODELES, corps: gReq, delaiMs: 28000 });
+  if (!g.ok) {
+    journal(req, 'flux-indisponible', t0, { statut: g.status, tentatives: g.tentatives });
+    return res.status(502).json({ error: 'Le Coach est indisponible à l\'instant. Réessaie dans un moment.',
+                                  gemini: g.status, detail: g.detail });
+  }
+  if (g.modele !== MODELES[0]) journal(req, 'flux-secours', t0, { modele: g.modele });
+
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream; charset=utf-8',
+    'Cache-Control': 'no-cache, no-transform',
+    'Connection': 'keep-alive',
+    // Pour les proxys de la famille nginx, qui tamponnent par défaut.
+    'X-Accel-Buffering': 'no'
+  });
+  // Un commentaire SSE, envoyé tout de suite : il pousse les en-têtes hors de
+  // la fonction sans rien promettre au client (les lignes `:` sont ignorées).
+  res.write(': ouvert\n\n');
+
+  const envoyer = (o) => res.write('data: ' + JSON.stringify(o) + '\n\n');
+
+  // Ce que le modèle a écrit jusqu'ici, et ce qu'on en a déjà donné.
+  let brut = '';
+  let emis = 0;
+  const appelsFn = [];
+  const partsModele = [];
+
+  // ═══ LA LIGNE « SUITES : » NE PART JAMAIS DANS LE FLUX ═══════════════════
+  //
+  // `extraireSuites` la détache à la fin — mais en flux, « à la fin » est trop
+  // tard : elle serait déjà passée à l'écran, et elle en repartirait. On
+  // retient donc la DERNIÈRE LIGNE tant qu'elle commence comme une consigne de
+  // suites, et seulement dans ce cas : un texte ordinaire n'est jamais retenu,
+  // même d'un caractère.
+  const DEBUT_SUITES = /^[ \t]*(?:\*\*)?[ \t]*(?:suites?|suggestions?|ensuite|next|siguientes?|a continuación)\b/i;
+  const partieSure = (t) => {
+    const coupe = t.lastIndexOf('\n');
+    if (coupe < 0) return DEBUT_SUITES.test(t) ? '' : t;
+    return DEBUT_SUITES.test(t.slice(coupe + 1)) ? t.slice(0, coupe + 1) : t;
+  };
+
+  try {
+    for await (const parts of partsDuFlux(g.reponse)) {
+      for (const p of parts) {
+        if (p.functionCall) {
+          appelsFn.push({ name: p.functionCall.name, args: p.functionCall.args || {} });
+          partsModele.push({ functionCall: p.functionCall });
+        } else if (typeof p.text === 'string' && p.text) {
+          brut += p.text;
+        }
+      }
+      if (!appelsFn.length) {
+        const sur = partieSure(brut);
+        if (sur.length > emis) { envoyer({ d: sur.slice(emis) }); emis = sur.length; }
+      }
+    }
+  } catch (e) {
+    journal(req, 'flux-rompu', t0, { message: String((e && e.message) || e).slice(0, 120), recu: brut.length });
+    envoyer({ erreur: 'La réponse s\'est interrompue. Repose ta question.' });
+    return res.end();
+  }
+
+  // Un tour d'outils : le texte éventuel ne compte pas (le modèle ne mélange
+  // pas les deux, mais on ne le suppose pas — `appels` gagne, et le client a
+  // reçu zéro `d` puisque la garde ci-dessus l'en empêche).
+  if (appelsFn.length) {
+    journal(req, 'flux-outils', t0, { appels: appelsFn.length, tours: contents.length });
+    envoyer({ fin: { mode: 'outils', appels: appelsFn,
+                     tourModele: { role: 'model', parts: partsModele } } });
+    return res.end();
+  }
+
+  // ═══ LE FILET — 24 SEPT. 2026, ÉCRIT APRÈS S'ÊTRE FAIT PRENDRE ══════════
+  //
+  // Première version : un flux vide rendait une erreur. Elle est tombée le
+  // jour même, sur la vraie chaîne — le séparateur SSE de Google est en CRLF,
+  // le découpage cherchait « \n\n », zéro bloc lu, zéro texte. Le banc était
+  // vert : il FABRIQUAIT ses séparateurs, donc il ne prouvait que ce qu'on
+  // avait pensé à fabriquer.
+  //
+  // Le CRLF est corrigé (`partsDuFlux`) et il est au banc. Mais corriger LE
+  // défaut ne corrige pas LA CLASSE de défaut : lire un flux qu'on ne contrôle
+  // pas, c'est parier sur sa forme, et ce pari se reperdra (un `[DONE]` d'un
+  // dialecte, une ligne `event:` qu'on n'attend pas, un jour où Google change
+  // de transport).
+  //
+  // Donc : si le flux n'a rien rendu, ON NE SE PLAINT PAS, ON REFAIT L'APPEL
+  // PAR L'ANCIEN CHEMIN et on livre le résultat dans le même `fin`. Le client
+  // ne voit aucune différence — sinon que ce tour-là n'aura pas diffusé. Le
+  // pire cas de la diffusion redevient ainsi, exactement, le comportement
+  // d'avant elle : c'est la seule forme sous laquelle ce chantier avait le
+  // droit d'approcher la production.
+  let brutFinal = brut;
+  if (!brutFinal.trim()) {
+    journal(req, 'flux-vide-repli', t0, { modele: g.modele });
+    const r = await appelerGemini({ key, modeles: MODELES, corps: gReq,
+                                    delaiMs: 28000, tentativesParModele: 1 });
+    const parts = (r.ok && r.json && r.json.candidates && r.json.candidates[0]
+                && r.json.candidates[0].content && r.json.candidates[0].content.parts) || [];
+    const appelsRepli = parts.filter(p => p.functionCall).map(p => ({
+      name: p.functionCall.name, args: p.functionCall.args || {} }));
+    if (appelsRepli.length) {
+      envoyer({ fin: { mode: 'outils', appels: appelsRepli,
+                       tourModele: r.json.candidates[0].content } });
+      return res.end();
+    }
+    brutFinal = parts.map(p => p.text || '').join('');
+  }
+
+  const propre = brutFinal.trim();
+  if (!propre) {
+    journal(req, 'flux-vide', t0, {});
+    envoyer({ erreur: 'Flint n\'a rien répondu. Repose ta question.' });
+    return res.end();
+  }
+
+  const { texte, suites } = extraireSuites(propre);
+  journal(req, 'flux-reponse', t0, { tours: contents.length, sortie: texte.length,
+                                     suites: suites.length, lang: langue, modele: g.modele });
+  // Le reliquat : ce qu'on a retenu et qui n'était PAS une ligne de suites
+  // (dernier paragraphe sans saut de ligne final, le cas ordinaire), plus la
+  // correction si `extraireSuites` a coupé plus court que notre garde.
+  if (texte.length > emis) envoyer({ d: texte.slice(emis) });
+  // `tourModele` garde le texte BRUT, suites comprises : c'est l'historique que
+  // le modèle relira, pas l'écran. Même règle que la branche non diffusée.
+  envoyer({ fin: { mode: 'reponse', texte, suites,
+                   tourModele: { role: 'model', parts: [{ text: brutFinal }] } } });
+  return res.end();
+}
 
 // ═══ CE QU'ON ÉCRIT, ET CE QU'ON N'ÉCRIT JAMAIS ════════════════════════════
 //
