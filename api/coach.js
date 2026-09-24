@@ -155,9 +155,13 @@ module.exports = async function handler(req, res) {
     // patience côté client, les deux suivants servent surtout le journal.
     const g = await appelerGemini({ key, modeles: MODELES, corps: gReq, delaiMs: 28000, tentativesParModele: 1 });
     if (!g.ok) {
-      journal(req, 'gemini-indisponible', t0, { statut: g.status, tentatives: g.tentatives, modele: g.modele || '-' });
+      journal(req, 'gemini-indisponible', t0, { statut: g.status, tentatives: g.tentatives,
+                                                modele: g.modele || '-', parcours: (g.parcours || []).join(' ') });
       return res.status(502).json({ error: 'Le Coach est indisponible à l\'instant. Réessaie dans un moment.',
-                                    gemini: g.status, detail: g.detail });
+                                    gemini: g.status, detail: g.detail,
+                                    // Un verdict PAR MODÈLE : `detail` ne dit que le dernier,
+                                    // et ça a déjà produit un diagnostic faux (voir `_lib.js`).
+                                    parcours: g.parcours || [] });
     }
     if (g.modele !== MODELES[0]) journal(req, 'secours', t0, { modele: g.modele, tentatives: g.tentatives });
     const j = g.json;
@@ -220,9 +224,11 @@ module.exports = async function handler(req, res) {
 async function repondreEnFlux({ req, res, t0, key, gReq, contents, langue }) {
   const g = await ouvrirGeminiFlux({ key, modeles: MODELES, corps: gReq, delaiMs: 28000 });
   if (!g.ok) {
-    journal(req, 'flux-indisponible', t0, { statut: g.status, tentatives: g.tentatives });
+    journal(req, 'flux-indisponible', t0, { statut: g.status, tentatives: g.tentatives,
+                                            parcours: (g.parcours || []).join(' ') });
     return res.status(502).json({ error: 'Le Coach est indisponible à l\'instant. Réessaie dans un moment.',
-                                  gemini: g.status, detail: g.detail });
+                                  gemini: g.status, detail: g.detail,
+                                  parcours: g.parcours || [] });
   }
   if (g.modele !== MODELES[0]) journal(req, 'flux-secours', t0, { modele: g.modele });
 

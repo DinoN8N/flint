@@ -189,6 +189,21 @@ console.log('\n═══ ⑥ UNE PANNE D\'OUVERTURE RÉPOND DU JSON, PAS DU SSE 
     res.corps && typeof res.corps.error === 'string' && res.corps.error.length > 10,
     JSON.stringify(res.corps));
   v('aucun octet écrit', res.morceaux.length === 0);
+
+  // ⚠️ LE VERDICT DE CHAQUE MODÈLE, PAS SEULEMENT DU DERNIER. `detail` ne
+  // porte que l'erreur du dernier essayé, et ça a produit un diagnostic faux
+  // le 24 sept. : annoncé « 503, Google sature » à partir du dernier maillon,
+  // alors que le journal montrait `3.6-flash:429` — un quota — en tête de
+  // chaîne. Les deux pannes n'appellent pas du tout la même réponse.
+  v('le `parcours` nomme les trois modèles',
+    Array.isArray(res.corps.parcours) && res.corps.parcours.length === 3,
+    JSON.stringify(res.corps.parcours));
+  v('  … chacun avec son verdict',
+    (res.corps.parcours || []).every(x => /^gemini-[\w.-]+:\d+$/.test(x)),
+    JSON.stringify(res.corps.parcours));
+  v('  … dans l\'ordre de la chaîne',
+    (res.corps.parcours || [])[0].startsWith('gemini-3.6-flash:'),
+    JSON.stringify(res.corps.parcours));
 }
 
 console.log('\n═══ ⑦ LE MODÈLE NE RÉPOND RIEN : UNE ERREUR, PAS UN FIN VIDE ═══');

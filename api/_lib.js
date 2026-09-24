@@ -324,6 +324,20 @@ async function appelerGemini({ key, modeles, corps, delaiMs, tentativesParModele
   const delai = Math.max(1000, delaiMs || 25000);
   let dernier = { ok: false, status: 0, texte: '', detail: 'aucune tentative' };
   let tentatives = 0;
+  // ═══ 24 SEPT. 2026 — `detail` NE PORTAIT QUE LE DERNIER MAILLON ═════════
+  //
+  // Coûté une heure et un diagnostic faux, écrit trois fois à Dino : la
+  // réponse 502 ne montre que `dernier.detail`, donc l'erreur du DERNIER
+  // modèle essayé. Le journal Vercel, lui, avait la vérité depuis le début —
+  // une ligne par modèle. Lu là : `3.6-flash` rendait **429** (un quota),
+  // `3.5-flash-lite` **statut 0** (il PEND, et mange 28 s de patience), et
+  // seul `3.1-flash-lite` rendait 503. J'ai annoncé « 503 high demand sur
+  // les trois », c'est-à-dire « attends que Google se calme », alors que le
+  // modèle principal était simplement à court de quota.
+  //
+  // Les trois verdicts voyagent maintenant avec l'erreur. Ce n'est pas pour
+  // l'utilisateur — `error` reste sa phrase — c'est pour qui lit la panne.
+  const parcours = [];
 
   for (const modele of liste) {
     for (let essai = 0; essai < essaisMax; essai++) {
@@ -343,12 +357,15 @@ async function appelerGemini({ key, modeles, corps, delaiMs, tentativesParModele
           return { ok: true, status: r.status, json, texte, modele, tentatives };
         }
         dernier = { ok: false, status: r.status, texte, modele, tentatives,
-                    detail: texte.slice(0, 400) };
+                    detail: texte.slice(0, 400), parcours };
+        parcours.push(modele + ':' + r.status);
         if (!REESSAYABLES.has(r.status)) return dernier;   // requête fausse : on ne s'acharne pas
       } catch (e) {
         dernier = { ok: false, status: 0, texte: '', modele, tentatives,
                     detail: (e && e.name === 'AbortError') ? `délai de ${delai} ms dépassé`
-                                                           : String((e && e.message) || e).slice(0, 200) };
+                                                           : String((e && e.message) || e).slice(0, 200),
+                    parcours };
+        parcours.push(modele + ':' + ((e && e.name === 'AbortError') ? 'délai' : 'panne'));
       } finally {
         clearTimeout(minuteur);
       }
@@ -451,6 +468,9 @@ async function ouvrirGeminiFlux({ key, modeles, corps, delaiMs }) {
   const delai = Math.max(1000, delaiMs || 25000);
   let dernier = { ok: false, status: 0, detail: 'aucune tentative' };
   let tentatives = 0;
+  // Voir la note de `appelerGemini` : les trois verdicts voyagent, pas
+  // seulement celui du dernier essayé.
+  const parcours = [];
 
   for (const modele of liste) {
     tentatives++;
@@ -472,12 +492,16 @@ async function ouvrirGeminiFlux({ key, modeles, corps, delaiMs }) {
         return { ok: true, status: r.status, reponse: r, modele, tentatives };
       }
       const texte = await r.text().catch(() => '');
-      dernier = { ok: false, status: r.status, modele, tentatives, detail: texte.slice(0, 400) };
+      dernier = { ok: false, status: r.status, modele, tentatives,
+                  detail: texte.slice(0, 400), parcours };
+      parcours.push(modele + ':' + r.status);
       if (!REESSAYABLES.has(r.status)) return dernier;
     } catch (e) {
       dernier = { ok: false, status: 0, modele, tentatives,
                   detail: (e && e.name === 'AbortError') ? `délai de ${delai} ms dépassé`
-                                                         : String((e && e.message) || e).slice(0, 200) };
+                                                         : String((e && e.message) || e).slice(0, 200),
+                  parcours };
+      parcours.push(modele + ':' + ((e && e.name === 'AbortError') ? 'délai' : 'panne'));
     } finally {
       clearTimeout(minuteur);
     }
