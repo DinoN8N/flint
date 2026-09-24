@@ -252,7 +252,16 @@ function corpsBrut(req) {
 // intact, tableau vide : une réponse sans suites reste une réponse.
 function extraireSuites(texte) {
   const t = String(texte || '').trimEnd();
-  const m = t.match(/(?:^|\n)[ \t]*(?:\*\*)?[ \t]*(?:suites?|suggestions?|ensuite|next|siguientes?|a continuación)[ \t]*(?:\*\*)?[ \t]*[:：][ \t]*(.+)$/i);
+  // 24 sept. 2026 — vu en prod (compte sans bracelet) : le modèle écrit parfois
+  // « Suites : » puis va à la ligne AVANT la liste (au lieu de la coller après
+  // le « : »). Le `[ \t]*` d'origine ne traverse pas un saut de ligne : la
+  // ligne « Suites : » restait affichée telle quelle, sans rien extraire.
+  // `\s*` traverse un ou plusieurs sauts de ligne (donc une ligne blanche
+  // aussi) — mais `(.+)$` juste après reste volontairement SANS `s` : la
+  // liste doit filer jusqu'à la toute fin sans plus jamais croiser de saut de
+  // ligne, sinon ce n'est pas la dernière chose du texte (cas ⑪r3 : « Suites :
+  // au milieu ? » suivie d'une autre ligne ne doit RIEN extraire).
+  const m = t.match(/(?:^|\n)[ \t]*(?:\*\*)?[ \t]*(?:suites?|suggestions?|ensuite|next|siguientes?|a continuación)[ \t]*(?:\*\*)?[ \t]*[:：]\s*(.+)$/i);
   if (!m) return { texte: t, suites: [] };
   const suites = m[1].split('|')
     .map(x => x.replace(/\*\*/g, '').replace(/^[\s\-–•]+/, '').trim())

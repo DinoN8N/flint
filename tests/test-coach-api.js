@@ -290,6 +290,15 @@ console.log('\n═══ ⑪ LES SUITES : LA DERNIÈRE LIGNE DEVIENT UN TABLEAU 
   v('  … au plus trois suites, et un texte vide ne devient pas vide (la ligne reste)',
     r4.suites.length === 3 && r4.texte === 'Suites : a | b | c | d | e');
   v('  … sans ligne : texte intact, tableau vide', lib.extraireSuites('Bonne nuit.').suites.length === 0 && lib.extraireSuites(null).texte === '');
+  // 24 sept., 09 h — vu en prod (compte sans bracelet) : « Suites : » va à la
+  // ligne AVANT la liste, au lieu de la coller après le « : ».
+  const r6 = lib.extraireSuites('**Pas assez de données.**\n\n→ Porte le bracelet.\n\nSuites :\nComment réactiver mes données ? | Pourquoi ma VFC ne remonte pas ?');
+  v('  … « Suites : » suivie d\'un SAUT DE LIGNE avant la liste est quand même extraite',
+    r6.suites.length === 2 && r6.suites[0] === 'Comment réactiver mes données ?'
+    && r6.texte === '**Pas assez de données.**\n\n→ Porte le bracelet.');
+  const r7 = lib.extraireSuites('Rien à extraire ici.\nSuites :\nau milieu ?\nEncore une ligne.');
+  v('  … et ce saut de ligne ne réintroduit pas le cas ⑪r3 : une ligne APRÈS la liste, rien n\'est extrait',
+    r7.suites.length === 0 && r7.texte === 'Rien à extraire ici.\nSuites :\nau milieu ?\nEncore une ligne.');
 }
 
 console.log('\n' + vert + ' vert(s), ' + rouge + ' rouge(s)\n');
