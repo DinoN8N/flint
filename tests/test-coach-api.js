@@ -226,8 +226,13 @@ console.log('\n═══ ⑨ LA DEUXIÈME QUESTION : DES FLOTTANTS, ET LES OCTET
   process.env.COACH_SIG_SECRET = 'secret-de-papier';
   const signer = (octets, dev, ts) => crypto.createHmac('sha256', 'secret-de-papier')
     .update(dev + '.' + ts + '.' + crypto.createHash('sha256').update(octets).digest('hex')).digest('hex');
+  // 24 sept. 2026 — un horodatage DISTINCT par requête : depuis le nonce
+  // (`signatureDejaVue`), deux requêtes qui signent les mêmes octets pour le
+  // même device dans la même milliseconde portent la même signature, et la
+  // seconde est un rejeu. Ce banc était vert par chance d'horloge.
+  let tick = 0;
   const requete = (octetsSignes, corps) => {
-    const ts = String(Date.now());
+    const ts = String(Date.now() + (tick++));
     return { headers: { 'x-flint-device': 'ABC', 'x-flint-ts': ts, 'x-flint-sig': signer(octetsSignes, 'ABC', ts) }, body: corps };
   };
   // Corps PARSÉ (application/json) : le serveur ne peut que canoniser, et

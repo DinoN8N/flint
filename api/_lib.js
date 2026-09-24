@@ -75,13 +75,25 @@ const RL_WINDOW = 60000;
 // les plus anciennes (un `Map` itère dans l'ordre d'insertion) : perdre le
 // compteur d'un device inventé n'a aucun coût — c'est l'IP qui le tient.
 const RL_MAX_CLES = 20000;
+// Le balayage des clés expirées coûte O(taille) ; au-delà de 5 000 clés il
+// tournait à CHAQUE requête (mesuré au banc : 30 000 appels → minutes). Une
+// fois par seconde suffit — entre deux, c'est le plafond dur qui tient.
+let RL_DERNIER_MENAGE = 0;
 
 function compter(cle, max, now) {
   const arr = (RL.get(cle) || []).filter(t => now - t < RL_WINDOW);
   arr.push(now);
+  // 24 sept. 2026 — UNE IP QUI INONDE NE FAIT PAS GROSSIR SON TABLEAU. Il
+  // gardait TOUS les horodatages de la minute : 30 000 requêtes = 30 000
+  // entrées filtrées à chaque appel, O(n²) — mesuré 82 s au banc. Or « plus
+  // de max dans la fenêtre » équivaut exactement à « le (max+1)-ième plus
+  // récent est encore dans la fenêtre » : ne garder que ces max+1 derniers
+  // rend le MÊME verdict, au même instant, pour O(max) par appel.
+  if (arr.length > max + 1) arr.splice(0, arr.length - (max + 1));
   RL.delete(cle);           // réinséré en queue : les plus anciennes restent en tête
   RL.set(cle, arr);
-  if (RL.size > 5000) {
+  if (RL.size > 5000 && now - RL_DERNIER_MENAGE > 1000) {
+    RL_DERNIER_MENAGE = now;
     for (const k of RL.keys()) {
       if (!(RL.get(k) || []).some(t => now - t < RL_WINDOW)) RL.delete(k);
     }
@@ -285,6 +297,7 @@ function verifierSignature(req, corpsBrut, options) {
 // panne : jamais un refus en trop.
 const SIG_VUES = new Map();
 const SIG_MAX_VUES = 20000;
+let SIG_DERNIER_MENAGE = 0;   // même règle que le rate-limit : un balayage par seconde au plus
 
 function signatureDejaVue(sig, now, fenetreMs) {
   const cle = String(sig).slice(0, 128);
@@ -293,7 +306,10 @@ function signatureDejaVue(sig, now, fenetreMs) {
   SIG_VUES.delete(cle);
   SIG_VUES.set(cle, now + (fenetreMs || 300000));
   if (SIG_VUES.size > SIG_MAX_VUES) {
-    for (const [k, e] of SIG_VUES) if (e <= now) SIG_VUES.delete(k);
+    if (now - SIG_DERNIER_MENAGE > 1000) {
+      SIG_DERNIER_MENAGE = now;
+      for (const [k, e] of SIG_VUES) if (e <= now) SIG_VUES.delete(k);
+    }
     let aJeter = SIG_VUES.size - SIG_MAX_VUES;
     for (const k of SIG_VUES.keys()) {
       if (aJeter-- <= 0) break;

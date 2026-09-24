@@ -27,12 +27,53 @@
 // côté UI. Une vraie diffusion par jeton pourra remplacer ceci plus tard sans
 // changer le contrat côté iOS (même forme de réponse).
 
-const { cors, rateLimited, identiteRequete, ipRequete,
+const { cors, rateLimited, identiteRequete, ipRequete, deviceIllisible,
         verifierSecret, verifierSignature, corpsJSON, corpsBrut, appelerGemini,
         ouvrirGeminiFlux, partsDuFlux, roleFonctionVersUser, extraireSuites,
-        plafondJournalier } = require('./_lib');
+        plafondJournalier, sansCle } = require('./_lib');
 const { OUTILS } = require('./_coach-tools');
-const { promptSysteme, LANGUES } = require('./_coach-prompt');
+const { promptSysteme, LANGUES, TONS } = require('./_coach-prompt');
+
+// ═══ 24 SEPT. 2026 — LA TAILLE DU CORPS, MESURÉE PUIS BORNÉE ═════════════════
+//
+// `contents.length ≤ 60` bornait le NOMBRE de tours, pas leur poids : un tour
+// de 4 Mo passait. Mesuré ce jour (tests/mesure de conversation, 60 tours :
+// 15 questions, 15 réponses de 2 000 caractères, 15 tours d'outils dont trois
+// avec 30 nuits + 90 jours d'activités) : 107 Ko. Si CHAQUE tour d'outils
+// portait les deux historiques lourds, ~340 Ko ; la plus grosse part mesurée
+// (30 nuits) pèse 12 Ko. Bornes : 768 Ko pour le corps entier (2× le pire
+// cas légitime, 7× le cas réel), 64 Ko par part (5× la plus grosse mesurée),
+// 16 parts par tour. Au-delà : 413, une phrase que l'app affiche telle quelle.
+// Vercel coupe de toute façon à 4,5 Mo — mais entre 768 Ko et 4,5 Mo, c'est
+// Gemini qui facturait, au jeton.
+const CORPS_MAX_OCTETS = 768 * 1024;
+const PART_MAX_OCTETS = 64 * 1024;
+const PARTS_MAX_PAR_TOUR = 16;
+
+function tailleCorps(req) {
+  const b = req.body;
+  if (Buffer.isBuffer(b)) return b.length;
+  if (typeof b === 'string') return Buffer.byteLength(b, 'utf8');
+  // Déjà parsé par Vercel : le coût réseau est payé, on borne quand même ce
+  // qu'on renverrait à Gemini.
+  try { return Buffer.byteLength(JSON.stringify(b == null ? '' : b), 'utf8'); } catch (e) { return 0; }
+}
+
+/** Rend une raison si un tour de `contents` est hors gabarit, sinon ''. */
+function tourHorsGabarit(contents) {
+  for (const tour of contents) {
+    if (!tour || typeof tour !== 'object') return 'tour illisible';
+    const parts = tour.parts;
+    if (!Array.isArray(parts)) return 'tour sans parts';
+    if (parts.length > PARTS_MAX_PAR_TOUR) return 'trop de parts dans un tour';
+    for (const p of parts) {
+      let n = 0;
+      try { n = Buffer.byteLength(JSON.stringify(p == null ? '' : p), 'utf8'); } catch (e) { return 'part illisible'; }
+      if (n > PART_MAX_OCTETS) return 'part trop lourde';
+    }
+  }
+  return '';
+}
 
 // 23 sept. 2026 — le premier est celui qu'on veut ; le second est celui qu'on
 // accepte quand Google déclare le premier saturé (503 « high demand », mesuré
@@ -76,6 +117,12 @@ module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
 
+  // 24 sept. 2026 — un `x-flint-device` présent mais hors forme (espace,
+  // saut de ligne, 129 caractères…) est refusé avant tout : il sert de clé de
+  // rate-limit, de plafond et de journal. Absent, on continue (l'IP fait
+  // l'identité, comme depuis toujours). Voir `deviceRequete` dans `_lib.js`.
+  if (deviceIllisible(req)) return res.status(400).json({ error: 'en-tête x-flint-device illisible' });
+
   const id = identiteRequete(req);
   if (rateLimited(id, RL_MAX, { ip: ipRequete(req) })) {
     return res.status(429).json({ error: 'Trop de requêtes, réessaie dans une minute.' });
@@ -100,7 +147,18 @@ module.exports = async function handler(req, res) {
   }
 
   const key = process.env.GEMINI_API_KEY;
-  if (!key) return res.status(500).json({ error: 'GEMINI_API_KEY manquante (variable d\'env Vercel)' });
+  if (!key) {
+    // 24 sept. 2026 — le NOM de la variable reste au journal serveur ; la
+    // réponse ne dit plus quelle pièce manque. Même statut qu'avant (500).
+    console.log('[coach] GEMINI_API_KEY absente — configuration serveur incomplète');
+    return res.status(500).json({ error: 'configuration serveur incomplète' });
+  }
+
+  // La taille AVANT de parser : un corps de 4 Mo ne mérite pas un JSON.parse.
+  if (tailleCorps(req) > CORPS_MAX_OCTETS) {
+    journal(req, 'trop-lourd', t0, { octets: tailleCorps(req) });
+    return res.status(413).json({ error: 'Conversation trop lourde. Commence une nouvelle discussion.' });
+  }
 
   const body = corpsJSON(req);
   const contents = Array.isArray(body.contents) ? body.contents : null;
@@ -108,8 +166,17 @@ module.exports = async function handler(req, res) {
   // Borne large mais réelle : une conversation ne doit pas pouvoir gonfler la
   // requête Gemini sans limite (coût, latence).
   if (contents.length > 60) return res.status(400).json({ error: 'conversation trop longue' });
+  // Et chaque tour, chaque part (voir la mesure en tête de fichier).
+  const horsGabarit = tourHorsGabarit(contents);
+  if (horsGabarit) {
+    journal(req, 'trop-lourd', t0, { raison: horsGabarit });
+    return res.status(413).json({ error: 'Conversation trop lourde. Commence une nouvelle discussion.', detail: horsGabarit });
+  }
 
-  const ton = typeof body.ton === 'string' ? body.ton : 'aucun';
+  // Même règle que `langue` : table fermée. `TONS[ton]` sur un objet ordinaire
+  // acceptait « constructor » ou « __proto__ » et collait `function Object()`
+  // dans le prompt — sans danger, mais pas un ton.
+  const ton = Object.prototype.hasOwnProperty.call(TONS, body.ton) ? body.ton : 'aucun';
   // La langue de l'APP (fr/en/es), envoyée par le client depuis la v2584. On la
   // ramène à la table fermée ICI, et pas seulement dans le prompt : ce code part
   // aussi au journal, et on ne veut pas y écrire dix kilo-octets choisis par
@@ -189,8 +256,13 @@ module.exports = async function handler(req, res) {
     journal(req, 'reponse', t0, { tours: contents.length, sortie: texte.length, suites: suites.length, lang: langue });
     return res.status(200).json({ mode: 'reponse', texte, suites, tourModele: content });
   } catch (e) {
-    journal(req, 'panne', t0, { message: String((e && e.message) || e).slice(0, 120) });
-    return res.status(500).json({ error: String((e && e.message) || e) });
+    // 24 sept. 2026 — le message brut d'une exception partait à l'app tel
+    // quel : un chemin de fichier, une URL, la clé si un jour un message la
+    // citait. `error` est une phrase pour l'écran ; `detail` garde le message
+    // (tronqué, clé masquée) pour lire la panne — jamais la pile.
+    const message = sansCle(String((e && e.message) || e).slice(0, 120), key);
+    journal(req, 'panne', t0, { message });
+    return res.status(500).json({ error: 'Le Coach a rencontré une erreur. Réessaie dans un moment.', detail: message });
   }
 };
 
@@ -234,7 +306,11 @@ async function repondreEnFlux({ req, res, t0, key, gReq, contents, langue }) {
 
   res.writeHead(200, {
     'Content-Type': 'text/event-stream; charset=utf-8',
-    'Cache-Control': 'no-cache, no-transform',
+    // `no-store` plutôt que `no-cache` (24 sept.) : même règle que le JSON,
+    // rien de cette réponse ne se garde ; `no-transform` reste, contre la
+    // recompression d'un proxy qui casserait le découpage.
+    'Cache-Control': 'no-store, no-transform',
+    'X-Content-Type-Options': 'nosniff',
     'Connection': 'keep-alive',
     // Pour les proxys de la famille nginx, qui tamponnent par défaut.
     'X-Accel-Buffering': 'no'
