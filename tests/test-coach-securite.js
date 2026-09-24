@@ -288,6 +288,56 @@ console.log('\n═══ ⑨ COACH.JS : LE REJEU DE BOUT EN BOUT, ET LE FLUX ═
     res.code === 200 && String(res.entetes['Cache-Control']).includes('no-store') && String(res.entetes['Cache-Control']).includes('no-transform')
     && res.entetes['X-Content-Type-Options'] === 'nosniff', JSON.stringify(res.entetes));
 }
+console.log('\n═══ ⑩ SCAN-MEAL.JS : LE TEXTE, LA PHOTO, LE CORPS, LE MIME, LES ERREURS ═══');
+{
+  const scan = require(path.join(__dirname, '..', 'api', 'scan-meal.js'));
+  const key = process.env.GEMINI_API_KEY;
+  let dernier = null;
+  global.fetch = async (url, init) => {
+    dernier = JSON.parse(init.body);
+    return { ok: true, status: 200, text: async () => JSON.stringify({ candidates: [{ content: { parts: [{ text: JSON.stringify({ mealName: 'Banc', items: [], healthScore: 7 }) }] } }] }) };
+  };
+  const ent = (extra) => Object.assign({ 'x-flint-key': 'secret-de-banc', 'x-forwarded-for': '203.0.113.77' }, extra || {});
+  let res = fauxRes();
+  await scan(fauxReq(ent(), { text: 'deux œufs' }), res);
+  v('un texte ordinaire passe (200)', res.code === 200 && res.corps.mealName === 'Banc', 'code ' + res.code + ' ' + JSON.stringify(res.corps));
+  v('  … avec no-store et nosniff', res.entetes['Cache-Control'] === 'no-store' && res.entetes['X-Content-Type-Options'] === 'nosniff');
+  res = fauxRes();
+  await scan(fauxReq(ent(), { text: 'a'.repeat(20000) }), res);
+  v('un texte de 20 000 caractères est tronqué à 800 avant Gemini',
+    res.code === 200 && dernier.contents[0].parts[0].text.endsWith('a'.repeat(800)) && !dernier.contents[0].parts[0].text.endsWith('a'.repeat(801)));
+  res = fauxRes();
+  await scan(fauxReq(ent(), { image: 'x'.repeat(3 * 1024 * 1024 + 1) }), res);
+  v('une photo de plus de 3 Mo → 413', res.code === 413, 'code ' + res.code);
+  res = fauxRes();
+  await scan(fauxReq(ent(), JSON.stringify({ image: 'ab', bourrage: 'x'.repeat(3.6 * 1024 * 1024) })), res);
+  v('un corps de 3,6 Mo (photo minuscule, bourrage ailleurs) → 413', res.code === 413, 'code ' + res.code);
+  res = fauxRes();
+  await scan(fauxReq(ent(), { image: 'abcd', mime: 'image/jpeg; boundary=' + 'x'.repeat(500) }), res);
+  v('un `mime` hors forme retombe sur image/jpeg', res.code === 200 && dernier.contents[0].parts[1].inline_data.mime_type === 'image/jpeg');
+  res = fauxRes();
+  await scan(fauxReq(ent({ 'x-flint-key': 'faux' }), { text: 'x' }), res);
+  v('mauvaise clé d\'app → 401 (comparaison à temps constant)', res.code === 401);
+
+  delete process.env.GEMINI_API_KEY;
+  res = fauxRes();
+  const lignes = await capterJournal(() => scan(fauxReq(ent(), { text: 'x' }), res));
+  v('clé Gemini absente → 500 sans le nom de la variable', res.code === 500 && !JSON.stringify(res.corps).includes('GEMINI'));
+  v('  … journal serveur nommé', lignes.some(l => l.includes('GEMINI_API_KEY')));
+  process.env.GEMINI_API_KEY = key;
+
+  // Une exception dans le chemin heureux : JSON Gemini qui casse `round`… on
+  // force plutôt `res.json` à lever au 200, comme pour le Coach.
+  res = fauxRes();
+  const jsonOrig = res.json; let premiere = true;
+  res.json = (o) => { if (premiere) { premiere = false; throw new Error('boum ' + key); } return jsonOrig(o); };
+  await capterJournal(() => scan(fauxReq(ent(), { text: 'x' }), res));
+  v('une exception → 500 avec une phrase et un `detail` sans la clé',
+    res.code === 500 && res.corps.error.startsWith("L'analyse") && !res.corps.detail.includes(key), JSON.stringify(res.corps));
+  const src = require('fs').readFileSync(path.join(__dirname, '..', 'api', 'scan-meal.js'), 'utf8');
+  v('scan-meal.js ne renvoie plus « GEMINI_API_KEY manquante »', !/json\(\{ error: 'GEMINI_API_KEY/.test(src));
+  v('  … et borne le texte à 800 (la ligne qui le prouve)', /\.slice\(0, 800\)/.test(src));
+}
 global.fetch = vraiFetch;
 
 console.log('\n' + vert + ' vert(s), ' + rouge + ' rouge(s)\n');

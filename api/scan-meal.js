@@ -12,7 +12,23 @@
 // contraint par `responseSchema`, donc le reste de ce fichier ne change pas.
 // Ce fichier n'importait rien de `_lib.js` (il a son propre rate-limit, plus
 // ancien) : l'aide de réessai est la première chose qu'il partage avec le Coach.
-const { appelerGemini, plafondJournalier, identiteRequete } = require('./_lib');
+const { appelerGemini, plafondJournalier, identiteRequete, entetesSurete, egalConstant, sansCle } = require('./_lib');
+
+// 24 sept. 2026 — LES BORNES DU SCAN. La photo l'était (3 Mo, ci-dessous),
+// le texte l'était (800 caractères) ; le CORPS, lui, ne l'était pas : un
+// JSON de 4 Mo avec une photo de 100 Ko passait le parse avant qu'on regarde
+// la photo. 3,5 Mo pour le tout = la photo maximale plus une marge pour le
+// reste du JSON ; au-delà, 413 avant tout parse. Et `mime`, choisi par
+// l'appelant et renvoyé tel quel à Gemini, prend une forme fermée.
+const CORPS_MAX_OCTETS = 3.5 * 1024 * 1024;
+const MIME_FORME = /^image\/[a-z0-9.+-]{1,20}$/;
+
+function tailleCorps(req) {
+  const b = req.body;
+  if (Buffer.isBuffer(b)) return b.length;
+  if (typeof b === 'string') return Buffer.byteLength(b, 'utf8');
+  try { return Buffer.byteLength(JSON.stringify(b == null ? '' : b), 'utf8'); } catch (e) { return 0; }
+}
 // 23 sept. 2026, 19 h 20 — les trois maillons d'avant étaient périmés côté
 // Google (2.5 « accès limité » → 429, 2.5-lite → 404, 2.0-flash éteint depuis
 // le 1er juin) ; voir la note dans coach.js. Même chaîne que le Coach, tous
@@ -121,6 +137,8 @@ Donne un mealName court. Réponds UNIQUEMENT en JSON conforme au schéma.
 Description du repas : `;
 
 function cors(res) {
+  // no-store + nosniff sur toute réponse (voir `entetesSurete`, _lib.js).
+  entetesSurete(res);
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-flint-key');
@@ -128,16 +146,13 @@ function cors(res) {
 
 // Rate-limit best-effort en mémoire (par IP, fenêtre glissante). Se réinitialise au cold start.
 // Pour du costaud en prod : passer sur Vercel KV / Upstash Redis.
-const RL = new Map();
-const RL_WINDOW = 60000, RL_MAX = 20;
-function rateLimited(ip) {
-  const now = Date.now();
-  const arr = (RL.get(ip) || []).filter(t => now - t < RL_WINDOW);
-  arr.push(now);
-  RL.set(ip, arr);
-  if (RL.size > 5000) { for (const k of RL.keys()) { if (!(RL.get(k) || []).some(t => now - t < RL_WINDOW)) RL.delete(k); } }
-  return arr.length > RL_MAX;
-}
+// 24 sept. 2026 — c'est maintenant le compteur de `_lib.js` (même fenêtre de
+// 60 s, même plafond de 20 par IP, même verdict) : lui seul est borné en
+// mémoire et en O(max) par appel quand une IP inonde ; la copie locale ne
+// l'était pas. Clé préfixée pour ne pas partager un compteur avec le Coach.
+const RL_MAX = 20;
+const { rateLimited: rateLimitedLib } = require('./_lib');
+function rateLimited(ip) { return rateLimitedLib('scan!' + ip, RL_MAX); }
 
 function round(n) { return Math.max(0, Math.round(Number(n) || 0)); }
 
@@ -161,16 +176,31 @@ module.exports = async function handler(req, res) {
   }
 
   // 2) Secret d'app (si FLINT_APP_SECRET est défini en env, on l'exige). Soft-secret : dissuade l'abus passant.
+  // 24 sept. — comparaison à temps constant, comme le Coach (`egalConstant`) ;
+  // le comportement « soft-secret » (rien exigé sans variable) ne change pas.
   const secret = process.env.FLINT_APP_SECRET;
-  if (secret && req.headers['x-flint-key'] !== secret) return res.status(401).json({ error: 'unauthorized' });
+  if (secret && !egalConstant((req.headers['x-flint-key'] || '').toString(), secret)) return res.status(401).json({ error: 'unauthorized' });
 
   const key = process.env.GEMINI_API_KEY;
-  if (!key) return res.status(500).json({ error: 'GEMINI_API_KEY manquante (variable d\'env Vercel)' });
+  if (!key) {
+    // Le NOM de la variable reste au journal ; la réponse ne dit plus quelle
+    // pièce manque (24 sept.). Même statut qu'avant.
+    console.log('[scan] GEMINI_API_KEY absente — configuration serveur incomplète');
+    return res.status(500).json({ error: 'configuration serveur incomplète' });
+  }
+
+  // Le corps entier, AVANT le parse (voir CORPS_MAX_OCTETS en tête).
+  if (tailleCorps(req) > CORPS_MAX_OCTETS) {
+    return res.status(413).json({ error: 'Photo trop lourde pour être analysée. Réessaie avec une photo plus petite.' });
+  }
 
   try {
     let body = req.body;
+    if (Buffer.isBuffer(body)) body = body.toString('utf8');
     if (typeof body === 'string') { try { body = JSON.parse(body); } catch (e) { body = {}; } }
     let image = body && body.image;
+    // Le texte est borné ici depuis l'origine (800 caractères) : c'est la
+    // ligne qui prouve que le scan borne AUSSI le texte, pas seulement la photo.
     const text = (body && typeof body.text === 'string') ? body.text.trim().slice(0, 800) : '';
     if (!image && !text) return res.status(400).json({ error: 'champ "image" ou "text" manquant' });
     // 23 sept. 2026 — UN PLAFOND SUR LA PHOTO, PARCE QUE RIEN NE LA BORNAIT.
@@ -189,6 +219,8 @@ module.exports = async function handler(req, res) {
       let mime = (body && body.mime) || 'image/jpeg';
       const m = /^data:([^;]+);base64,(.*)$/s.exec(image);
       if (m) { mime = m[1]; image = m[2]; }
+      // Une forme fermée, sinon le défaut : `mime` part tel quel à Gemini.
+      if (!MIME_FORME.test(String(mime))) mime = 'image/jpeg';
       parts = [{ text: PROMPT }, { inline_data: { mime_type: mime, data: image } }];
     } else {
       parts = [{ text: PROMPT_TEXT + text }];
@@ -248,6 +280,10 @@ module.exports = async function handler(req, res) {
 
     return res.status(200).json({ mealName: String(data.mealName || 'Mon repas'), items, total, healthScore, healthNote });
   } catch (e) {
-    return res.status(500).json({ error: String((e && e.message) || e) });
+    // 24 sept. — une phrase pour l'écran, le message (tronqué, clé masquée)
+    // en `detail` pour lire la panne, jamais la pile ni le message brut.
+    const message = sansCle(String((e && e.message) || e).slice(0, 120), key);
+    console.log('[scan] panne ' + message);
+    return res.status(500).json({ error: "L'analyse a rencontré une erreur. Réessaie dans un moment.", detail: message });
   }
 }
