@@ -819,6 +819,12 @@ console.log('\n═══ ⑳ LA PORTE FERMÉE : V1, ET L\'INSTANTANÉ N\'ATTEINT
   v('appareil listé, COACH_V2=1 → v2', await version({ COACH_V2: '1', COACH_V2_APPAREILS: 'banc-v2' }, APPAREIL_V2, CAP_V2) === 'v2');
   v('le nom ENTIER, pas un préfixe : « banc-v2x » listé ne vaut pas pour « banc-v2 »',
     await version({ COACH_V2: '1', COACH_V2_APPAREILS: 'banc-v2x, banc' }, APPAREIL_V2, CAP_V2) === 'v1');
+  // 25 sept. 2026 — le préfixe étoilé, ≥ 8 caractères : ouvre ; trop court ou sans étoile : non.
+  const APPAREIL_LONG = { 'x-flint-device': '8E79C65C-1A2B-4C3D-9E8F-0123456789AB' };
+  v('préfixe étoilé de 8 caractères → v2', await version({ COACH_V2: '1', COACH_V2_APPAREILS: '8e79c65c*' }, APPAREIL_LONG, CAP_V2) === 'v2');
+  v('préfixe étoilé trop court → v1', await version({ COACH_V2: '1', COACH_V2_APPAREILS: '8E79*' }, APPAREIL_LONG, CAP_V2) === 'v1');
+  v('préfixe de 8 SANS étoile → v1', await version({ COACH_V2: '1', COACH_V2_APPAREILS: '8E79C65C' }, APPAREIL_LONG, CAP_V2) === 'v1');
+  v('préfixe étoilé d\'un AUTRE appareil → v1', await version({ COACH_V2: '1', COACH_V2_APPAREILS: 'DEADBEEF*' }, APPAREIL_LONG, CAP_V2) === 'v1');
   v('COACH_V2=0 ferme, même pour un appareil listé', await version({ COACH_V2: '0', COACH_V2_APPAREILS: 'banc-v2' }, APPAREIL_V2, CAP_V2) === 'v1');
   v('COACH_FACTURATION=1 ouvre à tout appareil', await version({ COACH_V2: '1', COACH_FACTURATION: '1' }, { 'x-flint-device': 'inconnu-42' }, CAP_V2) === 'v2');
   v('porte ouverte mais moteur OTA plus vieux (outils: 0) → v1',

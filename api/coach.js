@@ -231,7 +231,14 @@ function porteV2Ouverte(req) {
   if (process.env.COACH_FACTURATION === '1') return true;
   const dev = deviceRequete(req);
   if (!dev) return false;
-  return (process.env.COACH_V2_APPAREILS || '').split(',').map((s) => s.trim()).filter(Boolean).includes(dev);
+  // 25 sept. 2026 — « 8E79C65C* » : le préfixe que le journal imprime déjà
+  // (8 caractères). L'identité vit dans le trousseau du téléphone, illisible
+  // du Mac : sans cette forme, impossible d'ouvrir V2 à UN iPhone. Le `*` est
+  // obligatoire et le préfixe fait au moins 8 caractères — un nom partiel sans
+  // étoile n'ouvre toujours rien (banc : « banc-v2x, banc » ferme « banc-v2 »).
+  return (process.env.COACH_V2_APPAREILS || '').split(',').map((s) => s.trim()).filter(Boolean)
+    .some((x) => x === dev || (x.endsWith('*') && x.length >= 9
+      && dev.toUpperCase().startsWith(x.slice(0, -1).toUpperCase())));
 }
 
 /** Les VRAIS tours d'outils de la question en cours (le tour fabriqué du
