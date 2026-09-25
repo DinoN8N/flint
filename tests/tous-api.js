@@ -17,6 +17,7 @@ const path = require('path');
 const BANCS = [
   ['test-coach-api.js',       'la porte d\'entrée : secret, signature, rate-limit, CORS'],
   ['test-coach-outils.js',    'les outils que le Coach déclare à Gemini'],
+  ['test-coach-natif-seul.js', 'v2 sans instantané : la part native (rééducation, bracelet) passe quand même'],
   ['test-coach-adaptateurs.js', 'les réponses V1 récrites en unités d\'écran, et le bloc DONNÉES DU JOUR'],
   ['test-coach-contexte.js',  'ce que le prompt système reçoit, et ce qu\'il ne reçoit jamais'],
   ['test-coach-manuel.js',    'le manuel : préfixe fixe ≤ 22 Ko, constantes du moteur, aucune fiche « i » recopiée'],

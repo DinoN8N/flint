@@ -484,13 +484,19 @@ module.exports = async function handler(req, res) {
 
     // Les données du moment, dans la QUEUE de l'instruction système — jamais
     // dans `contents`, donc les tours suivants ne les repaient pas.
-    const natif = version === 'v2' && instOk ? validerNatif(body.natif) : null;
+    // 25 sept. 2026 (revue app, constat 10) — la part NATIVE se valide en v2
+    // même sans instantané : un moteur trop lent ne doit pas faire oublier au
+    // Coach un plafond de rééducation, le bracelet ou une séance en cours.
+    const natif = version === 'v2' ? validerNatif(body.natif) : null;
     let donnees = '';
     if (version === 'v2' && instOk) {
       donnees = rendreInstantane(inst.objet, natif.objet, { langue, anodin });
     } else if (prep.precharges.length) {
       donnees = version === 'v2' ? rendreJson('DONNÉES DU JOUR', prep.precharges, { langue })
                                  : rendreDonneesV1(prep.precharges, langue);
+    }
+    if (version === 'v2' && !instOk && natif && natif.ok && natif.objet && natif.objet.visite !== true) {
+      donnees = [donnees, rendreJson('APPAREIL ET SÉCURITÉ', natif.objet, { langue })].filter(Boolean).join('\n\n');
     }
     // Les faits du plus RÉCENT au plus ancien (`faits` de l'app v2, ou
     // `memoireTexte` des apps posées, retourné) ; les mémos des autres fils
