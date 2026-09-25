@@ -473,6 +473,13 @@ console.log('\n═══ ⑭ LE MÉMO DE L\'ÉCHANGE, SANS MODÈLE ═══');
   v('un « ## » simple et un « ## » en milieu de ligne sont intacts', /\n## Pourquoi\n- ## pas un titre/.test(t.texte), JSON.stringify(t.texte));
 }
 
+// 25 sept. 2026 — un mémo ne retient jamais un titre comme verdict.
+{
+  const m = H.memoDe({ question: 'Pourquoi ma récup ?', texte: '## Pourquoi\n- **VFC basse** : 48 ms contre 62.\n## À faire\n- Au lit avant 22:30', jour: '2026-9-25' });
+  v('mémo sans verdict : v n\'est pas le titre', m && m.v !== 'Pourquoi' && /VFC basse/.test(m.v), JSON.stringify(m));
+  v('… et l\'action reste lue sous À faire', m && /22:30/.test(m.a), JSON.stringify(m));
+}
+
 console.log(`\n${vert} réussis, ${rouge} échoués`);
 process.exitCode = rouge ? 1 : 0;
 

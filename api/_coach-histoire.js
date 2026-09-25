@@ -481,7 +481,10 @@ function memoDe({ question, texte, jour, maintenant } = {}) {
   const t = typeof texte === 'string' ? texte : '';
   if (!q || estAnodin(q)) return null;
   const lignes = t.split('\n');
-  const premiere = lignes.map(sansMarkdown).find((l) => l !== '') || '';
+  // 25 sept. 2026 — vu en préproduction : sans ligne de verdict, la première
+  // ligne était « ## Pourquoi » et le mémo retenait « Pourquoi ». Un titre
+  // n'est pas un verdict : on prend la première ligne qui n'en est pas un.
+  const premiere = lignes.filter((l) => !/^\s*#{1,6}\s/.test(l)).map(sansMarkdown).find((l) => l !== '') || '';
   let a = '';
   const iTitre = lignes.findIndex((l) => TITRE_A_FAIRE.test(l));
   if (iTitre >= 0) {
