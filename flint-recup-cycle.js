@@ -215,7 +215,53 @@
          priverait de score pour toujours — exactement le piège que la v2034
          a fermé de l'autre côté (« un jour sans bracelet garde le
          comportement d'avant »). */
-      if (!s._watch) { out.etat = 'finale'; out.raison = 'nuit saisie ou semée — rien ne la fera bouger'; return out; }
+      /* ═══ v2638 — UN SCEAU POSÉ PENDANT LA NUIT N'EST PAS UN SCEAU ═══════
+
+         LE VERROU TIENT LA JOURNÉE, ET C'EST VOULU. Dino, 25 septembre :
+         « il doit être verrouillé toute la journée, ça c'est sûr ». Un score
+         qui bouge à 16 h ne vaut rien. On ne touche donc pas au verrou.
+
+         UNE SEULE EXCEPTION, et elle nomme exactement la pathologie du
+         25 septembre : LE SCEAU A ÉTÉ POSÉ AVANT LA FIN DE LA NUIT.
+
+         Ce jour-là, sa nuit portait `source:'manuel'`. À 01:49 elle couvrait
+         22:30 → 01:44 (159 min) et ce `return` l'a scellée — pendant qu'il
+         dormait. Il a dormi jusqu'à 08:06 : la nuit est devenue 00:32 → 08:06,
+         312 min. Score calculé sur 2h39 au lieu de 5h12 : 23 au lieu de 45,
+         quand WHOOP disait 53 au même poignet.
+
+         LA RÈGLE : si la nuit se termine APRÈS l'instant où le sceau a été
+         posé, ce sceau portait sur une nuit inachevée — il n'a jamais été
+         légitime. On rouvre, une fois ; la republication réécrit l'horodatage
+         et la fois suivante la condition est fausse. Elle s'éteint seule.
+
+         ⚠️ POURQUOI PAS « LA NUIT A CHANGÉ » — c'était ma première version, et
+         elle cassait le verrou : n'importe quel re-découpage de l'après-midi
+         aurait rouvert le score. Ici la condition ne PEUT PAS se déclencher
+         l'après-midi, puisque la fin de nuit est alors derrière le sceau.
+
+         ⚠️ ON NE DÉPLACE TOUJOURS PAS CE `return` PLUS BAS : une nuit saisie
+         tomberait dans les contrôles de LIVRAISON DU BRACELET, qui n'ont aucun
+         sens pour elle, et pourrait rester sans score — pire que le défaut. */
+      if (!s._watch) {
+        var _etM = null;
+        try { _etM = DB.get('recovEtat_' + K, null); } catch (e) {}
+        var _finM = null;
+        try {
+          var _miM = window.flMinuitMsDe(K);
+          if (!isNaN(_miM) && s.wakeMin != null) _finM = _miM + s.wakeMin * 60000;
+        } catch (e) {}
+        var _tS = (_etM && _etM.ts) ? Date.parse(_etM.ts) : NaN;
+        /* Une minute de marge : un sceau posé dans la minute qui suit le réveil
+           a vu la nuit finie, et on ne rouvre pas pour une seconde d'écart. */
+        if (_etM && _etM.etat === 'finale' && !isNaN(_tS) && _finM && _finM > _tS + 60000) {
+          out.etat = 'collecte';
+          out.raison = 'sceau posé avant la fin de la nuit ('
+                     + Math.round((_finM - _tS) / 60000) + ' min trop tôt) — il portait sur une nuit inachevée';
+          return out;
+        }
+        out.etat = 'finale'; out.raison = 'nuit saisie ou semée'; return out;
+      }
 
       var now = maintenant || Date.now();
       var fin = null;

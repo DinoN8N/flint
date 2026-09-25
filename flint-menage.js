@@ -91,6 +91,43 @@ window.flFenetreCourbes=function(viser){try{
   if(fin.length>=w2.hr.length)continue;
   w2.hr=fin; if(poser(k2,w2,{hr:w2.hr})){libere+=av2-taille(k2);jours++;}
  }
+ /* ══ Étape 3 (24 sept. 2026) — LA SÉRIE DE LA NUIT EST UN CACHE, ET UN
+      CACHE VIEILLIT ══════════════════════════════════════════════════════════
+      CE QUE LE 24 SEPTEMBRE A COÛTÉ. Dino termine un Football déclaré à
+      19:24:50 ; à 19:24:51 le moteur rend `ECHEC-ECRITURE`, à 19:25:07 sa
+      réponse « Football » est refusée elle aussi. La séance n'a jamais été
+      écrite : ce qui est resté à l'écran est la séance que la MONTRE avait
+      déposée de son côté — d'où « Activité détectée » et une fiche sans courbe.
+      LA CAUSE, MESURÉE SUR SA BASE RAPATRIÉE : 4 842 Ko pour un quota de
+      ~5 120, et `flFaireDeLaPlace()` rendait **false, 0 octet libéré**. Le
+      filet était vide — `hrbrut_`, `hrfine_` et `rrH` déjà à leur plancher,
+      la courbe du jour déjà éclaircie. C'est mot pour mot le défaut que le
+      pavé v1400 décrit (« un filet qui ne peut rien attraper n'est pas un
+      filet »), revenu par une autre porte.
+      OÙ ÉTAIT LE POIDS, ET POURQUOI IL EST GRATUIT À RENDRE : `night.hrTs`
+      pèse **987 Ko sur 54 jours** — un cinquième du quota — et ce n'est PAS
+      une mesure : `flsHrTs(K)` le fabrique par projection de `watch_<K>.hr`
+      (`w.hr.map(x => [x[1], minuit + x[0]*60])`, flint-sommeil.js). C'est un
+      instantané du re-staging, que son propre lecteur dit déjà pouvoir être
+      PÉRIMÉ (index.html, flEchantillonsNuit). Le jeter ne perd donc rien
+      qu'on ne sache refaire — contrairement à une courbe éclaircie, qui elle
+      perd de la finesse pour de bon.
+      MESURE SUR LA BASE DE DINO : 32 nuits au-delà de 21 jours, **592 Ko
+      rendus**, 32 sur 32 reconstruisibles depuis `watch_.hr`. Sa marge passe
+      de 278 Ko à ~870, et la base cesse de vivre collée au plein.
+      21 JOURS N'EST PAS UN NOMBRE NEUF : c'est la frontière que ce fichier se
+      donne déjà (`age(k)>21` ci-dessus) et celle de l'étape 1.
+      CE QU'ON NE TOUCHE PAS : les stades (`stages`, `stagesV8`), les totaux,
+      les scalaires, `vfcNuit`. Une vieille nuit garde TOUTE sa structure. Et
+      ses deux lecteurs directs tolèrent déjà l'absence — `(w.night&&w.night.hrTs)||null`
+      côté fuseau, `(s&&s.hrTs)||[]` côté échantillons : ils ne peuvent pas
+      trouver là un tableau vide qu'ils ne savent pas déjà rencontrer. */
+ for(var n3=0;n3<cles.length&&!assez();n3++){
+  var k3=cles[n3], av3=taille(k3); if(!av3)continue;
+  var w3=lire(k3); if(!w3||!w3.night||!w3.night.hrTs||!w3.night.hrTs.length)continue;
+  delete w3.night.hrTs;
+  if(poser(k3,w3,{night:w3.night})){libere+=av3-taille(k3);jours++;}
+ }
  try{if(jours)console.log('[flint] fenetre d age : '+jours+' reecriture(s), '
    +Math.round(libere/1024)+' Ko rendus');}catch(e){}
  return libere;

@@ -2997,9 +2997,10 @@ const DB={
    var fait=false;
    try{fait=!!(window.flFaireDeLaPlace&&window.flFaireDeLaPlace());}catch(e2){}
    if(fait){try{localStorage.setItem(k,s);DB.nuitMarque(k,v);return true;}catch(e3){}}
-   try{window._flPlein=(window._flPlein||0)+1;
-       if(window._flPlein<6)console.warn('[flint] STOCKAGE PLEIN — '+k+
-         ' ('+Math.round(s.length/1024)+' Ko) non enregistre');}catch(e4){}
+   /* 24 sept. 2026 — CE REFUS N'ALLAIT QU'À LA CONSOLE WEB, QUE PERSONNE NE LIT. Résultat : un Football déclaré perdu à 19:24:51, un `ECHEC-ECRITURE` muet, et une soirée à rapatrier la base pour deviner. Il part maintenant au journal du téléphone, AVEC ce que le filet a pu rendre — sans quoi on ne sait pas distinguer « plein » de « plein ET le filet est vide », qui est le vrai défaut. Voir CHANTIER-STOCKAGE-PLEIN.md. */
+   try{window._flPlein=(window._flPlein||0)+1;var _m='STOCKAGE PLEIN · '+k+' ('+Math.round(s.length/1024)+' Ko) NON ENREGISTRÉ · le filet a rendu '+(fait?'de la place':'RIEN')+' · refus n°'+window._flPlein;
+       if(window._flPlein<6){console.warn('[flint] '+_m);
+        try{window.webkit.messageHandlers.flint.postMessage({cmd:'journal',texte:_m});}catch(e5){}}}catch(e4){}
    return false;
   }
  }
@@ -13269,35 +13270,19 @@ window.flVie=function(doc){try{
   doc.addEventListener(t,lache,{capture:true,passive:true});});
  try{W.addEventListener('scroll',lache,{capture:true,passive:true});}catch(e){}
 }catch(e){}};
-/* v854 — ENTRÉE DE PAGE. Le founder trouve l'ouverture des Tendances gracieuse
-   et celle d'Aujourd'hui / Nutrition / Profil « brute ». La raison est dans le
-   code : Tendances bascule un display:none → flex (l'écran paraît d'un bloc,
-   sans résidu de mouvement) tandis que les autres posent leur transform avec la
-   transition COUPÉE (v777, pour supprimer un glissement depuis le bas que le
-   founder ne voulait plus) — d'où le claquement. On leur rend un geste : fondu
-   + très léger zoom.
-   En `scale` et non `transform` : #screen-nutrition et les écrans du Profil sont
-   centrés par translateX(-50%), qu'un transform:scale() écraserait (v837).
-   L'attribut est posé par la NAV et retiré à 560 ms. Aucun injecteur ne le pose,
-   donc l'animation ne peut pas se rejouer à chaque repaint de React — c'est ce
-   qui avait fait clignoter la barre de navigation sans fin (v838). */
+/* v854 — ENTRÉE DE PAGE. Tendances bascule un display:none → flex (l'écran paraît d'un bloc) tandis qu'Aujourd'hui / Nutrition / Profil posent leur transform avec la transition COUPÉE (v777), d'où le claquement. On leur rend un geste : fondu + très léger zoom.
+   En `scale` et non `transform` : #screen-nutrition et les écrans du Profil sont centrés par translateX(-50%), qu'un transform:scale() écraserait (v837). L'attribut est posé par la NAV et retiré à 560 ms ; aucun injecteur ne le pose, donc l'animation ne peut pas se rejouer à chaque repaint de React (v838). */
 window.flScrIn=function(el){try{
  if(!el||!el.setAttribute)return;
  var W=(el.ownerDocument&&el.ownerDocument.defaultView)||window;
  if(el._flInT){W.clearTimeout(el._flInT);el.removeAttribute('data-fl-in');void el.offsetHeight;}
  el.setAttribute('data-fl-in','1');
- /* v856 — 700 et non 560 : la 6e carte de la cascade du Profil demarre a 190 ms de retard
-    et dure --fl-ferme-ms (441 ms), donc se termine a 631 ms. A 560 ms on lui coupait
-    l attribut 71 ms avant la fin et, l animation etant en backwards, elle sautait
-    brutalement a son etat naturel. Bug trouve par l audit v856. */
+ /* v856 — 700 et non 560 : la 6e carte de la cascade du Profil demarre a 190 ms de retard et dure --fl-ferme-ms (441 ms), donc se termine a 631 ms. A 560 ms on lui coupait l attribut 71 ms avant la fin et, l animation etant en backwards, elle sautait brutalement a son etat naturel. Audit v856. */
  el._flInT=W.setTimeout(function(){try{el.removeAttribute('data-fl-in');}catch(e){}el._flInT=0;},700);
 }catch(e){}};
 function flSnapLoop(){try{
- /* v755 — cette boucle rAF tournait a CHAQUE frame avec layout force :
-    principal suspect du crash memoire WebKit au scroll (ecran blanc + splash +
-    rechargement). Son travail (FAB, bouton retour) n'a pas besoin de 60 Hz :
-    un passage toutes les ~180 ms suffit et divise le cout par 10. */
- var _n=performance.now();if(flSnapLoop._t&&_n-flSnapLoop._t<180){requestAnimationFrame(flSnapLoop);return;}flSnapLoop._t=_n;
+ /* v755 — cette boucle rAF tournait a CHAQUE frame avec layout force : principal suspect du crash memoire WebKit au scroll (ecran blanc + splash + rechargement). Son travail (FAB, bouton retour) n'a pas besoin de 60 Hz : un passage toutes les ~180 ms suffit et divise le cout par 10. */
+ var _n=performance.now();var _p=flSnapLoop.pas();if(flSnapLoop._t&&_n-flSnapLoop._t<_p){flSnapLoop.rendezVous(_p-(_n-flSnapLoop._t));return;}flSnapLoop._t=_n;
  var f=document.getElementById('frToday');var doc=f&&f.contentDocument;if(doc&&doc.body){var win=doc.defaultView,he=doc.documentElement;var y=win.pageYOffset;if(doc._flPrevY!==y){doc._flPrevY=y;doc._lastScrollTs=performance.now();}if(he.style.scrollSnapType!=='none')he.style.scrollSnapType='none';/* founder : plus de snap, scroll continu */
  var gb=doc.getElementById('flBackBtn');if(gb){var openScr=!!window._flBalOpen||flBackScreens(doc).some(function(s){return !(s.id==='screen-marche'&&s.querySelector('[data-fl-effhdr]'));});var want2=openScr?'1':'0';if(gb.style.opacity!==want2){gb.style.opacity=want2;gb.style.pointerEvents=openScr?'auto':'none';}}
  try{flEdgeBackWire(doc);}catch(_e){}
@@ -13361,7 +13346,21 @@ function flSnapLoop(){try{
   if(!nf.querySelector('svg')&&!/\+/.test(nf.textContent||''))return;
   nf._flCam=1;
   nf.addEventListener('click',function(ev){ev.preventDefault();ev.stopPropagation();try{flNCamera('Photo');}catch(e){}},true);});
- }}catch(e){}requestAnimationFrame(flSnapLoop);}
+ }}catch(e){}flSnapLoop.rendezVous();}
+/* v2637 — LA BOUCLE LÈVE LE PIED QUAND LA BATTERIE LE DEMANDE. Dino : « dès que mon téléphone est en mode économie d'énergie, ça bugue complètement l'application ». Preuves de son iPhone : flintWKKills=70, dernier décès à 21:00, charges-refusees.txt muet de 20:43 à 21:52 : le processus WebKit meurt et le moteur avec lui.
+   Cette boucle est nommée suspecte depuis la v755 (« principal suspect du crash mémoire WebKit »), bridée de 60 Hz à 180 ms mais jamais arrêtée. Deux coûts restaient : ① un layout forcé à travers l'iframe 5,5 fois par seconde, à vie ; ② une replanification par requestAnimationFrame à chaque image, soit soixante réveils par seconde pour lire une horloge, donc une page jamais au repos.
+   `rendezVous` corrige les deux sans rien changer au travail fait. Le réveil passe par setTimeout PUIS par rAF : le timeout laisse la page s'endormir (② tombe), le rAF garde la propriété qui comptait, une boucle rAF ne se déclenche pas quand le document est masqué. Inverser les deux perdrait ça.
+   La cadence suit la batterie : 180 ms à plein régime (la valeur mesurée en v755, inchangée), 900 ms en mode économie, posé par le natif (EtatEnergie → appliquerEnergie). Le travail de cette boucle est un rattrapage d'état, pas une animation : il se voit à 1,1 Hz comme à 5,5 Hz et coûte cinq fois moins.
+   ⚠️ CE LOT NE PRÉTEND PAS EMPÊCHER iOS DE TUER WEBKIT. Personne ne le peut. Il retire du travail que l'app s'infligeait au moment où elle a le moins de marge, et il rend le mode visible au journal. Le récit complet est dans le message du commit v2637. */
+flSnapLoop.pas=function(){return window.flEco?900:180;};
+flSnapLoop.rendezVous=function(reste){
+ /* `reste` : le temps qu'il manque quand on arrive TROP TÔT. Sans lui, la sortie anticipée se replanifiait image par image et le repos était illusoire : soixante réveils par seconde remplacés par soixante réveils par seconde. */
+ var d=(typeof reste==='number'&&reste>0)?reste:flSnapLoop.pas();
+ if(d<=180){requestAnimationFrame(flSnapLoop);return;}
+ setTimeout(function(){requestAnimationFrame(flSnapLoop);},d);
+};
+/* Le natif appelle ceci au démarrage ET à chaque bascule, y compris celle qu'iOS déclenche seul à 20 % de batterie : le cas de Dino, qui n'active pas le mode à la main. */
+window.flEnergieNatif=function(eco){try{window.flEco=!!eco;}catch(e){}};
 if(!window._flSnapLoopOn){window._flSnapLoopOn=true;requestAnimationFrame(flSnapLoop);}
 /* ═══ v2041 — IL N'Y A PLUS D'ÉCRAN DE CHARGEMENT, ET VOICI CE QU'IL CACHAIT
    Dino, trois fois : « vire-le », « plus jamais ».
@@ -17015,9 +17014,11 @@ var FL_HEBDO={
     for(var i=1;i<=14;i++){var sn=jour(tk(off-i));
       if(sn&&sn.sleepMin)d+=Math.max(0,base-sn.sleepMin);}
   }catch(e){}
-  var dette=Math.min(75,Math.round(d*0.35/14*7/60*60/60*60/60));
+  /* 24 sept. 2026 — CE GRAPHIQUE CALCULAIT SA PROPRE DETTE, A COTE DE L AUTORITE.
+     `flBesoinNuitDuJour` accumule EXACTEMENT le meme `d` (somme de max(0, base-dormi) sur 14 nuits) puis applique `Math.min(75, Math.round(d*0.35))`. Ici on lisait `d*0.035` pour le BESOIN — dix fois moins — et `d*0.35/14*7/60*60/60*60/60` (= d*0.35/120, une chaine d edition accidentelle) pour la DETTE AFFICHEE, cent vingt fois moins. Pour 40 min de deficit par nuit l ecran annoncait 2 min quand l autorite en compte 196 (plafonnees a 75). Trois echelles pour une seule grandeur. ON ALIGNE SUR L AUTORITE, ON N INVENTE PAS DE TROISIEME VALEUR. Et on ne DELEGUE pas : `flBesoinNuitDuJour` n est pas memoisee et `sensorOf` lit le disque — l appeler pour chacun des 30 points rendrait les 420 lectures que le cache ci-dessus existe justement pour eviter (v2158). La sieste de la veille, que l autorite deduit et pas nous, reste un ecart connu : elle demande son propre jour, donc son propre cache. LE PLAFOND RESTE A 75 ET SATURE, C EST ASSUME ET MESURE : voir le pave de `flBesoinNuitDuJour` — WHOOP sature aussi (plafond dur a 127 min, colle 52 %% de ses 494 nuits), et deux remedes ont ete ecartes sur piece. Ce correctif ne touche pas le mecanisme, seulement les trois echelles qui n etaient pas d accord. */
+  var dette=Math.min(75,Math.round(d*0.35));
   var charge=0; try{charge=Math.min(55,Math.round((loadStrain(tk(off-1))||0)*3.2));}catch(e){}
-  var n=base+Math.min(75,Math.round(d*0.035))+charge;
+  var n=base+dette+charge;
   return Math.max(base,Math.min(base+120,n))/60;
  }catch(e){return (getProfile().need)||null;}},fmt:flhHM,tickSteps:[0.5,1,2,3,4,6],tickFmt:function(t){return t%1===0?t+'h':flhHM(t);}},
  steps:{title:'Pas',lab:'VOS PAS',unit:'pas',col:FLEF_BLUE,kind:'bars',fmt:flhInt,vide0:true,   /* v1630 — bleu */tickFmt:function(t){return t>=1000?(t/1000)+'k':''+t;}},
@@ -23529,7 +23530,7 @@ function flPousserMorpho(){try{
    if(a>0&&a<120)age=a;
  }catch(e){}}
  if(!age||!taille||!poids)return false;
- var sexe=(String(p.gender||'h').toLowerCase()==='f')?0:1;
+ var sexe=(String(p.gender||'h').toLowerCase()==='f')?0:1;   /* BINAIRE PAR CONTRAINTE MATERIELLE : ce champ part dans le firmware de la montre (cmd morpho), qui n accepte que deux valeurs — aucun milieu possible, contrairement a Mifflin et Keytel plus bas. Ne pas « corriger » en croyant a l oubli. */
  /* ═══ v1765 — LA FENÊTRE DE SOMMEIL DESCEND AVEC LA MORPHOLOGIE ═══════════
     Elle sert au bracelet à ne mesurer la variabilité QUE la nuit. Mesuré : une
     acquisition HRV prend le capteur optique pendant deux minutes environ, et la
@@ -23621,7 +23622,7 @@ function wipeData(){if(!confirm('Vider TOUTES les données (démo incluse) et re
 function exportData(){const dump={};Object.keys(localStorage).forEach(k=>dump[k]=localStorage.getItem(k));const t=JSON.stringify(dump,null,2);try{const blob=new Blob([t],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='flint-data.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},1500);toast('⬇️ Données exportées (flint-data.json)')}catch(e){try{navigator.clipboard.writeText(t);toast('📋 Données copiées')}catch(e2){toast('Export impossible')}}}
 
 /* ===== Coach IA (réponses fondées sur les données du jour) ===== */
-const APP_VERSION='v2610';
+const APP_VERSION='v2643';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
@@ -34491,10 +34492,8 @@ window.flDeriverMetriques=function(k,liste){
       v1225 dit « un seul endroit où l'on lit le poids » : elle vaut aussi ici. */
    var a=flAge(), kg=(typeof flPoidsCorps==='function'?flPoidsCorps():+p.weight)||0;
    if(!(fc>0&&a>0&&kg>0))return null;
-   var femme=((p.gender||'h')+'').toLowerCase().charAt(0)==='f';
-   /* kJ/min chez Keytel, d ou la division par 4,184 pour des kcal. */
-   var kj=femme?(-20.4022+0.4472*fc-0.1263*kg+0.074*a)
-               :(-55.0969+0.6309*fc+0.1988*kg+0.2017*a);
+   var _g=String(p.gender||'').toLowerCase().charAt(0), _kjF=-20.4022+0.4472*fc-0.1263*kg+0.074*a, _kjH=-55.0969+0.6309*fc+0.1988*kg+0.2017*a;   /* kJ/min chez Keytel, d ou /4,184 pour des kcal. '' = sexe non declare : la MOYENNE des deux equations, jamais l hypothese homme. */
+   var kj=(_g==='f')?_kjF:((_g==='h')?_kjH:(_kjF+_kjH)/2);
    return kj/4.184;
   }catch(e){return null;}};
 
@@ -34569,8 +34568,8 @@ window.flDeriverMetriques=function(k,liste){
       pour que l ecran puisse inviter a completer plutot que se taire. */
    if(!(kg>0&&cm>0))return null;
    var age=(a>0)?a:30;
-   var femme=((p.gender||'h')+'').toLowerCase().charAt(0)==='f';
-   return Math.round(10*kg+6.25*cm-5*age+(femme?-161:5));
+   var _g=String(p.gender||'').toLowerCase().charAt(0);   /* '' = sexe NON DECLARE (« autre » a l onboarding met le champ a vide) : le MILIEU des deux constantes, comme bmrDay et comme l apercu de l onboarding. `||'h'` faisait basculer '' sur homme : +5 au lieu de -78, soit 83 kcal/j de trop dans la reference, le plan et le budget Nutrition. Meme defaut que la v2513 a l autre porte, une porte avait ete oubliee. */
+   return Math.round(10*kg+6.25*cm-5*age+((_g==='f')?-161:((_g==='h')?5:-78)));
   }catch(e){return null;}};
 
   /* La masse maigre du dernier releve connu, en kilos. Meme regle que le poids :
