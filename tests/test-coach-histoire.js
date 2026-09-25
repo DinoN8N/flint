@@ -463,6 +463,16 @@ console.log('\n═══ ⑭ LE MÉMO DE L\'ÉCHANGE, SANS MODÈLE ═══');
   v('sans question : pas de mémo', H.memoDe({ question: '', texte: 'x' }) === null && H.memoDe({}) === null);
 }
 
+// 25 sept. 2026 — « ## ## Détail » vu en production : ramené à un seul « ## ».
+{
+  const r = H.extraireMeta('**Verdict.**\n\n## ## Détail\n- **A** : b\n##  ##  À faire\n- c\nSuites : x ? | y ?', {});
+  v('titre doublé « ## ## » ramené à « ## »', /\n## Détail\n/.test(r.texte) && !/## ##/.test(r.texte), JSON.stringify(r.texte));
+  v('… même avec des espaces multiples', /\n## À faire\n/.test(r.texte), JSON.stringify(r.texte));
+  v('… et les suites restent détachées', r.suites.length === 2, JSON.stringify(r.suites));
+  const t = H.extraireMeta('**V.**\n\n## Pourquoi\n- ## pas un titre en milieu de ligne', {});
+  v('un « ## » simple et un « ## » en milieu de ligne sont intacts', /\n## Pourquoi\n- ## pas un titre/.test(t.texte), JSON.stringify(t.texte));
+}
+
 console.log(`\n${vert} réussis, ${rouge} échoués`);
 process.exitCode = rouge ? 1 : 0;
 

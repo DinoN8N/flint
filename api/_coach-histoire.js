@@ -361,8 +361,15 @@ const lireSuites = (s) => s.split('|')
 /** { texte, suites, retenir:[{categorie, fait}] } — `texte` et `suites` sont
  *  ceux d'`extraireSuites` quand il n'y a pas de « Retenir ».
  *  `opts.retenir === false` (v1) : « Retenir : » reste du texte. */
+// 25 sept. 2026 — vu en production puis en préproduction v2 : « ## ## Détail ».
+// Le modèle double parfois le marqueur malgré la consigne ; l'écran de l'app
+// (RenduCoach) n'y reconnaît plus son titre. On le ramène à un seul « ## » ici,
+// au seul endroit par où passe tout texte final (JSON et flux) : `fin.texte`
+// fait foi, l'app remplace le texte diffusé par lui à la fin.
+const TITRE_DOUBLE = /^[ \t]*(?:#{1,6}[ \t]+){2,}/gm;
+
 function extraireMeta(brut, opts) {
-  const t = String(brut || '').trimEnd();
+  const t = String(brut || '').replace(TITRE_DOUBLE, '## ').trimEnd();
   const lignes = t.split('\n');
   const debut = debutBlocFinal(lignes, opts);
   if (debut >= lignes.length) return { texte: t, suites: [], retenir: [] };
