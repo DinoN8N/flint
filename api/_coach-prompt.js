@@ -218,6 +218,15 @@ MÉMOIRE — fin des faits confiés, listés du plus RÉCENT (en haut) au plus a
   // pour le jour des outils.
   if (profil) parts.push(`CE QUE TU SAIS D'ELLE — BRIEFING DE L'ÉCRAN AFFICHÉ (peut être un autre jour) :\n${profil}`);
   if (!donnees && !profil) parts.push("DONNÉES : · aucune donnée de l'app jointe à cette question.");
+  // ═══ 25 sept. 2026 — LE RAPPEL DE FORME VIENT EN DERNIER ═══════════════════
+  // Vu en production le jour du manuel : avec ~20 Ko de connaissances devant
+  // lui, le modèle sautait la ligne de verdict et le titre À FAIRE, et
+  // appelait « séance de sport » le foot que la personne venait de nommer.
+  // La consigne complète reste dans FORME (préfixe fixe) ; ce rappel court est
+  // ce que le modèle lit juste avant d'écrire.
+  if (b.anodin !== true) {
+    parts.push(`RAPPEL AVANT D'ÉCRIRE : ligne 1 = le VERDICT, une phrase en **gras** avec le chiffre qui compte ; puis UN titre « ## ${T.pourquoi} » ou « ## ${T.detail} » et ses puces ; puis « ## ${T.aFaire} » (sauf question simple) ; une seule phrase _soulignée_ ; « Suites : » en dernière ligne. Une activité que la personne a nommée garde SON nom (« ton foot d'hier »), même si le bracelet l'a nommée autrement.`);
+  }
   return parts.join('\n\n');
 }
 
