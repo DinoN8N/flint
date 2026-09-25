@@ -1,0 +1,23 @@
+{
+  "app": { "langue": "fr", "metrique": true, "h24": true, "jourAffiche": null, "demo": false },
+  "bracelet": {
+    "liee": true, "batterie": 64, "enCharge": false, "famille": "V8", "synchroIlYaMin": 12, "synchroEnCours": false,
+    "nuitEnRoute": false, "canauxManquants": [], "nonPortDepuis": null, "autonomieH": 71
+  },
+  "seanceEnCours": null,
+  "gps": {
+    "kmSemaine": 14.2,
+    "sorties7j": 2,
+    "dernieres": [["2026-9-14", "course", 6.1, 31, "5:05 /km"], ["2026-9-11", "vélo", 8.1, 29, "16,8 km/h"]]
+  },
+  "reeducation": null,
+  "reveil": { "actif": true, "limite": "07:30", "fenetreMin": 30, "prochain": "2026-9-17 07:00", "coucherNotif": "22:50" },
+  "moniteur": {
+    "verdict": "Tout est dans ta norme",
+    "compte": 0,
+    "signaux": [["fcRepos", 49, "normal", "47–53"], ["vfc", 71, "normal", "55–74"], ["resp", null, "absent", "13,1–14,0"], ["temp", -0.3, "normal", "-0,4–0,3"], ["spo2", 93, "normal", "92–96"]]
+  },
+  "stressJour": { "pic": 2.4, "minutes": { "calme": 180, "faible": 220, "modere": 60, "eleve": 12 }, "calme": "12:10–13:00", "intense": "18:30–19:20" },
+  "notifs24h": [["07:45", "matin", "Ta récup est prête"], ["21:10", "coucher", "Au lit dans une heure"]],
+  "insight": null
+}

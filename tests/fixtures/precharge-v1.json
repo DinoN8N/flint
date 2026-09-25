@@ -1,0 +1,381 @@
+{
+ "_note": "Réponses V1 SYNTHÉTIQUES (personne « Test », aucune donnée réelle), à la forme que PontCoach rend : le préchargement Phase 0 et les outils V1. Lues par test-coach-api.js, test-coach-flux.js, test-coach-securite.js et outils/rejeu-coach.js.",
+ "getRecoveryContext": {
+  "s": 74,
+  "etat": "finale",
+  "fige": true,
+  "zone": "HAUTE",
+  "reco": "Bonne récupération.",
+  "state": "OK",
+  "vfc": 71,
+  "fcRepos": 49,
+  "normales": {
+   "vfc": 63,
+   "fcRepos": 51,
+   "fenetreJours": 30
+  },
+  "qualite": "good"
+ },
+ "getSleepHistory": {
+  "qualite": "good",
+  "nuits": [
+   {
+    "jour": "2026-9-16",
+    "fuseau": "Europe/Paris",
+    "besoin": 520,
+    "score": 74,
+    "couverture": 92,
+    "regul": 81,
+    "dormi": 468,
+    "eveil": 31,
+    "auLit": 483,
+    "eff": 94,
+    "coucher": 1433,
+    "lever": 487,
+    "coucherVeille": -1,
+    "dette": 52,
+    "reveils": 3,
+    "temp": 35.9,
+    "spo2": 97,
+    "recup": 70,
+    "effort": 9.4,
+    "kcal": 2380,
+    "pas": 9120,
+    "vfc": 66,
+    "fcRepos": 50,
+    "respiration": 14.1,
+    "seances": [],
+    "repas": [],
+    "journal": {
+     "alcool": false,
+     "cafeine": true,
+     "cafeine_n": "1",
+     "_saved": true
+    }
+   },
+   {
+    "jour": "2026-9-15",
+    "fuseau": "Europe/Paris",
+    "besoin": 520,
+    "score": 71,
+    "couverture": 92,
+    "regul": 81,
+    "dormi": 452,
+    "eveil": 31,
+    "auLit": 483,
+    "eff": 94,
+    "coucher": 1418,
+    "lever": 470,
+    "coucherVeille": -1,
+    "dette": 40,
+    "reveils": 3,
+    "temp": 35.9,
+    "spo2": 97,
+    "recup": 70,
+    "effort": 9.4,
+    "kcal": 2380,
+    "pas": 9120,
+    "vfc": 66,
+    "fcRepos": 50,
+    "respiration": 14.1,
+    "seances": [],
+    "repas": [],
+    "journal": {
+     "alcool": false,
+     "cafeine": true,
+     "cafeine_n": "1",
+     "_saved": true
+    }
+   },
+   {
+    "jour": "2026-9-14",
+    "fuseau": "Europe/Paris",
+    "besoin": 520,
+    "score": 72,
+    "couverture": 92,
+    "regul": 81,
+    "dormi": 452,
+    "eveil": 31,
+    "auLit": 483,
+    "eff": 94,
+    "coucher": 1418,
+    "lever": 470,
+    "coucherVeille": -1,
+    "dette": 40,
+    "reveils": 3,
+    "temp": 35.9,
+    "spo2": 97,
+    "recup": 70,
+    "effort": 9.4,
+    "kcal": 2380,
+    "pas": 9120,
+    "vfc": 66,
+    "fcRepos": 50,
+    "respiration": 14.1,
+    "seances": [],
+    "repas": [],
+    "journal": {
+     "alcool": false,
+     "cafeine": true,
+     "cafeine_n": "1",
+     "_saved": true
+    }
+   },
+   {
+    "jour": "2026-9-13",
+    "fuseau": "Europe/Paris",
+    "besoin": 520,
+    "score": 73,
+    "couverture": 92,
+    "regul": 81,
+    "dormi": 452,
+    "eveil": 31,
+    "auLit": 483,
+    "eff": 94,
+    "coucher": 1418,
+    "lever": 470,
+    "coucherVeille": -1,
+    "dette": 40,
+    "reveils": 3,
+    "temp": 35.9,
+    "spo2": 97,
+    "recup": 70,
+    "effort": 9.4,
+    "kcal": 2380,
+    "pas": 9120,
+    "vfc": 66,
+    "fcRepos": 50,
+    "respiration": 14.1,
+    "seances": [],
+    "repas": [],
+    "journal": {
+     "alcool": false,
+     "cafeine": true,
+     "cafeine_n": "1",
+     "_saved": true
+    }
+   },
+   {
+    "jour": "2026-9-12",
+    "fuseau": "Europe/Paris",
+    "besoin": 520,
+    "score": 74,
+    "couverture": 92,
+    "regul": 81,
+    "dormi": 452,
+    "eveil": 31,
+    "auLit": 483,
+    "eff": 94,
+    "coucher": 1418,
+    "lever": 470,
+    "coucherVeille": -1,
+    "dette": 40,
+    "reveils": 3,
+    "temp": 35.9,
+    "spo2": 97,
+    "recup": 70,
+    "effort": 9.4,
+    "kcal": 2380,
+    "pas": 9120,
+    "vfc": 66,
+    "fcRepos": 50,
+    "respiration": 14.1,
+    "seances": [],
+    "repas": [],
+    "journal": {
+     "alcool": false,
+     "cafeine": true,
+     "cafeine_n": "1",
+     "_saved": true
+    }
+   },
+   {
+    "jour": "2026-9-11",
+    "fuseau": "Europe/Paris",
+    "besoin": 520,
+    "score": 75,
+    "couverture": 92,
+    "regul": 81,
+    "dormi": 452,
+    "eveil": 31,
+    "auLit": 483,
+    "eff": 94,
+    "coucher": 1418,
+    "lever": 470,
+    "coucherVeille": -1,
+    "dette": 40,
+    "reveils": 3,
+    "temp": 35.9,
+    "spo2": 97,
+    "recup": 70,
+    "effort": 9.4,
+    "kcal": 2380,
+    "pas": 9120,
+    "vfc": 66,
+    "fcRepos": 50,
+    "respiration": 14.1,
+    "seances": [],
+    "repas": [],
+    "journal": {
+     "alcool": false,
+     "cafeine": true,
+     "cafeine_n": "1",
+     "_saved": true
+    }
+   },
+   {
+    "jour": "2026-9-10",
+    "fuseau": "Europe/Paris",
+    "besoin": 520,
+    "score": 76,
+    "couverture": 92,
+    "regul": 81,
+    "dormi": 452,
+    "eveil": 31,
+    "auLit": 483,
+    "eff": 94,
+    "coucher": 1418,
+    "lever": 470,
+    "coucherVeille": -1,
+    "dette": 40,
+    "reveils": 3,
+    "temp": 35.9,
+    "spo2": 97,
+    "recup": 70,
+    "effort": 9.4,
+    "kcal": 2380,
+    "pas": 9120,
+    "vfc": 66,
+    "fcRepos": 50,
+    "respiration": 14.1,
+    "seances": [],
+    "repas": [],
+    "journal": {
+     "alcool": false,
+     "cafeine": true,
+     "cafeine_n": "1",
+     "_saved": true
+    }
+   }
+  ]
+ },
+ "getTrainingLoad": {
+  "aigu": 9.23,
+  "chronique": 8.5,
+  "rapport": 1.09,
+  "joursAigus": 6,
+  "joursChroniques": 22,
+  "jours": [
+   {
+    "k": "2026-9-10",
+    "v": 8,
+    "mesure": true
+   },
+   {
+    "k": "2026-9-11",
+    "v": 9,
+    "mesure": true
+   },
+   {
+    "k": "2026-9-12",
+    "v": 10,
+    "mesure": true
+   },
+   {
+    "k": "2026-9-13",
+    "v": 11,
+    "mesure": true
+   },
+   {
+    "k": "2026-9-14",
+    "v": 12,
+    "mesure": true
+   },
+   {
+    "k": "2026-9-15",
+    "v": 13,
+    "mesure": true
+   },
+   {
+    "k": "2026-9-16",
+    "v": 14,
+    "mesure": true
+   }
+  ],
+  "qualite": "good"
+ },
+ "getNutritionToday": {
+  "aDesDonnees": true,
+  "restantes": "630",
+  "consommees": "1 420",
+  "budget": "2 050",
+  "manqueProfil": false,
+  "pourcent": 69,
+  "macros": [
+   {
+    "nom": "Protéines",
+    "actuel": 96,
+    "cible": 180
+   },
+   {
+    "nom": "Glucides",
+    "actuel": 150,
+    "cible": 190
+   },
+   {
+    "nom": "Lipides",
+    "actuel": 48,
+    "cible": 55
+   }
+  ],
+  "repas": [
+   {
+    "heure": "08:10",
+    "nom": "Porridge banane-banc",
+    "kcal": 420,
+    "prot": 14,
+    "carb": 68,
+    "fat": 9
+   },
+   {
+    "heure": "12:55",
+    "nom": "Poulet riz brocolis",
+    "kcal": 640,
+    "prot": 48,
+    "carb": 72,
+    "fat": 14
+   }
+  ],
+  "qualite": "good"
+ },
+ "getActivityHistory": {
+  "qualite": "good",
+  "activites": [
+   {
+    "jour": "2026-09-15",
+    "quand": "hier",
+    "nom": "Football",
+    "nomPosePar": "la personne",
+    "debut": "18:30",
+    "dureeMin": 95,
+    "effortSur20": 11.5,
+    "fcMoyenne": 142,
+    "fcMax": 181,
+    "calories": 820,
+    "pas": 6540,
+    "origine": "lancée ou nommée par la personne"
+   }
+  ]
+ },
+ "getCoachPreferences": {
+  "ton": "analytique",
+  "qualite": "good"
+ },
+ "saveMemoryFact": {
+  "ok": true
+ },
+ "setCoachPreferences": {
+  "ton": "analytique",
+  "qualite": "good"
+ }
+}
