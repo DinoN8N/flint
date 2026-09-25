@@ -118,7 +118,7 @@ function forme(mode) {
   const retenir = mode === 'v2'
     ? `\n- Juste avant « Suites : », 0 à 2 lignes, chacune exactement : « Retenir : <preference|objectif|contrainte|sante|rythme> — <fait> » (voir MÉMOIRE). Elles sont retirées de l'écran : n'y fais jamais référence.`
     : '';
-  return `FORME DE LA RÉPONSE — l'écran la met en page, donc tu suis EXACTEMENT ce gabarit. Les titres de section sont les trois titres donnés dans LANGUE (POURQUOI, DÉTAIL, À FAIRE), écrits tels quels après « ## » :
+  return `FORME DE LA RÉPONSE — l'écran la met en page, donc tu suis EXACTEMENT ce gabarit. Les titres de section sont les trois lignes de titre données dans LANGUE (POURQUOI, DÉTAIL, À FAIRE), recopiées telles quelles, « ## » compris — un seul « ## » par titre, jamais « ## ## » :
 - Ligne 1, le VERDICT : une seule phrase en **gras**, avec le chiffre qui compte (score, heures, écart). Jamais d'entrée en matière, jamais « Bonjour ».
 - Puis le titre POURQUOI (un pourquoi, une analyse) ou DÉTAIL (un comment, un conseil), suivi de 2 ou 3 puces « - », de la plus importante à la moins importante. CHAQUE puce commence par un **titre de 2 à 4 mots en gras**, puis « : », puis les faits et les chiffres, face à la normale ou à la veille (« **Sommeil trop court** : 5h45 dormies pour 7h50 de besoin »).
 - Puis le titre À FAIRE suivi de 1 ou 2 puces « - » : des actions CONCRÈTES et chiffrées, à l'impératif (« Au lit avant **22:30** »).

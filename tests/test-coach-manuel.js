@@ -207,7 +207,11 @@ for (const langue of ['fr', 'en', 'es']) {
   }
 }
 verifie('FORME renvoie aux « titres donnés dans LANGUE » au lieu de les écrire',
-  MODES.every(m => prefixeStatique(m).includes('les trois titres donnés dans LANGUE')));
+  MODES.every(m => prefixeStatique(m).includes('les trois lignes de titre données dans LANGUE')));
+// 25 sept. 2026 — vu en production : « ## ## Pourquoi ». FORME disait « écrits
+// après ## » et LANGUE donnait déjà « ## Pourquoi » : le modèle doublait.
+verifie('FORME interdit le titre doublé « ## ## »',
+  MODES.every(m => prefixeStatique(m).includes('jamais « ## ## »')));
 
 console.log('\n7 · « Comment est calculée la récup ? » — ce que le texte permet de répondre');
 {
