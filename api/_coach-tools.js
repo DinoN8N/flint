@@ -33,7 +33,10 @@ const OUTILS = [
   },
   {
     name: 'getActivityHistory',
-    description: "Historique des activités/entraînements récents : sport, durée, distance, allure, FC moyenne.",
+    description: "TOUTES les séances récentes, telles que l'app les liste : sports lancés par la personne, "
+      + "séances du mode sport de la montre, activités détectées par le bracelet, sorties GPS. Pour chacune : "
+      + "jour, quand (aujourd'hui/hier/il y a N jours), nom, qui a posé le nom (la personne, ou le bracelet = "
+      + "supposition), heure de début, durée, effort sur 20, FC moyenne et max, calories, pas, distance (GPS), origine.",
     parameters: {
       type: 'object',
       properties: { joursN: { type: 'integer', description: 'Nombre de jours à remonter (1 à 90).' } },
