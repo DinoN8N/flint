@@ -246,7 +246,7 @@
         pour la série stable, quand le pourcentage de la maximale rend 13,8. */
      var _pv=[],_i;
      for(_i=0;_i<30;_i++){
-      try{var _r1=flFcRepos(tk(-_i)); if(_r1&&_r1.v>25&&_r1.v<120)_pv.push(_r1.v);}catch(e){}
+      try{var _r1=flFcRepos(tk(-_i)); if(_r1&&_r1.v>25&&_r1.v<120&&(_r1.src==='nuit'||_r1.src==='courbe'))_pv.push(_r1.v);}catch(e){}   /* 28 sept. 2026 — des NUITS, comme la médiane stable plus haut : sans ce filtre, neuf jours portés seulement le jour comptaient « 11 nuits » et un repos de 67 au lieu de 48 (relecture adversariale, R5) */
      }
      if(_pv.length){
       var _t1=_pv.slice().sort(function(a,b){return a-b;});

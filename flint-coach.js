@@ -998,8 +998,17 @@ function flcInstantane(opts){
   r.sexe=(p.gender==='h'||p.gender==='f')?p.gender:'non déclaré';
   r.tailleCm=flcR(p.height,0);
   r.poids=flcSur('profil.poids',function(){var _w=flPoidsCorps();return (_w>0)?flPoidsAff(_w):null;},manques)||null;   /* 28 sept. 2026 — sans poids, rien : « 0.0 kg » partait au Coach, qui recopie les chiffres tels quels */
-  r.objectif={code:p.goal||null, mot:flNGoalWord(), rythmeKgSem:flcR(p.rate,2),
-              cible:(p.targetWeight?(flPoidsAff(+p.targetWeight)||null):null), kcalSrc:p.kcalSrc||null};
+  /* 28 sept. 2026 — L'OBJECTIF APPLIQUÉ, PAS L'OBJECTIF COCHÉ (relecture
+     adversariale, R2). Les garde-fous (`flPrudenceApport`) ne vivaient que
+     dans le plan : le Coach recevait « Sèche, 1 kg/sem, cible 47 kg » pour une
+     mineure que le plan tient au maintien, et « 1 kg/sem » quand le plancher
+     n'en laisse que 0,28. Il reçoit ce que le plan fait, et pourquoi. */
+  var _pl=null,_ng=null;try{_pl=(typeof flPlanSuivreReference==='function')?flPlanSuivreReference():null;_ng=(typeof flNutGoals==='function')?flNutGoals():null;}catch(e){_pl=null;}
+  var _mot=flNGoalWord(), _ry=flcR(p.rate,2), _cib=(p.targetWeight?(flPoidsAff(+p.targetWeight)||null):null), _gar=null;
+  if(_ng&&_ng.prudence){_gar=(typeof flPrudenceMot==='function')?flPrudenceMot(_ng.prudence,false):_ng.prudence;_mot='Maintien';_ry=null;_cib=null;}
+  else if(_pl&&!_pl.choix&&_pl.ref>0&&_mot!=='Maintien'&&_pl.kcal>0)_ry=flcR(Math.abs(_pl.ref-_pl.kcal)*7/7700,2);
+  r.objectif={code:p.goal||null, mot:_mot, garde:_gar, rythmeKgSem:_ry,
+              cible:_cib, kcalSrc:p.kcalSrc||null};
   var bs=flBesoinSommeil(); r.besoinSommeil=bs?{h:flcHM(bs.min!=null?bs.min:bs.h*60), src:bs.src||null}:null;
   r.reveil=p.wake||null;
   /* la formule de la carte Profil, et on le dit : réveil − besoin de la nuit */

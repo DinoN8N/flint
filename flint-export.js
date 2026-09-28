@@ -944,7 +944,7 @@ window.flExportTables = function () {
       ['Taille (cm)', flExpN(p.height != null ? p.height : p.taille)],
       ['Poids (kg)', flExpN(p.weight != null ? p.weight : p.poids, 1)],
       ['Heure de lever visée', p.wake || ''],
-      ['Besoin de sommeil (h)', flExpN(p.need, 1)],
+      ['Besoin de sommeil (h)', flExpN(((typeof flBesoinSommeil==='function')&&(flBesoinSommeil()||{}).h)||p.need, 1)],   // 28 sept. 2026 — le besoin EN USAGE : non choisi, `need` garde la nuit dessinée à l'onboarding
       ['Objectif de calories', flExpN(p.kcalGoal)],
       ['Objectif de protéines (g)', flExpN(p.protGoal)],
       ['Objectif', p.goal || '']

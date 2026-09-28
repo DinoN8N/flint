@@ -5377,7 +5377,7 @@ function strainTarget(){const rv=(typeof flRecovLu==='function')?flRecovLu(0):re
  if(!rv)return ech(10,14);
  const r=rv.s;
  return r>=67?ech(14,18):r>=34?ech(10,14):ech(6,10)}
-function calibNights(){let n=0,src=null;for(let i=0;i<30;i++){const s=sensorOf(tk(-i));if(s&&s.hrv!=null){if(i===0)src=s.hrvSrc||null;if(i===0||(!(s.sleepMin!=null&&s.sleepMin<240)&&!(src&&s.hrvSrc&&s.hrvSrc!==src)))n++}}return n}   /* 28 sept. 2026 — les MÊMES nuits que `baseStat` et `flNuitsBase` : plus de 4 h, même source de VFC (S6) */
+function calibNights(){let n=0,src=null;for(let i=0;i<31;i++){const s=sensorOf(tk(-i));if(s&&s.hrv!=null){if(i===0)src=s.hrvSrc||null;if(i===0||(!(s.sleepMin!=null&&s.sleepMin<240)&&!(src&&s.hrvSrc&&s.hrvSrc!==src)))n++}}return n}   /* 28 sept. 2026 — les MÊMES nuits que `baseStat` et `flNuitsBase` : plus de 4 h, même source de VFC (S6) ; et la même FENÊTRE, aujourd'hui + 30 (elle s'arrêtait à 29 : relecture adversariale) */
 
 /* ---------- RINGS / CHARTS ---------- */
 function ringHTML(val,size,label,sub,color,dispVal){color=color||'var(--accent)';const r=size/2-9,c=2*Math.PI*r,off=c*(1-Math.max(0,Math.min(100,val))/100);const gid='rg'+Math.round(size*1000+(+val||0));const fs=Math.round(size*0.225);return '<div style="position:relative;display:inline-block;width:'+size+'px;height:'+size+'px;vertical-align:top"><svg width="'+size+'" height="'+size+'" viewBox="0 0 '+size+' '+size+'" style="display:block"><defs><linearGradient id="'+gid+'" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="'+color+'" stop-opacity=".7"/><stop offset="1" stop-color="'+color+'"/></linearGradient></defs><circle cx="'+size/2+'" cy="'+size/2+'" r="'+r+'" fill="none" stroke="var(--track)" stroke-width="9"/><circle cx="'+size/2+'" cy="'+size/2+'" r="'+r+'" fill="none" stroke="url(#'+gid+')" stroke-width="9" stroke-linecap="round" stroke-dasharray="'+c.toFixed(1)+'" stroke-dashoffset="'+off.toFixed(1)+'" style="--rc:'+c.toFixed(1)+';--ro:'+off.toFixed(1)+';animation:ringfill .55s cubic-bezier(.2,.8,.2,1) both" transform="rotate(-90 '+size/2+' '+size/2+')"/></svg><div class="rc">'+(label?'<div class="rlab">'+label+'</div>':'')+'<div class="rval" style="font-size:'+fs+'px;color:'+color+'">'+(dispVal!=null?dispVal:val)+'</div>'+(sub?'<div class="rsub">'+sub+'</div>':'')+'</div></div>'}
@@ -5958,13 +5958,13 @@ function caloriesBurned(k){k=k||tk();
    sur 28 jours, complétée par la déclaration au début) — ce que CE corps brûle un jour
    ordinaire. ±15 % autour : Faible / Normale / Élevée. Aujourd'hui, le jour n'est pas
    fini : on compare au prorata de la journée écoulée, plancher d'un quart (avant 6 h,
-   un chiffre minuscule ne peut pas faire dire « Faible »). Repli : l'objectif d'apport,
-   puis 2 500, quand aucune référence n'existe encore. */
+   un chiffre minuscule ne peut pas faire dire « Faible »). Sans référence : ni verdict
+   ni arc (28 sept. 2026 — l'objectif d'apport et les 2 500 servaient de repli). */
 function flCaloriesRepere(off){
  off=off|0; var prof={};try{prof=getProfile()||{};}catch(e){}
- var ref=null,src='objectif d\'apport';
+ var ref=null,src=null;
  try{ref=(typeof flDepenseReference==='function')?flDepenseReference():null;}catch(e){ref=null;}
- if(ref>0){src='dépense de référence';}else{ref=(+prof.kcalGoal)||0;if(!(ref>0)){ref=null;src=null;}}   /* 28 sept. 2026 — plus de repère inventé à 2 500 : sans référence ni objectif, pas de verdict ni d arc (E11) */
+ if(ref>0){src='dépense de référence';}else{ref=null;}   /* 28 sept. 2026 — plus de repère inventé à 2 500 (E11), et plus de repli sur `prof.kcalGoal` : un objectif d APPORT ne juge pas une DÉPENSE — c est l erreur du 12 sept. — et chez qui n a pas de référence, c est souvent le plan bâti sur 2 400 inventés par un moteur d avant (relecture adversariale, R4) */
  /* 13 sept. 2026 — LE PRORATA SUIT LA JOURNÉE LOGIQUE, PAS L'HORLOGE. À 00:56
     le total « d'aujourd'hui » couvrait déjà quinze heures (« 12 septembre à
     aujourd'hui » : la journée court d'un sommeil au suivant), et l'horloge
@@ -5979,7 +5979,9 @@ function flCaloriesRepere(off){
   if(ecoule==null){var nw=new Date();ecoule=nw.getHours()*60+nw.getMinutes();}
   frac=Math.min(1.25,Math.max(0.25,ecoule/1440));
  }
- return {ref:ref, attendu:(ref>0?ref*frac:null), frac:frac, src:src};
+ /* 28 sept. 2026 — MÊME NATURE DES DEUX CÔTÉS (relecture adversariale, R1). La référence rend le métabolisme des heures sans bracelet (E1) ; le total AFFICHÉ ne le compte pas (v2058). Comparés tels quels, qui ôte son bracelet quatre heures lisait « Faible » presque chaque jour (17 jours sur 21, ôté la nuit). Le repère retire du jour jugé ce que le tiroir a retiré de SON total. */
+ var retire=0; if(ref>0){try{var _cl=[tk(off)];if(off===0&&typeof flJourLogiqueCles==='function'){var _c0=flJourLogiqueCles(0);if(_c0&&_c0.length)_cl=_c0;} for(var _i=0;_i<_cl.length;_i++){var _dr=(typeof flCaloriesDetail==='function')?flCaloriesDetail(_cl[_i]):null;if(_dr&&_dr.metaBaseRetiree>0)retire+=_dr.metaBaseRetiree;}}catch(e){retire=0;}}
+ return {ref:ref, attendu:(ref>0?Math.max(0,ref*frac-retire):null), frac:frac, src:src, retire:Math.round(retire)};
 }
 function flCaloriesMot(kcal,off){
  if(kcal==null||isNaN(+kcal))return null;
@@ -9203,7 +9205,7 @@ window.flRecupData=function(_argJour){try{
  if(rv&&!rv.c&&typeof recovery==='function'){
   try{var _rd=recovery(_off); if(_rd&&_rd.c)rvd=_rd;}catch(e){}
  }
- var need=(function(){try{var _ba=(typeof flBesoinJourAjuste==='function')?flBesoinJourAjuste(tk(_off)):null;if(_ba&&_ba.min>0)return _ba.min;}catch(e){}return ((getProfile().need)||8)*60;})();   /* 28 sept. 2026 — le besoin DU JOUR (âge, dette, effort), comme la carte hebdo de la même page : 7h30 d une ado jugés sur 8 h au lieu de 9 (S3) */
+ var need=(function(){try{var _ba=(typeof flBesoinJourAjuste==='function')?flBesoinJourAjuste(K):null;if(_ba&&_ba.min>0)return _ba.min;}catch(e){}return ((getProfile().need)||8)*60;})();   /* 28 sept. 2026 — le besoin DU JOUR (âge, dette, effort), comme la carte hebdo de la même page : 7h30 d une ado jugés sur 8 h au lieu de 9 (S3). Et du jour de la NUIT montrée, `K` — la page peut s être repliée sur la veille : 85 % au lieu de 79 (R8) */
  var score=rv?Math.round(rv.s):null;
  /* v1831 — LES TROIS COULEURS DE NIVEAU DE RÉCUPÉRATION, VALEURS WHOOP.
     Relevées par Dino dans les aplats de la capture de référence, verrouillées.
@@ -9268,8 +9270,8 @@ window.flRecupData=function(_argJour){try{
  var hO=colNuit(function(x){return x?x.spo2Bas:null;});
  var hR=colNuit(function(x){return x?x.rhr:null;});
  var hP=colNuit(function(x){return x?x.resp:null;});
- var hS=colNuit(function(x){
-  return (x&&x.sleepMin)?Math.min(100,Math.round(x.sleepMin/need*100)):null;});
+ var hS=_n22.map(function(x,i){var v=null;   /* 28 sept. 2026 — chaque nuit sur SON besoin, comme la carte hebdo (R8) : gelé par jour passé (`besoinAjuste_`), la lecture ne coûte rien */
+  try{if(x&&x.sleepMin){var _nb=need,_bq=(typeof flBesoinJourAjuste==='function')?flBesoinJourAjuste(tk(_off-(21-i))):null;if(_bq&&_bq.min>0)_nb=_bq.min;v=Math.min(100,Math.round(x.sleepMin/_nb*100));}}catch(e){v=null;} return (v==null||isNaN(v))?null:+v;});
  var sPct=(s0&&s0.sleepMin)?Math.min(100,Math.round(s0.sleepMin/need*100)):null;
  var metriques=[
   {cle:'hrv', libelle:'VARIABILITÉ DE LA\nFRÉQUENCE CARDIAQUE',
@@ -10179,8 +10181,8 @@ window.flProfilData=function(){try{
   /* v2492 — la DERNIERE pesee, pas la derniere ECRITE. Sans tri, cette ligne rendait l entree inseree en dernier ; `flPoidsCorps`, lui, prend la plus recente. Deux lecteurs du meme kilo qui divergent : c est exactement la v1225. */
   if(poids==null){var bl=DB.get('bodylog',{})||{},ks=flJoursTries(bl);
    if(ks.length)poids=bl[ks[ks.length-1]].weight;}}catch(e){}
- var but=null,prot=null;
- try{var g=flNutGoals();but=g&&g.kcal;prot=g&&g.prot;}catch(e){}
+ var but=null,prot=null,_garde=null;
+ try{var g=flNutGoals();but=g&&g.kcal;prot=g&&g.prot;_garde=(g&&g.prudence&&typeof flPrudenceMot==='function')?flPrudenceMot(g.prudence,true):null;}catch(e){}
  var objet=null;
  try{objet=flNGoalWord();if(objet==='Maintien')objet='Mieux récupérer';}catch(e){}
  /* v2207 — LE BESOIN DU JOUR, CALCULÉ UNE SEULE FOIS PAR CHARGE. Deux champs
@@ -10205,8 +10207,8 @@ window.flProfilData=function(){try{
   taille:(p.height==null?null:String(Math.round(p.height))),
   sexe:(p.gender==='f'?'Femme':(p.gender==='h'?'Homme':null)),
   objectif:objet,
-  objectifSous:((but!=null&&prot!=null)?(but+' kcal · '+prot+' g de protéines / j'):null),
-  reveil:(p.wake||null), besoin:(p.need!=null?String(p.need):null),
+  objectifSous:(function(){var _c=(but!=null&&prot!=null)?(but+' kcal · '+prot+' g de protéines / j'):null;return _garde?(_c?_garde+' · '+_c:_garde):_c;})(),   /* 28 sept. 2026 — « Sèche » sur des calories de maintien se justifie : « Maintien avant 18 ans · … » (R2) */
+  reveil:(p.wake||null), besoin:(function(){try{var _bs=(typeof flBesoinSommeil==='function')?flBesoinSommeil():null;if(_bs&&_bs.h>0)return String(_bs.h);}catch(e){}return (p.need!=null?String(p.need):null);})(),   /* 28 sept. 2026 — la règle du Profil s ouvre sur le besoin EN USAGE : la nuit dessinée à l onboarding (7 h) n est pas un choix, la rangée disait 9 h (l âge) et la règle s ouvrait sur 7 — un « OK » l aurait choisie (relecture adversariale) */
   version:(typeof APP_VERSION!=='undefined'?APP_VERSION:null),
 
   /* ═══ v960 — LA PAGE PROFIL REFAITE ═══════════════════════════════════ */
@@ -10626,7 +10628,8 @@ window.flProfilSet=function(champ,valeur){try{
      nouveau inatteignable, ce qui est le défaut d'origine à l'envers. */
   case 'besoin': p.need=Math.max(5,Math.min(12,Math.round((+valeur||8)*10)/10));
                  p.needChoisi=true; break;
-  case 'objectif': p.goal=String(valeur||'recup'); if(p.kcalSrc==='choix')p.kcalSrc='plan'; break;   /* 28 sept. 2026 — la feuille promet « il fixe tes cibles de calories » : un nouvel objectif rend la main au plan (AUDIT-NOUVEAUX-PROFILS-28-SEPT.md) */
+  case 'objectif': var _gn=function(g){g=String(g||'');return (g==='masse'||g==='prise')?'prise':(g==='seche'?'seche':'maintien');};
+   var _neuf=String(valeur||'recup'); if(p.kcalSrc==='choix'&&_gn(_neuf)!==_gn(p.goal))p.kcalSrc='plan'; p.goal=_neuf; break;   /* 28 sept. 2026 — la feuille promet « il fixe tes cibles de calories » : un NOUVEL objectif rend la main au plan (AUDIT-NOUVEAUX-PROFILS-28-SEPT.md). Le même, ré-enregistré — la feuille pré-coche l objectif courant —, ne touche pas à un apport choisi : 2 100 choisis tombaient à 1 900 (R7). recup et maintien, masse et prise sont le même objectif */
   case 'region': p.region=String(valeur||''); break;
   /* v960 — les champs de la page « Modifier le profil ». */
   case 'nom':    p.lastName=String(valeur||'').slice(0,32); break;
@@ -10636,7 +10639,7 @@ window.flProfilSet=function(champ,valeur){try{
    /* On stocke la DATE et on en DÉDUIT l'âge, jamais l'inverse : un âge saisi
       à la main se périme au prochain anniversaire et personne ne le corrige. */
    p.birth=String(valeur||'');
-   (function(){try{var _q=String(p.birth).split('-'),d=(_q.length===3)?new Date(+_q[0],+_q[1]-1,+_q[2]):new Date(p.birth);if(!isNaN(d)){
+   (function(){try{var _q=String(p.birth).split('-'),d=(_q.length===3)?new Date(+_q[0]>=1900?+_q[0]:NaN,+_q[1]-1,+_q[2]):new Date(p.birth);if(!isNaN(d)){
     var n=new Date(),a=n.getFullYear()-d.getFullYear();
     var m=n.getMonth()-d.getMonth();
     if(m<0||(m===0&&n.getDate()<d.getDate()))a--;
@@ -10704,7 +10707,7 @@ window.flOnboardApply=function(j){try{
  var nom=String(j.prenom||'').trim().slice(0,24);
  if(nom)p.name=nom;
  if(j.naissance){p.birth=String(j.naissance);
-  try{var _q=String(p.birth).split('-'),b=(_q.length===3)?new Date(+_q[0],+_q[1]-1,+_q[2]):new Date(p.birth),n=new Date();if(!isNaN(b)){
+  try{var _q=String(p.birth).split('-'),b=(_q.length===3)?new Date(+_q[0]>=1900?+_q[0]:NaN,+_q[1]-1,+_q[2]):new Date(p.birth),n=new Date();if(!isNaN(b)){
    var a=n.getFullYear()-b.getFullYear(),m=n.getMonth()-b.getMonth();
    if(m<0||(m===0&&n.getDate()<b.getDate()))a--;
    if(a>=10&&a<=100)p.age=a;}}catch(e){}}
@@ -10730,7 +10733,7 @@ window.flOnboardApply=function(j){try{
  if(w!=null&&p.height>0&&j.kcalChoixActif!==false&&+j.kcalChoix>=800&&+j.kcalChoix<=6000){p.kcalGoal=Math.round(j.kcalChoix);p.kcalSrc='choix';}   /* 28 sept. 2026 — et jamais sur un corps incomplet : la carte aurait été calculée sur 70 kg et 175 cm inventés (E3) */   /* 12 sept. 2026 — un apport choisi ne suit pas la référence */
  if(+j.pasObjectif>=1000&&+j.pasObjectif<=40000)p.stepGoal=Math.round(j.pasObjectif);
  if(/^[0-2]?[0-9]:[0-5][0-9]$/.test(String(j.coucher||'')))p.bedGoal=String(j.coucher);
- DB.set('profile',p); window._flRefCache=null; try{setTimeout(function(){try{flPousserMorpho();}catch(e){}},0);}catch(e){} try{if(j.extra&&Array.isArray(j.extra.sante)&&j.extra.sante.indexOf('grossesse')>=0){var _br=DB.get('besoinReponses',{})||{};_br.grossesse=true;DB.set('besoinReponses',_br);}}catch(e){}   /* 28 sept. 2026 — la référence mise en cache pendant le calcul à blanc ignorait l activité déclarée (E7) ; la montre reçoit le corps sans attendre le prochain lancement (M4) ; la grossesse déclarée ARME le verrou du besoin mesuré, qu aucun écran ne remplissait (S7) */
+ DB.set('profile',p); window._flRefCache=null; try{setTimeout(function(){try{flPousserMorpho();}catch(e){}},0);}catch(e){} try{if(j.extra&&Array.isArray(j.extra.sante)){var _br=DB.get('besoinReponses',{})||{};if(j.extra.sante.indexOf('grossesse')>=0){if(_br.grossesse!==true||!_br.grossesseA)_br.grossesseA=tk(0);_br.grossesse=true;}else{delete _br.grossesse;delete _br.grossesseA;}DB.set('besoinReponses',_br);}}catch(e){}   /* 28 sept. 2026 — la référence mise en cache pendant le calcul à blanc ignorait l activité déclarée (E7) ; la montre reçoit le corps sans attendre le prochain lancement (M4) ; la grossesse déclarée ARME le verrou du besoin mesuré, qu aucun écran ne remplissait (S7) — avec sa date, et un onboarding rejoué sans elle la RETIRE (R3, flGrossesseEtat) */
  /* Le poids nourrit LES DEUX journaux — l'un sans l'autre ferait mentir
     Tendances dès le lendemain (même règle que flProfilSet). */
  if(w!=null){try{flNWeightLogPush(w);}catch(e){}
@@ -12357,7 +12360,7 @@ window.flAccueilData=function(_argJour){try{
  /* 12 sept. 2026 — le repère est la dépense de référence (voir flCaloriesRepere) : l'arc
     se remplit vers ce que ce corps brûle un jour ordinaire, et le mot se lit contre le
     prorata de la journée. */
- var _rc=flCaloriesRepere(_off), but=_rc.ref;
+ var _rc=flCaloriesRepere(_off), but=_rc.ref; if(but>0&&_rc.retire>0)but=Math.max(1,but-_rc.retire);   /* 28 sept. 2026 — l arc vise ce que le total AFFICHÉ peut atteindre : sans le métabolisme retiré au tiroir (R1) */
  /* 13 sept. 2026 — AUCUNE MESURE, AUCUN VERDICT. Sans bracelet (ou avant la
     première synchro), `caloriesBurned` rend zéro — c'est la décision de la
     maison, « jamais un métabolisme fantôme » — et ce zéro se faisait juger
@@ -17722,7 +17725,8 @@ function flPlanSuivreReference(){try{
  goal=(goal==='masse'||goal==='prise')?'prise':(goal==='seche'?'seche':'maintien');
  var rate=(+p.rate>0)?+p.rate:0.5;
  var ref=(typeof flDepenseReference==='function')?flDepenseReference():null;
- if(!(ref>0))return null; var _pr=(typeof flPrudenceApport==='function')?flPrudenceApport():null; if(_pr){rate=Math.min(rate,_pr.rythmeMax);if(_pr.sansDeficit&&goal==='seche')goal='maintien';}   /* 28 sept. 2026 — les garde-fous de l apport (flint-nutrition.js) : rythme ≤ 1 % du poids, pas de sèche pour un mineur, une grossesse ou un IMC < 18,5 */
+ if(!(ref>0)){try{if(p.kcalSrc==='plan'&&typeof flMetaBase==='function'&&flMetaBase()==null){delete p.kcalGoal;delete p.kcalSrc;DB.set('profile',p);}}catch(e){} return null;}   /* 28 sept. 2026 — SANS CORPS, PAS DE PLAN, Y COMPRIS D AVANT (R4). Depuis la v2693 aucun plan ne se bâtit sur les 2 400 de repli ; ceux qu un moteur d avant a écrits restaient, et servaient de budget. Un plan (jamais un CHOIX) dont le métabolisme est inconnu s efface ; il se recalcule seul dès que le corps est complet. */
+ var _pr=(typeof flPrudenceApport==='function')?flPrudenceApport():null, _prud=null; if(_pr){rate=Math.min(rate,(goal==='prise'&&_pr.rythmeMaxPrise)?_pr.rythmeMaxPrise:_pr.rythmeMax);if(_pr.sansDeficit&&goal==='seche'){goal='maintien';_prud=_pr.raison;}if(_pr.sansSurplus&&goal==='prise'){goal='maintien';_prud='obesite';}}   /* 28 sept. 2026 — les garde-fous de l apport (flint-nutrition.js) : rythme ≤ 1 % du poids, pas de sèche pour un mineur, une grossesse ou un IMC < 18,5 */
  var daily=goal==='maintien'?0:Math.round(rate*7700/7/10)*10;
  var kcal=goal==='seche'?ref-daily:goal==='prise'?ref+daily:ref;
  var bmr=(typeof flMetaBase==='function')?flMetaBase():null;
@@ -17735,10 +17739,10 @@ function flPlanSuivreReference(){try{
  if(!_choix&&Math.abs((+p.kcalGoal||0)-kcal)>=10){p.kcalGoal=kcal;bouge=true;}
  if(prot>0&&(+p.protGoal||0)!==prot){p.protGoal=prot;bouge=true;}
  if(bouge){if(!_choix)p.kcalSrc='plan';DB.set('profile',p);}   /* un apport choisi ne se requalifie pas en « plan » parce que ses proteines ont bouge */
- return {kcal:(_choix?((typeof flPlancherChoix==='function')?flPlancherChoix(+p.kcalGoal||kcal):Math.max(+p.kcalGoal||kcal,(bmr>0?Math.round(bmr):0))):kcal),prot:prot,ref:ref,daily:daily,bouge:bouge,choix:_choix,prudence:(_pr&&_pr.raison)||null};
+ return {kcal:(_choix?((typeof flPlancherChoix==='function')?flPlancherChoix(+p.kcalGoal||kcal):Math.max(+p.kcalGoal||kcal,(bmr>0?Math.round(bmr):0))):kcal),prot:prot,ref:ref,daily:daily,bouge:bouge,choix:_choix,prudence:_prud};
 }catch(e){return null;}}
-function flNutGoals(){try{flPlanSuivreReference();}catch(e){}
- var p=getProfile();
+function flNutGoals(){var _pl=null;try{_pl=flPlanSuivreReference();}catch(e){}
+ var p=getProfile(), _prudC=null; try{if(p.kcalSrc==='choix'&&+p.kcalGoal>0&&typeof flPrudenceApport==='function'&&typeof flPlancherChoix==='function'){var _pc=flPrudenceApport();if(_pc&&_pc.sansDeficit&&flPlancherChoix(+p.kcalGoal)>+p.kcalGoal)_prudC=_pc.raison;}}catch(e){}   /* 28 sept. 2026 — un CHOIX relevé par le garde-fou (une carte « déficit » d un ancien natif, chez un mineur) se dit aussi (R2) */
  var kcal=+p.kcalGoal||0,prot=+p.protGoal||0; if(kcal&&p.kcalSrc==='choix'){try{if(typeof flPlancherChoix==='function')kcal=flPlancherChoix(kcal);else{var _b0=flMetaBase();if(_b0>0&&kcal<_b0)kcal=Math.round(_b0);}}catch(e){}}   /* 28 sept. 2026 — le plancher du métabolisme vaut aussi pour un apport choisi : la carte de l onboarding proposait 870 kcal à qui en brûle 877 au repos (AUDIT-NOUVEAUX-PROFILS-28-SEPT.md) */
  if(!kcal){try{kcal=(typeof flDepenseReference==='function'&&flDepenseReference())||0;}catch(e){kcal=0;}}
  if(!prot){try{var _w=(typeof flPoidsCorps==='function')?flPoidsCorps():(+p.weight||0);var _pr2=(typeof flPrudenceApport==='function')?flPrudenceApport():null;if(_pr2&&_pr2.poidsRef)_w=_pr2.poidsRef;
@@ -17746,7 +17750,7 @@ function flNutGoals(){try{flPlanSuivreReference();}catch(e){}
  if(!kcal&&!prot)return {kcal:null,prot:null,carb:null,fat:null};
  var carb=p.carbGoal,fat=p.fatGoal;
  if(carb==null||fat==null){var rest=Math.max(0,(kcal||0)-(prot||0)*4);carb=Math.round(rest*0.6/4);fat=Math.round(rest*0.4/9);}
- return {kcal:kcal||null,prot:prot||null,carb:+carb,fat:+fat};}
+ return {kcal:kcal||null,prot:prot||null,carb:+carb,fat:+fat,prudence:(_pl&&!_pl.choix&&_pl.prudence)||_prudC||null};}   /* 28 sept. 2026 — le garde-fou appliqué, pour qu un écran le dise (R2) */
 /* ═══ v1923 — L AVIS FLINT NOTE LA QUALITE, ET PLUS LES PROTEINES ══════════
    Dino, 26 aout : « il note uniquement la part des proteines dans le repas.
    Mais il n y a pas que des gomusclus. Une banane, c est sain — un truc
@@ -23515,7 +23519,7 @@ function flPousserMorpho(){try{
  /* L'âge se recalcule depuis la date de naissance quand elle est là : le champ
     `age` est saisi une fois et vieillit mal. */
  if(p.birth){try{
-   var _q=String(p.birth).split('-'), b=(_q.length===3)?new Date(+_q[0],+_q[1]-1,+_q[2]):new Date(p.birth), n=new Date(), a=n.getFullYear()-b.getFullYear();
+   var _q=String(p.birth).split('-'), b=(_q.length===3)?new Date(+_q[0]>=1900?+_q[0]:NaN,+_q[1]-1,+_q[2]):new Date(p.birth), n=new Date(), a=n.getFullYear()-b.getFullYear();
    if(n.getMonth()<b.getMonth()||(n.getMonth()===b.getMonth()&&n.getDate()<b.getDate()))a--;
    if(a>0&&a<120)age=a;
  }catch(e){}}
@@ -23612,7 +23616,7 @@ function wipeData(){if(!confirm('Vider TOUTES les données (démo incluse) et re
 function exportData(){const dump={};Object.keys(localStorage).forEach(k=>dump[k]=localStorage.getItem(k));const t=JSON.stringify(dump,null,2);try{const blob=new Blob([t],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='flint-data.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},1500);toast('⬇️ Données exportées (flint-data.json)')}catch(e){try{navigator.clipboard.writeText(t);toast('📋 Données copiées')}catch(e2){toast('Export impossible')}}}
 
 /* ===== Coach IA (réponses fondées sur les données du jour) ===== */
-const APP_VERSION='v2698';
+const APP_VERSION='v2699';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
@@ -27403,7 +27407,7 @@ window.flMetriquesCourse=function(id,debutSec,finSec,estCourse){
    try{
     var pr=getProfile()||{}, src=pr.gabaritSource||{}, n=0;
     ['weight','height','birth','gender','bodyFat'].forEach(function(k){
-     if(data[k]==null||data[k]===''||src[k]==='saisie')return; if((k==='weight'&&!(+data[k]>=30&&+data[k]<=250))||(k==='height'&&!(+data[k]>=120&&+data[k]<=230))||(k==='gender'&&data[k]!=='h'&&data[k]!=='f')||(k==='birth'&&!/^\d{4}-\d{2}-\d{2}$/.test(String(data[k]))))return;   /* 28 sept. 2026 — une SAISIE ne se réécrit plus (elle revenait à chaque retour au premier plan), « Autre » compris ; et les bornes de flProfilSet : 300 kg partaient au bracelet en 44 (AUDIT-NOUVEAUX-PROFILS-28-SEPT.md) */
+     if(data[k]==null||data[k]===''||src[k]==='saisie')return; if((k==='weight'&&!(+data[k]>=30&&+data[k]<=250))||(k==='height'&&!(+data[k]>=120&&+data[k]<=230))||(k==='gender'&&data[k]!=='h'&&data[k]!=='f')||(k==='birth'&&(!/^\d{4}-\d{2}-\d{2}$/.test(String(data[k]))||+String(data[k]).slice(0,4)<1900)))return;   /* 28 sept. 2026 — une SAISIE ne se réécrit plus (elle revenait à chaque retour au premier plan), « Autre » compris ; et les bornes de flProfilSet : 300 kg partaient au bracelet en 44 (AUDIT-NOUVEAUX-PROFILS-28-SEPT.md) */
      var vide=(pr[k]==null||pr[k]===''||(+pr[k]===0&&k!=='gender'));
      /* On reecrit aussi ce qu on avait SOI-MEME pose depuis Sante : Apple est
         alors plus a jour que notre copie. Jamais une saisie de l utilisateur. */
@@ -27413,6 +27417,7 @@ window.flMetriquesCourse=function(id,debutSec,finSec,estCourse){
     if(n){pr.gabaritSource=src;DB.set('profile',pr);
      console.log('[flint] Apple Sante : '+n+' valeur(s) de gabarit reprise(s)');
      try{if(typeof flCaloriesOublier==='function')flCaloriesOublier();}catch(e){}
+     try{setTimeout(function(){try{if(typeof flPousserMorpho==='function')flPousserMorpho();}catch(e){}},0);}catch(e){}   /* 28 sept. 2026 — un corps complété par Santé descend au bracelet, comme une saisie (M4) : il n y arrivait qu au lancement suivant (R9). Et jamais une année avant 1900 — un ancien natif en calendrier japonais écrit « 0055-… » (R6) */
      try{if(typeof window.flRafraichirDouce==='function')window.flRafraichirDouce();}catch(e){}}
    }catch(e){}
   }
@@ -30762,7 +30767,7 @@ window.flDansFenetre=function(m,d,f){ return m>=d && m<f; };
       est bien pose a la saisie, mais il se perime au prochain anniversaire et
       personne ne le corrige, ce que le commentaire de la saisie disait vouloir
       eviter. On garde donc `birth` pour verite et `age` en secours seulement. */
-   if(p.birth){var _q=String(p.birth).split('-'),d=(_q.length===3)?new Date(+_q[0],+_q[1]-1,+_q[2]):new Date(p.birth);   /* 28 sept. 2026 — en date LOCALE : lue en UTC, l âge changeait la veille de l anniversaire à l ouest (C12) */
+   if(p.birth){var _q=String(p.birth).split('-'),d=(_q.length===3)?new Date(+_q[0]>=1900?+_q[0]:NaN,+_q[1]-1,+_q[2]):new Date(p.birth);   /* 28 sept. 2026 — en date LOCALE : lue en UTC, l âge changeait la veille de l anniversaire à l ouest (C12). Et jamais avant 1900 : `new Date(55,…)` rend 1955, et un ancien natif en calendrier japonais écrit « 0055-03-12 » (Shōwa 55) — 71 ans au lieu de 46 ; l année invalide redonne « âge inconnu », comme avant (R6) */
     if(!isNaN(d)){var n=new Date(),a=n.getFullYear()-d.getFullYear(),
      m2=n.getMonth()-d.getMonth();
      if(m2<0||(m2===0&&n.getDate()<d.getDate()))a--;
@@ -31468,6 +31473,7 @@ window.flDansFenetre=function(m,d,f){ return m>=d && m<f; };
   window.flBesoinReponse=function(cle,valeur){try{
    var m=DB.get('besoinReponses',{})||{};
    if(valeur===null)delete m[cle]; else m[cle]=valeur;
+   if(cle==='grossesse'){if(valeur===true)m.grossesseA=tk(0);else delete m.grossesseA;}   /* 28 sept. 2026 — la date qui lui donne une fin (flGrossesseEtat) */
    DB.set('besoinReponses',m);
    return {ok:true,cle:cle,valeur:(valeur===null?null:m[cle])};
   }catch(e){return {ok:false,erreur:e.message};}};
@@ -31530,7 +31536,8 @@ window.flDansFenetre=function(m,d,f){ return m>=d && m<f; };
    if(_vaInsomnie())
     return _vaVide('Tu as décrit des nuits difficiles depuis plusieurs mois. Dans ce cas précis, chercher à dormir plus fait souvent l\'inverse de ce qu\'on croit. FLINT n\'affiche pas de besoin ici, et ne te conseillera jamais de te coucher plus tôt.');
    var rep=flBesoinReponses();
-   if(rep.grossesse===true||rep.postpartum===true)
+   var _ge=(typeof flGrossesseEtat==='function')?flGrossesseEtat():(rep.grossesse===true?'grossesse':null);   /* 28 sept. 2026 — datée, elle finit (R3) */
+   if(_ge||rep.postpartum===true)
     return _vaVide('Pendant une grossesse et l\'année qui suit, le sommeil change trop vite pour qu\'une mesure sur quatre mois veuille encore dire quelque chose. On met l\'estimation en pause.');
    if(rep.travailPoste===true)
     return _vaVide('Tes nuits se situent en dehors de la plage horaire sur laquelle cette mesure a été construite. On préfère ne rien afficher plutôt qu\'un chiffre auquel on ne croit pas.');

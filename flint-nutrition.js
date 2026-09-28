@@ -980,11 +980,42 @@ window.flPalDeclare=function(){try{
      dit. Avant : une ado de 16 ans à IMC 18 recevait 1 518 kcal de sèche.
    · un RYTHME d'au plus 1 % du poids par semaine (repère 0,5–1 %/sem), jamais
      au-delà d'1 kg : 1 kg/sem demandé par 45 kg devient 0,45.
+   · la PRISE DE MASSE a ses propres bornes (ajoutées le même jour, trouvées
+     par le balayage de 1 890 profils) : rythme ≤ 0,5 % du poids par semaine
+     (0,5 kg au plus — le repère d'une prise « propre », 0,25–0,5 %/sem), et
+     PAS DE SURPLUS au-delà d'un IMC de 35 (obésité de classe II, OMS). Avant :
+     +1 100 kcal/j proposés à 160 kg pour 1,65 m. Le seuil est 35 et non 30 :
+     l'IMC confond le muscle et la graisse, et un sportif de 100 kg pour 1,80 m
+     (IMC 31) doit pouvoir prendre du muscle.
    · des PROTÉINES sur un POIDS DE RÉFÉRENCE plafonné à l'IMC 25 (352 g/j à
      160 kg n'est la recommandation de personne). PAS de plafond en % des
      calories : essayé à 35 % (AMDR), il rognait la sèche d'un homme mince
      (183 → 180 g), là où 2,2 g/kg est un choix de la maison et où les
      recommandations sportives dépassent ce pourcentage en déficit. */
+/* ═══ 28 sept. 2026 — UNE GROSSESSE A UNE FIN (relecture adversariale, R3) ═══
+   Déclarée une fois, elle verrouillait pour toujours : plus de déficit, plus de
+   besoin de sommeil mesuré, et seul « Tout effacer » en sortait — l'onboarding
+   rejoué sans « Grossesse » ne la retirait pas. Elle porte désormais sa DATE
+   (posée à la déclaration ; à la première lecture pour une déclaration d'avant,
+   y compris celle restée dans `profile.onb.sante`) : « grossesse » 280 jours,
+   puis « postpartum » jusqu'au 645ᵉ — l'année qui suit, la fenêtre que le
+   besoin de sommeil nommait déjà —, puis plus rien. Un « non » explicite
+   (`grossesse:false`) n'est jamais ressuscité. */
+window.flGrossesseEtat=function(){try{
+ var r=(typeof flBesoinReponses==='function')?flBesoinReponses():{};
+ if(r.grossesse===false)return null;
+ if(r.grossesse!==true){
+  var p=getProfile()||{},_s=(p.onb&&p.onb.sante)||[];
+  if(!(Array.isArray(_s)&&_s.indexOf('grossesse')>=0))return null;
+  r.grossesse=true;
+ }
+ var a=String(r.grossesseA||'');
+ if(!/^\d{4}-\d{1,2}-\d{1,2}$/.test(a)){a=tk(0);r.grossesseA=a;try{DB.set('besoinReponses',r);}catch(e){}}
+ var q=a.split('-'),d0=new Date(+q[0],+q[1]-1,+q[2]),n=new Date(),n0=new Date(n.getFullYear(),n.getMonth(),n.getDate());
+ var j=Math.round((n0.getTime()-d0.getTime())/864e5);
+ if(!(j>=0)||j<=280)return 'grossesse';
+ return j<=645?'postpartum':null;
+}catch(e){return null;}};
 window.flPrudenceApport=function(){try{
  var p=getProfile()||{};
  var age=(typeof flAge==='function')?flAge():null;
@@ -996,14 +1027,22 @@ window.flPrudenceApport=function(){try{
  if(!(w>0))w=+p.weight||0;
  var h=+p.height||0, imc=(w>0&&h>0)?w/Math.pow(h/100,2):null;
  var enceinte=false;
- try{var _s=(p.onb&&p.onb.sante)||[];
-     enceinte=(Array.isArray(_s)&&_s.indexOf('grossesse')>=0)
-              ||((typeof flBesoinReponses==='function')&&flBesoinReponses().grossesse===true);}catch(e){}
+ try{enceinte=(typeof flGrossesseEtat==='function')&&flGrossesseEtat()==='grossesse';}catch(e){}   /* 28 sept. 2026 — une grossesse a une FIN (R3, voir flGrossesseEtat) */
  var raison=(age!=null&&age<18)?'mineur':(enceinte?'grossesse':((imc!=null&&imc<18.5)?'maigreur':null));
  var wRef=(w>0&&h>0)?Math.min(w,25*Math.pow(h/100,2)):w;
  return {plancher:plancher, sansDeficit:!!raison, raison:raison,
-         rythmeMax:(w>0?Math.min(1,0.01*w):1), poidsRef:(wRef>0?Math.round(wRef*10)/10:null)};
+         rythmeMax:(w>0?Math.min(1,0.01*w):1), rythmeMaxPrise:(w>0?Math.min(0.5,0.005*w):0.5),
+         sansSurplus:(imc!=null&&imc>=35), poidsRef:(wRef>0?Math.round(wRef*10)/10:null)};
 }catch(e){return null;}};
+/* 28 sept. 2026 — LE GARDE-FOU SE DIT (relecture adversariale, R2). Il ne
+   vivait que dans `flPlanSuivreReference` : le Profil affichait « Sèche » sur
+   des calories de maintien, sans un mot, et le Coach recevait « sèche,
+   1 kg/sem, cible 47 kg » pour une mineure. Court : sous l'objectif du
+   Profil. Complet : ce que le Coach doit respecter. */
+window.flPrudenceMot=function(r,court){
+ var C={mineur:'Maintien avant 18 ans',grossesse:'Maintien pendant la grossesse',maigreur:'Maintien : IMC sous 18,5',obesite:'Maintien : IMC au-delà de 35'};
+ var L={mineur:'pas de déficit avant 18 ans',grossesse:'pas de déficit pendant une grossesse',maigreur:'pas de déficit sous un IMC de 18,5',obesite:'pas de surplus au-delà d\'un IMC de 35'};
+ return (court?C:L)[r]||null;};
 /* Un apport CHOISI garde sa valeur — sauf s'il franchit un garde-fou. */
 window.flPlancherChoix=function(kcal){try{
  var pr=flPrudenceApport(); if(!pr||!(kcal>0))return kcal;
