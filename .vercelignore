@@ -1,0 +1,15 @@
+# ═══════════════════════════════════════════════════════════════════════════
+#  CE QUI NE PART JAMAIS EN LIGNE (28 sept. 2026)
+#
+#  `vercel --prod` publie tout le dossier. Relevé ce soir-là sur la production :
+#  tests/cas-dino-2026-08-16.json — la fréquence cardiaque de Dino minute par
+#  minute — répondait 200 à n'importe qui, comme les schémas SQL de supabase/.
+#  Seuls doivent être servis le canal OTA (moteur, manifeste signé, images) et
+#  les fonctions api/. Tout ce qui suit est local : les bancs et leurs données
+#  réelles, les schémas, les outils, l'ancienne coque iOS, le script de déploiement.
+# ═══════════════════════════════════════════════════════════════════════════
+tests/
+supabase/
+outils/
+ios-shell/
+deployer.sh
