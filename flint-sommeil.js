@@ -2248,7 +2248,31 @@ function restageSleep(dayKey) {
              voyage transmeridien ou d un changement d heure sans localisation
              continue. Sans lui, un fragment de nuit d avion injecte un deficit
              fictif de plusieurs heures. */
-          s.offsetUTC = new Date(start * 1000).getTimezoneOffset();
+          /* ═══ 28 sept. 2026 — CE CHAMP SE REECRIVAIT AU RETOUR DE VOYAGE ═══
+             `getTimezoneOffset()` rend le decalage du telephone MAINTENANT. Sur
+             une nuit REJOUEE — et `moteurVersion` dit qu elles le sont souvent,
+             « restage-2026-09-01c » chez Dino — il stampe donc le fuseau du
+             jour du rejeu, pas celui de la nuit.
+             MESURE SUR SA BASE : du 13 au 24 aout, `night.offsetUTC` annonce
+             -120 (UTC+2) quand `watch_<K>.tz.off` annonce 240 (UTC+4) et que
+             WHOOP declare UTC+04:00 pour les memes nuits. Douze nuits etiquetees
+             du fuseau du RETOUR, parce qu elles ont ete restagees le 1er sept.
+             CE QUE CA COUTE : `index.html` rejette de la normale les nuits qui
+             « suivaient un changement de fuseau horaire ». Un faux changement
+             jette donc de vraies nuits — et il est FAUX DEUX FOIS, a l aller
+             comme au retour. Pour un produit qu on vend a des gens qui voyagent,
+             c est une normale amputee a chaque deplacement.
+             LE REMEDE EXISTAIT DEJA : `flint-fuseau.js` capture le decalage EN
+             DIRECT (`src:'courant'`, avec la date de capture) et s interdit de
+             reecrire un jour passe — il porte la cicatrice du meme defaut
+             (« write-once fige l erreur : 20 jours sur 32 etaient etiquetes
+             le:'2026-8-20' »). On lit donc SON chiffre, et on ne retombe sur
+             l horloge du lecteur que faute de mieux. Signe oppose : `tz.off`
+             vaut +240 pour UTC+4 la ou `getTimezoneOffset()` vaut -240. */
+          var _fz = (typeof flFuseauDe === 'function') ? flFuseauDe(dayKey) : null;
+          s.offsetUTC = (_fz && typeof _fz.off === 'number' && isFinite(_fz.off))
+                      ? -_fz.off
+                      : new Date(start * 1000).getTimezoneOffset();
           s.moteurVersion = MOTEUR_VERSION;
         }catch(eI){ flsLog('instrumentation : ' + eI.message); }
       })();

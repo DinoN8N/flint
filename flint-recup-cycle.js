@@ -1371,9 +1371,22 @@ window.flSommeilPourRecup = function (K) {
           try { q = flScoreSommeil(kk, null, null, undefined, undefined);
                 if (q && q.score != null) vs.push(q.score); } catch (e) {}
         }
-        if (vs.length >= 8) {
+        /* ═══ GÉN. 21 — 28 sept. 2026 — LE POIDS EST LE COMPTE DE PREUVES ═══
+           L'ancre valait 70 jusqu'à la huitième nuit notée, puis sautait d'un
+           coup à SA médiane. Mesuré sur les huit corps du banc (le même jour
+           jugé avec N−1 nuits d'historique, 30 tirages) : biais des nuits 4 à 8
+           de +14 à +18 points chez l'athlète, le gros dormeur et la femme
+           sédentaire, puis un SAUT de −14 à −17 (jusqu'à −27) à la neuvième
+           nuit — la première semaine d'un nouveau venu racontait un autre
+           corps que le sien, puis se démentait sans prévenir.
+           La règle de la maison existe déjà (`flDepenseReference`, v2004) :
+           « avec n journées sur les sept attendues, la mesure pèse n/7 ». Ici,
+           n/8 : l'ancre part de 70 et glisse vers SA médiane au fil des nuits,
+           trois nuits au moins (celles que `baseStat` exige). Dès huit nuits,
+           rien ne change d'un octet. AUDIT-NOUVEAUX-PROFILS-28-SEPT.md §2. */
+        if (vs.length >= 3) {
           vs.sort(function (a, b) { return a - b; });
-          anc = vs[vs.length >> 1]; ancN = vs.length;
+          anc = 70 + (vs[vs.length >> 1] - 70) * Math.min(1, vs.length / 8); ancN = vs.length;
         }
         C.par[K] = { v: anc, n: ancN };
       }

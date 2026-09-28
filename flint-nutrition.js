@@ -967,6 +967,52 @@ window.flPalDeclare=function(){try{
  return {pal:Math.min(1.90,pal), src:'déclarée à l\'inscription'};
 }catch(e){return null;}};
 
+/* ═══ 28 sept. 2026 — LES GARDE-FOUS DE L'APPORT ═══════════════════════════
+   AUDIT-NOUVEAUX-PROFILS-28-SEPT.md §2. Dino : « prends les bonnes décisions ».
+   Quatre règles PUBLIÉES, aucune calibrée sur un poignet :
+   · un PLANCHER ABSOLU sous lequel aucun plan ne descend sans suivi médical :
+     1 200 kcal pour une femme, 1 500 pour un homme (repères NIH/NHLBI des
+     régimes non supervisés), 1 350 quand le sexe n'est pas déclaré (le milieu,
+     la convention du moteur) — et le métabolisme de base s'il est plus haut.
+     Mesuré avant : 16 profils sur 180 passaient dessous (802 kcal à 85 ans).
+   · PAS DE DÉFICIT pour un mineur, pendant une grossesse, ni sous un IMC de
+     18,5 (maigreur, seuil OMS) : la « sèche » devient un maintien, `raison` le
+     dit. Avant : une ado de 16 ans à IMC 18 recevait 1 518 kcal de sèche.
+   · un RYTHME d'au plus 1 % du poids par semaine (repère 0,5–1 %/sem), jamais
+     au-delà d'1 kg : 1 kg/sem demandé par 45 kg devient 0,45.
+   · des PROTÉINES sur un POIDS DE RÉFÉRENCE plafonné à l'IMC 25 (352 g/j à
+     160 kg n'est la recommandation de personne). PAS de plafond en % des
+     calories : essayé à 35 % (AMDR), il rognait la sèche d'un homme mince
+     (183 → 180 g), là où 2,2 g/kg est un choix de la maison et où les
+     recommandations sportives dépassent ce pourcentage en déficit. */
+window.flPrudenceApport=function(){try{
+ var p=getProfile()||{};
+ var age=(typeof flAge==='function')?flAge():null;
+ var g=String(p.gender||'').toLowerCase().charAt(0);
+ var plancher=(g==='f')?1200:((g==='h')?1500:1350);
+ var bmr=(typeof flMetaBase==='function')?flMetaBase():null;
+ if(bmr>plancher)plancher=Math.round(bmr);
+ var w=0;try{w=(typeof flPoidsCorps==='function')?(+flPoidsCorps()||0):0;}catch(e){w=0;}
+ if(!(w>0))w=+p.weight||0;
+ var h=+p.height||0, imc=(w>0&&h>0)?w/Math.pow(h/100,2):null;
+ var enceinte=false;
+ try{var _s=(p.onb&&p.onb.sante)||[];
+     enceinte=(Array.isArray(_s)&&_s.indexOf('grossesse')>=0)
+              ||((typeof flBesoinReponses==='function')&&flBesoinReponses().grossesse===true);}catch(e){}
+ var raison=(age!=null&&age<18)?'mineur':(enceinte?'grossesse':((imc!=null&&imc<18.5)?'maigreur':null));
+ var wRef=(w>0&&h>0)?Math.min(w,25*Math.pow(h/100,2)):w;
+ return {plancher:plancher, sansDeficit:!!raison, raison:raison,
+         rythmeMax:(w>0?Math.min(1,0.01*w):1), poidsRef:(wRef>0?Math.round(wRef*10)/10:null)};
+}catch(e){return null;}};
+/* Un apport CHOISI garde sa valeur — sauf s'il franchit un garde-fou. */
+window.flPlancherChoix=function(kcal){try{
+ var pr=flPrudenceApport(); if(!pr||!(kcal>0))return kcal;
+ var ref=(typeof flDepenseReference==='function')?flDepenseReference():null;
+ if(pr.sansDeficit&&ref>0&&kcal<ref)kcal=ref;
+ if(kcal<pr.plancher)kcal=(ref>0)?Math.min(ref,pr.plancher):pr.plancher;
+ return Math.round(kcal);
+}catch(e){return kcal;}};
+
 window._flRefCache=null;
 window.flDepenseReference=function(){try{
  var bmr=(typeof flMetaBase==='function')?flMetaBase():null;

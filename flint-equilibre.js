@@ -127,7 +127,7 @@ function chargeBalance(off){
  var e=flEquilibreCharge(off||0);
  if(!e||e.manque)return null;
  var r=e.rapport,o;
- if(r<0.8)o={zone:0,lab:'Sous-charge',col:'#3E63E0',tint:'#ECF0FC',ic:'ti-trending-down',txt:'Ton volume baisse. Si tu te sens frais, c\'est le moment d\'ajouter une séance.'};
+ if(r<0.8)o={zone:0,lab:'Sous-charge',col:'#3E63E0',tint:'#ECF0FC',ic:'ti-trending-down',txt:'Ton volume baisse. Si tu te sens en forme, c\'est le moment d\'ajouter une séance.'};
  else if(r<=1.3)o={zone:1,lab:'Optimal',col:'#2FA86A',tint:'#EAF6EF',ic:'ti-circle-check',txt:'Tu progresses sans entamer ta récup. Continue comme ça.'};
  else if(r<=1.5)o={zone:2,lab:'Élevé',col:'#E0922A',tint:'#FBF1DD',ic:'ti-alert-triangle',txt:'Charge en hausse rapide, surveille ta récup et garde une séance facile cette semaine.'};
  else o={zone:3,lab:'Risque',col:'var(--accent)',tint:'#FBE9E4',ic:'ti-alert-triangle',txt:'Montée trop rapide, risque de surmenage. Lève le pied 1 à 2 jours.'};
