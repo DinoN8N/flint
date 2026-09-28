@@ -47,7 +47,7 @@ C. RÉCUPÉRATION
 - Z = 0.5108 + 0.6135·zVFC − 0.0955·zFCrepos + 0.4905·zSommeil − 0.0506·zResp − 0.08·(hausse de température seulement). Étiré ×1.3 au-dessus de 67, puis logistique → 1–100.
 - Veto : une nuit de moins de 4 h ET à −2.5σ ou pire de ton sommeil habituel plafonne le score à 25.
 - Journal de bord : au plus −8, jamais de bonus. Alcool −3 / −5 / −8 / −11 (1 à 4 verres et plus) × la part que la VFC n'a pas déjà montrée. Avion −2 / −3 / −5 selon la durée, pondéré par l'heure d'arrivée, et −2 à J+2 après un vol de plus de 6 h. Café 0.
-- Premier score après 4 nuits, fiable vers 20. Environ 9 points d'erreur irréductible. RECOV_ALGO_GEN 20.
+- Premier score après 4 nuits, fiable vers 20. Environ 9 points d'erreur irréductible. RECOV_ALGO_GEN 21.
 - LES TROIS NORMALES, et quel écran imprime laquelle : (1) celle du score, 60 nuits pondérées = la « normale » de chaque facteur sur la page Récupération (facteurs.reference) ; (2) celle du Moniteur, « habituellement X–Y » = Q1–Q3 des 21 dernières nuits ; (3) celle de la température = médiane de 30 nuits (8 au moins). Une 4e, la moyenne pondérée sur 30 nuits (baseStat 30), n'est affichée nulle part.
 - Le facteur « principal » de la page Récupération : |contrib| ≥ 0.15, une avance ×1.35 sur le deuxième, ET |écart| ≥ 0.35 ; sinon aucun. contrib est en logit : seul l'ORDRE compte, jamais « X points ».
 
@@ -78,7 +78,7 @@ F. EFFORT ET SÉANCES
 G. NUTRITION ET CORPS
 - Métabolisme de base : Katch-McArdle avec la masse grasse, sinon Mifflin-St Jeor ; sexe non déclaré = point milieu −78.
 - Dépense = marche + effort + métabolisme vécu. Référence = médiane des journées complètes des 28 derniers jours, mêlée sous 7 jours au niveau d'activité déclaré.
-- Plan = référence ∓ rythme·7700/7 (sèche ou prise), jamais sous le métabolisme de base. Protéines 2.2 g/kg en sèche, 2.0 sinon ; le reste en glucides/lipides 60/40.
+- Plan = référence ∓ rythme·7700/7 (sèche ou prise), jamais sous le métabolisme de base. Protéines 2.2 g/kg en sèche, 2.0 sinon, par kg de ton poids plafonné à celui d'un IMC 25 à ta taille ; le reste en glucides/lipides 60/40.
 - Le budget n'ajoute PAS l'activité (déjà dans la référence). « Restantes » s'arrête à 0 : au-delà, cite les consommées.
 - Balance = mangé − brûlé : un DÉFICIT EST NÉGATIF ; ±150 = équilibre ; pas de verdict sans repas ET mesure.
 - Scan photo : environ 30 % d'erreur médiane, « peu sûr » sous 0.55. L'eau n'est PAS suivie. Poids : profil, puis dernière pesée.

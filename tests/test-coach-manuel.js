@@ -139,8 +139,13 @@ console.log('\n4 · Les constantes du MANUEL sont celles du moteur publié');
       /VETO_DUREE_MIN\s*=\s*240\b[\s\S]{0,4000}?Math\.min\(sBrut0,25\)/, ['index.html']],
     ['étirement ×1.3 au-dessus de 67', /Étiré ×1\.3 au-dessus de 67/, /_z0\+1\.3\*\(Z-_z0\)/, ['index.html']],
     ['demi-vie 7 j des normales', /demi-vie 7 j/, /_demiVie\s*=\s*7\b/, ['index.html']],
-    ['RECOV_ALGO_GEN 20', /RECOV_ALGO_GEN 20/, /RECOV_ALGO_GEN\s*=\s*20\b/, ['index.html']],
-    ['protéines 2.2 / 2.0 g/kg', /2\.2 g\/kg en sèche, 2\.0 sinon/, /\(goal==='seche'\?2\.2:2\)\*w/, ['index.html']],
+    ['RECOV_ALGO_GEN 21', /RECOV_ALGO_GEN 21\b/, /RECOV_ALGO_GEN\s*=\s*21\b/, ['index.html']],
+    // 28 sept. 2026 (v2699) — les protéines se comptent sur le poids de
+    // RÉFÉRENCE : le poids, plafonné à celui d'un IMC 25 (flPrudenceApport).
+    ['protéines 2.2 / 2.0 g/kg du poids de référence', /2\.2 g\/kg en sèche, 2\.0 sinon, par kg de ton poids plafonné/,
+      /_wr=\(_pr&&_pr\.poidsRef\)\|\|w;[\s\S]{0,200}?\(goal==='seche'\?2\.2:2\)\*_wr\b/, ['index.html']],
+    ['poids de référence = IMC 25', /plafonné à celui d'un IMC 25 à ta taille/,
+      /wRef=\(w>0&&h>0\)\?Math\.min\(w,25\*Math\.pow\(h\/100,2\)\):w;[\s\S]{0,400}?poidsRef:\(wRef>0/, ['flint-nutrition.js']],
     ['sexe non déclaré −78', /point milieu −78/, /\?5:-78\)/, ['index.html']],
     ['journal : alcool −3/−5/−8/−11', /Alcool −3 \/ −5 \/ −8 \/ −11/, /\[0,-3,-5,-8,-11\]/, ['flint-recup-cycle.js']],
     ['journal : au plus −8', /Journal de bord : au plus −8/, /if\(out\.total<-8\)out\.total=-8/, ['flint-recup-cycle.js']],
