@@ -239,7 +239,7 @@
       var off = offDe(K);
       var avant = stressMoy(off, deb - 45, deb - 3);
       var apres = stressMoy(off, fin + 3, fin + 45);
-      if (avant != null && apres != null) { out.stressAvant = avant; out.stressApres = apres; }
+      if (avant != null && apres != null) { out.stressAvant = avant; out.stressApres = apres; out.echelleStress = (window.flEchelleStress === 100 ? 100 : 3); } /* v2710 : la fiche dit l echelle de ses deux valeurs — une fiche figee garde la sienne a vie */
 
       return out;
     } catch (e) {

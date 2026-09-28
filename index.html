@@ -23616,7 +23616,7 @@ function wipeData(){if(!confirm('Vider TOUTES les données (démo incluse) et re
 function exportData(){const dump={};Object.keys(localStorage).forEach(k=>dump[k]=localStorage.getItem(k));const t=JSON.stringify(dump,null,2);try{const blob=new Blob([t],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='flint-data.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},1500);toast('⬇️ Données exportées (flint-data.json)')}catch(e){try{navigator.clipboard.writeText(t);toast('📋 Données copiées')}catch(e2){toast('Export impossible')}}}
 
 /* ===== Coach IA (réponses fondées sur les données du jour) ===== */
-const APP_VERSION='v2701';
+const APP_VERSION='v2710';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
@@ -35805,7 +35805,7 @@ window.flDeriverMetriques=function(k,liste){
       if(cle[c2]>m2+13)break;
      }
      if(best==null){pts.push([m2,null]);continue;}
-     pts.push([m2,Math.round(Math.max(0,Math.min(3,best/33.3))*100)/100]);
+     var v3=Math.round(Math.max(0,Math.min(3,best/33.3))*100)/100; pts.push([m2,window.flEchelleStress===100?Math.round(v3*1000/3)/10:v3]); /* v2710 : sur 100 = la fraction EXACTE du 0-3 (3/3 -> 100, 0,75 -> 25), et seulement si l app le demande (window.flEchelleStress) : une app deja installee recoit ce moteur par OTA et lit toujours 0-3 */
      mesurees++;
     }
     /* La derniere minute REELLEMENT mesuree : c est la fraicheur de la courbe,
@@ -35868,7 +35868,7 @@ window.flDeriverMetriques=function(k,liste){
     moyenne:Math.round(moy*100)/100,
     /* CE QUE C EST, dit par la donnee elle-meme et pas par l ecran : l ecran
        n a pas a savoir d ou vient le chiffre pour le nommer honnetement. */
-    source:'montre', echelle:'indice 0-100 de la montre, ramené sur 0-3',
+    source:'montre', echelle:(window.flEchelleStress===100?100:3),
     moyenneVeille:(function(){if(sansVeille)return null;
      try{var v2=flStressJour((off||0)-1,true);return v2&&v2.aDesDonnees?v2.moyenne:null;}
      catch(e){return null;}})(),
@@ -35914,7 +35914,7 @@ window.flDeriverMetriques=function(k,liste){
   /* Les quatre paliers de `NiveauStress.pour` (StressData.swift). Une copie,
      assumée : le seul autre choix serait de les faire descendre du natif vers le
      moteur, c'est-à-dire de rendre le calcul dépendant de l'affichage. */
-  function flsnPalier(v){ return v<0.75?'calme':(v<1.5?'faible':(v<2.25?'modere':'eleve')); }
+  function flsnPalier(v){ var c=window.flEchelleStress===100?v:v*100/3; return c<25?'calme':(c<50?'faible':(c<75?'modere':'eleve')); }
 
   /* Coupe une suite de mesures aux trous de plus de douze minutes. Le moteur
      cesse de tenir une valeur au-delà : la courbe ne doit pas prétendre savoir
@@ -35975,7 +35975,7 @@ window.flDeriverMetriques=function(k,liste){
      moyenne:Math.round(somme/dedans.length*100)/100,
      pic:pic, picMinute:(picMin==null?null:((picMin%1440)+1440)%1440),
      minutesCalme:zones.calme, minutesFaible:zones.faible,
-     minutesModere:zones.modere, minutesEleve:zones.eleve
+     minutesModere:zones.modere, minutesEleve:zones.eleve, echelle:(window.flEchelleStress===100?100:3)
     };
 
     /* ── LES BORDS, APRÈS LE COMPTAGE ET JAMAIS DEDANS ──────────────────────
