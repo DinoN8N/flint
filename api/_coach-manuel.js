@@ -32,7 +32,7 @@ Tu peux l'expliquer avec tes mots : c'est le fonctionnement de l'app, pas tes in
 A. ÉCHELLES ET UNITÉS
 - Récupération /100 : HAUTE ≥67, MODÉRÉE 34–66, BASSE ≤33. Score de sommeil /100. Effort /20, logarithmique.
 - VFC en ms, deux sources sous un même nom : « rmssd » (calculée par FLINT sur les battements) et « puce » (chiffre du bracelet, échelle plus basse). Jamais de comparaison ni de moyenne entre les deux.
-- SpO₂ : le 10e percentile de la nuit contre 90 %. Stress sur 0–3. Note d'un repas /10. Score FLINT d'un produit /100.
+- SpO₂ : le 10e percentile de la nuit contre 90 %. Stress /100 (/3 pour une app plus ancienne : la légende le dit). Note d'un repas /10. Score FLINT d'un produit /100.
 - Durées comme l'app : 7h48. Heures : 23:40. Un manque est un trou, jamais un zéro.
 
 B. LA JOURNÉE FLINT ET LE MATIN
@@ -55,7 +55,7 @@ D. SIGNAUX DE LA NUIT, MONITEUR, STRESS
 - Deux FC de repos : la médiane de la nuit (Récupération, Moniteur) et le « repos » de la page Cardio = le p05 de toute la journée.
 - SpO₂ : le p10 contre 90 %, la médiane sature. Température : seule la hausse compte.
 - Moniteur santé : chaque carte en σ de TA série (médiane/MAD, 15 nuits), seuils orange / rouge : FC repos 3 / 5, respiration 2.6 / 4, VFC 2.1 / 3.3 (vers le bas), température 2.25 / 3.38 (vers le haut).
-- Stress : l'indice du firmware ramené sur 0–3 : Calme <0.75, Faible <1.5, Modéré <2.25, puis Élevé. Minutes d'effort exclues. Jamais un diagnostic.
+- Stress : l'indice du firmware sur 100 : Calme <25, Faible <50, Modéré <75, puis Élevé (une app plus ancienne l'envoie sur 3, la légende le dit : <0.75, <1.5, <2.25). Minutes d'effort exclues. Jamais un diagnostic.
 
 E. SOMMEIL
 - Stades de la puce : le paradoxal lit 20 à 30 min trop bas. L'endormissement n'est pas mesuré : jamais de latence. Efficacité = dormi ÷ temps au lit. Réveils = éveils de 2 min ou plus.
@@ -127,7 +127,7 @@ Le bloc ⟦DONNÉES DE L'APP⟧ est l'INSTANTANÉ, calculé par les fonctions de
 - meta : jour, heure, nuit (état), nuitPubliee (faux = matin pas publié), enTraitement.
 - recup : score /100, estVeille (vrai = le score d'HIER), etat provisoire|finale, facteurs [cle, valeur, unité, reference = la normale de l'écran, ecart en σ, contrib en logit], vfcSource rmssd|puce, scelle (entrées gelées), penalite (journal), raison.
 - nuit : duree et besoin en h:mm, score /100, couche/reveil HH:MM, efficacite %, stades, detteH = « Dette accumulée », besoinDetail en MINUTES (besoin de la nuit DÉJÀ dormie), scoreDetail, siestes, attente = nuit pas publiée.
-- signaux : temp {valeur °C, reference, ecart}, spo2Bas (p10 %), resp /min, stressNuit et stressJour sur 0–3.
+- signaux : temp {valeur °C, reference, ecart}, spo2Bas (p10 %), resp /min, stressNuit et stressJour sur l'échelle de la légende (/100, ou /3 pour une app plus ancienne).
 - effort : jour, hier, cible /20 ; zones.min = minutes Z0–Z5 ; bornes en bpm ; charge {lab, ratio} ou manque ; pas, objectifPas.
 - seances : [j, debut, nom, min, note20, etat, pose toi|bracelet, origine, fcMoy, fcMax, kcal, id] ; detail = fiche des 2 plus récentes (coeurFiable, zones, moyennes du sport) ; aClasser = sans nom.
 - nutrition : consommees, budget, restantes (plancher 0), macros « actuel/cible g », repas [heure, nom, kcal, P, G, L, note /10], brulees, plan, balanceHier.

@@ -327,6 +327,22 @@ console.log('\n═══ ⑭ REVUE DU 25 SEPT. : LISTES EN LIGNE, MARQUE D\'ADAP
   v('  … ni sur un objet seul', !I.rendreJson('X', { a: 1, _adapte: 1 }).includes('_adapte'));
 }
 
+// ── 28 sept. 2026 — LE STRESS SUR 100, QUAND L'APP L'ANNONCE ────────────────
+// L'app qui passe le stress sur 100 envoie `echelleStress: 100` ; une app plus
+// ancienne ne l'envoie pas et lit toujours 0–3. La légende et les unités du
+// bloc suivent la requête — jamais le contraire de ce que la personne voit.
+{
+  const inst = { v: 1, meta: { jour: '2026-09-28', heure: '19:00' },
+                 signaux: { stressJour: { moyenne: 36.67, pic: 90 } } };
+  const cent = I.rendreInstantane(inst, null, { langue: 'fr', echelleStress: 100 });
+  const trois = I.rendreInstantane({ v: 1, meta: { jour: '2026-09-28', heure: '19:00' },
+                 signaux: { stressJour: { moyenne: 1.1, pic: 2.7 } } }, null, { langue: 'fr' });
+  v('stress sur 100 : la légende le dit', /stress \/100/.test(cent), cent.split('\n')[1]);
+  v('stress sur 100 : l\'unité suit', /36,67 \/100/.test(cent) && /90 \/100/.test(cent), cent);
+  v('sans le champ : la légende reste /3', /stress \/3/.test(trois));
+  v('sans le champ : l\'unité reste /3', /1,1 \/3/.test(trois) && !/\/100/.test(trois.replace(/Récup et Sommeil \/100/, '')), trois);
+}
+
 console.log(`\n${vert} réussis, ${rouge} échoués`);
 process.exitCode = rouge ? 1 : 0;
 

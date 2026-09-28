@@ -429,6 +429,9 @@ module.exports = async function handler(req, res) {
   // l'appelant. Une app plus ancienne n'envoie rien : repli français, c'est-à-
   // dire exactement ce qu'elle faisait déjà.
   const langue = Object.prototype.hasOwnProperty.call(LANGUES, body.langue) ? body.langue : 'fr';
+  // 28 sept. 2026 — l'échelle du stress que l'app annonce (100), 3 sinon : une
+  // app plus ancienne n'envoie pas ce champ et lit toujours 0–3.
+  const echelleStress = Number(body.echelleStress) === 100 ? 100 : 3;
   const profilTexte = typeof body.profilTexte === 'string' ? body.profilTexte.slice(0, 4000) : '';
   // Les 3 000 DERNIERS caractères, pas les 2 000 premiers (voir `memoireRecente`).
   const memoireTexte = memoireRecente(body.memoireTexte);
@@ -497,13 +500,13 @@ module.exports = async function handler(req, res) {
     const natif = version === 'v2' ? validerNatif(body.natif) : null;
     let donnees = '';
     if (version === 'v2' && instOk) {
-      donnees = rendreInstantane(inst.objet, natif.objet, { langue, anodin });
+      donnees = rendreInstantane(inst.objet, natif.objet, { langue, anodin, echelleStress });
     } else if (prep.precharges.length) {
-      donnees = version === 'v2' ? rendreJson('DONNÉES DU JOUR', prep.precharges, { langue })
+      donnees = version === 'v2' ? rendreJson('DONNÉES DU JOUR', prep.precharges, { langue, echelleStress })
                                  : rendreDonneesV1(prep.precharges, langue);
     }
     if (version === 'v2' && !instOk && natif && natif.ok && natif.objet && natif.objet.visite !== true) {
-      donnees = [donnees, rendreJson('APPAREIL ET SÉCURITÉ', natif.objet, { langue })].filter(Boolean).join('\n\n');
+      donnees = [donnees, rendreJson('APPAREIL ET SÉCURITÉ', natif.objet, { langue, echelleStress })].filter(Boolean).join('\n\n');
     }
     // Les faits du plus RÉCENT au plus ancien (`faits` de l'app v2, ou
     // `memoireTexte` des apps posées, retourné) ; les mémos des autres fils
@@ -516,7 +519,7 @@ module.exports = async function handler(req, res) {
     let profilInst = 0;
     if (version === 'v1' && !profilTexte.trim()) {
       const pv1 = profilPourV1(body.instantane);
-      if (pv1) { profil = rendreJson('PROFIL', pv1, { langue }); profilInst = 1; }
+      if (pv1) { profil = rendreJson('PROFIL', pv1, { langue, echelleStress }); profilInst = 1; }
     }
     const systeme = promptSysteme({ ton, langue, mode: version,
                                     blocs: { donnees, profilTexte: profil, faits, memos, anodin } });

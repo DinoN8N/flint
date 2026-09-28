@@ -167,7 +167,7 @@ const OUTILS_V2 = [
       + "Rend {cols, lignes}, du plus ancien au plus récent, sans aujourd'hui ; null = pas mesuré. "
       + "Unités : recup, scoreSommeil /100 ; dormi, besoin, dette7n h:mm ; coucher, lever HH:MM ; efficacite % ; "
       + "vfc ms (vfcSrc : jamais deux sources comparées) ; fcRepos bpm ; resp /min ; temp écart °C ; spo2Bas % ; "
-      + "effort /20 ; zones13, zones45, muscu min ; kcal (balance : déficit négatif) ; poids kg ; stress 0–3 ; "
+      + "effort /20 ; zones13, zones45, muscu min ; kcal (balance : déficit négatif) ; poids kg ; stress /100 (ou 0–3 si la légende des DONNÉES dit /3) ; "
       + "journal du jour K → récup de K+1.",
     parameters: {
       type: 'object',
