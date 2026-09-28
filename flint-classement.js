@@ -1,5 +1,58 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   flint-classement.js — CE QU'UNE DÉTECTION A LE DROIT DE S'APPELER
+   flint-classement.js — CE QU'UNE DÉTECTION A LE DROIT DE S'APPELER,
+   ET LES PAS QU'UNE ACTIVITÉ A LE DROIT DE COMPTER
+
+   ═══ 28 SEPTEMBRE 2026 — LA RÈGLE CHANGE DE CENTRE ════════════════════════
+
+   DINO : « énormément de marches remontent simplement comme Activité […] Une
+   vraie marche doit être reconnue comme Marche beaucoup plus souvent », et
+   dans la même demande « pendant une séance de musculation, le système peut
+   compter 1 437 pas alors que l'utilisateur n'a évidemment pas marché autant ».
+   Le principe qu'il pose : « Marche certaine → Marche · Activité certaine
+   mais type inconnu → Activité · Pas certains → compter · Pas incertains →
+   ne pas compter ».
+
+   LA RÈGLE DU 20 SEPTEMBRE (plus bas) ÉTAIT JUSTE SUR LES SPORTS ET FAUSSE
+   SUR LES MARCHES. Elle exigeait que les trois quarts des MINUTES soient à
+   40 pas : une marche qui s'arrête à un feu, dans une boutique, devant une
+   vitrine ne les tient pas. Mesuré sur la base du téléphone du 28 septembre :
+   des cinq fenêtres que Dino a lui-même nommées « Marche » via la question,
+   AUCUNE ne passait. Et un seul maximum cardiaque parasite suffisait à tout
+   refuser.
+
+   LA MESURE, `outils/audit-nom-detection.js`, contre ce que Dino a nommé :
+       base                   segments   « Marche » 20 sept. → 28 sept.   sports nommés Marche
+       téléphone, 28 sept.       158           16  →  87                        0
+       export, 16 sept.          127           15  →  77                        0
+       Félix, 18 sept.           102            8  →  76                        0
+   Marches nommées par Dino : 0 sur 5 → 3 sur 5. Les deux qui restent
+   « Activité » (0,59 et 0,65 de leurs pas en déplacement) sont des flâneries
+   faites surtout d'arrêts : c'est le prix de la marge gardée du côté des sports.
+
+   CE QUI LA REMPLACE, À LA MINUTE (le chemin par tranches n'a pas bougé) :
+   on ne demande plus « la cadence est-elle tenue partout ? » mais « d'où
+   viennent les pas ? ». Une marche avec des arrêts reste une marche si ses
+   pas viennent d'un DÉPLACEMENT — trois minutes d'affilée à la cadence de
+   déclaration, la preuve même qui allume le détecteur. Une séance de salle
+   produit ses pas par minutes isolées, et c'est ce qui la trahit.
+
+     ① LE DÉPLACEMENT — quatre pas sur cinq au moins viennent d'enchaînements
+        de marche (`flMinutesLocomotion`, voir § LE DÉPLACEMENT).
+     ② L'ALLURE — pas deux minutes à cadence de course (140 pas et plus).
+        Une marche rapide en touche une ; le football tranquille du
+        14 septembre en a deux (212 et 149), les courses de 7 à 48.
+     ③ LE CŒUR — neuf battements mesurés sur dix sous la Z2, au lieu de
+        TOUS : un seul point parasite ne condamne plus une marche. Et une
+        fenêtre que `flFcFiable` déclare incohérente ne prouve toujours rien.
+
+   ET LES PAS SUIVENT LA MÊME PREUVE. Une activité qui n'est pas un
+   déplacement (« Activité », Musculation, Vélo…) ne compte que les pas de
+   ses enchaînements de marche — `flPasConfirmes`. Une Marche, une Course,
+   une Randonnée comptent tout (`flPasCompteEntier`). Le total du JOUR ne
+   bouge pas : c'est le podomètre du bracelet, et il reste la référence.
+   Dossier et mesures : CHANTIER-ACTIVITE-DETECTEE.md § IX.
+
+   ═══ LE 20 SEPTEMBRE — L'HISTOIRE QUI A POSÉ LA DISSYMÉTRIE ════════════════
 
    DINO, 20 SEPTEMBRE 2026 : « je suis allé jouer tranquillement au football
    avec des amis […] Flint a pourtant classé automatiquement cette période
@@ -168,6 +221,175 @@
     } catch (e) { return null; }
   }
 
+  /* ═══ 28 SEPT. — LE DÉPLACEMENT : CE QUI PROUVE QU'ON A MARCHÉ ═════════════
+
+     L'ACTIVITÉ ET LE DÉPLACEMENT SONT DEUX QUESTIONS. Le détecteur de pas dit
+     qu'il s'est passé quelque chose ; il ne dit pas que les jambes ont porté
+     le corps d'un point à un autre. Le podomètre du bracelet compte des
+     mouvements du POIGNET — une série de développé couché, un haltère, une
+     vibration de guidon lui ressemblent. Ce qui ne lui ressemble pas, c'est la
+     DURÉE : on ne soulève pas une barre trois minutes d'affilée à quarante
+     « pas » par minute, on marche.
+
+     LA PREUVE EST CELLE DU DÉTECTEUR, SANS UN SEUIL DE PLUS. Une minute est un
+     déplacement quand elle appartient à un enchaînement :
+       · ALLUMAGE_MIN minutes CONSÉCUTIVES à MARCHE_FORTE (3 × 40 pas) — c'est
+         l'allumage de `marchesALaMinute`, « traverser une pièce » n'y suffit
+         pas ;
+       · prolongé des deux côtés par les minutes contiguës à MIN_PLANCHER
+         (10 pas) — la traîne de `fermerRompu`, le ralentissement au bout
+         d'une rue. Une minute vide coupe : l'élan ne traverse pas un arrêt.
+     Les trois nombres sont PASSÉS par index.html (`flSeuilsMarche`) ; les
+     valeurs par défaut ci-dessous ne servent qu'à un web où ils manquent.
+
+     MESURÉ sur la musculation du 28 septembre, 12:16 → 13:09 : le bracelet
+     compte 1 437 pas, dont 573 dans l'arrivée à la salle (12:16 → 12:22, 73 à
+     112 pas par minute — l'enchaînement commence à 12:14, avant la fenêtre).
+     Le reste est fait de minutes isolées — 26, 50, 10,
+     12, 32, 29, 40, 7, 45… — et de deux salves de deux minutes : aucune ne
+     tient trois minutes. ⚠️ Le téléphone de Dino, dans sa poche, a compté
+     1 304 pas sur 12:10 → 12:59 : une partie de ces mouvements étaient de
+     vrais pas. La règle ne sait pas lesquels, elle ne compte donc que ceux
+     qu'elle peut DÉMONTRER — c'est la consigne (« pas incertains → ne pas
+     compter »), et c'est un choix prudent, pas une mesure exacte. */
+  var SEUILS_DEFAUT = { forte: 40, allumage: 3, plancher: 10 };
+  function seuils() {
+    var s = window.flSeuilsMarche;
+    return (s && s.forte > 0 && s.allumage > 0 && s.plancher > 0) ? s : SEUILS_DEFAUT;
+  }
+
+  /* Les 1 440 minutes d'une journée, vrai = déplacement. Le résultat vit sur
+     l'objet `p` lui-même, non énumérable : `flPasParMinute` en fabrique un neuf
+     à chaque appel, donc la mémoire meurt avec la donnée qu'elle résume —
+     aucune chance de servir une journée qui a bougé. */
+  window.flMinutesLocomotion = function (p) {
+    if (!p || !p.m || !p.vu) return null;
+    if (p._flLoco) return p._flLoco;
+    var S = seuils(), n = p.m.length, en = new Array(n), i, j, a, b, q;
+    for (i = 0; i < n; i++) en[i] = false;
+    function v(k) { return p.vu[k] ? (+p.m[k] || 0) : -1; }
+    i = 0;
+    while (i < n) {
+      if (v(i) < S.forte) { i++; continue; }
+      j = i; while (j < n && v(j) >= S.forte) j++;
+      if (j - i >= S.allumage) {
+        a = i; b = j - 1;
+        while (a - 1 >= 0 && v(a - 1) >= S.plancher) a--;
+        while (b + 1 < n && v(b + 1) >= S.plancher) b++;
+        for (q = a; q <= b; q++) en[q] = true;
+      }
+      i = j;
+    }
+    try { Object.defineProperty(p, '_flLoco', { value: en, enumerable: false }); } catch (e) {}
+    return en;
+  };
+
+  /* UNE MINUTE DE COURSE. La marche de Dino plafonne vers 120 pas par minute
+     et touche 140 une fois, au plus, sur une sortie rapide (19 août). Au-delà,
+     les jambes courent — ou le poignet s'agite plus vite qu'un pas. */
+  var CADENCE_COURSE = 140;
+
+  /* CE QU'UNE FENÊTRE DIT DU DÉPLACEMENT — la matière du verdict et des pas.
+     `pauses` : les arrêts d'un tracker (bruts ou normalisés), qui ne sont pas
+     la séance. `hr` : la série `[minute, bpm]` de la journée, facultative.
+     Rend `null` quand le bracelet n'a décrit aucune minute : il n'était pas
+     là, il n'a pas mesuré une absence de pas. */
+  window.flLocomotion = function (p, deb, fin, pauses, hr) {
+    try {
+      var en = window.flMinutesLocomotion(p);
+      if (!en || !(fin > deb)) return null;
+      var ps = null;
+      if (pauses && pauses.length) {
+        ps = (typeof window.flPausesDe === 'function') ? window.flPausesDe({ pauses: pauses }) : pauses;
+      }
+      var arret = function (m) {
+        return !!(ps && ps.length && typeof window.flEnPause === 'function' && window.flEnPause(m, ps));
+      };
+      var d = Math.max(0, Math.round(deb)), f = Math.min(en.length, Math.round(fin));
+      var pas = 0, conf = 0, vues = 0, course = 0;
+      for (var i = d; i < f; i++) {
+        if (!p.vu[i] || arret(i)) continue;
+        var x = +p.m[i] || 0;
+        vues++; pas += x;
+        if (en[i]) conf += x;
+        if (x >= CADENCE_COURSE) course++;
+      }
+      if (!vues) return null;
+      var o = { pas: pas, pasConfirmes: conf, part: (pas > 0 ? conf / pas : null),
+                minutesCourse: course, minutesVues: vues, p90Hr: null, nHr: 0 };
+      /* LE NEUVIÈME DÉCILE, PAS LE MAXIMUM. Le capteur optique d'un poignet
+         qui marche lâche des points isolés — 55 puis 117 puis 56 dans trois
+         minutes voisines, sur la marche du 21 septembre. Un maximum les prend
+         pour un effort ; le neuvième décile les laisse passer et garde un
+         effort tenu, qui en occupe bien plus d'un dixième. */
+      if (hr && hr.length) {
+        var v = [];
+        for (var k = 0; k < hr.length; k++) {
+          var h = hr[k];
+          if (h && h[1] > 0 && h[0] >= d && h[0] < f && !arret(h[0])) v.push(+h[1]);
+        }
+        o.nHr = v.length;
+        if (v.length >= 3) { v.sort(function (x, y) { return x - y; }); o.p90Hr = v[Math.floor(v.length * 0.9)]; }
+      }
+      return o;
+    } catch (e) { return null; }
+  };
+
+  /* Les pas qu'une fenêtre peut DÉMONTRER, ou `null` sans canal à la minute. */
+  window.flPasConfirmes = function (p, deb, fin, pauses) {
+    var l = window.flLocomotion(p, deb, fin, pauses, null);
+    return l ? l.pasConfirmes : null;
+  };
+
+  /* ═══ LES ACTIVITÉS DONT LES PAS SONT L'ACTIVITÉ ══════════════════════════
+     Marcher, courir, monter : chaque pas en fait partie, on les compte TOUS
+     (« Marche claire → compter les pas normalement »). Le reste — l'inconnu
+     « Activité », la salle, le vélo, la natation, les sports de balle —
+     ne compte que les pas de ses enchaînements. Un football garde ainsi
+     presque tout (on y court sans arrêt : 95 à 100 % de ses pas sont des
+     enchaînements sur les quatre matchs de fin septembre) ; une salle de
+     musculation garde ses allées et venues.
+     La liste est celle du catalogue, famille « course & marche » (Marche
+     digestive comprise), plus l'Alpinisme que Dino a déjà répondu une fois. */
+  var NOMS_DEPLACEMENT = /^(marche|randonnee|rando|course|trail|sprint|athletisme|escalier|footing|jogging|alpinisme)/;
+  function simple(t) {
+    var s = String(t || '').toLowerCase();
+    try { s = s.normalize('NFD').replace(/[̀-ͯ]/g, ''); } catch (e) {}
+    return s.trim();
+  }
+  window.flPasCompteEntier = function (s) {
+    return NOMS_DEPLACEMENT.test(simple(s && (s.name || s.nom)));
+  };
+
+  /* RECOMPTER LES PAS D'UNE ACTIVITÉ SELON SON NOM — la porte des écritures
+     qui n'en passent pas par `flDeriverMetriques` : un renommage, la passe de
+     l'historique. `p` se passe quand l'appelant l'a déjà (une journée entière
+     à recompter) ; sans canal à la minute on ne touche à rien. Rend vrai
+     quand le nombre a changé. */
+  window.flRecompterPas = function (k, s, p) {
+    try {
+      /* Une activité sans pas n'en reçoit pas ; une fenêtre que le moteur
+         refuse (`fenetreOk:false`) ne porte rien, on ne lui rend rien. */
+      if (!s || s.type === 'nap' || s.startMin == null || s.pas == null || s.fenetreOk === false) return false;
+      p = p || ((typeof window.flPasParMinute === 'function') ? window.flPasParMinute(k) : null);
+      if (!p || !p.m) return false;
+      var fin = (s.endMin != null) ? +s.endMin : (+s.startMin + (+s.dur || 0));
+      var l = window.flLocomotion(p, +s.startMin, fin, s.pauses, null);
+      if (!l) return false;
+      /* ON NE TRANSFORME QUE CE QU'ON SAIT LIRE. Le nombre rangé doit être le
+         brut OU le démontré de cette même fenêtre ; sinon il vient d'un autre
+         calcul — les totaux de blocs d'avant la v1413, quand la montre ne
+         décrivait pas encore ses minutes. Mesuré sur la base du 28 sept. : un
+         Badminton du 4 août rangé à 2 757 pas dont 66 seulement sont décrits à la
+         minute ; le recompter aurait écrit 0 sur une mesure qu'on n'a pas. */
+      if (+s.pas !== l.pas && +s.pas !== l.pasConfirmes) return false;
+      var n = window.flPasCompteEntier(s) ? l.pas : l.pasConfirmes;
+      if (s.pas === n) return false;
+      s.pas = n;
+      return true;
+    } catch (e) { return false; }
+  };
+
   /* ═══ LA PREUVE : COMBIEN DE FENÊTRES TIENNENT VRAIMENT LA CADENCE ════════
 
      Les deux formes que le détecteur sait produire, et pas une de plus. Elles
@@ -200,8 +422,9 @@
 
   /* ═══ LE VERDICT ══════════════════════════════════════════════════════════
 
-     `seg`   le segment tel que le détecteur le rend — on n'y lit que
-             `partForte` (la preuve ci-dessus), `maxHr` et `fcIncoherent`.
+     `seg`   le segment tel que le détecteur le rend. Au chemin À LA MINUTE on
+             y lit `loco` (`flLocomotion` sur sa fenêtre) et `fcIncoherent` ;
+             au chemin PAR TRANCHES, `partForte`, `maxHr` et `fcIncoherent`.
              Nul : aucune preuve, et le verdict le dit.
      `pas`   le nombre de pas, `dur` la durée en minutes, `K` la clé du jour.
      `forte` le seuil de déclaration du détecteur (MARCHE_FORTE), PASSÉ plutôt
@@ -210,11 +433,45 @@
      Rend `{nom, ti, tenus, manques}`. `manques` nomme les critères qui n'ont
      pas été démontrés — c'est ce qui permet à un diagnostic de dire POURQUOI
      une activité est restée sans nom, plutôt que de le faire deviner. */
+  /* QUATRE PAS SUR CINQ. Mesuré sur la base du téléphone du 28 septembre et
+     l'export de Félix du 18 : aucune séance de salle ou de renforcement
+     étiquetée ne dépasse 0,72 parmi celles que le cœur et l'allure laissent
+     passer (le football et la course, eux, tombent sur le cœur ou l'allure) ;
+     les marches que Dino a nommées et que la règle retrouve sont à 0,87 et
+     plus. Le seuil tient la marge du côté des sports. */
+  var PART_DEPLACEMENT = 0.8;
+  /* Deux minutes de course suffisent à dire qu'on a couru : une marche rapide
+     en touche une au plus, le football tranquille du 14 septembre deux. */
+  var MINUTES_COURSE = 2;
+
   window.flVerdictMarche = function (seg, pas, dur, K, forte) {
     var g = seg || {};
     pas = +pas; dur = +dur; forte = +forte;
     var tenus = [], manques = [];
+    var z2 = zone2(K);
 
+    /* ═══ À LA MINUTE — la règle du 28 septembre ═══════════════════════════ */
+    if (g.loco && g.loco.part != null) {
+      /* ① le déplacement : d'où viennent les pas */
+      if (g.loco.part >= PART_DEPLACEMENT) tenus.push('deplacement');
+      else manques.push('deplacement');
+      /* ② l'allure : une marche ne court pas */
+      if ((+g.loco.minutesCourse || 0) < MINUTES_COURSE) tenus.push('allure');
+      else manques.push('course');
+      /* ③ le cœur : neuf battements sur dix sous la Z2. Une absence ne prouve
+         rien contre ; une mesure que le moteur a démontrée fausse, rien pour. */
+      if (g.fcIncoherent === true) manques.push('coeurIncoherent');
+      else if (g.loco.p90Hr == null || z2 == null) tenus.push('coeurMuet');
+      else if (+g.loco.p90Hr < z2) tenus.push('coeur');
+      else manques.push('coeur');
+      var m1 = !manques.length;
+      return { nom: m1 ? 'Marche' : 'Activité', ti: m1 ? 'walk' : null,
+               tenus: tenus, manques: manques };
+    }
+
+    /* ═══ PAR TRANCHES — la règle du 20 septembre, inchangée ═════════════════
+       Sans répartition à la minute, aucun enchaînement ne se démontre : on
+       garde les trois critères d'avant, qui sont PLUS stricts. */
     /* ① la cadence moyenne */
     if (dur > 0 && pas > 0 && forte > 0 && (pas / dur) >= forte) tenus.push('cadence');
     else manques.push('cadence');
@@ -226,7 +483,6 @@
 
     /* ③ le cœur — une contradiction : son absence ne prouve rien contre, mais
        une mesure que le moteur a démontrée fausse ne prouve rien pour. */
-    var z2 = zone2(K);
     if (g.fcIncoherent === true) manques.push('coeurIncoherent');
     else if (g.maxHr == null || z2 == null) tenus.push('coeurMuet');
     else if (+g.maxHr < z2) tenus.push('coeur');
@@ -292,6 +548,10 @@
                   de plus que ce que la mesure vaut */
                partForte: (entree.partForte != null
                            ? Math.round(+entree.partForte * 100) / 100 : null),
+               /* 28 sept. — la part des pas qui viennent d'un déplacement : la
+                  preuve du nom depuis la règle du jour, gardée au même grain */
+               deplacement: (entree.deplacement != null
+                             ? Math.round(+entree.deplacement * 100) / 100 : null),
                avgHr: (entree.avgHr != null ? +entree.avgHr : null),
                maxHr: (entree.maxHr != null ? +entree.maxHr : null),
                manques: (Array.isArray(entree.manques) ? entree.manques.slice(0, 4) : null) });
@@ -342,6 +602,7 @@
             choisi: choisi, avant: (avant || x.name || null),
             dur: dur, pas: (x.pas != null ? x.pas : (g ? g.pasTotal : null)),
             partForte: (g && g.partForte != null ? g.partForte : null),
+            deplacement: (g && g.loco && g.loco.part != null ? g.loco.part : null),
             avgHr: (x.avgHr != null ? Math.round(x.avgHr) : (g ? g.avgHr : null)),
             maxHr: (g && g.maxHr != null ? g.maxHr : null),
             manques: (g && dur ? window.flVerdictMarche(g, g.pasTotal, dur, k, 40).manques : null)
@@ -352,7 +613,7 @@
     } catch (e) { return 'ECHEC · ' + (e && e.message ? e.message : '?'); }
   };
 
-  /* ═══ REJUGER CE QUI EST DÉJÀ EN BASE — ET POURQUOI PERSONNE NE L'APPELLE
+  /* ═══ REJUGER CE QUI EST DÉJÀ EN BASE ═════════════════════════════════════
 
      LE PROBLÈME EST RÉEL. `flReconcilierSeances` GARDE l'existant : c'est ce qui
      protège une correction à la main, et c'est donc aussi ce qui fige les
@@ -362,10 +623,19 @@
 
      CE QUE CETTE FONCTION FAIT, ET RIEN D'AUTRE. Elle REJUGE, elle ne
      redétecte pas. Aucune activité n'apparaît, aucune ne disparaît, aucune
-     borne ne bouge, aucun pas, aucune calorie, aucun effort. Elle relit le nom,
-     et elle ne l'écrit que dans un sens : « Marche » → « Activité ». Jamais
-     l'inverse — promouvoir une activité en marche sur une redérivation serait
-     exactement le geste que ce fichier existe pour empêcher.
+     borne ne bouge, aucune calorie, aucun effort. Elle relit le nom avec la
+     règle du jour, sur la même preuve qu'une détection fraîche.
+
+     28 SEPT. — ELLE VA DÉSORMAIS DANS LES DEUX SENS. Le 21 elle n'écrivait que
+     « Marche » → « Activité », et l'en-tête disait pourquoi : promouvoir sur une
+     redérivation aurait été nommer sans preuve. La preuve a changé de nature —
+     un enchaînement de marche se DÉMONTRE à la minute, exactement comme pour une
+     détection fraîche — et la demande aussi : « une vraie marche doit être
+     reconnue comme Marche beaucoup plus souvent ». Les marches rangées sous
+     « Activité » par la règle du 20 septembre retrouvent donc leur nom ; celles
+     que la règle refuse le perdent, comme avant. Et SES PAS SUIVENT SON NOM
+     (`flRecompterPas`) : une « Activité » ne garde que ses pas démontrés, une
+     « Marche » les retrouve tous.
 
      CE QU'ELLE NE TOUCHE JAMAIS :
        · une activité qui porte `srcs.user` — quelqu'un l'a nommée, point ;
@@ -394,16 +664,16 @@
   window.flRejugerNomsDetectes = function (jours) {
     try {
       var haut = (jours == null) ? 30 : Math.max(0, Math.min(120, jours | 0));
-      var vus = 0, changes = 0, sansPreuve = 0, details = [];
+      var vus = 0, versMarche = 0, versActivite = 0, sansPreuve = 0, details = [];
       for (var j = 0; j <= haut; j++) {
         var k = tk(-j), L = DB.get('sessions_' + k, []) || [], touche = false;
-        var segs = null;
+        var segs = null, p = null;
         for (var i = 0; i < L.length; i++) {
           var x = L[i];
           if (!x || x.type === 'nap') continue;
           if (!(x.auto === true && x.source === 'pas')) continue;
           if (x.srcs && x.srcs.user) continue;
-          if (x.name !== 'Marche') continue;
+          if (x.name !== 'Marche' && x.name !== 'Activité') continue;
           vus++;
           if (segs === null) { try { segs = window.flDetectMarches(k) || []; } catch (e) { segs = []; } }
           var g = null;
@@ -411,22 +681,61 @@
             if (x.startMin != null && Math.abs(segs[q].startMin - x.startMin) <= 2) g = segs[q];
           /* Pas de segment retrouvé = le jour ne porte plus ses pas à la minute.
              On ne rejuge pas sur rien. */
-          if (!g || g.partForte == null) { sansPreuve++; continue; }
+          if (!g || (g.loco == null && g.partForte == null)) { sansPreuve++; continue; }
           var fin = (x.endMin != null) ? x.endMin : (x.startMin + (+x.dur || 0));
           var dur = fin - x.startMin;
           if (!(dur > 0)) { sansPreuve++; continue; }
-          if (window.flVerdictMarche(g, (x.pas != null ? x.pas : g.pasTotal), dur, k, 40).nom === 'Marche')
-            continue;
-          x.name = 'Activité'; delete x.ti;
-          if (x.srcs && x.srcs.auto) { x.srcs.auto.name = 'Activité'; delete x.srcs.auto.ti; }
-          touche = true; changes++;
-          details.push(k + ' ' + (x.start || x.startMin) + ' · ' + dur + ' min');
+          var nom = window.flVerdictMarche(g, (x.pas != null ? x.pas : g.pasTotal), dur, k, 40).nom;
+          if (nom === x.name) continue;
+          var ic = (nom === 'Marche') ? '🚶' : '✨';
+          x.name = nom; x.icon = ic;
+          if (nom === 'Marche') x.ti = 'walk'; else delete x.ti;
+          if (x.srcs && x.srcs.auto) {
+            x.srcs.auto.name = nom; x.srcs.auto.icon = ic;
+            if (nom === 'Marche') x.srcs.auto.ti = 'walk'; else delete x.srcs.auto.ti;
+          }
+          if (p === null) p = (typeof window.flPasParMinute === 'function') ? (window.flPasParMinute(k) || false) : false;
+          if (p) window.flRecompterPas(k, x, p);
+          touche = true;
+          if (nom === 'Marche') versMarche++; else versActivite++;
+          details.push(k + ' ' + (x.start || x.startMin) + ' · ' + dur + ' min → ' + nom);
         }
         if (touche && !DB.set('sessions_' + k, L)) details.push(k + ' · ÉCRITURE REFUSÉE');
       }
-      return 'rejugé · ' + vus + ' marches lues · ' + changes + ' devenues Activité · '
-        + sansPreuve + ' sans preuve (inchangées)'
+      return 'rejugé · ' + vus + ' détections lues · ' + versMarche + ' devenues Marche · '
+        + versActivite + ' devenues Activité · ' + sansPreuve + ' sans preuve (inchangées)'
         + (details.length ? '\n  ' + details.join('\n  ') : '');
+    } catch (e) { return 'ECHEC · ' + (e && e.message ? e.message : '?'); }
+  };
+
+  /* ═══ 28 SEPT. — LES PAS DÉJÀ RANGÉS SUIVENT LA RÈGLE DES PAS ════════════
+     `pas` est ÉCRIT sur l'activité à la réconciliation, et une journée passée
+     ne se resynchronise jamais : la musculation de ce matin garderait ses
+     1 437 pas dans Ma journée pendant que sa fiche, qui recompte à
+     l'ouverture, en dirait 573. On recompte donc une fois, par journée, les
+     activités qui ne sont PAS un déplacement — c'est la seule population que
+     la règle change. Une Marche, une Course, une Randonnée gardent leur nombre
+     au pas près. On ne crée aucun champ : une activité sans pas en reste sans. */
+  window.flRecompterPasAnciens = function (jours) {
+    try {
+      var haut = (jours == null) ? 30 : Math.max(0, Math.min(120, jours | 0));
+      var lus = 0, changes = 0, retires = 0, avant = 0;
+      for (var j = 0; j <= haut; j++) {
+        var k = tk(-j), L = DB.get('sessions_' + k, []) || [], touche = false, p = null;
+        for (var i = 0; i < L.length; i++) {
+          var x = L[i];
+          if (!x || x.type === 'nap' || x.pas == null || x.fenetreOk === false) continue;
+          if (window.flPasCompteEntier(x)) continue;
+          lus++;
+          if (p === null) p = (typeof window.flPasParMinute === 'function') ? (window.flPasParMinute(k) || false) : false;
+          if (!p) continue;
+          var n0 = +x.pas;
+          if (window.flRecompterPas(k, x, p)) { touche = true; changes++; avant += n0; retires += n0 - (+x.pas || 0); }
+        }
+        if (touche) DB.set('sessions_' + k, L);
+      }
+      return 'pas recomptés · ' + lus + ' activités sans déplacement lues · ' + changes
+        + ' corrigées · ' + retires + ' pas non démontrés retirés sur ' + avant;
     } catch (e) { return 'ECHEC · ' + (e && e.message ? e.message : '?'); }
   };
 
@@ -453,8 +762,16 @@
      drapeau : la passe lit trente journées et écrit celles qu'elle corrige.
      Répétée à chaque montage, elle coûterait ce prix pour zéro changement — et
      le troisième symptôme de la v1910 nous a déjà appris que « rien à faire »
-     ne se découvre qu'après avoir tout lu. */
-  var CLE_REJUGE = 'flNomsRejugesV2566';
+     ne se découvre qu'après avoir tout lu.
+
+     28 SEPT. — LE DRAPEAU NEUF QUE CE PARAGRAPHE ANNONÇAIT. La règle du nom a
+     bougé (voir l'en-tête) : la passe se rejoue une fois sur la nouvelle, dans
+     les deux sens, et recompte avec elle les pas des activités qui ne sont pas
+     un déplacement. L'ancien drapeau `flNomsRejugesV2566` reste en base,
+     témoin de la première correction. Le natif l'appelle à chaque montage du
+     moteur depuis la v2566 : le drapeau neuf suffit à la relancer, sur tous
+     les binaires, par le seul canal du web. */
+  var CLE_REJUGE = 'flNomsEtPasRejuges20260928';
 
   window.flCorrigerAnciensNoms = function () {
     try {
@@ -467,8 +784,13 @@
          suivant — sinon la correction serait perdue sans que personne ne le
          sache. `flRejugerNomsDetectes` dit « ECHEC · … » dans ce cas. */
       if (/^ECHEC/.test(String(r))) return r;
+      /* Les pas APRÈS les noms : une Marche devenue Activité doit être
+         recomptée avec son nom neuf, pas avec l'ancien. */
+      var r2 = window.flRecompterPasAnciens(120);
+      if (/^ECHEC/.test(String(r2))) return r2;
       try { DB.set(CLE_REJUGE, true); } catch (e) {}
-      return r;
+      var t = String(r), nl = t.indexOf('\n');
+      return (nl < 0 ? t + '\n' + r2 : t.slice(0, nl) + '\n' + r2 + t.slice(nl));
     } catch (e) { return 'ECHEC · ' + (e && e.message ? e.message : '?'); }
   };
 

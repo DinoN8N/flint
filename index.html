@@ -22587,7 +22587,7 @@ function flEffData(doc){
    for(var mn=Math.max(0,Math.round(sm0));mn<Math.min(1440,Math.round(sm0+dur));mn++){
      if(pm.vu[mn]){tot+=(pm.m[mn]||0);vus++;}
    }
-   return vus?tot:null;
+   return vus?((typeof flPasCompteEntier==='function'&&typeof flPasConfirmes==='function'&&!flPasCompteEntier(sess))?flPasConfirmes(pm,sm0,sm0+dur,null):tot):null;   /* 28 sept. 2026 — une activité qui n'est pas un déplacement ne compte que les pas de ses enchaînements de marche (flint-classement.js) */
  }catch(e){return null;}})();
  /* pastilles moyennes perso (45 j, même activité) */
  var cH=[],aH=[],xH=[];
@@ -23616,7 +23616,7 @@ function wipeData(){if(!confirm('Vider TOUTES les données (démo incluse) et re
 function exportData(){const dump={};Object.keys(localStorage).forEach(k=>dump[k]=localStorage.getItem(k));const t=JSON.stringify(dump,null,2);try{const blob=new Blob([t],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='flint-data.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},1500);toast('⬇️ Données exportées (flint-data.json)')}catch(e){try{navigator.clipboard.writeText(t);toast('📋 Données copiées')}catch(e2){toast('Export impossible')}}}
 
 /* ===== Coach IA (réponses fondées sur les données du jour) ===== */
-const APP_VERSION='v2699';
+const APP_VERSION='v2701';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
@@ -29311,7 +29311,7 @@ window.flDansFenetre=function(m,d,f){ return m>=d && m<f; };
      var cad=g.pas/Math.max(1,g.fin-g.debut);
      it=cad>=100?2:1;
     }
-    return {startMin:g.debut,endMin:g.fin,pasTotal:g.pas,partForte:(typeof flPartMinutesTenues==='function'?flPartMinutesTenues(p,g.debut,g.fin,MARCHE_FORTE):null),
+    return {startMin:g.debut,endMin:g.fin,pasTotal:g.pas,partForte:(typeof flPartMinutesTenues==='function'?flPartMinutesTenues(p,g.debut,g.fin,MARCHE_FORTE):null),loco:(typeof flLocomotion==='function'?flLocomotion(p,g.debut,g.fin,null,hh):null),
             avgHr:moy,maxHr:mx,int:it,fcFiable:(q?q.fiable:null),fcIncoherent:(q?!!q.incoherent:null),
             source:'pas',capteur:(src&&src.src)||'bracelet',
             /* La finesse est une propriété de la mesure : on la dit, pour que le
@@ -29560,7 +29560,7 @@ window.flDansFenetre=function(m,d,f){ return m>=d && m<f; };
       c.startMin=d;c.endMin=f;
       c.avgHr=null;c.maxHr=null;                 /* la fenêtre a changé */
       var s=0; for(var i=Math.max(0,d);i<Math.min(1440,f);i++)if(p.vu[i])s+=p.m[i];
-      c.pasTotal=s; c.partForte=(typeof flPartMinutesTenues==='function')?flPartMinutesTenues(p,d,f,MARCHE_FORTE):null;
+      c.pasTotal=s; c.partForte=(typeof flPartMinutesTenues==='function')?flPartMinutesTenues(p,d,f,MARCHE_FORTE):null; c.loco=(typeof flLocomotion==='function')?flLocomotion(p,d,f,null,(typeof watchOf==='function'?((watchOf(K)||{}).hr):null)):null;
       out.push(c);
      });
      /* chaque résiduel repasse par les MÊMES critères, sur SES minutes */
@@ -29634,7 +29634,7 @@ window.flDansFenetre=function(m,d,f){ return m>=d && m<f; };
    }catch(e){return seances;}
   }
   try{window.flPartitionnerSeances=flPartitionnerSeances;}catch(e){}
-  window.flDetectMarches=detectMarches;
+  window.flDetectMarches=detectMarches; window.flSeuilsMarche={forte:MARCHE_FORTE,allumage:ALLUMAGE_MIN,plancher:MIN_PLANCHER};   /* 28 sept. — la preuve du déplacement (flint-classement.js) est l'allumage de ce détecteur, avec ses nombres */
 
   /* ═══ L ACTIVITE QUI N EST PAS ENCORE FINIE ═══════════════════════════════
 
@@ -32871,7 +32871,7 @@ window.flMetriquesCanoniques=function(k,d,f,ps){
     for(var mn=Math.max(0,Math.round(d));mn<Math.min(1440,Math.round(f));mn++){
      if(_ps.length&&flEnPause(mn,_ps))continue;  if(pm.vu[mn]){tot+=(pm.m[mn]||0);vus++;}
     }
-    if(vus)out.pas=tot;
+    if(vus){out.pas=tot; try{if(typeof flPasConfirmes==='function')out.pasConfirmes=flPasConfirmes(pm,d,f,_ps);}catch(_e){}}
    }
   }catch(e){}
   return out;
@@ -33169,7 +33169,7 @@ window.flReclasserActivite=function(id,nom,ti){try{
    s.srcs.user={src:'user', name:N, ti:(_ti||null),
                 startMin:s.startMin, endMin:s.endMin,
                 start:s.start, dur:s.dur, _le:tk()};
-   s.name=N;                       /* la vue plate, tout de suite */
+   s.name=N; try{if(typeof flRecompterPas==='function')flRecompterPas(k,s);}catch(_e){}   /* la vue plate, tout de suite — et ses pas suivent le nom (28 sept.) */
    if(_ti)s.ti=String(_ti);
    if(!DB.set('sessions_'+k,L))return 'écriture refusée · '+k;
    try{if(typeof flDeriverMetriques==='function')flDeriverMetriques(k,L);}catch(e){}
@@ -33214,7 +33214,7 @@ window.flDeriverMetriques=function(k,liste){
            delete s.kcal; delete s.kcalEtat; delete s.kcalTrous; return; }
    if(m.avgHr!=null)s.avgHr=m.avgHr; else delete s.avgHr;
    if(m.maxHr!=null)s.maxHr=m.maxHr; else delete s.maxHr;
-   if(m.pas!=null)s.pas=m.pas; else delete s.pas;
+   if(m.pas!=null)s.pas=((m.pasConfirmes!=null&&typeof flPasCompteEntier==='function'&&!flPasCompteEntier(s))?m.pasConfirmes:m.pas); else delete s.pas;   /* 28 sept. 2026 — pas certains → comptés, pas incertains → non (flint-classement.js) */
    /* v1723 — les calories suivent la même règle : dérivées sur la fenêtre
       canonique, ou absentes. */
    if(m.kcal!=null)s.kcal=m.kcal; else delete s.kcal;
