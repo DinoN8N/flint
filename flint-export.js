@@ -940,7 +940,7 @@ window.flExportTables = function () {
     var profil = flExpCsv(['Champ', 'Valeur'], [
       ['Prénom', p.name || ''],
       ['Sexe', p.gender || ''],
-      ['Âge', flExpN(p.age)],
+      ['Âge', flExpN((typeof flAge==='function'&&flAge())||p.age)],   // 28 sept. 2026 — l'âge du jour, pas celui de l'inscription
       ['Taille (cm)', flExpN(p.height != null ? p.height : p.taille)],
       ['Poids (kg)', flExpN(p.weight != null ? p.weight : p.poids, 1)],
       ['Heure de lever visée', p.wake || ''],

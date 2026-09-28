@@ -594,6 +594,7 @@ window.FL_LANG.es={
  "re:^(\\d+) séances$":"$1 sesiones",
  "re:^(\\d+)/(\\d+) nuits$":"$1/$2 noches",
  "re:^(\\d+)h cible$":"$1h objetivo",
+ "re:^(\\d+)h(\\d\\d) cible$":"$1h$2 objetivo",
  "re:^(\\d{1,2} \\S+\\.?) à (\\d{1,2}:\\d{2})$":"$1 a las $2",
  "re:^(\\d{1,2}:\\d{2} → \\d{1,2}:\\d{2}) · repas$":"$1 · comida",
  "re:^(\\d{1,2}:\\d{2} → \\d{1,2}:\\d{2}) · sommeil$":"$1 · sueño",

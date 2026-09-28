@@ -161,7 +161,7 @@
    n=n||30;
    var v=[],i;
    for(i=0;i<n;i++){
-    try{var r=flFcRepos(tk(-i)); if(r&&r.v>25&&r.v<120)v.push(r.v);}catch(e){}
+    try{var r=flFcRepos(tk(-i)); if(r&&r.v>25&&r.v<120&&(r.src==='nuit'||r.src==='courbe'))v.push(r.v);}catch(e){}   /* 28 sept. 2026 — UNE NUIT DE CE JOUR-LÀ. Le repli « récente » recopie la dernière nuit sur chaque jour vide : deux nuits valaient « 30 nuits », et les zones se posaient pour un mois sur deux mesures (C2) (AUDIT-NOUVEAUX-PROFILS-28-SEPT.md) */
    }
    /* Sous sept nuits, une médiane ne mesure plus une habitude, elle mesure la
       semaine qu'on vient de passer. On préfère ne rien dire. */
@@ -275,7 +275,7 @@
    }
 
    /* 1 · la pointe mesurée a monté → tout de suite */
-   var montee=(fm.v>(+reg.fcMax||0));
+   var _fs=String(fm.src||''), montee=(fm.v>(+reg.fcMax||0))||(_fs!==String(reg.fcMaxSrc||''))||(_fs==='mesurée'&&fm.v!==+reg.fcMax)||(/^estimée/.test(_fs)&&Math.abs(fm.v-(+reg.fcMax||0))>=3);   /* 28 sept. 2026 — une maximale SAISIE plus basse, un sexe ou une naissance corrigés attendaient trente jours : 14 bpm de trop en zone 5 (C4). Un anniversaire (0,7 bpm) ne déclenche rien */
    /* 2 · sinon, trente jours */
    var age=(now-(+reg.revu||0))/86400000;
    /* 3 · et un mouvement qui dépasse le bruit */
@@ -284,7 +284,7 @@
    for(i=0;i<5;i++)if(Math.abs(cand[i]-reg.bornes[i])>=bruit)bouge++;
 
    if(montee||(age>=_ZONES_REVISION_JOURS&&bouge>0)){
-    try{DB.set('zonesReglage',neuf);}catch(e){}
+    try{DB.set('zonesReglage',neuf);}catch(e){} if(montee)try{localStorage.removeItem('zonesJour_'+tk(0));}catch(e){}
     return neuf;
    }
    return {bornes:reg.bornes,source:reg.source||'personnelles',
@@ -313,7 +313,7 @@
       de lire, et à défaut rend les bornes qui avaient cours. */
    var _auj=tk(0);
    if(k===_auj){
-    try{DB.set('zonesJour_'+k,reg.bornes);}catch(e){}
+    if(reg.source!=='defaut')try{DB.set('zonesJour_'+k,reg.bornes);}catch(e){}   /* 28 sept. 2026 — les bornes de référence ne se figent pas : le jour de l installation, l accueil se calcule AVANT que l âge soit écrit, et le jour 0 gardait les zones d un autre corps (C3) */
     return reg.bornes;
    }
    if(reg.source==='manuelles')return reg.bornes;

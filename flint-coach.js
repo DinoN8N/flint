@@ -997,7 +997,7 @@ function flcInstantane(opts){
   /* un sexe non déclaré n'est JAMAIS « homme » (le ''||'h' qui coûtait 83 kcal/j) */
   r.sexe=(p.gender==='h'||p.gender==='f')?p.gender:'non déclaré';
   r.tailleCm=flcR(p.height,0);
-  r.poids=flcSur('profil.poids',function(){return flPoidsAff(flPoidsCorps());},manques)||null;
+  r.poids=flcSur('profil.poids',function(){var _w=flPoidsCorps();return (_w>0)?flPoidsAff(_w):null;},manques)||null;   /* 28 sept. 2026 — sans poids, rien : « 0.0 kg » partait au Coach, qui recopie les chiffres tels quels */
   r.objectif={code:p.goal||null, mot:flNGoalWord(), rythmeKgSem:flcR(p.rate,2),
               cible:(p.targetWeight?(flPoidsAff(+p.targetWeight)||null):null), kcalSrc:p.kcalSrc||null};
   var bs=flBesoinSommeil(); r.besoinSommeil=bs?{h:flcHM(bs.min!=null?bs.min:bs.h*60), src:bs.src||null}:null;
@@ -1216,7 +1216,7 @@ function flcGetHistory(a){
  else{var plein=lignes.some(function(l){for(var c=1;c<l.length;c++)if(l[c]!=null)return true;return false;});
   if(!plein)o.q='missing';}
  flcPurger(o);
- while(flcOctets(o)>12288&&o.lignes.length>1){o.lignes.shift();o.tronque=true;}
+ while(flcOctets(o)>12288&&o.lignes.length>1){o.lignes.shift();o.tronque=true;if(o.q==='good')o.q='partial';}   /* 28 sept. 2026 — la qualité se pose DANS la boucle : posée après, « partial » ajoutait 3 octets à un lot déjà mesuré, et le plafond de 12 Ko ne tenait qu'à un octet près */
  if(o.tronque&&o.q==='good')o.q='partial';
  return o;
 }

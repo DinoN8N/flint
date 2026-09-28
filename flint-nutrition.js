@@ -1000,7 +1000,7 @@ window.flDepenseReference=function(){try{
  if(typeof flCaloriesDetail==='function'){
   for(var i=1;i<=28;i++){
    var r=null; try{r=flCaloriesDetail(tk(-i));}catch(e){}
-   if(r&&!r.vide&&r.complet&&r.total>0)tot.push(r.total);
+   if(r&&!r.vide&&r.complet&&r.total>0)tot.push(r.total+(r.metaBaseRetiree>0?r.metaBaseRetiree:0));   /* 28 sept. 2026 — LE CORPS DÉPENSE AUSSI QUAND LE BRACELET EST AU TIROIR. L affichage du jour écarte ce métabolisme (v2058, comme WHOOP) ; la RÉFÉRENCE, elle, estime ce que ce corps brûle un jour ordinaire. Sans ce retour, bracelet ôté de 0 h à 8 h : −572 kcal/j sur la référence, donc sur le plan et le budget (E1) (AUDIT-NOUVEAUX-PROFILS-28-SEPT.md) */
   }
  }
  /* ═══ v2004 — LA DÉCLARATION S'EFFACE AU FUR ET À MESURE, PAS D'UN COUP ═══

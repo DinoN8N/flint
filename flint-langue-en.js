@@ -602,6 +602,7 @@ window.FL_LANG.en={
  "re:^(\\d+) séances$":"$1 sessions",
  "re:^(\\d+)/(\\d+) nuits$":"$1/$2 nights",
  "re:^(\\d+)h cible$":"$1h target",
+ "re:^(\\d+)h(\\d\\d) cible$":"$1h$2 target",
  "re:^(\\d{1,2} \\S+\\.?) à (\\d{1,2}:\\d{2})$":"$1 at $2",
  "re:^(\\d{1,2}:\\d{2} → \\d{1,2}:\\d{2}) · repas$":"$1 · meal",
  "re:^(\\d{1,2}:\\d{2} → \\d{1,2}:\\d{2}) · sommeil$":"$1 · sleep",
