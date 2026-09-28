@@ -2902,6 +2902,7 @@ body.stepsview header{display:none}
 <script src="flint-tendances.js"></script>
 <script src="flint-jambes.js"></script>
 <script src="flint-export.js"></script>
+<script src="flint-energie.js"></script>
 <script>
 /* ══════════ LA MEMOIRE, ET CE QUI LA REMPLIT ══════════════════════════════
 
@@ -13347,20 +13348,7 @@ function flSnapLoop(){try{
   nf._flCam=1;
   nf.addEventListener('click',function(ev){ev.preventDefault();ev.stopPropagation();try{flNCamera('Photo');}catch(e){}},true);});
  }}catch(e){}flSnapLoop.rendezVous();}
-/* v2637 — LA BOUCLE LÈVE LE PIED QUAND LA BATTERIE LE DEMANDE. Dino : « dès que mon téléphone est en mode économie d'énergie, ça bugue complètement l'application ». Preuves de son iPhone : flintWKKills=70, dernier décès à 21:00, charges-refusees.txt muet de 20:43 à 21:52 : le processus WebKit meurt et le moteur avec lui.
-   Cette boucle est nommée suspecte depuis la v755 (« principal suspect du crash mémoire WebKit »), bridée de 60 Hz à 180 ms mais jamais arrêtée. Deux coûts restaient : ① un layout forcé à travers l'iframe 5,5 fois par seconde, à vie ; ② une replanification par requestAnimationFrame à chaque image, soit soixante réveils par seconde pour lire une horloge, donc une page jamais au repos.
-   `rendezVous` corrige les deux sans rien changer au travail fait. Le réveil passe par setTimeout PUIS par rAF : le timeout laisse la page s'endormir (② tombe), le rAF garde la propriété qui comptait, une boucle rAF ne se déclenche pas quand le document est masqué. Inverser les deux perdrait ça.
-   La cadence suit la batterie : 180 ms à plein régime (la valeur mesurée en v755, inchangée), 900 ms en mode économie, posé par le natif (EtatEnergie → appliquerEnergie). Le travail de cette boucle est un rattrapage d'état, pas une animation : il se voit à 1,1 Hz comme à 5,5 Hz et coûte cinq fois moins.
-   ⚠️ CE LOT NE PRÉTEND PAS EMPÊCHER iOS DE TUER WEBKIT. Personne ne le peut. Il retire du travail que l'app s'infligeait au moment où elle a le moins de marge, et il rend le mode visible au journal. Le récit complet est dans le message du commit v2637. */
-flSnapLoop.pas=function(){return window.flEco?900:180;};
-flSnapLoop.rendezVous=function(reste){
- /* `reste` : le temps qu'il manque quand on arrive TROP TÔT. Sans lui, la sortie anticipée se replanifiait image par image et le repos était illusoire : soixante réveils par seconde remplacés par soixante réveils par seconde. */
- var d=(typeof reste==='number'&&reste>0)?reste:flSnapLoop.pas();
- if(d<=180){requestAnimationFrame(flSnapLoop);return;}
- setTimeout(function(){requestAnimationFrame(flSnapLoop);},d);
-};
-/* Le natif appelle ceci au démarrage ET à chaque bascule, y compris celle qu'iOS déclenche seul à 20 % de batterie : le cas de Dino, qui n'active pas le mode à la main. */
-window.flEnergieNatif=function(eco){try{window.flEco=!!eco;}catch(e){}};
+flSnapLoop.pas=typeof flSnapPas==='function'?flSnapPas:function(){return 180;};flSnapLoop.rendezVous=typeof flSnapRendezVous==='function'?flSnapRendezVous:function(){requestAnimationFrame(flSnapLoop);};  /* v2637 — la cadence suit la batterie (mode économie) : flint-energie.js. Satellite absent (OTA sur un natif plus ancien) → la boucle d'avant, 180 ms image par image. */
 if(!window._flSnapLoopOn){window._flSnapLoopOn=true;requestAnimationFrame(flSnapLoop);}
 /* ═══ v2041 — IL N'Y A PLUS D'ÉCRAN DE CHARGEMENT, ET VOICI CE QU'IL CACHAIT
    Dino, trois fois : « vire-le », « plus jamais ».
@@ -22534,6 +22522,7 @@ function flEffData(doc){
    avg=Math.round(_sm.reduce(function(a,b){return a+b;},0)/_sm.length);
   }
   mx=Math.round(Math.max.apply(null,base));
+  if(_kpi&&hrT&&hrT.length)hrT.forEach(function(x){if(Math.round(x[1])>mx)mx=Math.round(x[1]);}); /* 25 sept. 2026 : la moyenne se lit sur hrT (v1663), le max aussi — jamais max < moy */
   /* v1657 — LA CORRECTION A SENS UNIQUE EST RETIREE. La v1583 laissait le canal
      fin RABAISSER le maximum quand une minute etait recollee, sans jamais lui
      permettre de le restaurer quand la serie minute sous-estimait le pic. Sur
@@ -23622,7 +23611,7 @@ function wipeData(){if(!confirm('Vider TOUTES les données (démo incluse) et re
 function exportData(){const dump={};Object.keys(localStorage).forEach(k=>dump[k]=localStorage.getItem(k));const t=JSON.stringify(dump,null,2);try{const blob=new Blob([t],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='flint-data.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},1500);toast('⬇️ Données exportées (flint-data.json)')}catch(e){try{navigator.clipboard.writeText(t);toast('📋 Données copiées')}catch(e2){toast('Export impossible')}}}
 
 /* ===== Coach IA (réponses fondées sur les données du jour) ===== */
-const APP_VERSION='v2643';
+const APP_VERSION='v2691';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();

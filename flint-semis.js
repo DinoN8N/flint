@@ -126,8 +126,10 @@ function flSeedDemoDays(n,fut){if(flRefuseSemis('flSeedDemoDays'))return;
    var hard = r('hard'+q)<0.3;
    ss.push({name:nm,icon:sportIcon(nm),
     /* v722 : créneaux disjoints (matin / fin d'après-midi) et minutes variées,
-       pour que deux séances du même jour ne commencent jamais à la même heure. */
-    start:(q?16:8)+Math.floor(r('st'+q)*4)+':'+String(Math.floor(r('mn'+q)*4)*15).padStart(2,'0'),
+       pour que deux séances du même jour ne commencent jamais à la même heure.
+       27 sept. 2026 : l'heure prend aussi son zéro (« 8:15 » → « 08:15 ») :
+       `s.start` est une clé « HH:MM », comme `m.time`. */
+    start:String((q?16:8)+Math.floor(r('st'+q)*4)).padStart(2,'0')+':'+String(Math.floor(r('mn'+q)*4)*15).padStart(2,'0'),
     dur:(hard?55:30)+Math.round(r('du'+q)*45),
     /* v714 : répartition réaliste — 60 % léger, 25 % modéré, 12 % soutenu,
        3 % maximal. La formule d'effort de la coquille est très raide : sans cette
@@ -206,15 +208,19 @@ function flSeedDemoDays(n,fut){if(flRefuseSemis('flSeedDemoDays'))return;
   /* v728 : aujourd'hui a TOUJOURS une journée alimentaire complète — c'est
     l'écran le plus consulté, le laisser vide donnait une page morte. */
  var meals=[],mr=(i===0?0.95:r('mcount'));
-  function push(tab,salt,time){var x=tab[Math.floor(r(salt)*tab.length)];
-   meals.push({name:x[0],kcal:x[1],prot:x[2],carb:x[3],fat:x[4],time:time,demo:true});}
+  /* 27 sept. 2026 : la minute tirée prend son zéro ICI, une fois pour les cinq
+     repas. Collée telle quelle, elle écrivait « 08:5 » ou « 21:0 », et
+     Nutrition l'affichait en démo (vu sur l'émulateur Android, même moteur).
+     `m.time` est une clé « HH:MM » relue et comparée (cf. flNfmt). */
+  function push(tab,salt,h,mn){var x=tab[Math.floor(r(salt)*tab.length)];
+   meals.push({name:x[0],kcal:x[1],prot:x[2],carb:x[3],fat:x[4],time:h+':'+('0'+mn).slice(-2),demo:true});}
   if(mr>0.12){
-   push(PD,'m1','08:'+(5+Math.floor(r('t1')*40)));
-   push(DJ,'m2','12:'+(20+Math.floor(r('t2')*35)));
-   if(mr>0.35)push(SN,'m3','16:'+(5+Math.floor(r('t3')*45)));
+   push(PD,'m1','08',5+Math.floor(r('t1')*40));
+   push(DJ,'m2','12',20+Math.floor(r('t2')*35));
+   if(mr>0.35)push(SN,'m3','16',5+Math.floor(r('t3')*45));
    /* le dîner est le repas le plus régulier : presque tous les soirs */
-   if(mr>0.16)push(DN,'m4','19:'+(30+Math.floor(r('t4')*25)));
-   if(mr>0.72)push(SN,'m5','21:'+(0+Math.floor(r('t5')*30)));
+   if(mr>0.16)push(DN,'m4','19',30+Math.floor(r('t4')*25));
+   if(mr>0.72)push(SN,'m5','21',0+Math.floor(r('t5')*30));
   }
   DB.set('meals_'+k,meals);
 
