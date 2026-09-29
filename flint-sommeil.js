@@ -2107,6 +2107,39 @@ function restageSleep(dayKey) {
          sous le message « la montre a oublié le début », qui serait faux.
          Et avant les affectations de `s` : plus bas, la durée et les stades
          seraient déjà écrits. */
+      /* ═══ 29 sept. 2026 — LA PORTE AMPUTAIT LES RENDORMISSEMENTS, EN SILENCE ═══
+
+         Dino, ce matin-là : couché 01:29, éveillé de 07:00 à ~07:50, rendormi
+         jusqu'à 09:09. WHOOP a recollé la nuit ; FLINT a gardé 5h15 et un réveil
+         à 07:00. La puce avait TOUT livré, d'un seul enregistrement : éveil
+         07:00→08:21, léger 08:21→09:03, et la FC revenue à 44-46 dès 07:50
+         (plancher de la nuit : 45). C'est cette porte qui a coupé à 07:00 et
+         jeté la suite — et elle a rendu aveugle le filet du rendormissement
+         (`flNuitRendormissement`), qui compare le sceau au calcul VIVANT, déjà
+         coupé : « la nuit n'a pas bougé ».
+
+         ON NE PEUT PAS TRANCHER SEUL, ET C'EST MESURÉ. Moteur rejoué sur les
+         59 nuits de la base de Dino : la porte en coupe 6. WHOOP lui donne
+         raison 4 fois (20, 21, 23 et 24 août — couché mais éveillé, la puce
+         comptait du sommeil, réveil juste au lieu de deux heures trop tard) et
+         tort 2 fois (1er et 29 septembre, vrais rendormissements). Les pas
+         séparent trois des quatre ; le 24 août contre le 29 septembre tient à
+         UN battement de FC médiane (+4 contre +3 au-dessus du plancher). Une
+         falaise, pas un plateau : aucune règle ne se pose là-dessus.
+
+         DONC ON DEMANDE. La porte garde sa décision, mais elle écrit ce
+         qu'elle retire quand c'est du sommeil (`rendormiPropose`, au moins
+         `dureeMiniRetenue` minutes — en dessous, le classement lui-même n'y
+         verrait pas un sommeil) ; `flint-nuit-matin.js` en fait une question
+         (« Tu t'es rendormi ? ») ; et un « oui » (`rendormiDit_<K>`) lève la
+         porte pour cette nuit-là. Le filet voit alors la nuit changer, rouvre
+         la session une fois, et rescelle — le mécanisme que Dino a demandé le
+         3 septembre, enfin nourri. Banc : test-rendormi-propose.js.
+
+         ⚠️ LE CHAMP SE RETIRE À CHAQUE PASSAGE. C'est un drapeau posé sur
+         l'objet de la base, et un drapeau qu'on ne retire pas survit à la
+         décision qui l'a posé — la leçon du `_est` du 12 septembre. */
+      delete s.rendormiPropose;
       (function fermerLaPorte() {
         try {
           if (manuel) return;                           /* 7 sept. 2026 — la fin saisie fait foi */
@@ -2120,6 +2153,14 @@ function restageSleep(dayKey) {
             }
           }
           if (coupe == null || coupe >= N) return;
+          /* 29 sept. 2026 — l'utilisateur a dit qu'il s'était rendormi : la
+             porte ne coupe pas cette nuit-là. La traîne d'éveil, plus haut, a
+             déjà fermé la fenêtre à la fin du dernier sommeil. */
+          var dit = flsLire('rendormiDit_' + dayKey, null);
+          if (dit && dit.rep === 'oui') {
+            flsLog('nuit ' + dayKey + ' : porte du matin LEVÉE — rendormissement confirmé par l utilisateur');
+            return;
+          }
           var gardees = [];
           for (var j = 0; j < newStages.length; j++) {
             var t = newStages[j]; if (t.startMin >= coupe) break;
@@ -2127,8 +2168,24 @@ function restageSleep(dayKey) {
                        : { stage: t.stage, startMin: t.startMin, durMin: coupe - t.startMin });
           }
           if (!gardees.length) return;
+          /* Ce que la coupe retire de SOMMEIL, et d'où à où. `N` vaut encore la
+             fin du dernier sommeil (la traîne d'éveil est déjà rognée). */
+          var dormiApres = 0, debutApres = null;
+          for (var q = 0; q < newStages.length; q++) {
+            var u = newStages[q];
+            if (u.stage === 'awake' || u.startMin + u.durMin <= coupe) continue;
+            dormiApres += u.startMin + u.durMin - Math.max(u.startMin, coupe);
+            if (debutApres == null) debutApres = Math.max(u.startMin, coupe);
+          }
+          if (debutApres != null && dormiApres >= CLASSIF.dureeMiniRetenue) {
+            var msDeb = (start + debutApres * 60) * 1000, msFin = (start + N * 60) * 1000;
+            s.rendormiPropose = { debut: msDeb, fin: msFin, dormi: dormiApres,
+                                  debutMin: flsMinuteDu(dayKey, msDeb), finMin: flsMinuteDu(dayKey, msFin),
+                                  coupe: (start + coupe * 60) * 1000 };
+          }
           flsLog('nuit ' + dayKey + ' : porte du matin — fermeture a +' + coupe
-               + ' min au lieu de +' + N + ' (' + (N - coupe) + ' min d eveil retires)');
+               + ' min au lieu de +' + N + ' (' + (N - coupe) + ' min retires, dont '
+               + dormiApres + ' de sommeil' + (s.rendormiPropose ? ' : rendormissement propose' : '') + ')');
           newStages = gardees; N = coupe;
           /* on recompte comme plus haut : les agrégats viennent des tranches,
              jamais d'une soustraction — une soustraction se désynchronise. */

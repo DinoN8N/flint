@@ -134,6 +134,7 @@
   var CLE_REVEIL = 'reveilDit_';    /* le réveil DÉCLARÉ, par jour */
   var CLE_LIVRE = 'nuitSommeilLivre_'; /* la montre a TOUT donné du sommeil, par jour */
   var CLE_LAPSE = 'nuitAttenteLapsee_'; /* l'attente du matin a lapsé ce jour-là — la nuit qui arrive ensuite est CELLE-LÀ, pas une migration */
+  var CLE_RENDORMI = 'rendormiDit_';   /* 29 sept. 2026 — la réponse à « Tu t'es rendormi ? », par jour (lue aussi par la porte du matin, flint-sommeil.js) */
   var JRN = 'nuitMatinJrn';         /* le journal horodaté, une nuit de bout en bout */
   var JRN_CAP = 200;
 
@@ -999,6 +1000,10 @@
       if (rec.etat === 'FINALIZED') {
         out.etat = 'FINALIZED'; out.finalisee = true;
         out.raison = rec.raison || 'nuit finalisée';
+        /* 29 sept. 2026 — la question ne se pose que sur une nuit PUBLIÉE : avant,
+           la carte du matin a la main, et « Traiter » d'abord. */
+        var qr = window.flNuitRendormiQuestion(K);
+        if (qr) out.rendormi = qr;
         return out;
       }
       if (rec.etat === 'JOURNAL_IN_PROGRESS' || rec.etat === 'FINALIZING'
@@ -2217,6 +2222,105 @@
       res.ok = true; res.raison = r.raison;
       return res;
     } catch (e) { res.raison = 'réouverture : ' + e.message; return res; }
+  };
+
+  /* ═══ 29 sept. 2026 — « TU T'ES RENDORMI ? » : LE FILET AVAIT UN ANGLE MORT ═══
+
+     Le filet ci-dessus ne voit un rendormissement que si le moteur de sommeil
+     le RETIENT. Or la porte du matin (`fermerLaPorte`, flint-sommeil.js) ferme
+     la nuit au premier éveil de 27 min+ du dernier tiers, et jette ce qui
+     suit. Dino, le 29 : éveillé de 07:00 à ~07:50, rendormi jusqu'à 09:09 —
+     la puce l'a livré, la porte l'a coupé, et le filet a répondu « la nuit
+     n'a pas bougé (0 min d'écart) ». Porte levée, le même filet dit
+     « recollée : 315 → 353 min » et rouvre la session.
+
+     LA PORTE NE PEUT PAS DEVINER, ET C'EST MESURÉ (pavé de `fermerLaPorte`) :
+     sur 6 coupes, 4 justes (couché éveillé, la puce comptait du sommeil) et 2
+     fausses (vrais rendormissements), séparées par un battement de FC. Celui
+     qui sait, c'est le dormeur. On lui pose donc la question, une fois, sur
+     la nuit du jour, quand la nuit est publiée ; sa réponse lève la porte
+     (« oui ») ou la confirme (« non »), et ne se repose plus.
+
+     « OUI » EMPRUNTE LES CHEMINS QUI EXISTENT, DANS L'ORDRE DE LA PASSE : la
+     nuit se recalcule (la porte lit la réponse), le filet la voit changer,
+     rouvre UNE fois et refinalise (sceau, score de sommeil, récupération —
+     la carte dit « TU T'ES RENDORMI » pendant ce temps). Si l'unique
+     réouverture du jour est déjà prise, on rescelle directement, comme le
+     stylo : c'est une réponse de l'utilisateur, pas une dérive de capteur. */
+  function hhmmDe(m) {
+    m = ((Math.round(m) % 1440) + 1440) % 1440;
+    return String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
+  }
+  function rendormiPropose(K) {
+    try {
+      var w = DB.get('watch_' + K, null);
+      var n = w && w.night;
+      if (!n || n.source === 'manuel') return null;
+      var p = n.rendormiPropose;
+      if (!p || !(p.dormi > 0) || p.debutMin == null || p.finMin == null) return null;
+      return p;
+    } catch (e) { return null; }
+  }
+  window.flNuitRendormiQuestion = function (K) {
+    K = K || tk(0);
+    try {
+      /* Du moins cher au plus cher : `flNuitEtat` passe ici à chaque lecture
+         d'une nuit publiée, et le cas courant — rien de proposé — ne doit
+         coûter qu'une lecture de la base. */
+      if (K !== tk(0)) return null;                          /* la nuit du jour seulement */
+      if (DB.get(CLE_RENDORMI + K, null)) return null;       /* on ne redemande jamais */
+      var p = rendormiPropose(K);
+      if (!p) return null;
+      if (typeof flNuitSansMesure === 'function' && flNuitSansMesure(K)) return null;
+      return { debut: hhmmDe(p.debutMin), fin: hhmmDe(p.finMin), dormiMin: p.dormi };
+    } catch (e) { return null; }
+  };
+  window.flNuitRendormiRepondre = function (K, oui, maintenant) {
+    K = K || tk(0);
+    var now = maintenant || Date.now();
+    var res = { ok: false, rep: oui ? 'oui' : 'non', raison: null };
+    function rafraichir() {
+      try {
+        if (typeof window.flRafraichirDonnees === 'function')
+          setTimeout(function () { try { window.flRafraichirDonnees(); } catch (e) {} }, 0);
+      } catch (e) {}
+    }
+    try {
+      var q = window.flNuitRendormiQuestion(K), p = rendormiPropose(K);
+      if (!q || !p) { res.raison = 'aucune question en cours pour ' + K; return res; }
+      DB.set(CLE_RENDORMI + K, { rep: res.rep, ts: now, debut: p.debut, fin: p.fin, dormi: p.dormi });
+      var rec = lire(K);
+      tracer(rec && rec.id, oui ? 'resleep confirmed' : 'resleep denied', USER, rec && rec.etat,
+             q.debut + ' → ' + q.fin + ', ' + q.dormiMin + ' min de sommeil après la porte');
+      res.ok = true;
+      if (!oui) { rafraichir(); return res; }
+
+      try { if (typeof window.flintSommeilRecalculer === 'function') window.flintSommeilRecalculer(); }
+      catch (e) { res.recalcul = e.message; }
+      var ro = window.flNuitRouvrir(K, now);
+      res.reouverture = ro.ok ? true : ro.raison;
+      if (ro.ok) {
+        var rf = window.flNuitFinaliser(K, RENDORMI, now);
+        res.etat = rf.etat || 'FINALIZING'; res.recup = rf.recup;
+        /* Publiée, la finalisation a poussé l'écran elle-même (étape 7). Garée
+           (la matière manque encore), c'est à nous de le faire : la carte doit
+           dire « TU T'ES RENDORMI » pendant l'attente, pas rester muette. */
+        if (!rf.publie) rafraichir();
+        return res;
+      }
+      var rs = window.flNuitResceller(K, RENDORMI);
+      res.rescelle = rs.ok ? rs.apres : rs.raison;
+      if (rs.ok) {
+        var r = null;
+        try { if (typeof window.flRecupPublier === 'function') r = window.flRecupPublier(K, 'rendormi', true); }
+        catch (e) {}
+        res.recup = (r && r.s != null) ? r.s : null;
+        tracer(rec && rec.id, 'resleep resealed', RENDORMI, rec && rec.etat,
+               (ro.raison || '') + ' — ' + rs.avant.asleep + ' → ' + rs.apres.asleep + ' min');
+      }
+      rafraichir();
+      return res;
+    } catch (e) { res.raison = 'réponse au rendormissement : ' + e.message; return res; }
   };
 
   /* LA NUIT EST-ELLE VERROUILLÉE ? — c'est-à-dire : finalisée, donc close.

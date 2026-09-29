@@ -12444,6 +12444,7 @@ window.flAccueilData=function(_argJour){try{
        un troisieme fait, et c est lui qui retient les chiffres d hier pendant
        les quelques minutes ou la montre livre. Voir `flNuitAttendue`. */
     attendue:(_nuit.attendue===true),
+    rendormi:(_nuit.rendormi||null),  /* 29 sept. 2026 — « Tu t es rendormi ? » : du sommeil apres la porte du matin, a confirmer. Metier : flNuitRendormiQuestion (flint-nuit-matin.js) */
     /* ═══ v2210 — POURQUOI L ANNEAU EST VIDE ALORS QUE LA NUIT EST FINIE ═════
        Le 4 septembre, Dino a vu sa nuit publiee — 7h20, score de sommeil 78 —
        et, juste au-dessus, un anneau de recuperation vide portant « /100 ». Cet
@@ -23616,7 +23617,7 @@ function wipeData(){if(!confirm('Vider TOUTES les données (démo incluse) et re
 function exportData(){const dump={};Object.keys(localStorage).forEach(k=>dump[k]=localStorage.getItem(k));const t=JSON.stringify(dump,null,2);try{const blob=new Blob([t],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='flint-data.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},1500);toast('⬇️ Données exportées (flint-data.json)')}catch(e){try{navigator.clipboard.writeText(t);toast('📋 Données copiées')}catch(e2){toast('Export impossible')}}}
 
 /* ===== Coach IA (réponses fondées sur les données du jour) ===== */
-const APP_VERSION='v2714';
+const APP_VERSION='v2716';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
