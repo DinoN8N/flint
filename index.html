@@ -12381,7 +12381,7 @@ window.flAccueilData=function(_argJour){try{
      c est bien ce qu on veut : pas de score invente. */
   /* v2184 — une nuit EN TRAITEMENT est une donnee : sans ce terme, l accueil
      bascule en etat vide et la carte n a plus de page ou se poser. */
-  aDesDonnees: !!(rv||n||eff!=null||kcal!=null||(_nuit&&_nuit.etat&&_nuit.etat!=='SANS_NUIT')), sansBracelet: (typeof flSansBracelet==='function'&&flSansBracelet())===true,   /* 28 sept. 2026 — le natif met en scène l absence avec le MÊME verdict que le moteur (ApercuSansBracelet.swift) */
+  aDesDonnees: !!(rv||n||eff!=null||kcal!=null||(_nuit&&_nuit.etat&&_nuit.etat!=='SANS_NUIT')), sansBracelet: (typeof flSansBracelet==='function'&&flSansBracelet())===true, apercuBracelet: (typeof flApercuBracelet==='function'&&flApercuBracelet())===true,   /* 28 sept. 2026 — le natif met en scène l absence avec le MÊME verdict que le moteur (ApercuSansBracelet.swift) */
   enTraitement: (_enTraitement===true),   /* 16 sept. 2026 — LA CHARGE DIT LEQUEL DES DEUX ETATS ELLE PORTE : « il ne doit pas exister de troisieme etat ». Le natif le devinait a la forme de la charge, et une charge mi-figue mi-raisin se lisait comme une journee. `true` = « ce que je te donne n est pas encore la journee » : ce qui depend de la frontiere vaut `null` ICI MEME — pas cache, pas calcule. Banc : tests/test-accueil-coherent.js. */
   /* ═══ v1919 — POURQUOI L ANNEAU EST VIDE, ET PAS SEULEMENT QU IL L EST ═══
      Le score de recuperation se debloque apres quatre nuits portees. Le web le
@@ -23617,7 +23617,7 @@ function wipeData(){if(!confirm('Vider TOUTES les données (démo incluse) et re
 function exportData(){const dump={};Object.keys(localStorage).forEach(k=>dump[k]=localStorage.getItem(k));const t=JSON.stringify(dump,null,2);try{const blob=new Blob([t],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='flint-data.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},1500);toast('⬇️ Données exportées (flint-data.json)')}catch(e){try{navigator.clipboard.writeText(t);toast('📋 Données copiées')}catch(e2){toast('Export impossible')}}}
 
 /* ===== Coach IA (réponses fondées sur les données du jour) ===== */
-const APP_VERSION='v2716';
+const APP_VERSION='v2717';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();

@@ -694,10 +694,39 @@ window.flDemoOuvrir=function(){
  }
 };
 
+/* ═══ 29 sept. 2026 — SANS BRACELET, LA DÉMO NE LAISSE AUCUNE NUIT ══════════
+   « Voir un exemple » (pages floutées, natif v2715) et le choix « démo » de
+   l'onboarding l'ouvrent justement chez qui n'a pas de bracelet. Or la purge
+   chirurgicale GARDE toute nuit à hypnogramme trouvée dans un conteneur marqué
+   démo — le piège d'un bracelet qui écrit dans un jour semé — et n'en retire
+   que la marque. Les nuits SEMÉES en portent un (`flStageSegs`) : mesuré au
+   banc, 34 journées survivaient à la sortie, sans marque. De fausses nuits
+   pour toujours, et une base qui passait pour « mesurée » : plus de porte
+   fermée, plus d'aperçu.
+   Quand AUCUN bracelet n'a jamais été lié ici (`flMontreConnue === false`, pas
+   de souvenir — flint-porte.js), le piège ne peut pas exister : aucune nuit
+   n'a pu être livrée. Le conteneur démo part EN ENTIER, avant la purge (qui
+   effacerait la marque) ; la copie vivante est vidée EN PLACE (v1824 : la
+   copie vivante gagne toujours la course). Banc : test-sans-bracelet.js § 6. */
+function flDemoRetirerSansBracelet(){
+ if(window.flMontreConnue!==false)return 0;
+ if(typeof flBraceletDejaVu==='function'&&flBraceletDejaVu())return 0;
+ var cles=[],n=0;
+ for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i)||'';if(k.indexOf('watch_')===0)cles.push(k);}
+ cles.forEach(function(k){try{
+  var v=DB.get(k,null);
+  if(!v||!v.demo)return;
+  var vif=(typeof window.flJourMontre==='function')?window.flJourMontre(k.slice(6)):null;
+  if(vif&&typeof vif==='object'){Object.keys(vif).forEach(function(f){delete vif[f];});vif.hr=[];vif.rr=[];}
+  DB.set(k,null);n++;
+ }catch(e){}});
+ return n;
+}
 window.flDemoFermer=function(){
  var etait=flDemoActive();
  try{DB.set('flDemoSession',0);}catch(e){}                    /* la porte D'ABORD */
  try{localStorage.setItem('flintDemoData','0');}catch(e){}
+ try{flDemoRetirerSansBracelet();}catch(e){}                  /* 29 sept. 2026 — AVANT la purge, qui efface la marque */
  try{flPurgeDemoDays(60,70);}catch(e){}                       /* chirurgicale : la marque, jamais une mesure */
  try{DB.set('flDemoSeed',0);DB.set('demo',0);}catch(e){}
  return {ok:true,etait:etait};

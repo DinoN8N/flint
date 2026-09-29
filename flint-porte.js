@@ -560,8 +560,41 @@ window.flBaseAMesureBracelet=function(){try{
  return false;
 }catch(e){return true;}};   /* dans le doute, on ne ferme rien */
 
+/* ═══ 29 sept. 2026 — L'APERÇU EST POUR QUI N'A JAMAIS LIÉ DE BRACELET ═══════
+   Dino : « Les écrans qu'on a faits là, c'est pour les gens qui n'ont jamais
+   connecté de montre sur l'application, uniquement. À partir du moment où il y
+   a déjà une montre qui a été connectée, ils n'ont plus ces écrans. Ils n'ont
+   juste du vide. » Un bracelet qui décroche — Bluetooth, batterie, « Oublier
+   ce bracelet », base vidée — ne ramène JAMAIS l'aperçu.
+   DEUX VERDICTS, donc :
+     · `flSansBracelet()` — aucune mesure : la porte se ferme, les pages sont
+       VIDES. Inchangé : il ne lit pas le souvenir (un ancien porteur sans
+       bracelet ni mesure n'a pas plus de calories qu'une nouvelle venue) ;
+     · `flApercuBracelet()` — vide ET jamais lié ici : les pages floutées du
+       natif v2715+ (`apercuBracelet` dans flAccueilData).
+   LE SOUVENIR, deux sources, aucune n'est la base (la démo y sème des jours) :
+     1. le natif v2717+ lit son propre disque (lien ouvert une fois, nom
+        mémorisé) et pose `window.flMontreDejaLiee = true` ;
+     2. le moteur lui-même : dès qu'il voit `flMontreConnue === true`, il
+        l'écrit (`flBraceletDejaVu` = 1) — ce qui couvre les binaires App Store
+        qui ne posent pas le témoin 1.
+   Seul « Réinitialiser » (localStorage.clear) l'efface ; le natif v2717+ le
+   garde, lui, hors de la base. Le banc : tests/test-sans-bracelet.js § 3.
+   UNE lecture de la base par vie de page, au plus : `flSansBracelet` est lu
+   des centaines de fois par rendu, et des bancs plafonnent les lectures. */
+window.flBraceletDejaVu=function(){try{
+ if(window.flMontreDejaLiee===true)return true;
+ if(window.flMontreConnue===true){
+  if(!window._flBraceletVuNote){if(DB.get('flBraceletDejaVu',0)!==1)DB.set('flBraceletDejaVu',1);window._flBraceletVuNote=1;}
+  window._flBraceletVuLu=true;
+  return true;
+ }
+ if(window._flBraceletVuLu===undefined)window._flBraceletVuLu=DB.get('flBraceletDejaVu',0)===1;
+ return window._flBraceletVuLu;
+}catch(e){return true;}};   /* dans le doute, pas d'aperçu : il ne doit jamais tomber sur un porteur */
+
 window.flSansBracelet=function(){try{
- if(window.flMontreConnue!==false)return false;
+ if(window.flMontreConnue!==false){if(window.flMontreConnue===true)flBraceletDejaVu();return false;}   /* témoin vrai : le souvenir s'écrit */
  if(typeof flDemoActive==='function'&&flDemoActive())return false;
  try{if(localStorage.getItem('flintDemoData')==='1')return false;}catch(e){}
  var t=(DB&&DB.tampon)?DB.tampon('watch_'):0, m=window._flSansBraceletMemo;
@@ -570,6 +603,10 @@ window.flSansBracelet=function(){try{
  window._flSansBraceletMemo={t:t,v:v};
  return v;
 }catch(e){return false;}};
+
+window.flApercuBracelet=function(){try{
+ return flSansBracelet()===true&&!flBraceletDejaVu();
+}catch(e){return false;}};   /* dans le doute, pas d'aperçu */
 
 /* Ce que `flCaloriesDetail` rend sans bracelet : la MÊME forme qu'un jour sans
    aucune source (`vide`), pour que chaque lecteur existant — tuile, Balance,
