@@ -3752,7 +3752,7 @@ window.flEntreesJour=function(off){try{
       ses données, et `rang` continue de désigner sa position réelle — c'est
       l'index de stockage, il ne bouge pas parce qu'on saute l'affichage. La
       preuve brute est conservée ; c'est la FAUSSE ACTIVITÉ qui disparaît. */
-   if(_et&&_et.artefact)return;
+   if(_et&&_et.artefact)return; if((o.auto||sieste)&&typeof flSansBracelet==='function'&&flSansBracelet())return;   /* 28 sept. 2026 — sans bracelet, rien de DÉTECTÉ ne s affiche (masqué, pas supprimé) : flint-porte.js */
    out.push({debut:hhmm(d0), fin:hhmm(d1), nom:o.name||'Séance',
              genre:sieste?'sommeil':(o.auto?'auto':'manuelle'),
              /* v1828 — sans clé posée, on la DEMANDE AU CATALOGUE par le nom.
@@ -5084,7 +5084,7 @@ window.flNoteSeance=function(s,k){
  if(!s)return null;
  /* Saisie manuelle : `eff` EST la note sur 20, telle que l utilisateur l a
     donnée. Rien à recalculer, et surtout rien à recalculer par-dessus. */
- if(!s.auto&&s.eff!=null&&!isNaN(+s.eff))return +s.eff;
+ if(!s.auto&&s.eff!=null&&!isNaN(+s.eff))return +s.eff; if(typeof flSansBracelet==='function'&&flSansBracelet())return null;   /* 28 sept. 2026 — sans bracelet, seule la note DONNÉE par la personne reste : aucune note calculée sans pouls (flint-porte.js) */
  /* Séance détectée : on recalcule sur SA fenêtre — ET SUR SON JOUR (v1682).
     Sans `k`, `flEffortSeance` retombe sur le jour courant : c est ce qui
     donnait 2,8 a une randonnee qui en valait bien davantage. */
@@ -7973,7 +7973,7 @@ window.flSommeilData=function(_argJour){try{
     return (m&&m.valeurMin==null&&m.raison)?String(m.raison):null;
   }catch(e){return null;}})(),
   dormiH: n?n.asleep/60:null, auLit:(n&&n.inBed!=null)?hm(n.inBed):null, auLitH:(n&&n.inBed!=null)?n.inBed/60:null, /* 7 sept. 2026 — le dénominateur de l'efficacité, voir SommeilData.auLit */
-  detteH: Math.round(dette*100)/100,
+  detteH: (typeof flSansBracelet==='function'&&flSansBracelet())?null:Math.round(dette*100)/100,   /* 28 sept. 2026 — sans bracelet, pas de « dette +0h00 » fabriquée : flint-porte.js */
   /* ═══ v1402 — D'OÙ VIENT LA NUIT AFFICHÉE ═══════════════════════════════════
 
      Le 9 août, Dino : « ma nuit est fausse, je n'ai jamais dormi 8 h 25, et je
@@ -9816,7 +9816,7 @@ window.flTendancesData=function(mi,pi){try{
   ['hrv','HRV (ms)','#6C7BD6',function(k){var s=sensorOf(k);return s?s.hrv:null;}],
   ['rhr','FC repos','#E0723A',function(k){var s=sensorOf(k);return s?s.rhr:null;}],
   ['sleep','Sommeil (h)','#3A4FB0',function(k){var s=sensorOf(k);return (s&&s.sleepMin!=null)?s.sleepMin/60:null;}],
-  ['load','Charge','#3FB57A',function(k){return (_vus&&!_vus[k])?null:loadOf(k);}]];   /* v2492 — un jour que la base ne connaît pas n'a pas une charge nulle : il n'a PAS DE CHARGE. */
+  ['load','Charge','#3FB57A',function(k){return ((_vus&&!_vus[k])||(typeof flSansBracelet==='function'&&flSansBracelet()))?null:loadOf(k);}]];   /* v2492 — un jour que la base ne connaît pas n'a pas une charge nulle : il n'a PAS DE CHARGE. */
  var PER=[[7,'1 sem'],[30,'1 mois'],[180,'6 mois']];
  var m=METR[mi], nd=PER[pi][0];
  var vals=[];
@@ -9859,7 +9859,7 @@ window.flTendancesData=function(mi,pi){try{
   bilan={recup:rn?String(Math.round(rec/rn)):null,
    delta:(d==null?null:((d>=0?'+':'')+d+' vs sem. dernière')),
    sommeil:slh==null?null:(Math.floor(slh)+'h'+String(Math.round((slh%1)*60)).padStart(2,'0')),
-   effort:st?String(Math.round(str)):null, seances:vu?String(ses):null};
+   effort:st?String(Math.round(str)):null, seances:(vu&&!(typeof flSansBracelet==='function'&&flSansBracelet()))?String(ses):null};   /* 28 sept. 2026 — sans bracelet, ni charge ni compte de séances : flint-porte.js */
  }catch(e){}
  /* corrélations du journal — reprend behaviorCorr */
  var corr=[];
@@ -10196,7 +10196,7 @@ window.flProfilData=function(){try{
    catch(e){_b0=null;}}
   return _b0;
  }
- return {aDesDonnees:true,
+ return {aDesDonnees:true, sansBracelet:(typeof flSansBracelet==='function'&&flSansBracelet())===true,
   prenom:(p.name||null),
   age:(function(){var _a=null;try{_a=(typeof flAge==='function')?flAge():null;}catch(e){}return (_a!=null)?String(_a):(p.age!=null?String(p.age):null);})(),   /* 14 sept. 2026 — L AGE SE RECALCULE ICI AUSSI, depuis la date de naissance. `p.age` n est ecrit qu a la saisie (flProfilSet 'naissance', flOnboardApply) : il se perime au prochain anniversaire et personne ne le corrige — c est ce que `flAge` dit depuis le 24 aout, et le moteur, lui, relit `birth` a chaque lecture. Ne le 22/10/2004 et saisi en septembre 2026, le Profil (« 21 ans »), le Coach (« Age 21 ans ») et la Keytel du cockpit (MorphoProfil.depuis, qui prend `Int(p.age)`) auraient dit 21 le 22 octobre pendant que flAge, flFcMax et l age FLINT comptaient 22 : deux ages dans la meme app, pour toujours. L entier saisi reste le repli — une date illisible n efface pas ce qui a ete donne. */
   region:(p.region||null),   /* 28 sept. 2026 — « France » pour tout le monde était inventé ; le natif n affiche que ce qui existe */
@@ -10237,7 +10237,7 @@ window.flProfilData=function(){try{
      Rien n'est calculé ici : les quatre termes sortent tels quels de la
      formule unique (base + dette + effort, plafonds compris). L'écran les
      montre pour que « 9 h 15 » cesse d'être un nombre tombé du ciel. */
-  besoin2:(function(){try{
+  besoin2:(function(){try{if(typeof flSansBracelet==='function'&&flSansBracelet())return null;   /* 28 sept. 2026 — sans bracelet, ni dette ni « rien à rattraper » : flint-porte.js */
    var b=flBesoinJour0();
    if(!b)return null;
    var bs=(typeof flBesoinSommeil==='function')?flBesoinSommeil():null;
@@ -10292,7 +10292,7 @@ window.flProfilData=function(){try{
      affiché comme atteint : on renvoie aussi le palier SUIVANT, avec son
      avancement, pour qu'il reste quelque chose à viser. */
   objectifs:(function(){try{
-   var nuits=0,seances=0,kcal=0,jours=0;
+   var nuits=0,seances=0,kcal=0,jours=0,_sb=(typeof flSansBracelet==='function'&&flSansBracelet());   /* 28 sept. 2026 — sans bracelet, aucune nuit ni séance DÉTECTÉE ne compte : flint-porte.js */
    /* v1444 — LES BADGES NE FONT PLUS LE TOUR DE L'ANNÉE JOUR PAR JOUR.
       Trois questions par journée (une nuit ? des séances ? des calories ?)
       × 365 journées = plus de mille lectures, dont l'écrasante majorité pour
@@ -10301,8 +10301,8 @@ window.flProfilData=function(){try{
    var _vo=flJoursVus(['sensor_','sessions_','watch_'],365);
    for(var i=0;i<365;i++){var k=tk(-i);
     if(_vo&&!_vo[k])continue;
-    var sn=sensorOf(k); if(sn&&sn.sleepMin!=null)nuits++;
-    var ss=(DB.get('sessions_'+k,[])||[]).filter(function(x){return x.type!=='nap';});
+    var sn=_sb?null:sensorOf(k); if(sn&&sn.sleepMin!=null)nuits++;
+    var ss=(DB.get('sessions_'+k,[])||[]).filter(function(x){return x.type!=='nap'&&!(_sb&&x.auto);});
     seances+=ss.length;
     /* v961b — UN SEUL NaN ET LE MESSAGE ENTIER DISPARAÎT.
        `postMessage` sérialise la charge utile ; NaN n'est pas sérialisable et
@@ -10554,13 +10554,13 @@ window.flProfilRecords=function(pi){try{
      sport le PLUS pratiqué — une barre pleine dit « c'est ton sport », pas
      « tu as atteint un objectif ». */
   total:(function(){var t=0;try{for(var i=0;i<N;i++){
-   t+=(DB.get('sessions_'+tk(-i),[])||[]).filter(function(x){return x.type!=='nap';}).length;}
+   t+=(DB.get('sessions_'+tk(-i),[])||[]).filter(function(x){return x.type!=='nap'&&!(x.auto&&typeof flSansBracelet==='function'&&flSansBracelet());}).length;}   /* 28 sept. 2026 — sans bracelet, le détecté ne compte pas : flint-porte.js */
   }catch(e){} return t;})(),
   sports:(function(){try{
    var m={};
    for(var i=0;i<N;i++){
     (DB.get('sessions_'+tk(-i),[])||[]).forEach(function(x){
-     if(x.type==='nap')return;
+     if(x.type==='nap'||(x.auto&&typeof flSansBracelet==='function'&&flSansBracelet()))return;
      var n=x.name||'Séance';
      if(!m[n])m[n]={n:0,e:0,ne:0};
      m[n].n++;
@@ -12356,7 +12356,7 @@ window.flAccueilData=function(_argJour){try{
     Meme regle : la somme sur les cles de la journee logique. A minuit le
     compteur ne retombe pas a zero, il continue de monter. */
  var kcal=null;
- if(!_enTraitement)try{kcal=(_off===0&&typeof flCaloriesJour==='function')?flCaloriesJour(0):((typeof caloriesBurned==='function')?caloriesBurned(K):null);}catch(e){kcal=null;}   /* 16 sept. 2026 — 3 364 kcal = 2 800 hier + 563 ce matin, meme cause */
+ if(!_enTraitement)try{kcal=(_off===0&&typeof flCaloriesJour==='function')?flCaloriesJour(0):((typeof caloriesBurned==='function')?caloriesBurned(K):null);}catch(e){kcal=null;} if(typeof flSansBracelet==='function'&&flSansBracelet())kcal=null;   /* 16 sept. 2026 — 3 364 kcal = 2 800 hier + 563 ce matin, meme cause ; 28 sept. 2026 — sans bracelet, « — » et non « 0 » (flint-porte.js) */
  /* 12 sept. 2026 — le repère est la dépense de référence (voir flCaloriesRepere) : l'arc
     se remplit vers ce que ce corps brûle un jour ordinaire, et le mot se lit contre le
     prorata de la journée. */
@@ -12381,7 +12381,7 @@ window.flAccueilData=function(_argJour){try{
      c est bien ce qu on veut : pas de score invente. */
   /* v2184 — une nuit EN TRAITEMENT est une donnee : sans ce terme, l accueil
      bascule en etat vide et la carte n a plus de page ou se poser. */
-  aDesDonnees: !!(rv||n||eff!=null||kcal!=null||(_nuit&&_nuit.etat&&_nuit.etat!=='SANS_NUIT')),
+  aDesDonnees: !!(rv||n||eff!=null||kcal!=null||(_nuit&&_nuit.etat&&_nuit.etat!=='SANS_NUIT')), sansBracelet: (typeof flSansBracelet==='function'&&flSansBracelet())===true,   /* 28 sept. 2026 — le natif met en scène l absence avec le MÊME verdict que le moteur (ApercuSansBracelet.swift) */
   enTraitement: (_enTraitement===true),   /* 16 sept. 2026 — LA CHARGE DIT LEQUEL DES DEUX ETATS ELLE PORTE : « il ne doit pas exister de troisieme etat ». Le natif le devinait a la forme de la charge, et une charge mi-figue mi-raisin se lisait comme une journee. `true` = « ce que je te donne n est pas encore la journee » : ce qui depend de la frontiere vaut `null` ICI MEME — pas cache, pas calcule. Banc : tests/test-accueil-coherent.js. */
   /* ═══ v1919 — POURQUOI L ANNEAU EST VIDE, ET PAS SEULEMENT QU IL L EST ═══
      Le score de recuperation se debloque apres quatre nuits portees. Le web le
@@ -12476,7 +12476,7 @@ window.flAccueilData=function(_argJour){try{
                8 + 15845/60 = 272 heures, et l anneau du widget Sommeil se
                figerait a 2,8 % de remplissage, hors de portee de toute mise a
                jour a distance. On envoie donc le nombre. */
-            besoinMin: besoinMin,
+            besoinMin: (typeof flSansBracelet==='function'&&flSansBracelet())?null:besoinMin,   /* 28 sept. 2026 — sans bracelet, pas de conseil de coucher (Dino) : PontNotifs n en fabrique plus sans besoin */
             /* ═══ 12 sept. 2026 — LE BESOIN DE LA NUIT, À CÔTÉ DE LA CIBLE ═══
                `besoinMin` ci-dessus est la RECOMMANDATION d age (480 min chez
                Dino, invariable). C est elle qu affichent la barre de l accueil,
@@ -12494,7 +12494,7 @@ window.flAccueilData=function(_argJour){try{
                Un champ de plus, et chacun lit le sien : aucun chiffre deja
                affiche ne change. Mesure et chiffre dans
                RAPPORT-TROIS-DETTES-11-SEPT.md §4. */
-            besoinNuitMin:(function(){try{
+            besoinNuitMin:(function(){try{if(typeof flSansBracelet==='function'&&flSansBracelet())return null;
              var _b=(typeof flBesoinNuitDuJour==='function')
                     ?flBesoinNuitDuJour(_cleNuit||tk(0)):null;
              return (_b&&_b.min!=null)?_b.min:null;}catch(e){return null;}})(),
@@ -23616,7 +23616,7 @@ function wipeData(){if(!confirm('Vider TOUTES les données (démo incluse) et re
 function exportData(){const dump={};Object.keys(localStorage).forEach(k=>dump[k]=localStorage.getItem(k));const t=JSON.stringify(dump,null,2);try{const blob=new Blob([t],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='flint-data.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},1500);toast('⬇️ Données exportées (flint-data.json)')}catch(e){try{navigator.clipboard.writeText(t);toast('📋 Données copiées')}catch(e2){toast('Export impossible')}}}
 
 /* ===== Coach IA (réponses fondées sur les données du jour) ===== */
-const APP_VERSION='v2710';
+const APP_VERSION='v2714';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
@@ -23939,7 +23939,7 @@ try{
  })();
 }catch(e){}
 
- if(DB.get('purge.total')!==1367){
+ try{if(typeof flSecoursRetirer==='function')flSecoursRetirer();}catch(e){} if(DB.get('purge.total')!==1367){   /* 28 sept. 2026 — AVANT la purge : l archive secours.json, porte fermée et retirée des bases qui ne sont pas la sienne (flint-porte.js) */
   window.flPurgeToutLeFaux();
   DB.set('purge.total',1367);
  }
@@ -28030,7 +28030,7 @@ window.flMetriquesCourse=function(id,debutSec,finSec,estCourse){
      chez l'appelant), et l'arrondi de la moyenne des deux valeurs centrales
      est le même que partout ailleurs dans la maison. */
   function medNuit(hr){if(!hr||hr.length<5)return null;var v=hr.map(function(x){return x[1];}).sort(function(a,b){return a-b;});return v.length%2?v[v.length>>1]:Math.round((v[v.length/2-1]+v[v.length/2])/2);}
-  window.flStepsOf=function(k){k=k||tk();var w=watchOf(k);
+  window.flStepsOf=function(k){k=k||tk();if(typeof flSansBracelet==='function'&&flSansBracelet())return 0;var w=watchOf(k);   /* 28 sept. 2026 — sans bracelet, pas de pas (ceux de l iPhone compris) : flint-porte.js */
    /* ═══ 4 SEPT. 2026 — LE TOTAL DU JOUR EST LA SOMME DES BLOCS, PAS LE COMPTEUR ═══
       Cette fonction commençait par `if(w.steps>0)return w.steps;`. Deux
       conséquences, et les deux se sont vues le 3 septembre 2026.
@@ -28834,7 +28834,7 @@ window.flMetriquesCourse=function(id,debutSec,finSec,estCourse){
      .sort(function(a,b){return a[0]-b[0];});
     if(t1.length>=2)return {t:t1,src:'bracelet'};
    }
-   var s=DB.get('sante_'+K,null);
+   var s=(typeof flSansBracelet==='function'&&flSansBracelet())?null:DB.get('sante_'+K,null);   /* 28 sept. 2026 — sans bracelet, l iPhone ne fabrique pas de marches : flint-porte.js */
    var t2=((s&&s.pas)||[]).filter(function(x){return x&&x.length>=2&&x[1]>0;})
                           .slice().sort(function(a,b){return a[0]-b[0];});
    return t2.length>=2?{t:t2,src:'sante'}:null;
@@ -32898,7 +32898,7 @@ window.flMetriquesCanoniques=function(k,d,f,ps){
         regarde ni un battement ni un pas, et qui reste un repli EXPLICITE.
    Le forfait ne passe jamais devant une mesure. */
 window._flKcMemo={};
-window.flKcalActivite=function(k,s,debut,fin){try{
+window.flKcalActivite=function(k,s,debut,fin){try{if(typeof flSansBracelet==='function'&&flSansBracelet())return null;   /* 28 sept. 2026 — sans bracelet, pas de calories de séance (forfait sans pouls) : flint-porte.js */
  /* ═══ v1748 — UNE FENÊTRE REFUSÉE N'A PAS DE CALORIES, À AUCUNE PORTE ════
     Retirer la valeur stockée d'un artefact ne suffisait pas : la dérivation,
     elle, ne consulte pas l'invariant et rendait 1 857 kcal pour le
@@ -32998,7 +32998,7 @@ window.flActivitesAClasser=function(){try{
  for(var j=0;j<=7;j++){
   var k=tk(-j), L=DB.get('sessions_'+k,[])||[];
   for(var i=0;i<L.length;i++){
-   var s=L[i]; if(!s||s.type==='nap')continue;
+   var s=L[i]; if(!s||s.type==='nap')continue; if(s.auto&&typeof flSansBracelet==='function'&&flSansBracelet())continue;   /* 28 sept. 2026 — sans bracelet, pas de « C'était quoi ? » sur une détection : flint-porte.js */
    var e=null; try{e=flEtatActivite(s,k,null);}catch(x){}
    if(!e||e.etat!=='needsClassification')continue;
    if(_deja[s.id||flIdActivite(s,k)])continue;
@@ -34597,7 +34597,7 @@ window.flDeriverMetriques=function(k,liste){
   window.flCaloriesOublier=function(){_flCalCache={};};
   window.flCaloriesDetail=function(k){try{
    k=k||tk();
-   var w=watchOf(k); if(!w)return null;
+   var w=watchOf(k); if(!w)return null; if(typeof flCaloriesSansBracelet==='function'&&flSansBracelet())return flCaloriesSansBracelet(k);   /* 28 sept. 2026 — sans bracelet, aucune dépense : flint-porte.js */
    var nHr=(w.hr&&w.hr.length)||0, det=(w.actDet&&w.actDet.length)?w.actDet:null;
    /* LE PROFIL FAIT PARTIE DE LA SIGNATURE. Sans lui, corriger son poids ou sa
       date de naissance laissait le cache rendre l ancien calcul : le defaut a
@@ -37485,7 +37485,7 @@ window.flShellHonest=function(doc){try{
   }
  }catch(e){}}
  /* dans la coquille : scan + connexion auto à la montre au lancement */
- if(native)setTimeout(function(){try{native.postMessage({cmd:'start'});}catch(e){}},1500);
+ if(native)setTimeout(function(){try{if(typeof flSansBracelet==='function'&&flSansBracelet())return;native.postMessage({cmd:'start'});}catch(e){}},1500);   /* 28 sept. 2026 — sans bracelet, pas de recherche automatique : elle adoptait le premier capteur cardiaque à portée (RegleLien). L appairage volontaire passe par montreChercher(), natif. */
  /* v1316 — la morphologie part avec la mise en route : le pont la garde et
     corrige la montre a la premiere lecture de profil. */
  if(native)setTimeout(function(){try{flPousserMorpho();}catch(e){}},1800);

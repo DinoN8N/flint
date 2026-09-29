@@ -766,6 +766,9 @@ function flcInstantane(opts){
   try{porte=(flNuitPublicationOuverte(K0)!==false);}catch(e){}
   try{enT=!!flJourneeEnTraitement(K0);}catch(e){}
   m.nuitPubliee=porte; m.enTraitement=enT;
+  /* 28 sept. 2026 — SANS BRACELET, LE COACH LE LIT EN TÊTE (flint-porte.js) :
+     aucune mesure n'existe, et le manuel du serveur dit quoi en faire. */
+  try{if(typeof flSansBracelet==='function'&&flSansBracelet())m.bracelet='aucun bracelet FLINT connecté : aucune mesure (sommeil, récup, cœur, activité, pas, calories dépensées)';}catch(e){}
   return m;
  },manques);
 
@@ -834,7 +837,8 @@ function flcInstantane(opts){
      flAccueilData) — en traitement, ni chiffre ni mot (flCaloriesJour(0) y
      rendait hier entier + ce matin : le « 3 364 kcal » du 16 sept.) ; sans
      aucune mesure de dépense, pas de mot */
-  var kc=enT?null:flCaloriesJour(0); r.brulees=flcR(kc,0);
+  var _sb=(typeof flSansBracelet==='function'&&flSansBracelet());   /* 28 sept. 2026 — sans bracelet : ni dépense, ni pas, ni cible (flint-porte.js) */
+  var kc=(enT||_sb)?null:flCaloriesJour(0); r.brulees=flcR(kc,0);
   var cvide=false; if(!enT){try{var cd=flCaloriesDetail(K0);cvide=!!(cd&&cd.vide);}catch(x){}}
   r.bruleesMot=(kc==null||cvide)?null:(flCaloriesMot(kc,0)||null);
   var g=flNutGoals(); r.plan=g?{kcal:flcR(g.kcal,0),prot:flcR(g.prot,0),carb:flcR(g.carb,0),fat:flcR(g.fat,0)}:null;
@@ -848,11 +852,12 @@ function flcInstantane(opts){
  },manques);
 
  if(!L)o.effort=flcSur('effort',function(){
-  return flcFraisMemo('effort',[DB.tampon('sessions_'),DB.tampon('recov_'),DB.tampon('recovFige_'),DB.tampon('profile'),enT?1:0].join('.'),function(){
+  return flcFraisMemo('effort',[DB.tampon('sessions_'),DB.tampon('recov_'),DB.tampon('recovFige_'),DB.tampon('profile'),enT?1:0,(typeof flSansBracelet==='function'&&flSansBracelet())?'sb':''].join('.'),function(){
   /* jamais flEffortData() : il ignore son argument et suit le jour regardé */
   var e={jour:enT?null:flcR(flEffortJour(0),1)};
   if(enT)e.enTraitement=true;
-  var c=strainTarget(); e.cible=Array.isArray(c)?c.map(function(v){return flcR(v,1);}):null;
+  var _sb=(typeof flSansBracelet==='function'&&flSansBracelet());
+  var c=_sb?null:strainTarget(); e.cible=Array.isArray(c)?c.map(function(v){return flcR(v,1);}):null;
   e.hier=flcR(flEffortJour(-1),1);
   /* en traitement, la journée n'a pas encore de frontière : ses minutes par
      zone portent DEUX jours (les écrans ne les montrent pas non plus) */
@@ -863,7 +868,7 @@ function flcInstantane(opts){
   var cb=chargeBalance(0);
   if(cb)e.charge={lab:cb.lab||null, txt:cb.txt?flcTxt(cb.txt,140):null, ratio:flcR(cb.ratio,2), aigu:flcR(cb.acute,1), chronique:flcR(cb.chronic,1)};
   else{var eq=flEquilibreCharge(0)||{}; e.charge={manque:eq.manque?flcTxt(eq.manque,140):'pas encore de verdict'};}
-  e.vo2=flcR(flVo2Max(0),0); e.pas=flcR(flStepsOf(K0),0); e.objectifPas=flcR(stpGoal(),0);
+  e.vo2=flcR(flVo2Max(0),0); e.pas=_sb?null:flcR(flStepsOf(K0),0); e.objectifPas=flcR(stpGoal(),0);
   return e;
   });
  },manques);

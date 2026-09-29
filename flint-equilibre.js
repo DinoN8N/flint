@@ -56,6 +56,14 @@ var FL_EQUILIBRE={aigu:7,chronique:28,minAigu:4,minChronique:14};
 window.flEquilibreCharge=function(off){
  try{
   off=Math.min(0,(off|0));
+  /* 28 sept. 2026 — SANS BRACELET, LE COACH DOIT LE SAVOIR, ET C'EST ICI QU'IL
+     L'APPREND. Les binaires App Store (1.0 à 1.1) n'envoient au Coach que le
+     préchargement V1, dont cette réponse (`getTrainingLoad`) ; le serveur
+     imprime `manque` tel quel (« pas de verdict : … »). C'est donc le seul
+     chemin qui porte le fait jusqu'au modèle sans attendre un build : la règle
+     qui dit quoi en faire vit dans le manuel du serveur (flint-app). */
+  if(typeof flSansBracelet==='function'&&flSansBracelet())
+   return {manque:'aucun bracelet FLINT connecté : l\'app n\'a encore aucune mesure (sommeil, récup, cœur, activité, pas, calories dépensées)',sansBracelet:true,jours:[]};
   if(typeof loadStrain!=='function')return {manque:'le calcul de l\'effort n\'est pas charge',jours:[]};
   var JJ=flJoursCourts();
   var jours=[],sa=0,na=0,sc=0,nc=0,avant=0;

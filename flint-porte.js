@@ -497,3 +497,149 @@ window.flCycleJour=function(K){try{
  if(!enCours&&min<PORTE_CYCLE_MIN)return null;
  return {deb:deb, fin:fin, minutes:min, dormi:Math.max(0,+n0.asleep||0)};
 }catch(e){return null;}};
+
+/* ═══ 28 SEPT. 2026 — SANS BRACELET, AUCUNE MESURE NE S'AFFICHE ════════════════
+
+   Dino, à propos d'une amie qui a installé FLINT depuis l'App Store avant
+   d'avoir reçu son bracelet : « elle a déjà ses calories dépensées dans la
+   journée […] comment elle est censée avoir ses calories alors qu'il n'y a
+   pas de montre ? […] ils ne sont pas censés avoir accès à des choses. À la
+   limite, le scan repas et l'IA du coach. »
+
+   CE QU'ELLE VOYAIT, MESURÉ (moteur entier monté sur un compte neuf : profil,
+   pas de l'iPhone, zéro bracelet) : « 1 120 kcal brûlées · Faible » — 990 de
+   métabolisme tiré du profil + 130 tirés de 11 059 pas de l'iPhone —, ses pas,
+   un effort « Léger », et une Balance qui rangeait ces calories sous le
+   « podomètre du bracelet ». AUCUN SERVEUR là-dedans : un calcul local, sur
+   des sources qui ne sont pas le bracelet.
+
+   LA RÈGLE : sans bracelet, pas de mesure. Le scan repas, le journal de
+   nutrition (dont le plan vient du profil, pas d'une mesure) et le Coach
+   restent ouverts. Tout le reste attend le bracelet.
+
+   QUI EST « SANS BRACELET » — trois conditions, toutes nécessaires :
+     1. le natif l'a DIT : `window.flMontreConnue === false`, posé au
+        `didFinish` par les trois binaires App Store (le témoin date de la
+        v2405, la 1.0 est la v2533). `undefined` — page qui démarre, natif
+        muet — ne ferme RIEN : on ne retire pas un chiffre sur un silence ;
+     2. pas de démo en cours : elle montre tout, et le dit ;
+     3. la base ne porte AUCUNE mesure de bracelet. Une propriétaire qui a
+        fait « Oublier ce bracelet », réinstallé ou changé de téléphone garde
+        son histoire ; c'est aussi le filet qui protège un porteur le jour où
+        le témoin natif se tromperait.
+   Le verdict est mémorisé jusqu'à la prochaine écriture de `watch_`
+   (`DB.tampon`) : la première trame du bracelet le lève aussitôt.
+   Le banc : tests/test-sans-bracelet.js. */
+/* ⚠️ L'ARCHIVE `secours.json` NE COMPTE PAS. Le natif (`restaurerSecours`,
+   1,2 s après chaque chargement, sans garde dans le code) verse dans toute base
+   où elles manquent six journées de bracelet du 3 au 8 août 2026 et huit clés
+   de séances — sur un build de DÉVELOPPEMENT : en Release (App Store),
+   `garde-hermeticite.sh` retire le fichier du paquet et l'appel ne trouve rien.
+   Sans cette exclusion, un téléphone de l'entourage posé par câble passerait
+   pour une base « mesurée ». Leur vraie propriétaire porte d'autres mesures :
+   l'exclusion ne lui retire rien. */
+var FL_SECOURS_CLES={'watch_2026-8-3':1,'watch_2026-8-4':1,'watch_2026-8-5':1,'watch_2026-8-6':1,'watch_2026-8-7':1,'watch_2026-8-8':1};
+window.flBaseAMesureBracelet=function(){try{
+ for(var i=0;i<localStorage.length;i++){
+  var k=localStorage.key(i)||'';
+  if(FL_SECOURS_CLES[k])continue;
+  if(k.indexOf('hrfine_')===0||k.indexOf('hrbrut_')===0)return true;
+  if(k.indexOf('watch_')!==0)continue;
+  var v=localStorage.getItem(k)||'';
+  /* une courbe ou un bloc d'activité : le bracelet, sans discussion */
+  if(/"(hr|actDet|rrH|spo2|temp)":\[\[/.test(v))return true;
+  if(!/"night":\{|"(kcal|steps)":/.test(v))continue;
+  /* un compteur du bracelet, ou une nuit qu'il a livrée. ⚠️ PAS une nuit
+     SAISIE À LA MAIN (`source:'manuel'`, flint-sommeil.js) : le crayon de
+     « Ma nuit » l'écrit dans la même case, et elle ne prouve aucun bracelet. */
+  var w=null; try{w=JSON.parse(v);}catch(e){continue;}
+  if(!w)continue;
+  if((+w.kcal>0)||(+w.steps>0))return true;
+  var n=w.night; if(n&&n.source!=='manuel'&&(+n.sleepMin>0||n.stagesV8||+n.asleep>0))return true;
+ }
+ return false;
+}catch(e){return true;}};   /* dans le doute, on ne ferme rien */
+
+window.flSansBracelet=function(){try{
+ if(window.flMontreConnue!==false)return false;
+ if(typeof flDemoActive==='function'&&flDemoActive())return false;
+ try{if(localStorage.getItem('flintDemoData')==='1')return false;}catch(e){}
+ var t=(DB&&DB.tampon)?DB.tampon('watch_'):0, m=window._flSansBraceletMemo;
+ if(m&&m.t===t)return m.v;
+ var v=!flBaseAMesureBracelet();
+ window._flSansBraceletMemo={t:t,v:v};
+ return v;
+}catch(e){return false;}};
+
+/* Ce que `flCaloriesDetail` rend sans bracelet : la MÊME forme qu'un jour sans
+   aucune source (`vide`), pour que chaque lecteur existant — tuile, Balance,
+   hebdo, Coach, fiches — se taise par le chemin qu'il connaît déjà. Aucune
+   dépense, aucun métabolisme vécu, aucun seau : `manque` nomme le bracelet. */
+window.flCaloriesSansBracelet=function(k){
+ var z=[];for(var i=0;i<96;i++)z.push(0);
+ return {vide:true,sansBracelet:true,actives:0,marche:0,effort:0,comble:0,pasComble:0,
+         minutesEffort:0,metaBase:null,metaBaseVecue:null,metaBaseRetiree:0,partJour:null,
+         seuil:null,total:null,montre:null,seances:[],seaux:z,seauxOk:false,complet:false,
+         manque:'ton bracelet'};
+};
+
+/* ═══ 28 SEPT. 2026 — L'ARCHIVE `secours.json` QUITTE LES BASES DES AUTRES ══════
+
+   CE QUI SE PASSE, VÉRIFIÉ SUR 1.0 (d2942b4e), 1.1 (b4b68adc) ET main
+   (8ae4891b) : 1,2 s après chaque chargement, le natif appelle
+   `restaurerSecours()` sans aucune garde dans le code. Il lit `secours.json`
+   — 344 Ko, l'archive personnelle d'APP-STORE.md § 5 — et verse dans toute
+   base où elles manquent quatorze clés : les séances du 1er au 8 août 2026 et
+   six journées de bracelet (≈ 900 battements par jour). LE CLIENT APP STORE
+   EST À L'ABRI : en Release, `garde-hermeticite.sh` retire le fichier du
+   paquet (phase de build présente dans les trois binaires publiés) et l'appel
+   ne trouve rien. RESTENT EXPOSÉS les builds de DÉVELOPPEMENT posés par câble
+   — le téléphone de quiconque dans l'entourage n'est pas la propriétaire.
+
+   CE QUE ÇA FAIT CHEZ QUI N'EST PAS SA PROPRIÉTAIRE, mesuré sur un compte
+   neuf : « 6 séances · 5 nuits suivies · 6 jours sur FLINT » au Profil, et des
+   nuits étrangères dans les normales de soixante nuits (VFC, FC au repos)
+   jusqu'au début d'octobre.
+
+   DEUX GESTES, et le moteur peut les faire seul (le natif qui appelle reste
+   en circulation) :
+     1. FERMER LA PORTE : une base qui n'a jamais reçu l'archive reçoit
+        `flSecours = 1285` au chargement, avant que le natif ne passe
+        (1,2 s après `didFinish`) ; il répond alors « deja » et ne verse rien ;
+     2. RETIRER CE QUI A ÉTÉ VERSÉ, une fois, et SEULEMENT si l'archive est
+        étrangère : la propriétaire porte d'autres mesures de bracelet en
+        juillet ou en août 2026, un compte ouvert depuis l'App Store (21 sept.)
+        n'en a aucune. On efface — une copie des données d'une autre personne
+        n'a rien à faire sur ce téléphone — et on le note (`flSecoursRetire`).
+   Le banc : tests/test-sans-bracelet.js. */
+var FL_SECOURS_SAISIES=/^(meals_|sante_|journal_|fljrnl_)/;
+window.flSecoursEtranger=function(){try{
+ if(DB.get('flSecours',null)!==1285)return false;
+ var aArchive=false;
+ for(var i=0;i<localStorage.length;i++){
+  var k=localStorage.key(i)||'';
+  if(FL_SECOURS_CLES[k]){aArchive=true;continue;}
+  if(/^(hrfine_|hrbrut_)2026-[78]-\d+$/.test(k))return false;       /* sa propriétaire */
+  if(!/^watch_2026-[78]-\d+$/.test(k))continue;
+  if(/"(hr|actDet|rrH)":\[\[|"night":\{/.test(localStorage.getItem(k)||''))return false;
+ }
+ return aArchive;
+}catch(e){return false;}};
+
+window.flSecoursRetirer=function(){try{
+ if(DB.get('flSecoursRetire',null)!=null)return 0;
+ if(DB.get('flSecours',null)!==1285){DB.set('flSecours',1285);DB.set('flSecoursRetire','ferme');return 0;}
+ if(!flSecoursEtranger()){DB.set('flSecoursRetire','garde');return 0;}
+ var cles=[];
+ for(var i=0;i<localStorage.length;i++){
+  var k=localStorage.key(i)||'';
+  if(/_2026-8-[1-8]$/.test(k)&&!FL_SECOURS_SAISIES.test(k))cles.push(k);
+ }
+ cles.forEach(function(k){try{DB.marque(k);localStorage.removeItem(k);}catch(e){}});
+ try{if(typeof flWatchOublier==='function')flWatchOublier();}catch(e){}
+ try{if(typeof flCaloriesOublier==='function')flCaloriesOublier();}catch(e){}
+ window._flSansBraceletMemo=null;
+ DB.set('flSecoursRetire',{t:Date.now(),n:cles.length});
+ try{console.log('[flint] archive secours retirée de cette base : '+cles.length+' clés');}catch(e){}
+ return cles.length;
+}catch(e){return 0;}};
