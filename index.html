@@ -22849,9 +22849,9 @@ function flEffOpen(doc){try{var o=flEffData(doc);
  var el=doc.getElementById('screen-fl-effort');
  if(!el){el=doc.createElement('section');el.id='screen-fl-effort';doc.body.appendChild(el);}
  el.style.cssText="font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;color:#14110f;position:fixed;top:0;bottom:0;left:50%;width:100%;max-width:464px;z-index:132;overflow-y:auto;-webkit-overflow-scrolling:touch;background:#fbfbfc;transition:transform .38s cubic-bezier(.32,.72,0,1);transform:translateX(-50%) translateY(100%);pointer-events:none";
- var COLS=o.base.length,XMIN=34,XMAX=328,YTOP=14,YBOT=166.5;
+ var COLS=o.base.length,XMIN=34,XMAX=328,YTOP=14,YBOT=166.5;var _E=(typeof window.flEchelleFC==='function')?window.flEchelleFC(o.base):{lo:75,hi:175,ticks:[75,100,125,150,175]},ELO=_E.lo,EHI=_E.hi;
  function xOf(i){return XMIN+i*(XMAX-XMIN)/(COLS-1);}
- function yOf(b){b=Math.max(75,Math.min(175,b));return YTOP+(175-b)/100*(YBOT-YTOP);}
+ function yOf(b){b=Math.max(ELO,Math.min(EHI,b));return YTOP+(EHI-b)/(EHI-ELO)*(YBOT-YTOP);}
  var lineD='',areaD='';
  for(var c=0;c<COLS;c++){var x=xOf(c).toFixed(1),y=yOf(o.base[c]).toFixed(1);lineD+=(c?' L ':'M ')+x+' '+y;}
  areaD=lineD+' L '+XMAX.toFixed(1)+' '+YBOT+' L '+XMIN.toFixed(1)+' '+YBOT+' Z';
@@ -22911,7 +22911,7 @@ function flEffOpen(doc){try{var o=flEffData(doc);
    +'<div style="margin-top:18px"><svg class="fle-svg" viewBox="0 0 340 186" width="100%" style="display:block;touch-action:none;cursor:crosshair">'
     +'<defs><linearGradient id="fleFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fb6015" stop-opacity="0.20"></stop><stop offset="1" stop-color="#fb6015" stop-opacity="0.02"></stop></linearGradient><linearGradient id="flMarkFade" x1="0" y1="14" x2="0" y2="166.5" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#14110f" stop-opacity="0.12"></stop><stop offset="1" stop-color="#14110f" stop-opacity="0.52"></stop></linearGradient></defs>'
     +'<g stroke="#efe9e1" stroke-width="1" stroke-dasharray="1 5" stroke-linecap="round"><line x1="34" y1="14" x2="328" y2="14"></line><line x1="34" y1="52.1" x2="328" y2="52.1"></line><line x1="34" y1="90.25" x2="328" y2="90.25"></line><line x1="34" y1="128.4" x2="328" y2="128.4"></line><line x1="34" y1="166.5" x2="328" y2="166.5"></line></g>'
-    +'<g font-family="-apple-system,system-ui,sans-serif" font-size="10" font-weight="300" fill="#b3ab9f" text-anchor="end"><text x="27" y="17.5">175</text><text x="27" y="55.6">150</text><text x="27" y="93.75">125</text><text x="27" y="131.9">100</text><text x="27" y="170">75</text></g>'
+    +'<g font-family="-apple-system,system-ui,sans-serif" font-size="10" font-weight="300" fill="#b3ab9f" text-anchor="end">'+_E.ticks.map(function(_t){return '<text x="27" y="'+(yOf(_t)+3.5).toFixed(1)+'">'+_t+'</text>';}).join('')+'</g>'
     +'<line x1="34" y1="14" x2="34" y2="166.5" stroke="url(#flMarkFade)" stroke-width="1" stroke-dasharray="3 3"></line><line x1="328" y1="14" x2="328" y2="166.5" stroke="url(#flMarkFade)" stroke-width="1" stroke-dasharray="3 3"></line>'
     +'<path class="fle-area" d="'+areaD+'" fill="url(#fleFill)" style="transition:opacity .2s ease"></path>'
     +'<path class="fle-line" d="'+lineD+'" fill="none" stroke="#fb6015" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round" style="transition:opacity .2s ease,stroke .2s ease"></path>'
@@ -23041,10 +23041,10 @@ function actBuild(s){
    updated:null,mile:null,zones:genZones(hr,totSec),hr,coach:'Dino, séance '+(s.name||'')+' de '+dur+' min. '+(eff>12?'Grosse intensité — pense à bien récupérer.':'Effort bien dosé, on continue comme ça.')};
 }
 function actGraph(samples,focus){
- const W=346,H=216,padL=30,padR=6,padT=12,padB=26,n=samples.length,yMin=68,yMax=170;
+ const W=346,H=216,padL=30,padR=6,padT=12,padB=26,n=samples.length,_E=(typeof window.flEchelleFC==='function')?window.flEchelleFC(samples):{lo:68,hi:170,ticks:[75,100,125,150]},yMin=_E.lo,yMax=_E.hi;
  const gx=i=>padL+i*(W-padL-padR)/(n-1),gy=v=>padT+(yMax-v)/(yMax-yMin)*(H-padT-padB);
  let s='<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg">';
- [75,100,125,150].forEach(y=>{const Y=gy(y);s+='<line x1="'+padL+'" y1="'+Y.toFixed(1)+'" x2="'+(W-padR)+'" y2="'+Y.toFixed(1)+'" stroke="#ECE7DD" stroke-width="1"/><text x="'+(padL-7)+'" y="'+(Y+3.5).toFixed(1)+'" text-anchor="end" font-size="10" font-weight="700" fill="#B3AEA4">'+y+'</text>'});
+ _E.ticks.forEach(y=>{const Y=gy(y);s+='<line x1="'+padL+'" y1="'+Y.toFixed(1)+'" x2="'+(W-padR)+'" y2="'+Y.toFixed(1)+'" stroke="#ECE7DD" stroke-width="1"/><text x="'+(padL-7)+'" y="'+(Y+3.5).toFixed(1)+'" text-anchor="end" font-size="10" font-weight="700" fill="#B3AEA4">'+y+'</text>'});
  for(let g=1;g<6;g++){const X=(padL+g*(W-padL-padR)/6).toFixed(1);s+='<line x1="'+X+'" y1="'+padT+'" x2="'+X+'" y2="'+(H-padB)+'" stroke="#F1EBE3" stroke-width="1"/>'}
  const pts=samples.map((v,i)=>[gx(i),gy(v)]),d=pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
  if(!focus){const area=d+' L'+pts[n-1][0].toFixed(1)+' '+(H-padB)+' L'+pts[0][0].toFixed(1)+' '+(H-padB)+' Z';s+='<defs><linearGradient id="acg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F0492E" stop-opacity=".26"/><stop offset="1" stop-color="#F0492E" stop-opacity="0"/></linearGradient></defs><path d="'+area+'" fill="url(#acg)"/>'}
@@ -23067,7 +23067,7 @@ function actStatsHTML(m){const C=[['ti-flame','Calories',m.kcal,'kcal',m.kcalCmp
 function actFocus(z){haptic(6);window._actFocus=(window._actFocus===z?null:z);set('actGraph',actGraph(window._actHR,window._actFocus));set('actZones',actZonesHTML())}
 function openActivity(i){const ss=DB.get('sessions_'+tk(gDay),[]).filter(s=>s.type!=='nap');window._actSess=ss[i]||null;window._actFocus=null;go('activitydetail')}
 function actClock(startStr,fracSec){var base=tmin(startStr)*60+fracSec;base=((Math.round(base)%86400)+86400)%86400;return String(Math.floor(base/3600)).padStart(2,'0')+':'+String(Math.floor(base%3600/60)).padStart(2,'0')}
-function actGeo(m){var hr=m.hr,n=hr.length,W=346,H=216,padL=30,padR=6,padT=12,padB=26,yMin=68,yMax=170,dur=hms2sec(m.dur),xPct=[],yPct=[],times=[];
+function actGeo(m){var hr=m.hr,n=hr.length,W=346,H=216,padL=30,padR=6,padT=12,padB=26,_E=(typeof window.flEchelleFC==='function')?window.flEchelleFC(hr):{lo:68,hi:170},yMin=_E.lo,yMax=_E.hi,dur=hms2sec(m.dur),xPct=[],yPct=[],times=[];
  for(var i=0;i<n;i++){var x=padL+i*(W-padL-padR)/(n-1),v=Math.max(yMin,Math.min(yMax,hr[i])),y=padT+(yMax-v)/(yMax-yMin)*(H-padT-padB);xPct.push(x/W*100);yPct.push(y/H*100);times.push(actClock(m.start,dur*(i/(n-1))))}
  return {xPct:xPct,yPct:yPct,times:times,topPct:padT/H*100,htPct:(H-padB-padT)/H*100}}
 function actBind(){var box=document.getElementById('actChartBox');if(!box||box._b)return;box._b=1;
@@ -23617,7 +23617,7 @@ function wipeData(){if(!confirm('Vider TOUTES les données (démo incluse) et re
 function exportData(){const dump={};Object.keys(localStorage).forEach(k=>dump[k]=localStorage.getItem(k));const t=JSON.stringify(dump,null,2);try{const blob=new Blob([t],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='flint-data.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},1500);toast('⬇️ Données exportées (flint-data.json)')}catch(e){try{navigator.clipboard.writeText(t);toast('📋 Données copiées')}catch(e2){toast('Export impossible')}}}
 
 /* ===== Coach IA (réponses fondées sur les données du jour) ===== */
-const APP_VERSION='v2732';
+const APP_VERSION='v2735';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();

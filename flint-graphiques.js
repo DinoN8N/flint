@@ -383,3 +383,71 @@ window.flHebdoAnneePhrase = function (cfg, key, cur, prev, nbSem) {
   return head + ' — ' + tail + '.' + (inv && moved && d < 0 ? ' Bon signe.' : '');
  } catch (e) { return null; }
 };
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   4 · L'ÉCHELLE VERTICALE D'UNE COURBE DE CŒUR, CALÉE SUR LA SÉANCE
+   ═══════════════════════════════════════════════════════════════════════════
+   (30 septembre 2026)
+
+   Demande de Dino : « si une séance évolue seulement entre ~55 et 120 BPM,
+   inutile d'afficher une échelle allant jusqu'à 175 BPM : la courbe doit
+   occuper naturellement la hauteur disponible ».
+
+   ⚠️ ET IL Y AVAIT PIRE QUE L'ÉCRASEMENT : ÇA COUPAIT. La fiche Effort cadrait
+   en dur de 75 à 175 avec un `Math.max(75, …)` — donc toute valeur SOUS 75
+   était plaquée sur le plancher. La musculation du 30 septembre descendait à
+   51 : quinze minutes de courbe étaient dessinées plates, à une hauteur
+   qu'elles n'ont jamais eue. La fiche d'activité, elle, cadrait de 68 à 170.
+
+   ⚠️ ON NE TOUCHE PAS AUX DONNÉES, seulement au cadrage. Rien n'est lissé,
+   écrêté ni inventé ici ; ce sont les BORNES qui bougent. La consigne de Dino
+   sur le pouls vaut pour les graphiques comme pour le reste.
+
+   ⚠️ ET UNE COURBE PRESQUE PLATE NE DOIT PAS DEVENIR UNE MONTAGNE. Sans
+   amplitude minimale, une nuit qui oscille entre 52 et 56 remplirait toute la
+   hauteur et donnerait à quatre battements l'allure d'un effort. D'où
+   `AMPLI_MIN` : en dessous, on ouvre la fenêtre autour du centre.
+
+   Rend `{lo, hi, ticks}` :
+     · `lo` et `hi` sont des multiples ronds du pas, et ils CONTIENNENT toutes
+       les valeurs avec une marge — la courbe ne touche jamais un bord ;
+     · `ticks` va de `lo` à `hi` inclus, six étiquettes au plus.
+
+   Fonction PURE : mêmes entrées, mêmes sorties. C'est ce qui la rend
+   éprouvable au banc sans rien dessiner.                                     */
+window.flEchelleFC = function (vals) {
+  var DEFAUT = { lo: 60, hi: 180, ticks: [60, 90, 120, 150, 180] };
+  try {
+    var v = [], i, x, n = (vals && vals.length) || 0;
+    for (i = 0; i < n; i++) {
+      x = vals[i];
+      if (typeof x === 'number' && isFinite(x) && x > 0) v.push(x);
+    }
+    if (!v.length) return DEFAUT;            // rien à cadrer : on n'invente pas
+    var mn = Math.min.apply(null, v), mx = Math.max.apply(null, v);
+    var AMPLI_MIN = 30;
+    if (mx - mn < AMPLI_MIN) {
+      var c = (mn + mx) / 2;
+      mn = c - AMPLI_MIN / 2; mx = c + AMPLI_MIN / 2;
+    }
+    var etendue = mx - mn;
+    /* La marge : 8 % de l'amplitude de chaque côté, et jamais moins de quatre
+       battements. C'est elle qui garantit qu'un pic ne touche pas le haut. */
+    var marge = Math.max(4, etendue * 0.08);
+    var brut = etendue + 2 * marge;
+    var pas = brut <= 40 ? 10 : (brut <= 90 ? 20 : (brut <= 150 ? 25 : 50));
+    var lo = Math.max(0, Math.floor((mn - marge) / pas) * pas);
+    var hi = Math.ceil((mx + marge) / pas) * pas;
+    /* Trop d'étiquettes serrées se lisent moins bien qu'aucune. On double le
+       pas jusqu'à en avoir six au plus — et doubler ne fait qu'ÉLARGIR les
+       bornes, donc la garantie « rien n'est coupé » tient encore après. */
+    while ((hi - lo) / pas > 6) {
+      pas *= 2;
+      lo = Math.max(0, Math.floor(lo / pas) * pas);
+      hi = Math.ceil(hi / pas) * pas;
+    }
+    var ticks = [], t;
+    for (t = lo; t <= hi + 0.001; t += pas) ticks.push(Math.round(t));
+    return { lo: lo, hi: hi, ticks: ticks };
+  } catch (e) { return DEFAUT; }
+};
