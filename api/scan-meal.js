@@ -136,6 +136,91 @@ Donne un mealName court. Réponds UNIQUEMENT en JSON conforme au schéma.
 
 Description du repas : `;
 
+// ═══ 30 SEPT. 2026 — LA LECTURE D'ÉTIQUETTE (`mode: 'label'`) ═══════════════
+//
+// L'app l'envoie depuis la v1768 (`LectureEtiquette.swift`, demande de Félix :
+// « si le code-barres ne suffit pas, prends l'étiquette en photo, et voilà »).
+// Ce serveur l'IGNORAIT depuis sa reconstruction : la photo d'un tableau
+// nutritionnel partait en analyse de REPAS, revenait sans `lisible`, et l'app
+// affichait « illisible » à chaque fois — une analyse payée pour rien.
+//
+// La réponse suit le contrat que l'app lit déjà : `lisible`, `name`, `brand`,
+// `servingG`, et `per100` (kcal, prot, carb, sugars, fat, satfat, fiber, salt
+// en grammes ; caffeine en MILLIGRAMMES pour 100 ml — l'app la convertit).
+//
+// CE QUI EST LU N'EST JAMAIS DEVINÉ : température 0, `null` déclaré bonne
+// réponse, et le serveur écarte ensuite tout nombre hors des bornes physiques
+// d'un aliment (plus de 900 kcal ou de 100 g d'un nutriment pour 100 g).
+const SCHEMA_LABEL = {
+  type: 'object',
+  properties: {
+    lisible: { type: 'boolean' },
+    name: { type: 'string', nullable: true },
+    brand: { type: 'string', nullable: true },
+    servingG: { type: 'number', nullable: true },
+    per100: {
+      type: 'object',
+      nullable: true,
+      properties: {
+        kcal: { type: 'number', nullable: true },
+        prot: { type: 'number', nullable: true },
+        carb: { type: 'number', nullable: true },
+        sugars: { type: 'number', nullable: true },
+        fat: { type: 'number', nullable: true },
+        satfat: { type: 'number', nullable: true },
+        fiber: { type: 'number', nullable: true },
+        salt: { type: 'number', nullable: true },
+        caffeine: { type: 'number', nullable: true }
+      }
+    }
+  },
+  required: ['lisible']
+};
+
+const PROMPT_LABEL = `Tu lis l'EMBALLAGE d'un produit alimentaire photographié : son tableau des valeurs nutritionnelles, son nom, sa marque, sa portion.
+
+RÈGLE ABSOLUE : ne devine RIEN. Recopie uniquement les nombres que tu LIS sur la photo. Une valeur absente, coupée, floue ou illisible vaut null — null est une bonne réponse, un nombre inventé est une faute.
+
+per100 : les valeurs POUR 100 g (ou 100 ml) telles qu'écrites :
+- kcal : l'énergie en kcal (jamais les kJ) ;
+- prot (protéines), carb (glucides), sugars (dont sucres), fat (matières grasses), satfat (dont acides gras saturés), fiber (fibres), salt (sel) : en grammes ;
+- caffeine : en MILLIGRAMMES pour 100 ml, seulement si l'emballage l'indique.
+Si le tableau ne donne QUE des valeurs par portion, laisse per100 à null.
+servingG : la portion écrite sur l'emballage, en grammes ou en ml, sinon null.
+name : le nom du produit tel qu'écrit ; brand : la marque. Sinon null.
+lisible : true SEULEMENT si tu as lu au moins l'énergie ou une macro. Une photo de plat, de personne, de paysage, ou trop floue : lisible false, et tout le reste null.
+
+Réponds UNIQUEMENT en JSON conforme au schéma.`;
+
+/** Les bornes physiques d'un aliment, pour 100 g. Hors bornes : pas lu. */
+const BORNES_100 = { kcal: 900, prot: 100, carb: 100, sugars: 100, fat: 100,
+                     satfat: 100, fiber: 100, salt: 100, caffeine: 1000 };
+
+/** Ce qui repart à l'app : des nombres lus et plausibles, sinon rien. */
+function normaliserEtiquette(d) {
+  const nombre = (x, max) => {
+    const n = Number(x);
+    return (x !== null && x !== '' && Number.isFinite(n) && n >= 0 && n <= max)
+      ? Math.round(n * 10) / 10 : null;
+  };
+  const texte = (x) => {
+    const t = (typeof x === 'string') ? x.trim().slice(0, 80) : '';
+    return t || null;
+  };
+  const brut = (d && typeof d.per100 === 'object' && d.per100) || {};
+  const per100 = {};
+  for (const k of Object.keys(BORNES_100)) per100[k] = nombre(brut[k], BORNES_100[k]);
+  const lu = ['kcal', 'prot', 'carb', 'fat'].some(k => per100[k] !== null);
+  if (!(d && d.lisible === true) || !lu) return { lisible: false };
+  return {
+    lisible: true,
+    name: texte(d.name),
+    brand: texte(d.brand),
+    servingG: nombre(d.servingG, 5000),
+    per100
+  };
+}
+
 function cors(res) {
   // no-store + nosniff sur toute réponse (voir `entetesSurete`, _lib.js).
   entetesSurete(res);
@@ -203,6 +288,9 @@ module.exports = async function handler(req, res) {
     // ligne qui prouve que le scan borne AUSSI le texte, pas seulement la photo.
     const text = (body && typeof body.text === 'string') ? body.text.trim().slice(0, 800) : '';
     if (!image && !text) return res.status(400).json({ error: 'champ "image" ou "text" manquant' });
+    // 30 sept. 2026 — l'étiquette se LIT, elle ne s'analyse pas (voir PROMPT_LABEL).
+    const etiquette = !!(body && body.mode === 'label');
+    if (etiquette && !image) return res.status(400).json({ error: 'champ "image" manquant' });
     // 23 sept. 2026 — UN PLAFOND SUR LA PHOTO, PARCE QUE RIEN NE LA BORNAIT.
     // L'app envoie du 1280 px à 0,85 (≈ 200 à 400 Ko en base64) ; rien côté
     // serveur n'empêchait un client de pousser 10 Mo, que Gemini facture au
@@ -221,14 +309,16 @@ module.exports = async function handler(req, res) {
       if (m) { mime = m[1]; image = m[2]; }
       // Une forme fermée, sinon le défaut : `mime` part tel quel à Gemini.
       if (!MIME_FORME.test(String(mime))) mime = 'image/jpeg';
-      parts = [{ text: PROMPT }, { inline_data: { mime_type: mime, data: image } }];
+      parts = [{ text: etiquette ? PROMPT_LABEL : PROMPT }, { inline_data: { mime_type: mime, data: image } }];
     } else {
       parts = [{ text: PROMPT_TEXT + text }];
     }
 
     const gReq = {
       contents: [{ parts }],
-      generationConfig: { responseMimeType: 'application/json', responseSchema: SCHEMA, temperature: 0.1 }
+      generationConfig: { responseMimeType: 'application/json',
+                          responseSchema: etiquette ? SCHEMA_LABEL : SCHEMA,
+                          temperature: etiquette ? 0 : 0.1 }
     };
 
     // 23 sept. 2026 — réessai puis modèle de secours (voir `appelerGemini`
@@ -251,6 +341,7 @@ module.exports = async function handler(req, res) {
 
     let data;
     try { data = JSON.parse(txt); } catch (e) { return res.status(502).json({ error: 'JSON Gemini invalide' }); }
+    if (etiquette) return res.status(200).json(normaliserEtiquette(data));
 
     const items = (data.items || []).map(it => {
       const prot = round(it.prot), carb = round(it.carb), fat = round(it.fat);
@@ -287,3 +378,4 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({ error: "L'analyse a rencontré une erreur. Réessaie dans un moment.", detail: message });
   }
 }
+module.exports.normaliserEtiquette = normaliserEtiquette;
