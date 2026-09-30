@@ -296,6 +296,9 @@ window.flRepasData=function(rang,jour){try{
  var pk=p*4,ck=c*4,fk=f*9,tt=(pk+ck+fk)||1;
  return {aDesDonnees:true, rang:+rang||0,
   nom:m.name||'Repas', heure:m.time||null,
+  /* 30 sept. — le drapeau de la base voyage : la pastille de la fiche ne
+     jugeait que le nom, la frise lisait les deux (EntreeJournee.symbole). */
+  boisson:m.boisson===true?true:null,
   jour:(typeof nutDayLabel==='function')?nutDayLabel(K):null,
   kcal:Math.round(m.kcal||0), prot:p, gluc:c, lip:f,
   partProt:pk/tt, partGluc:ck/tt, partLip:fk/tt,
@@ -333,6 +336,41 @@ window.flSupprimerRepas=function(rang,jour){try{
     jusqu'au prochain rendu provoqué par autre chose. */
  try{renderNutrition();}catch(e){}
  return true;}catch(e){return false;}};
+
+/* ═══ 30 sept. 2026 — LE RIZ N'EST PLUS UNE BOISSON, MÊME DANS LE PASSÉ ═══════
+   Dino, devant son riz aux champignons de Ben's Original : « si c'est quelque
+   chose que je mange, c'est un repas. Pourquoi j'ai la tasse ? »
+   La règle du code-barres lisait `beverages` dans N'IMPORTE QUELLE catégorie
+   d'Open Food Facts, et la base range riz, pain de mie, pâtes et céréales sous
+   « Aliments et boissons à base de végétaux ». Corrigée à la source
+   (ScanProduitNatif.estUneBoisson), elle laissait en base les repas DÉJÀ écrits
+   avec `boisson:true`.
+   Le natif garde la fiche de chaque produit scanné, catégories comprises : il
+   rejuge, et envoie ici les NOMS DE JOURNAL (« nom marque ») de ceux qui ne se
+   boivent pas. On ne touche qu'à ce drapeau, et seulement sur un repas venu
+   d'un code-barres : un plat photographié, une vraie boisson, un nom inconnu
+   restent tels quels. L'apostrophe est comparée typographie à part — le pont
+   écrit « Ben’s » (jsTexte), la fiche dit « Ben's ». Aucune apostrophe dans
+   une expression régulière : garde-liaisons.js lit le fichier sans connaître
+   les regex, et un guillemet dedans lui fait prendre le CSS qui suit pour du
+   code (« rgba » hors de portée).
+   La liste des clés est FIGÉE d'abord (le bracelet écrit pendant la passe).
+   Rend le nombre de repas corrigés ; -1 si la passe a échoué. */
+window.flRepasPasBoisson=function(noms){try{
+ var cle=function(s){return String(s||'').split('\u2019').join('\u0027').replace(/\s+/g,' ').trim().toLowerCase();};
+ var cibles={};(Array.isArray(noms)?noms:[]).forEach(function(n){var k=cle(n);if(k)cibles[k]=1;});
+ var cles=[];
+ for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i)||'';if(k.indexOf('meals_')===0)cles.push(k);}
+ var n=0;
+ cles.forEach(function(K){
+  var a=DB.get(K,null),t=0; if(!Array.isArray(a))return;
+  a.forEach(function(m){
+   if(m&&m.boisson===true&&m.source==='code-barres'&&cibles[cle(m.name)]){m.boisson=false;t++;}
+  });
+  if(t&&DB.set(K,a)!==false)n+=t;
+ });
+ return n;
+}catch(e){return -1;}};
 
 window.flNutritionData=function(_argJour){try{
  /* v1459 — ELLE AUSSI IGNORAIT LE JOUR CHOISI. `tk(0)` en dur : le ruban des
@@ -478,6 +516,8 @@ window.flNutritionData=function(_argJour){try{
            ligne:mil(m.kcal)+' kcal · '+mp+' P · '+mg+' G · '+ml+' L',
            note:note!=null?String(note):null,
            rang:i, ph:m.ph||null, ing:(ing&&ing.length)?ing:null,
+           /* 30 sept. — la pastille de la fiche lit le drapeau, pas que le nom. */
+           boisson:m.boisson===true?true:null,
            kcal:Math.round(m.kcal||0), prot:mp, carb:mg, fat:ml};
   })
  };

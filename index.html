@@ -23617,7 +23617,7 @@ function wipeData(){if(!confirm('Vider TOUTES les données (démo incluse) et re
 function exportData(){const dump={};Object.keys(localStorage).forEach(k=>dump[k]=localStorage.getItem(k));const t=JSON.stringify(dump,null,2);try{const blob=new Blob([t],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='flint-data.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},1500);toast('⬇️ Données exportées (flint-data.json)')}catch(e){try{navigator.clipboard.writeText(t);toast('📋 Données copiées')}catch(e2){toast('Export impossible')}}}
 
 /* ===== Coach IA (réponses fondées sur les données du jour) ===== */
-const APP_VERSION='v2736';
+const APP_VERSION='v2738';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
@@ -25045,7 +25045,7 @@ document.addEventListener('visibilitychange',function(){if(document.hidden)retur
      n ont pas `portionG` : les servir telles quelles rendrait la correction
      invisible pendant trente jours sur tous les produits deja scannes. */
   try{var c=DB.get('produit_'+code,null);
-   if(c&&c.ok&&c._v===6&&(Date.now()-(c._ts||0))<30*86400e3){post(c);return;}}catch(e){}
+   if(c&&c.ok&&c._v===7&&(Date.now()-(c._ts||0))<30*86400e3){post(c);return;}}catch(e){}
   /* v1104 — categories_tags entre dans les champs : une BOISSON se dit
      (logo tasse dans la fiche et dans le journal). */
   var champs='product_name,product_name_fr,brands,image_front_url,quantity,serving_size,serving_quantity,serving_quantity_unit,product_quantity,product_quantity_unit,additives_tags,image_nutrition_url,completeness,pnns_groups_2,labels_tags,nutriscore_grade,nova_group,additives_n,ingredients_text_fr,ingredients_text,nutriments,categories_tags';
@@ -25055,8 +25055,8 @@ document.addEventListener('visibilitychange',function(){if(document.hidden)retur
     if(!d||d.status!==1||!d.product){post({ok:false,raison:'introuvable',code:code});return;}
     var p=d.product,n=p.nutriments||{};
     var num=function(k){var v=n[k];return (v==null||isNaN(+v))?null:+(+v).toFixed(1)};
-    var boisson=false;
-    try{boisson=(p.categories_tags||[]).some(function(t){return /beverage|boisson/i.test(t)});}catch(e){}
+    var boisson=false;  /* 30 sept. : racines exactes, « plant-based-foods-and-beverages » rangeait le riz en boisson — ScanProduitNatif.estUneBoisson */
+    try{boisson=(p.categories_tags||[]).some(function(t){return t==='en:beverages'||t==='en:beverages-and-beverages-preparations'});}catch(e){}
     var fiche={ok:true,code:code,
      nom:(p.product_name_fr||p.product_name||'Produit'),
      marque:p.brands?String(p.brands).split(',')[0].trim():null,
@@ -25118,7 +25118,7 @@ document.addEventListener('visibilitychange',function(){if(document.hidden)retur
            nom:fiche.nom,marque:fiche.marque,image:fiche.image});
      return;
     }
-    try{fiche._ts=Date.now();fiche._v=6;DB.set('produit_'+code,fiche);}catch(e){}
+    try{fiche._ts=Date.now();fiche._v=7;DB.set('produit_'+code,fiche);}catch(e){}
     post(fiche);
    }).catch(function(e){
     /* v1603 — LA VRAIE RAISON REMONTE. Ce catch aplatissait TOUT sur « reseau »,
