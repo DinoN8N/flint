@@ -434,20 +434,41 @@ window.flEchelleFC = function (vals) {
     /* La marge : 8 % de l'amplitude de chaque côté, et jamais moins de quatre
        battements. C'est elle qui garantit qu'un pic ne touche pas le haut. */
     var marge = Math.max(4, etendue * 0.08);
-    var brut = etendue + 2 * marge;
-    var pas = brut <= 40 ? 10 : (brut <= 90 ? 20 : (brut <= 150 ? 25 : 50));
-    var lo = Math.max(0, Math.floor((mn - marge) / pas) * pas);
-    var hi = Math.ceil((mx + marge) / pas) * pas;
-    /* Trop d'étiquettes serrées se lisent moins bien qu'aucune. On double le
-       pas jusqu'à en avoir six au plus — et doubler ne fait qu'ÉLARGIR les
-       bornes, donc la garantie « rien n'est coupé » tient encore après. */
-    while ((hi - lo) / pas > 6) {
-      pas *= 2;
-      lo = Math.max(0, Math.floor(lo / pas) * pas);
-      hi = Math.ceil(hi / pas) * pas;
+
+    /* ⚠️ LES BORNES NE SONT PAS LES GRADUATIONS, et c'est tout le gain.
+       Arrondir les BORNES au pas gaspillait la hauteur : une séance de 51 à
+       123 devenait un cadre 40–140, soit onze battements de vide en bas. On
+       cadre donc au plus juste — `min − marge` à `max + marge` — et on ne
+       garde comme graduations que les multiples ronds qui tombent DEDANS.
+       C'est exactement ce que fait la référence que Dino a envoyée : son axe
+       affiche 50 / 75 / 100 / 125 alors que la courbe descend sous 50. */
+    var lo = Math.max(0, Math.floor(mn - marge));
+    var hi = Math.ceil(mx + marge);
+    var fen = hi - lo;
+
+    /* LE PAS SE CHOISIT PAR ESSAI, PAS PAR FORMULE. On essaie les échelons
+       ronds dans l'ordre de préférence et on garde le premier qui rend entre
+       deux et six étiquettes DANS le cadre. Vingt-cinq passe en premier parce
+       que c'est le pas de la référence que Dino a envoyée — 50 / 75 / 100 /
+       125 — et une formule sur la largeur de fenêtre ne le retrouvait pas.
+       Trop d'étiquettes serrées se lisent moins bien qu'aucune ; une seule ne
+       donne aucune échelle. */
+    var ECHELONS = [25, 20, 50, 10, 100, 5], e, p, essai;
+    function graduations(p2) {
+      var r = [], t = Math.ceil((lo + 1) / p2) * p2;
+      for (; t < hi; t += p2) r.push(Math.round(t));
+      return r;
     }
-    var ticks = [], t;
-    for (t = lo; t <= hi + 0.001; t += pas) ticks.push(Math.round(t));
+    var pas = 25, ticks = graduations(25);
+    for (e = 0; e < ECHELONS.length; e++) {
+      p = ECHELONS[e]; essai = graduations(p);
+      if (essai.length >= 2 && essai.length <= 6) { pas = p; ticks = essai; break; }
+    }
+    /* Dernier recours : un cadre si étroit qu'aucun échelon rond n'y tient
+       deux fois. On prend les tiers, arrondis — mieux qu'un axe nu. */
+    if (ticks.length < 2) {
+      ticks = [Math.round(lo + fen / 3), Math.round(lo + 2 * fen / 3)];
+    }
     return { lo: lo, hi: hi, ticks: ticks };
   } catch (e) { return DEFAUT; }
 };
