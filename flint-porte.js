@@ -235,6 +235,50 @@ window.flMesureDans=function(deb,fin){
    ET LA MEME CONTRE-EPREUVE : une journee sans aucun battement ne prouve rien
    (base importee, mode demo, bracelet jamais synchronise). On rend zero, et le
    metabolisme se compte comme avant. */
+/* ═══ 1er oct. 2026 — LA MATIÈRE D'UNE NUIT FINIE AVANT MINUIT ════════════════
+
+   L'insomnie du 30 sept. au 1er oct. : endormi à 22:32, la montre ferme ses
+   pages à 23:49, éveillé ensuite jusqu'au milieu de la nuit. Cette nuit est
+   rangée au 1er (flint-sommeil.js, « la nuit du soir appartient au
+   lendemain ») avec des minutes NÉGATIVES (coucher −88, réveil −11).
+
+   SA MATIÈRE N'EST PAS DANS LA CLÉ DU 1er. Battements, intervalles R-R, VFC de
+   la puce, oxygène, température : tout ce qui a été mesuré entre 22:32 et
+   23:49 vit dans `watch_2026-9-30`. Les lecteurs de la nuit (`sensorOf`,
+   `flRmssdNuit`, `flRespirationNuit`, `flSpo2NuitDe`, `flPuceNuit`,
+   `flMesureNuitComplete`) filtrent tous `watch_<K>.<canal>` sur la fenêtre du
+   cadran de K : ils trouvaient ZÉRO mesure, et la récupération rendait null.
+
+   ON NE RÉÉCRIT AUCUN LECTEUR, ON LEUR PRÉSENTE LA BONNE MATIÈRE. Pour une nuit
+   du soir, `flMatiereNuit` rend une montre « vue depuis K » dont les canaux sont
+   ceux de la VEILLE (soirée seulement, à partir de midi), décalés de −1440 :
+   22:32 la veille devient −88, exactement la minute que porte la nuit. Le
+   filtre de toujours, `(b<=r)?(m>=b&&m<=r):…`, retombe juste sans changer d'un
+   caractère.
+
+   POUR TOUTE AUTRE NUIT, l'objet rendu EST l'objet reçu — même référence, pas
+   une copie : aucune valeur existante ne peut bouger. Le jour où l'on voudra
+   que les nuits commencées avant minuit lisent AUSSI leur première heure dans
+   la veille (elles l'ignorent aujourd'hui), ce sera ici, et ce sera une
+   génération de récupération — pas un effet de bord de ce correctif. */
+window.flNuitDuSoir=function(n){return !!(n&&n.bedMin!=null&&n.wakeMin!=null&&+n.wakeMin<0);};
+var FL_CANAUX_NUIT=['hr','hrvMontre','rrH','spo2','temp'];
+window.flMatiereNuit=function(K,w){try{
+ if(!w||w._matiereNuit||!flNuitDuSoir(w.night))return w;
+ var m0=flMinuitMsDe(K); if(m0==null||isNaN(m0))return w;
+ var Kv=flCleLocaleDe(m0-43200000,null), wv=_porteMontre(Kv)||{};
+ var v={_matiereNuit:true,K:K,night:w.night};
+ for(var i=0;i<FL_CANAUX_NUIT.length;i++){
+  var ch=FL_CANAUX_NUIT[i], L=wv[ch]||[], o=[];
+  for(var j=0;j<L.length;j++){
+   var x=L[j]; if(!x||x[0]==null||+x[0]<720)continue;
+   var y=x.slice(); y[0]=+x[0]-1440; o.push(y);
+  }
+  v[ch]=o;
+ }
+ return v;
+}catch(e){return w;}};
+
 window.flMinutesNonPortees=function(deb,fin){try{
  var m=flMesureDans(deb,fin);
  return (m.n<PORTE_MESURE_MINI)?0:m.silence;

@@ -53,6 +53,9 @@
    le verdict : la bande se calculerait sur ce qu'elle doit juger). */
 window.flPuceNuit = function (w) {
   try {
+    /* 1er oct. 2026 — une nuit finie avant minuit lit la puce de la veille
+       (`flMatiereNuit`, flint-porte.js) ; la nuit porte sa clé (`night.K`). */
+    if (w && w.night && w.night.K && typeof flMatiereNuit === 'function') w = flMatiereNuit(w.night.K, w);
     if (!w || !w.hrvMontre || !w.hrvMontre.length) return null;
     /* ═══ 14 sept. 2026 — LE REPLI SUR LA JOURNÉE ENTIÈRE EST RETIRÉ ══════════
        La ligne disait « la nuit si elle porte au moins trois mesures, TOUTE LA

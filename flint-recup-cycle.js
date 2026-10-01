@@ -406,6 +406,8 @@
   window.flMesureNuitComplete = function (K) {
     try {
       var w = (typeof window.watchOf === 'function') ? window.watchOf(K) : null;
+      /* 1er oct. 2026 — nuit finie avant minuit : ses battements vivent dans la veille */
+      if (w && typeof window.flMatiereNuit === 'function') w = window.flMatiereNuit(K, w);
       var n = w && w.night;
       if (!n || n.bedMin == null || n.wakeMin == null) return null;
       var rh = (w.rrH || []);
@@ -576,7 +578,17 @@
   function ecrire(K, s, emp, ajust, final, cyc) {
     var res = { score: false, sceau: !final ? null : false };
     if (final) {
-      res.sceau = !!DB.set('recovFige_' + K, { s: s, h: emp.h, e: emp.e,
+      /* 1er oct. 2026 — le sceau dit SUR QUELLE NUIT il a été calculé : une
+         estimation par le pouls ou une mesure. `flNuitMesureArrivee` en a
+         besoin pour qu'un score né sur une estimation cède à la mesure, même
+         quand la nuit, elle, a été rescellée par un autre chemin. */
+      var _srcNuit = null;
+      try {
+        var _wn = DB.get('watch_' + K, null), _nn = _wn && _wn.night;
+        if (_nn) _srcNuit = ((_nn.stages && _nn.stages.length) || _nn.source === 'ble' || _nn.source === 'manuel')
+                            ? (_nn.source || 'ble') : (_nn._est ? 'estimation' : (_nn.source || null));
+      } catch (e) {}
+      res.sceau = !!DB.set('recovFige_' + K, { s: s, h: emp.h, e: emp.e, nuit: _srcNuit,
                                                ts: new Date().toISOString(), cycleGen: CYCLE_GEN });
       if (!res.sceau) {
         try { if (typeof window.flAlerteRecup === 'function')

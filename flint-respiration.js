@@ -190,7 +190,7 @@ window.flRespirationNuit=function(K){
  var _calcul=function(K){try{
  var memo=window._flRespMemo=window._flRespMemo||{};
  var w=watchOf(K); if(!w)return null;
- var rh=w.rrH||[]; if(!rh.length)return {ok:false, blocs:0, refuses:0,
+ var rh=((typeof flMatiereNuit==='function')?flMatiereNuit(K,w):w).rrH||[]; if(!rh.length)return {ok:false, blocs:0, refuses:0,   /* 1er oct. 2026 — nuit finie avant minuit : sa matière vit dans la veille (flint-porte.js) */
    motif:"Le bracelet n'a enregistré aucun battement cette nuit."};
  var n=w.night||null;
  if(!n||n.sleepStart==null||n.sleepEnd==null)return null;
@@ -198,6 +198,7 @@ window.flRespirationNuit=function(K){
  if(memo[cle])return memo[cle];
  var a=new Date(n.sleepStart), b=new Date(n.sleepEnd);
  var am=a.getHours()*60+a.getMinutes(), bm=b.getHours()*60+b.getMinutes();
+ if(typeof flNuitDuSoir==='function'&&flNuitDuSoir(n)){am=+n.bedMin;bm=+n.wakeMin;}
  function dans(m){return (am<=bm)?(m>=am&&m<=bm):(m>=am||m<=bm);}
  var vals=[], refuses=0;
  for(var q=0;q<rh.length;q++){

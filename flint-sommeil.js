@@ -147,7 +147,7 @@
       var av = w.night;
       if (av && av.stages && av.stages.length && !(nuit && nuit.stages && nuit.stages.length)) {
         flsLog('nuit ' + K + ' : on garde l hypnogramme mesuré, la nouvelle version n en a pas');
-        return;
+        return false;
       }
       /* v1165 — LE DERNIER VERROU, celui qui manquait.
          Quoi qu'aient décidé les étages au-dessus, rien qui ne ressemble pas à
@@ -157,16 +157,18 @@
          suppression silencieuse. */
       if (nuit && nuit.sleepStart != null && nuit.sleepEnd != null) {
         var type = flsClasser(nuit.sleepStart, nuit.sleepEnd);
-        if (type !== TYPE_NUIT) {
+        /* 1er oct. 2026 — sauf la nuit courte que `nightFromChunks` a retenue
+           en dernier recours (nocturne, aucune autre nuit ce jour-là). */
+        if (type !== TYPE_NUIT && !(type === TYPE_SECOND && nuit.nuitCourte)) {
           flsLog('nuit ' + K + ' : la période proposée est classée « ' + type +
                  ' » — enregistrée à part, la nuit principale n est pas touchée.');
-          return;
+          return false;
         }
         if (av && av.sleepStart != null && av.sleepEnd != null) {
           var chevauche = Math.min(av.sleepEnd, nuit.sleepEnd) - Math.max(av.sleepStart, nuit.sleepStart) > 0;
           if (!chevauche && (av.sleepMin || 0) >= (nuit.sleepMin || 0)) {
             flsLog('nuit ' + K + ' : deux périodes distinctes ce jour-là, la plus longue reste la nuit principale.');
-            return;
+            return false;
           }
         }
       }
@@ -205,7 +207,8 @@
          couché 00 h 02, écran 8 h 25 / couché 23 h 25, pendant des heures.
          On prévient donc la coquille. Elle ne reprend que le champ `night`. */
       try { if (window.flWatchOublier) window.flWatchOublier(K); } catch (e) {}
-    } catch (e) { flsLog('écriture impossible : ' + e.message); }
+      return true;
+    } catch (e) { flsLog('écriture impossible : ' + e.message); return false; }
   }
   /* La FC de la nuit, pour le re-staging : watch_<K>.hr est en minute du jour,
      le re-staging attend des horodatages absolus. On convertit. */
@@ -290,6 +293,20 @@
     var m = Math.round((ms / 1000 - flsMinuit(K)) / 60);
     m %= 1440; if (m < 0) m += 1440;
     return m;
+  }
+  /* ═══ 1er oct. 2026 — UNE NUIT FINIE AVANT MINUIT A DES MINUTES NÉGATIVES ══
+     La nuit du soir est rangée au lendemain (`flsJourDuGroupe`). Ramenées dans
+     [0, 1440), ses minutes la décriraient le SOIR DE K — dans le futur — et
+     `flNuitCycle` (minuit de K + `wakeMin`) attendrait un réveil qui n'a pas
+     encore eu lieu : la nuit ne se fermerait jamais. On garde donc la minute
+     RELATIVE au minuit de K, négative : 23:49 la veille vaut −11, et
+     `minuit + wakeMin` retombe juste partout sans qu'aucun lecteur ne change.
+     Seule la nuit qui FINIT avant minuit est concernée ; une nuit qui le
+     traverse garde la convention de toujours (coucher 1380 = 23:00 la veille). */
+  function flsMinuteDuNuit(K, ms, finMs) {
+    var m0 = flsMinuit(K);
+    if (finMs / 1000 <= m0) return Math.round((ms / 1000 - m0) / 60);
+    return flsMinuteDu(K, ms);
   }
 
   /* ═══ v2110 — LA FC D'AVANT MINUIT VIT DANS LA CLÉ DE LA VEILLE ═══════════
@@ -395,6 +412,24 @@
     dureeNuitEvidente: 240,    // 4 h : une période aussi longue est une nuit
     dureeMaxiSieste: 180,      // 3 h : au-delà, ce n'est plus une sieste
     dureeMiniRetenue: 15,      // en dessous, c'est du bruit de capteur
+    /* ═══ 1er oct. 2026 — LA NUIT COURTE D'UNE INSOMNIE EST UNE NUIT ═════════
+       Nuit du 30 sept. au 1er oct., insomnie de Dino : la montre mesure
+       22:32 → 23:49 (74 min dormies, profond compris), le pouls dit sommeil
+       jusqu'à 00:13, puis deux heures et demie d'éveil allongé. WHOOP : nuit
+       22:36 → 00:14, récupération 4 %. FLINT : « sommeil secondaire » (moins
+       de `dureeMiniNuit`), donc pas de nuit mesurée, donc l'estimation par le
+       pouls — et un pouls d'éveil allongé (53-60) ressemble à un pouls de
+       sommeil : la nuit a suivi l'horloge, 4h00, récupération 70.
+       Dino : « je préfère largement leur manière de faire » — un sommeil
+       nocturne, même court, est LA nuit quand il n'y en a pas d'autre, et la
+       récupération se calcule dessus comme si la nuit était finie. Un
+       rendormissement la recollera (`reveilCoupeNuit`).
+       SOIXANTE MINUTES DE SOMMEIL RÉEL, pas quinze : en dessous c'est un
+       assoupissement, pas une nuit — la règle de la nuit blanche (14 août,
+       « pas de sommeil mesuré = pas de nouvelle journée ») garde la main.
+       Ce n'est qu'un DERNIER RECOURS : il ne joue que si aucune vraie nuit
+       n'existe ce jour-là, donc aucune nuit déjà juste ne peut changer. */
+    nuitCourteMini: 60,
     /* v1191 — combien de temps debout coupe une nuit en deux. Règle du founder,
        dictée par lui : « à partir d'un réveil d'une heure et demie, ce sera des
        sommeils complètement différents ». En dessous, on se rendort et c'est la
@@ -510,6 +545,26 @@
   }
 
 
+
+  /* ═══ 1er oct. 2026 — LA NUIT DU SOIR APPARTIENT AU LENDEMAIN ═══════════════
+     « Une nuit appartient au jour du réveil » supposait un réveil APRÈS minuit.
+     Endormi à 22:32, réveillé à 23:49 et plus jamais rendormi : rangée au jour
+     du réveil, cette nuit tombait sur la veille, qui a déjà SA nuit (celle du
+     matin) — elle devenait un « sommeil secondaire » de la veille, et le jour
+     qui commençait n'avait plus de nuit du tout.
+     Un sommeil RÉEL qui commence et finit le même soir (après midi), et qui est
+     majoritairement nocturne, est la nuit du LENDEMAIN. Le « majoritairement
+     nocturne » est le seuil de `flsClasser`, rien de neuf : la sieste de 19 h
+     reste à son jour. Tout le reste garde la règle d'avant, au mot près. */
+  function flsCle(d) { return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
+  function flsJourDuGroupe(f, reel) {
+    var K = flsCle(new Date(f.end * 1000));
+    if (!reel) return K;
+    var d0 = new Date(reel.start * 1000), d1 = new Date((reel.end - 1) * 1000);
+    if (flsCle(d0) !== flsCle(d1) || d0.getHours() < 12) return K;
+    if (flsPartNocturne(reel.start * 1000, reel.end * 1000) < CLASSIF.partNuitMini) return K;
+    return flsCle(new Date(d1.getFullYear(), d1.getMonth(), d1.getDate() + 1, 12));
+  }
 
   /* Quelle part de [debut, fin] tombe dans la plage nocturne, entre 0 et 1. */
   function flsPartNocturne(debutMs, finMs) {
@@ -1450,12 +1505,13 @@ function nightFromChunks(dayKey) {
     var chosen = null, autres = [];
     nights.forEach(function (grp) {
       var f = flsFenetre(grp);
-      var d = new Date(f.end * 1000);
-      if (d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate() !== dayKey) return;
       /* v1170 — on CLASSE sur la fenêtre réelle, pas sur la fenêtre bourrée.
          Une sieste de 1 h 21 noyée dans une tranche de 4 h ressortait à 3 h 04,
          donc en `secondarySleep` au lieu de `nap` — et affichée à 3 h 04. */
       var reel = flsFenetreReelle(grp);
+      /* 1er oct. 2026 — le jour se lit sur le sommeil RÉEL : la nuit du soir
+         appartient au lendemain (`flsJourDuGroupe`). */
+      if (flsJourDuGroupe(f, reel) !== dayKey) return;
       if (!reel) return;
       var type = flsClasser(reel.start * 1000, reel.end * 1000);
       if (type === TYPE_NUIT) {
@@ -1469,6 +1525,39 @@ function nightFromChunks(dayKey) {
         autres.push({ grp: grp, type: type, reel: reel });
       }
     });
+    /* ═══ 1er oct. 2026 — EN DERNIER RECOURS, LA NUIT COURTE ═════════════════
+       Aucune vraie nuit ce jour-là : le plus long sommeil NOCTURNE d'au moins
+       `nuitCourteMini` minutes de sommeil réel devient la nuit. C'est ce que
+       WHOOP a fait de l'insomnie du 1er octobre (22:36 → 00:14, récupération
+       calculée « comme si la nuit était finie »). Une sieste de jour n'est
+       jamais candidate : la condition nocturne est celle de `flsClasser`.
+       ET SEULEMENT SUR UN JOUR SANS NUIT MESURÉE. La mémoire de la montre tourne :
+       une nuit d'il y a six jours ne garde plus que sa dernière tranche, et ce
+       reste, nocturne et court, passerait pour une nuit courte. La nuit d'époque
+       est en base (stades, `ble`, ou saisie) : rien à remplacer. Une estimation
+       (`_est`) ou une nuit courte précédente, elles, cèdent — c'est le cas du
+       1er octobre. Rejoué sur 907 jours : sans cette garde, quatre nuits d'août
+       bougeaient de 4 min et le 18 août gagnait un second sommeil principal. */
+    var _stockee = !chosen ? flsNuitDe(dayKey) : null;
+    var _mesuree = !!(_stockee && !_stockee._est && !_stockee.nuitCourte
+                      && ((_stockee.stages && _stockee.stages.length)
+                          || _stockee.source === 'ble' || _stockee.source === 'manuel'));
+    if (!chosen && !_mesuree) {
+      var courte = null;
+      autres.forEach(function (o) {
+        if (o.type !== TYPE_SECOND || !o.reel) return;
+        if (!(o.reel.dormi >= CLASSIF.nuitCourteMini)) return;
+        if (flsPartNocturne(o.reel.start * 1000, o.reel.end * 1000) < CLASSIF.partNuitMini) return;
+        if (!courte || o.reel.dormi > courte.reel.dormi) courte = o;
+      });
+      if (courte) {
+        var fC = flsFenetre(courte.grp);
+        chosen = { grp: courte.grp, start: fC.start, end: fC.end, courte: true };
+        autres = autres.filter(function (o) { return o !== courte; });
+        flsLog('nuit ' + dayKey + ' : nuit COURTE retenue, ' + courte.reel.dormi
+               + ' min de sommeil nocturne et aucune autre nuit ce jour-là');
+      }
+    }
     /* Ce qui n'est pas la nuit principale est enregistré tout de suite : une
        sieste rejoint la journée, tout le reste rejoint le registre. Rien ne
        disparaît, même quand aucune nuit n'a été trouvée. */
@@ -1663,7 +1752,7 @@ function nightFromChunks(dayKey) {
        et c est le mode d echec dominant : 20 % de nuits tronquees deplacent une
        moyenne de sommeil de 91 minutes. */
     return { start: start, N: N, base: base, mv: mv, mvSrc: mvSrc,
-             seen: seen, comble: comble };
+             seen: seen, comble: comble, courte: !!chosen.courte };
   }
 
 function restageSleep(dayKey) {
@@ -2196,6 +2285,11 @@ function restageSleep(dayKey) {
       })();
       var d0 = new Date(start * 1000), dEnd = new Date((start + N * 60) * 1000);
       s.source = manuel ? 'manuel' : 'ble';
+      /* 1er oct. 2026 — la nuit courte retenue en dernier recours le DIT, pour
+         le dernier verrou de `flsEcrireNuit` (qui refuse ce que `flsClasser`
+         ne nomme pas « nuit ») et pour qui la lit. Le drapeau part dès qu'une
+         vraie nuit la remplace — un rendormissement recollé, par exemple. */
+      if (nc && nc.courte && !manuel) s.nuitCourte = true; else delete s.nuitCourte;
       /* ═══ 12 septembre 2026 — LA NUIT MESURÉE NE PORTE PLUS LE DRAPEAU DE
          L'ESTIMATION. `s` est l'objet `watch_<K>.night` tel qu'il est en base,
          et quand la montre livre APRÈS que `computeNight` a posé sa nuit
@@ -2258,8 +2352,11 @@ function restageSleep(dayKey) {
          demande un geste, pas un calcul. Un banc garde ce refus :
          `test-endormi-en-retire.js`. */
       s.stages = newStages;
-      s.bedMin = flsMinuteDu(dayKey, d0.getTime());
-      s.wakeMin = flsMinuteDu(dayKey, dEnd.getTime());
+      s.bedMin = flsMinuteDuNuit(dayKey, d0.getTime(), dEnd.getTime());
+      s.wakeMin = flsMinuteDuNuit(dayKey, dEnd.getTime(), dEnd.getTime());
+      /* La nuit du soir porte sa clé : `flPuceNuit` ne reçoit que la montre, et
+         c'est par elle qu'il retrouve la matière de la veille. */
+      if (s.wakeMin < 0) s.K = dayKey;
       s.sleepMap = 'flint-restage-v1';
       /* PROVENANCE des stades : l'app doit pouvoir dire d'où ils sortent :
          'flint-hr'      = notre analyse, FC nocturne suffisante
@@ -2333,10 +2430,14 @@ function restageSleep(dayKey) {
           s.moteurVersion = MOTEUR_VERSION;
         }catch(eI){ flsLog('instrumentation : ' + eI.message); }
       })();
-      flsEcrireNuit(dayKey, s);
+      var _ecrite = flsEcrireNuit(dayKey, s);
       /* La nuit entre aussi au registre : une journée doit pouvoir énumérer
-         TOUTES ses périodes de sommeil, la principale comprise. */
-      flsPoserSommeil(dayKey, { debut: s.sleepStart, fin: s.sleepEnd, type: TYPE_NUIT,
+         TOUTES ses périodes de sommeil, la principale comprise.
+         1er oct. 2026 — une nuit COURTE que l'écriture a refusée n'est pas la
+         nuit : elle entre sous son vrai type, jamais en second sommeil principal
+         (la journée logique prend le dernier `mainSleep` qu'elle trouve). */
+      flsPoserSommeil(dayKey, { debut: s.sleepStart, fin: s.sleepEnd,
+                                type: (s.nuitCourte && _ecrite === false) ? TYPE_SECOND : TYPE_NUIT,
                                 sleepMin: s.sleepMin, timeInBed: s.timeInBed, source: s.source });
       flsLog('🌙 re-staging ' + dayKey + ': ' + Math.floor(asleep / 60) + 'h' + String(asleep % 60).padStart(2, '0') +
           ' [' + flHHMM(s.bedMin) + '-' + flHHMM(s.wakeMin) + '] éveil ' + agg.awake + ' min (V8 ' + Math.floor(s.sleepMinV8 / 60) + 'h' + String(s.sleepMinV8 % 60).padStart(2, '0') + ')'
@@ -2613,6 +2714,11 @@ function restageSleep(dayKey) {
       /* Un coucher après le lever ne peut vouloir dire qu'une chose : on s'est
          couché la veille. On ne refuse pas, on interprète. */
       if (fin <= deb) deb -= 86400000;
+      /* 1er oct. 2026 — UN RÉVEIL APRÈS 20 H EST CELUI DE LA VEILLE AU SOIR.
+         La nuit du soir (22:32 → 23:49, rangée au lendemain) revient de
+         « Corriger ma nuit » en heures du cadran : lues sur K, elles tombaient
+         le soir de K — dans le futur. Aucune nuit de K ne finit le soir de K. */
+      if (reveilMin >= 20 * 60) { deb -= 86400000; fin -= 86400000; }
       var duree = Math.round((fin - deb) / 60000);
       if (duree < CLASSIF.dureeMiniRetenue || duree > 1000) {
         flsLog('saisie manuelle refusée : ' + duree + ' min hors bornes');
@@ -2628,8 +2734,9 @@ function restageSleep(dayKey) {
         var w = flsLire('watch_' + K, null) || {};
         var n = w.night || {};
         var dd = new Date(deb), df = new Date(fin);
-        n.bedMin = flsMinuteDu(K, dd.getTime());
-        n.wakeMin = flsMinuteDu(K, df.getTime());
+        n.bedMin = flsMinuteDuNuit(K, dd.getTime(), df.getTime());
+        n.wakeMin = flsMinuteDuNuit(K, df.getTime(), df.getTime());
+        if (n.wakeMin < 0) n.K = K;
         n.timeInBed = duree;
         if (n.sleepMin == null || n.sleepMin > duree) n.sleepMin = duree;
         n.source = 'manuel';

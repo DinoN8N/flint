@@ -1961,12 +1961,58 @@
     return null;
   }
 
+  /* ═══ 1er oct. 2026 — LE SCORE AUSSI PEUT ÊTRE NÉ SUR UNE ESTIMATION ═══════
+     Cette nuit-là, le SCORE a été scellé à 02:32 sur l'estimation par le pouls
+     (240 min, VFC de la puce gonflée par l'éveil : 70). À 08:20, « Tu t'es
+     rendormi ? — Oui » a rescellé la NUIT sur la mesure (139 min) ; le score,
+     lui, est resté : sa réouverture unique avait été brûlée à 02:32 par
+     l'estimation qui grandissait. Cette porte-ci ne regardait que le sceau de
+     la nuit — devenu une mesure par l'autre chemin, elle ne voyait plus rien à
+     promouvoir, et 70 restait affiché pour une nuit de 2h19.
+     LA RÈGLE NE S'ÉLARGIT PAS : seul un score calculé sur une ESTIMATION cède,
+     une fois (`nuitPromu_`). Un score scellé sur une mesure garde le verrou de
+     la journée (« il doit être verrouillé toute la journée », 25 sept.).
+     Le sceau dit désormais sa nuit (`nuit`, flint-recup-cycle.js) ; un sceau
+     d'avant ce correctif se reconnaît à quatre indices, tous requis. */
+  function scoreSurEstimation(K, rf, m) {
+    try {
+      if (!rf || !rf.e || rf.e.sleepMin == null) return false;
+      if (rf.nuit) return rf.nuit === 'estimation';
+      var e = rf.e;
+      /* VFC de la puce faute de RMSSD (une nuit estimée n'a pas de découpe),
+         aucune couverture de tranches, et un coucher à plus de cinq minutes de
+         celui que le bracelet a mesuré. */
+      if (!(e.hrvSrc === 'puce' && e.couv == null && e.bord == null && e.vfcMinutes == null)) return false;
+      if (!m || m.debut == null || e.bedMin == null || e.wakeMin == null) return false;
+      var m0 = (typeof flMinuitMsDe === 'function') ? flMinuitMsDe(K) : null;
+      if (m0 == null || isNaN(m0)) return false;
+      var deb = m0 + e.bedMin * 60000, fin = m0 + e.wakeMin * 60000;
+      if (deb >= fin) deb -= 86400000;
+      return Math.abs(deb - m.debut) > SEUIL_RENDORMI_MIN * 60000;
+    } catch (er) { return false; }
+  }
+
   window.flNuitMesureArrivee = function (K) {
     K = K || tk(0);
     var out = { promouvoir: false, raison: null };
     try {
       var f = DB.get(CLE_NUIT + K, null);
       if (!f || f.asleep == null) { out.raison = 'aucune nuit scellée'; return out; }
+      var rf = null;
+      try { rf = DB.get('recovFige_' + K, null); } catch (e) {}
+      var m1 = rf ? mesureBracelet(K) : null;
+      if (m1 && scoreSurEstimation(K, rf, m1)) {
+        var n1 = null;
+        try { n1 = (typeof sleepNight === 'function') ? sleepNight(K) : null; } catch (e) {}
+        var d1 = (n1 && n1.asleep != null) ? Math.abs((+rf.e.sleepMin || 0) - (+n1.asleep || 0)) : 0;
+        if (d1 > SEUIL_RENDORMI_MIN) {
+          out.promouvoir = true;
+          out.ecart = d1;
+          out.raison = 'le score portait encore sur l\'estimation : ' + rf.e.sleepMin + ' → ' + n1.asleep
+                     + ' min (' + d1 + ' min d\'écart) — une estimation ne tient pas devant une mesure';
+          return out;
+        }
+      }
       if (f.src === 'ble') { out.raison = 'la nuit scellée vient déjà de la mesure'; return out; }
       var m = mesureBracelet(K);
       if (!m) { out.raison = 'le bracelet n\'a toujours pas livré sa nuit'; return out; }
@@ -2010,6 +2056,18 @@
          nuit dessous a changé de nature. */
       try { DB.set('recovFige_' + K, null); } catch (e) {}
       try { DB.set('recovReouv_' + K, 0); } catch (e) {}
+      /* ═══ 1er oct. 2026 — ET LA RÉOUVERTURE DU RENDORMISSEMENT EST RENDUE ═══
+         Cette nuit-là, l'estimation par le pouls a suivi l'horloge pendant
+         que Dino était couché éveillé (02:00 → 02:30) : `flNuitRouvrir` y a vu
+         « la nuit s'est recollée » et a dépensé l'UNIQUE réouverture sur une
+         nuit qui n'existait pas. La mesure promue, un vrai rendormissement à
+         03:00 aurait été refusé — 1h14 et 5 % affichés toute la journée pour
+         une nuit de 5h40 (rejoué : outils/rejeu-insomnie-1oct.js).
+         Une réouverture consommée sur une ESTIMATION n'a rien mesuré ; la
+         promotion change la nature de la nuit, son compteur repart avec elle.
+         Le principe « une seule réouverture » est intact : il vaut pour la
+         nuit mesurée, celle que l'on scelle ici. */
+      try { DB.set('nuitReouv_' + K, 0); } catch (e) {}
       rec.etat = 'FINALIZING';
       rec.cause = MESURE;
       rec.tFinal0 = now;

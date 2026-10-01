@@ -32,6 +32,7 @@
   window.flSpo2NuitDe=function(K){
    var _calcul=function(K){try{
    var w=DB.get('watch_'+K,null);
+   if(w&&typeof flMatiereNuit==='function')w=flMatiereNuit(K,w);   /* 1er oct. 2026 — nuit finie avant minuit : l'oxygène de la veille */
    if(!w||!w.spo2||!w.spo2.length)return null;
    var n=w.night;
    if(!n||n.bedMin==null||n.wakeMin==null)return null;
@@ -99,6 +100,7 @@
   window.flSpo2BasNuitDe=function(K){
    var _calcul=function(K){try{
    var w=DB.get('watch_'+K,null);
+   if(w&&typeof flMatiereNuit==='function')w=flMatiereNuit(K,w);   /* 1er oct. 2026 — nuit finie avant minuit : l'oxygène de la veille */
    if(!w||!w.spo2||!w.spo2.length)return null;
    var n=w.night;
    if(!n||n.bedMin==null||n.wakeMin==null)return null;

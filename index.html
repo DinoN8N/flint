@@ -3459,7 +3459,7 @@ function _jlCalculer(maintenant){
     reveil a 06h57 a La Reunion, relu depuis Paris, se rangerait sous la veille
     et la journee logique se redecouperait au voyage. */
  var _fo=null;try{var _q=flFuseauDe(ouvrant&&ouvrant.cle);if(_q)_fo=_q.off;}catch(e){}
- var kAncre=_jlCleDe(debut,_fo), liste=[];
+ var kAncre=_jlCleDe(debut,_fo), liste=[]; if(ouvrant&&ouvrant.cle&&ouvrant.cle!==kAncre&&_jlMinuit(ouvrant.cle)!=null&&_jlMinuit(ouvrant.cle)>debut)kAncre=ouvrant.cle;  /* 1er oct. 2026 — une nuit finie avant minuit est rangée au lendemain : la journée s'ancre sur SON jour, sinon elle traînerait toute la veille dans ses calories et son effort */
  for(var off=0;off>=-JL_PROFONDEUR;off--){
   var Ko=tk(off); liste.unshift(Ko);
   if(Ko===kAncre)break;
@@ -23618,7 +23618,7 @@ function wipeData(){if(!confirm('Vider TOUTES les données (démo incluse) et re
 function exportData(){const dump={};Object.keys(localStorage).forEach(k=>dump[k]=localStorage.getItem(k));const t=JSON.stringify(dump,null,2);try{const blob=new Blob([t],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='flint-data.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},1500);toast('⬇️ Données exportées (flint-data.json)')}catch(e){try{navigator.clipboard.writeText(t);toast('📋 Données copiées')}catch(e2){toast('Export impossible')}}}
 
 /* ===== Coach IA (réponses fondées sur les données du jour) ===== */
-const APP_VERSION='v2792';
+const APP_VERSION='v2793';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
@@ -27877,14 +27877,14 @@ window.flMetriquesCourse=function(id,debutSec,finSec,estCourse){
   window.flRmssdNuit=function(K){try{
    var _rmMemo=window._flRmssdMemo=window._flRmssdMemo||{};
    var w=watchOf(K); if(!w)return null;
-   var rh=w.rrH||[]; if(!rh.length)return {ok:false,raison:"Aucun battement enregistré cette nuit."};
+   var rh=((typeof flMatiereNuit==='function')?flMatiereNuit(K,w):w).rrH||[]; if(!rh.length)return {ok:false,raison:"Aucun battement enregistré cette nuit."};
    var n=w.night||null;
    if(!n||n.sleepStart==null||n.sleepEnd==null)
     return {ok:false,raison:"Pas de nuit découpée pour ce jour."};
    var _cle=K+'|'+rh.length+'|'+n.sleepStart+'|'+n.sleepEnd;
    if(_rmMemo[_cle])return _rmMemo[_cle];
    var a=new Date(n.sleepStart), b=new Date(n.sleepEnd);
-   var am=a.getHours()*60+a.getMinutes(), bm=b.getHours()*60+b.getMinutes();
+   var am=a.getHours()*60+a.getMinutes(), bm=b.getHours()*60+b.getMinutes(); if(typeof flNuitDuSoir==='function'&&flNuitDuSoir(n)){am=+n.bedMin;bm=+n.wakeMin;}  /* 1er oct. 2026 — nuit du soir : minutes relatives (négatives), matière de la veille */
    function dans(m){return (am<=bm)?(m>=am&&m<=bm):(m>=am||m<=bm);}
 
    var parMinute=[], totalBattements=0, totalRetenus=0;
@@ -28108,7 +28108,7 @@ window.flMetriquesCourse=function(id,debutSec,finSec,estCourse){
       resumer, c est la seule situation ou il en sait plus que nous. */
    return _pasB>0?_pasB:((w&&w.steps!=null)?w.steps:0);};
   window.caloriesBurned=function(k){k=k||tk();var w=watchOf(k);return (w&&w.kcal!=null)?w.kcal:0;};
-  window.sensorOf=function(k){var w=watchOf(k);if(!w)return null;
+  window.sensorOf=function(k){var w=watchOf(k);if(!w)return null;var _wn=(typeof flMatiereNuit==='function')?flMatiereNuit(k,w):w;  /* 1er oct. 2026 — une nuit finie avant minuit lit sa matière dans la veille (flint-porte.js) ; toute autre nuit : _wn===w */
    try{if(typeof flNuitSansMesure==='function'&&flNuitSansMesure(k))return null;}catch(e){}  /* v2057 — une nuit que personne n a mesuree n a ni duree, ni VFC, ni score : le refus et sa calibration vivent dans `flint-porte.js`. */
    /* LA VARIABILITE VIENT D ABORD DU BRACELET.
       La politique du projet dit depuis longtemps « bracelet prioritaire, notre
@@ -28154,7 +28154,7 @@ window.flMetriquesCourse=function(id,debutSec,finSec,estCourse){
       sous son étiquette de provenance. */
    var hrv=null,hrvSrc=null,hrvPuce=null,hrvN=0;
    try{
-    if(w.hrvMontre&&w.hrvMontre.length){
+    var _wh=(typeof _wn!=='undefined'&&_wn)||w; if(_wh.hrvMontre&&_wh.hrvMontre.length){
      /* ON LIT LA NUIT DIRECTEMENT, PAS LA VARIABLE `n`.
         `n` est declaree PLUS BAS dans cette fonction : par remontee des `var`,
         elle vaut `undefined` ici, la condition serait toujours fausse et ce
@@ -28168,7 +28168,7 @@ window.flMetriquesCourse=function(id,debutSec,finSec,estCourse){
      var _hm=null, _nn=w.night||null;
      if(_nn&&_nn.bedMin!=null&&_nn.wakeMin!=null){
       var _b2=_nn.bedMin,_r2=_nn.wakeMin;
-      _hm=w.hrvMontre.filter(function(x){var m=x[0];
+      _hm=_wh.hrvMontre.filter(function(x){var m=x[0];
         return (_b2<=_r2)?(m>=_b2&&m<=_r2):(m>=_b2||m<=_r2);});
      }
      var hv=(_hm||[]).map(function(x){return x[1];})
@@ -28266,9 +28266,9 @@ window.flMetriquesCourse=function(id,debutSec,finSec,estCourse){
       nuit manque, ce qui est exactement ce que la ligne voulait dire. */
    var rhrNuit=null;
    try{
-    if(n&&n.bedMin!=null&&n.wakeMin!=null&&w.hr&&w.hr.length){
+    var _wr=(typeof _wn!=='undefined'&&_wn)||w; if(n&&n.bedMin!=null&&n.wakeMin!=null&&_wr.hr&&_wr.hr.length){
      var _b=n.bedMin,_r=n.wakeMin;
-     var _hn=w.hr.filter(function(x){var m=x[0];
+     var _hn=_wr.hr.filter(function(x){var m=x[0];
        return (_b<=_r)?(m>=_b&&m<=_r):(m>=_b||m<=_r);});
      /* ═══ v2125 — CE N'EST PLUS LE PLANCHER DE LA NUIT, C'EST SON NIVEAU ══
         Un 5e centile est le creux le plus bas atteint entre le coucher et le
@@ -28354,9 +28354,9 @@ window.flMetriquesCourse=function(id,debutSec,finSec,estCourse){
       repare pas, il l empeche seulement de salir la mesure. */
    var tempNuit=null;
    try{
-    if(n&&n.bedMin!=null&&n.wakeMin!=null&&w.temp&&w.temp.length){
+    var _wt=(typeof _wn!=='undefined'&&_wn)||w; if(n&&n.bedMin!=null&&n.wakeMin!=null&&_wt.temp&&_wt.temp.length){
      var b=n.bedMin,r=n.wakeMin;
-     var v=w.temp.filter(function(x){var m=x[0];
+     var v=_wt.temp.filter(function(x){var m=x[0];
        return (b<=r)?(m>=b&&m<=r):(m>=b||m<=r);})
       .map(function(x){return x[1];})
       .filter(function(t){return typeof t==='number'&&t>=32&&t<=38;})
