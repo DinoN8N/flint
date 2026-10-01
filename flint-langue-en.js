@@ -13,6 +13,17 @@
     gabarit : clé `re:` + expression régulière, valeur avec $1, $2.        */
 window.FL_LANG=window.FL_LANG||{};
 window.FL_LANG.en={
+ "Tes réponses du matin ne distinguent pas deux types de nuits : celles avec réveil et celles sans durent la même chose. On ne peut pas s'en servir.":"Your morning answers don't separate two kinds of nights: nights with and without an alarm last the same. We can't use them.",
+ "Tes nuits retenues se ressemblent trop pour être vraies : le bracelet les coupe probablement toutes à la même longueur. On ne calcule pas là-dessus.":"Your selected nights look too alike to be real: the band probably cuts them all to the same length. We don't calculate on that.",
+ "Le calcul tombe sous 6 heures, ce qui est en dessous de tout ce qui a été mesuré chez l'adulte en bonne santé. On préfère ne rien afficher plutôt qu'un chiffre auquel on ne croit pas.":"The calculation falls below 6 hours, lower than anything measured in healthy adults. We'd rather show nothing than a number we don't believe.",
+ "Le calcul dépasse 10 heures. Aucune mesure de laboratoire ne va aussi haut chez l'adulte, donc on ne l'affiche pas. Si tu dors beaucoup et que la fatigue reste, ça vaut le coup d'en parler à un médecin du sommeil.":"The calculation exceeds 10 hours. No lab measurement goes that high in adults, so we don't show it. If you sleep a lot and still feel tired, it's worth talking to a sleep doctor.",
+ "Le calcul dépasse ce qui a été mesuré chez l'adulte en bonne santé. On ne l'affiche pas. Si tu dors beaucoup et que la fatigue reste, ça vaut le coup d'en parler à un médecin du sommeil.":"The calculation exceeds what has been measured in healthy adults. We don't show it. If you sleep a lot and still feel tired, it's worth talking to a sleep doctor.",
+ "Tes nuits sans réveil sont très morcelées : on ne sait pas y distinguer ton besoin de ton temps passé au lit. Ce que tu décris mérite d'en parler à un médecin du sommeil.":"Your alarm-free nights are very fragmented: we can't tell your need apart from your time in bed. What you describe is worth discussing with a sleep doctor.",
+ "re:^Aucune nuit sans réveil parmi les (\\d+) nuits que tu as étiquetées\\.$":"None of the $1 nights you labeled was alarm-free.",
+ "re:^Tes réponses du matin ne distinguent pas encore deux types de nuits : il faut au moins cinq matins avec réveil, il y en a (\\d+)\\.$":"Your morning answers don't yet separate two kinds of nights: at least five mornings with an alarm are needed, there are $1.",
+ "re:^Il faut au moins 10 périodes de repos distinctes pour estimer ton besoin, il y en a (\\d+)\\.$":"At least 10 distinct rest periods are needed to estimate your need, there are $1.",
+ "Personne ne t'a encore demandé si ton réveil était naturel. C'est cette réponse, et elle seule, qui permet de mesurer ton besoin.":"No one has asked you yet whether you woke up naturally. That answer, and only that answer, is what lets us measure your need.",
+ "g de protéines / j":"g of protein / day",
  "(heures)":"(hours)",
  "+ Activité mesurée (total)":"+ Measured activity (total)",
  ", plus la note monte.":", the higher the score.",
@@ -634,5 +645,11 @@ window.FL_LANG.en={
  "Tu as décrit des nuits difficiles depuis plusieurs mois. Dans ce cas précis, chercher à dormir plus fait souvent l'inverse de ce qu'on croit. FLINT n'affiche pas de besoin ici, et ne te conseillera jamais de te coucher plus tôt.":"You've described difficult nights for several months. In this specific case, trying to sleep more often does the opposite of what you'd think. FLINT shows no need here, and will never advise you to go to bed earlier.",
  "re:^Il faut au moins 30 nuits bien mesurées pour savoir ce qu'est une nuit normale chez toi\\. Il y en a (\\d+)\\.$":"At least 30 well-measured nights are needed to know what a normal night is for you. There are $1.",
  "ajusté à ta charge — ta dette est au plafond":"adjusted to your strain — your debt is at the ceiling",
- "ajusté à ta dette et à ta charge":"adjusted to your debt and your strain"
+ "ajusté à ta dette et à ta charge":"adjusted to your debt and your strain",
+ "Effort intense":"Intense strain",
+ "Effort léger":"Light strain",
+ "Grosse séance — bravo.":"Big session — well done.",
+ "Une séance tranquille.":"An easy session.",
+ "re:^ajusté à ta charge — ta dette est au plafond — sieste de la veille déduite \\((\\d+) min\\)$":"adjusted to your strain — your debt is at the ceiling — yesterday's nap deducted ($1 min)",
+ "re:^ajusté à ta dette et à ta charge — sieste de la veille déduite \\((\\d+) min\\)$":"adjusted to your debt and your strain — yesterday's nap deducted ($1 min)"
 };

@@ -5,6 +5,17 @@
     pantalla, y el registro de cobertura la nombra. Tuteo, como en francés. */
 window.FL_LANG=window.FL_LANG||{};
 window.FL_LANG.es={
+ "Tes réponses du matin ne distinguent pas deux types de nuits : celles avec réveil et celles sans durent la même chose. On ne peut pas s'en servir.":"Tus respuestas de la mañana no distinguen dos tipos de noches: las que tienen despertador y las que no duran lo mismo. No podemos usarlas.",
+ "Tes nuits retenues se ressemblent trop pour être vraies : le bracelet les coupe probablement toutes à la même longueur. On ne calcule pas là-dessus.":"Tus noches seleccionadas se parecen demasiado para ser reales: la pulsera probablemente las corta todas a la misma duración. No calculamos con eso.",
+ "Le calcul tombe sous 6 heures, ce qui est en dessous de tout ce qui a été mesuré chez l'adulte en bonne santé. On préfère ne rien afficher plutôt qu'un chiffre auquel on ne croit pas.":"El cálculo baja de 6 horas, por debajo de todo lo medido en adultos sanos. Preferimos no mostrar nada antes que una cifra en la que no creemos.",
+ "Le calcul dépasse 10 heures. Aucune mesure de laboratoire ne va aussi haut chez l'adulte, donc on ne l'affiche pas. Si tu dors beaucoup et que la fatigue reste, ça vaut le coup d'en parler à un médecin du sommeil.":"El cálculo supera las 10 horas. Ninguna medición de laboratorio llega tan alto en adultos, así que no la mostramos. Si duermes mucho y el cansancio sigue, vale la pena hablarlo con un médico del sueño.",
+ "Le calcul dépasse ce qui a été mesuré chez l'adulte en bonne santé. On ne l'affiche pas. Si tu dors beaucoup et que la fatigue reste, ça vaut le coup d'en parler à un médecin du sommeil.":"El cálculo supera lo medido en adultos sanos. No lo mostramos. Si duermes mucho y el cansancio sigue, vale la pena hablarlo con un médico del sueño.",
+ "Tes nuits sans réveil sont très morcelées : on ne sait pas y distinguer ton besoin de ton temps passé au lit. Ce que tu décris mérite d'en parler à un médecin du sommeil.":"Tus noches sin despertador están muy fragmentadas: no podemos distinguir tu necesidad de tu tiempo en la cama. Lo que describes merece hablarlo con un médico del sueño.",
+ "re:^Aucune nuit sans réveil parmi les (\\d+) nuits que tu as étiquetées\\.$":"Ninguna noche sin despertador entre las $1 noches que etiquetaste.",
+ "re:^Tes réponses du matin ne distinguent pas encore deux types de nuits : il faut au moins cinq matins avec réveil, il y en a (\\d+)\\.$":"Tus respuestas de la mañana aún no distinguen dos tipos de noches: hacen falta al menos cinco mañanas con despertador, hay $1.",
+ "re:^Il faut au moins 10 périodes de repos distinctes pour estimer ton besoin, il y en a (\\d+)\\.$":"Hacen falta al menos 10 periodos de descanso distintos para estimar tu necesidad, hay $1.",
+ "Personne ne t'a encore demandé si ton réveil était naturel. C'est cette réponse, et elle seule, qui permet de mesurer ton besoin.":"Nadie te ha preguntado todavía si te despertaste de forma natural. Esa respuesta, y solo ella, permite medir tu necesidad.",
+ "g de protéines / j":"g de proteína / día",
  "(heures)":"(horas)",
  "+ Activité mesurée (total)":"+ Actividad medida (total)",
  ", plus la note monte.":", más sube la nota.",
@@ -626,5 +637,11 @@ window.FL_LANG.es={
  "Tu as décrit des nuits difficiles depuis plusieurs mois. Dans ce cas précis, chercher à dormir plus fait souvent l'inverse de ce qu'on croit. FLINT n'affiche pas de besoin ici, et ne te conseillera jamais de te coucher plus tôt.":"Has descrito noches difíciles desde hace varios meses. En este caso concreto, intentar dormir más suele hacer lo contrario de lo que se cree. FLINT no muestra ninguna necesidad aquí, y nunca te aconsejará acostarte antes.",
  "re:^Il faut au moins 30 nuits bien mesurées pour savoir ce qu'est une nuit normale chez toi\\. Il y en a (\\d+)\\.$":"Hacen falta al menos 30 noches bien medidas para saber qué es una noche normal en tu caso. Hay $1.",
  "ajusté à ta charge — ta dette est au plafond":"ajustado a tu carga: tu deuda está en el techo",
- "ajusté à ta dette et à ta charge":"ajustado a tu deuda y a tu carga"
+ "ajusté à ta dette et à ta charge":"ajustado a tu deuda y a tu carga",
+ "Effort intense":"Esfuerzo intenso",
+ "Effort léger":"Esfuerzo ligero",
+ "Grosse séance — bravo.":"Gran sesión — ¡bravo!",
+ "Une séance tranquille.":"Una sesión tranquila.",
+ "re:^ajusté à ta charge — ta dette est au plafond — sieste de la veille déduite \\((\\d+) min\\)$":"ajustado a tu carga: tu deuda está en el techo — siesta del día anterior descontada ($1 min)",
+ "re:^ajusté à ta dette et à ta charge — sieste de la veille déduite \\((\\d+) min\\)$":"ajustado a tu deuda y a tu carga — siesta del día anterior descontada ($1 min)"
 };

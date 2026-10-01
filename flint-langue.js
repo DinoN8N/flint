@@ -49,7 +49,17 @@ try{var _fi=document.getElementById('frToday');if(_fi)_fi.title=flAujourdhui();}
 window.flT=function(fr){
  var l=flLangue(); if(l==='fr')return fr;
  var d=window.FL_LANG[l]; if(!d)return fr;
- var v=d[fr]; return (typeof v==='string'&&v)?v:fr;
+ var v=d[fr]; if(typeof v==='string'&&v)return v;
+ /* 30 sept. 2026 — LES GABARITS SERVENT AUSSI À CE QUI PART AU NATIF. Une
+    phrase à nombre (« … Il y en a 12. ») ne se trouve pas à l'identique :
+    seule la passe DOM savait lire les clés `re:`, et le natif, qui affiche
+    tout depuis la v947, recevait le français. Compilés une fois par langue. */
+ var G=window._flTGab||(window._flTGab={}), g=G[l];
+ if(!g){ g=G[l]=[];
+  for(var k in d){ if(k.indexOf('re:')===0&&typeof d[k]==='string'){
+   try{ g.push([new RegExp(k.slice(3)),d[k]]); }catch(e){} } } }
+ for(var i=0;i<g.length;i++){ if(g[i][0].test(fr))return fr.replace(g[i][0],g[i][1]); }
+ return fr;
 };
 /* Le dictionnaire de la langue, chargé de façon SYNCHRONE : la balise est
    écrite pendant l'analyse de <head>, donc exécutée avant tout script qui

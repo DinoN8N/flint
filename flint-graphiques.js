@@ -359,28 +359,36 @@ window.flHebdoAnnee = function (key, recul, leger) {
    douze d'avant — et l'aveu, quand ces douze-là n'existent pas encore. */
 window.flHebdoAnneePhrase = function (cfg, key, cur, prev, nbSem) {
  try {
-  if (!cur || !cur.length) return 'Pas encore de jour mesuré sur ces douze mois.';
+  /* 30 sept. 2026 — la phrase suit la langue de l'app ; le français ne bouge pas d'un octet. */
+  var _L = (typeof flLangue === 'function') ? flLangue() : 'fr';
+  var T = function (fr, en, es) { return _L === 'en' ? en : (_L === 'es' ? es : fr); };
+  if (!cur || !cur.length) return T('Pas encore de jour mesuré sur ces douze mois.', 'No measured day in these twelve months yet.', 'Todavía no hay ningún día medido en estos doce meses.');
   function av(a) { return a.reduce(function (x, y) { return x + y; }, 0) / a.length; }
-  var aC = av(cur), quand = 'sur ' + nbSem + ' semaine' + (nbSem > 1 ? 's' : '') + ' mesurée' + (nbSem > 1 ? 's' : '');
-  var pPrev = 'les douze mois d’avant', head, tail, moved, d;
+  var s = nbSem > 1;
+  var aC = av(cur), quand = T('sur ' + nbSem + ' semaine' + (s ? 's' : '') + ' mesurée' + (s ? 's' : ''),
+                              'over ' + nbSem + ' measured week' + (s ? 's' : ''),
+                              'en ' + nbSem + ' semana' + (s ? 's' : '') + ' medida' + (s ? 's' : ''));
+  var pPrev = T('les douze mois d’avant', 'the previous twelve months', 'los doce meses anteriores'), head, tail, moved, d;
+  var moy = T('Ta moyenne : ', 'Your average: ', 'Tu media: '), stb = T('stable par rapport à ', 'steady compared with ', 'estable respecto a ');
+  var u = cfg.unit === 'pas' ? T('pas', 'steps', 'pasos') : cfg.unit;
   var inv = (key === 'rhr' || key === 'sleepdebt');
   var assez = prev && prev.length >= 3;
   if (assez) d = aC - av(prev);
   if (cfg.fmt === flhHM) {
-   head = 'Ta moyenne : ' + flhReadFmtH(aC) + ' ' + quand;
+   head = moy + flhReadFmtH(aC) + ' ' + quand;
    if (assez) { var dm = Math.round(Math.abs(d) * 60); moved = dm > 0;
-    tail = moved ? (flhReadFmtH(d) + ' de ' + (d > 0 ? 'plus' : 'moins') + ' que ' + pPrev) : ('stable par rapport à ' + pPrev); }
+    tail = moved ? (flhReadFmtH(d) + T(' de ' + (d > 0 ? 'plus' : 'moins') + ' que ', (d > 0 ? ' more' : ' less') + ' than ', ' ' + (d > 0 ? 'más' : 'menos') + ' que ') + pPrev) : (stb + pPrev); }
   } else if (cfg.pct) {
-   head = 'Ta moyenne : ' + Math.round(aC) + ' % ' + quand;
+   head = moy + Math.round(aC) + T(' % ', '% ', ' % ') + quand;
    if (assez) { var dp = Math.round(Math.abs(d)); moved = dp > 0;
-    tail = moved ? (dp + ' point' + (dp > 1 ? 's' : '') + ' ' + (d > 0 ? 'au-dessus' : 'au-dessous') + ' de ' + pPrev) : ('au même niveau que ' + pPrev); }
+    tail = moved ? (dp + T(' point' + (dp > 1 ? 's' : '') + ' ' + (d > 0 ? 'au-dessus' : 'au-dessous') + ' de ', ' point' + (dp > 1 ? 's' : '') + ' ' + (d > 0 ? 'above' : 'below') + ' ', ' punto' + (dp > 1 ? 's' : '') + ' ' + (d > 0 ? 'por encima' : 'por debajo') + ' de ') + pPrev) : (T('au même niveau que ', 'at the same level as ', 'al mismo nivel que ') + pPrev); }
   } else {
-   head = 'Ta moyenne : ' + cfg.fmt(aC) + (cfg.unit ? ' ' + cfg.unit : '') + ' ' + quand;
+   head = moy + cfg.fmt(aC) + (u ? ' ' + u : '') + ' ' + quand;
    if (assez) { var dn = cfg.fmt(Math.abs(d)); moved = dn !== cfg.fmt(0);
-    tail = moved ? ('en ' + (d > 0 ? 'hausse' : 'baisse') + ' de ' + dn + ' vs ' + pPrev) : ('stable par rapport à ' + pPrev); }
+    tail = moved ? (T('en ' + (d > 0 ? 'hausse' : 'baisse') + ' de ' + dn + ' vs ', (d > 0 ? 'up ' : 'down ') + dn + ' vs ', (d > 0 ? 'al alza, ' : 'a la baja, ') + dn + ' vs ') + pPrev) : (stb + pPrev); }
   }
-  if (!assez) return head + ' — pas encore d’année précédente pour comparer.';
-  return head + ' — ' + tail + '.' + (inv && moved && d < 0 ? ' Bon signe.' : '');
+  if (!assez) return head + T(' — pas encore d’année précédente pour comparer.', ' — no previous year to compare with yet.', ' — todavía no hay un año anterior para comparar.');
+  return head + ' — ' + tail + '.' + (inv && moved && d < 0 ? T(' Bon signe.', ' Good sign.', ' Buena señal.') : '');
  } catch (e) { return null; }
 };
 

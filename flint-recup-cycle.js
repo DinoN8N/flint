@@ -1211,6 +1211,10 @@ window.flRecovLu=function(off){
 window.flJournalAjust=function(off,zH){
  try{
   var out={total:0,detail:[],phrase:null};
+  /* 30 sept. 2026 — la phrase arrive telle quelle à l'écran natif : elle se
+     fabrique dans la langue de l'app (le français ne change pas d'un octet). */
+  var _L=(typeof flLangue==='function')?flLangue():'fr';
+  var T=function(fr,en,es){return _L==='en'?en:(_L==='es'?es:fr);};
   var _o=Math.min(0,(off||0));
   var j=DB.get('journal_'+tk(_o-1),null);
   var j2=DB.get('journal_'+tk(_o-2),null);
@@ -1224,21 +1228,25 @@ window.flJournalAjust=function(off,zH){
    var part=(zH==null||isNaN(zH))?1:Math.max(0,Math.min(1,1+Math.min(0,zH)));
    var pts=Math.round(attendu*part);
    if(pts<0)out.detail.push({id:'alcool',pts:pts,
-    txt:'alcool ('+(n>1?(j.alcool_n||n)+' verres':'1 verre')+')'});
+    txt:T('alcool ('+(n>1?(j.alcool_n||n)+' verres':'1 verre')+')',
+          'alcohol ('+(n>1?(n>=4?'4+':n)+' drinks':'1 drink')+')',
+          'alcohol ('+(n>1?(n>=4?'4+':n)+' copas':'1 copa')+')')});
   }
   if(j&&j.avion===true){
    var base={'Moins de 3 h':-2,'3 à 6 h':-3,'Plus de 6 h':-5}[j.avion_duree]||-2;
    var mod={'Ce matin':0.4,'Cet après-midi':0.6,'Ce soir':1}[j.avion_arrivee]||1;
    var pv=Math.round(base*mod);
    if(pv<0)out.detail.push({id:'avion',pts:pv,
-    txt:'vol'+(j.avion_duree?' ('+j.avion_duree.toLowerCase()+')':'')});
+    txt:T('vol'+(j.avion_duree?' ('+j.avion_duree.toLowerCase()+')':''),
+          'flight'+({'Moins de 3 h':' (under 3 h)','3 à 6 h':' (3 to 6 h)','Plus de 6 h':' (over 6 h)'}[j.avion_duree]||''),
+          'vuelo'+({'Moins de 3 h':' (menos de 3 h)','3 à 6 h':' (3 a 6 h)','Plus de 6 h':' (más de 6 h)'}[j.avion_duree]||''))});
   }
   if(j2&&j2.avion===true&&j2.avion_duree==='Plus de 6 h'){
-   out.detail.push({id:'avion2',pts:-2,txt:'contrecoup du long vol'});
+   out.detail.push({id:'avion2',pts:-2,txt:T('contrecoup du long vol','long-flight after-effect','secuelas del vuelo largo')});
   }
   for(var i2=0;i2<out.detail.length;i2++)out.total+=out.detail[i2].pts;
   if(out.total<-8)out.total=-8;
-  if(out.total<0)out.phrase='Journal de bord : '+out.detail.map(function(d){
+  if(out.total<0)out.phrase=T('Journal de bord : ','Evening journal: ','Diario de la noche: ')+out.detail.map(function(d){
    return d.txt+' '+d.pts+' pts';}).join(' · ');
   return out;
  }catch(e){return {total:0,detail:[],phrase:null};}
@@ -1397,4 +1405,179 @@ window.flSommeilPourRecup = function (K) {
              src: 'score-sommeil',
              couverture: (r.couverture != null ? r.couverture : null) };
   } catch (e) { return null; }
+};
+
+/* ═══ 30 sept. 2026 — LES COMPORTEMENTS QUE LE BRACELET MESURE SEUL ══════════
+
+   La page Comportements les annonçait depuis la v1555 — « Entraînement tôt »,
+   « Heure de coucher régulière », « Sieste »… — et AUCUN n'était calculé :
+   `flImpactsData` ne rendait que l'alcool, la caféine, l'avion, la nuit à
+   85 % et l'effort élevé. Des fiches rédigées pour des mesures qui
+   n'existaient pas (le motif que Dino a nommé le 30 sept. : « vérifie que
+   toutes les features du front ont un backend »).
+
+   CE FICHIER NE FAIT AUCUNE STATISTIQUE. Il dit, jour par jour, si le
+   comportement a eu lieu : 1, 0, ou null quand le jour ne se lit pas (une
+   absence n'est pas une mesure). La comparaison reste celle de
+   `flImpactsData` — même Welch, mêmes seuils (3 de chaque côté, 10 en tout),
+   même alignement : journée J → score du matin J+1.
+
+   LES RÈGLES — les mêmes mots que les fiches d'ImpactRecup.swift :
+   · early_workout   une séance qui commence dans les 3 h après le réveil ;
+   · late_workout    une séance qui finit moins de 3 h avant le coucher ;
+   · regular_bedtime un coucher à 45 min ou moins de la médiane des 28 nuits
+                     d'AVANT (7 au moins — jamais la nuit jugée elle-même) ;
+   · regular_wake    la même chose pour le réveil ;
+   · high_stress_day la part des minutes mesurées en stress élevé (≥ 2 sur 3,
+                     ≥ 67 sur 100 : les seuils du fabricant) dans le quart le
+                     plus haut de TES journées (3 h mesurées au moins) ;
+   · nap             une sieste dans la journée ;
+   · rest_day        aucune séance, et un effort sous ta médiane.
+   « Séance » : ni sieste, ni marche détectée par les pas (`auto` + « Marche »),
+   ni étirement ou récupération (`flCatDuSport`), ni artefact du bracelet
+   (`flFenetreValide`), 10 minutes au moins. La journée va du réveil au
+   coucher : une séance d'après minuit rangée au lendemain lui appartient
+   (flint-journee-va-dun-sommeil-au-suivant). La nuit est rangée au jour du
+   réveil : `sensorOf(J)` est le matin de J, `sensorOf(J+1)` le soir de J.
+   Mesuré sur la base de Dino (export du 16 sept., 32 jours comparables).
+   Banc : tests/test-comportements-mesures.js. */
+window.flComportementsAuto = function (rows) {
+  try {
+    if (!rows || !rows.length || !rows[0] || !rows[0].K) return [];
+    var FEN = 180, ECART = 45, HABITUDE = 28, HABITUDE_MIN = 7;
+    function lire(k, d) { try { var v = DB.get(k, null); return v == null ? d : v; } catch (e) { return d; } }
+    function decaler(K, n) {
+      var p = String(K).split('-'), d = new Date(+p[0], +p[1] - 1, +p[2]);
+      d.setDate(d.getDate() + n);
+      return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+    }
+    function nombre(x) { return (x != null && !isNaN(+x)) ? +x : null; }
+    var nuits = {};
+    function nuit(K) {
+      if (Object.prototype.hasOwnProperty.call(nuits, K)) return nuits[K];
+      var t = null;
+      try { t = (typeof sensorOf === 'function') ? sensorOf(K) : null; } catch (e) {}
+      return (nuits[K] = { b: t ? nombre(t.bedMin) : null, w: t ? nombre(t.wakeMin) : null });
+    }
+    /* Les axes de la maison (index.html, `flAxeNuit` / `flAxeReveil`), recopiés
+       ici à dessein : une fonction qui en appelle une voisine tombe dans son
+       `catch` le jour où un banc la rejoue seule. */
+    function axeC(m) { return m < 720 ? m + 1440 : m; }
+    function axeR(r, c) { return c == null ? axeC(r) : axeC(c) + (((r - c) % 1440) + 1440) % 1440; }
+    function minutes(t) {
+      if (t == null) return null;
+      var p = String(t).split(':'), v = (+p[0]) * 60 + (+p[1] || 0);
+      return isNaN(v) ? null : v;
+    }
+    function seances(K, decal) {
+      var ss = lire('sessions_' + K, []) || [], out = [];
+      for (var q = 0; q < ss.length; q++) {
+        var o = ss[q];
+        if (!o || o.type === 'nap') continue;
+        if (o.auto && o.name === 'Marche') continue;
+        var cat = null;
+        try { cat = (typeof flCatDuSport === 'function') ? flCatDuSport(o.name || '') : null; } catch (e) {}
+        if (cat === 'recup' || cat === 'sommeil') continue;
+        try {
+          var v = (typeof flFenetreValide === 'function') ? flFenetreValide(K, o) : null;
+          if (v && v.artefact) continue;
+        } catch (e) {}
+        var d = nombre(o.startMin); if (d == null) d = minutes(o.start);
+        if (d == null) continue;
+        var f = nombre(o.endMin); if (f == null) f = d + (+o.dur || 0);
+        if (f - d < 10) continue;
+        out.push({ d: d + decal, f: f + decal });
+      }
+      return out;
+    }
+    function siesteDuJour(K) {
+      var ss = lire('sessions_' + K, []) || [];
+      for (var q = 0; q < ss.length; q++) {
+        var o = ss[q];
+        if (o && o.type === 'nap' && ((+o.sleepMin || 0) > 0 || (+o.dur || 0) > 0)) return true;
+      }
+      return false;
+    }
+    function mediane(a) {
+      var b = a.slice().sort(function (x, y) { return x - y; }), n = b.length;
+      return n % 2 ? b[(n - 1) / 2] : (b[n / 2 - 1] + b[n / 2]) / 2;
+    }
+    function habitude(Kn, cle) {
+      var v = [];
+      for (var j = 1; j <= HABITUDE; j++) {
+        var nt = nuit(decaler(Kn, -j));
+        if (cle === 'b' && nt.b != null) v.push(axeC(nt.b));
+        if (cle === 'w' && nt.w != null) v.push(axeR(nt.w, nt.b));
+      }
+      return v.length >= HABITUDE_MIN ? mediane(v) : null;
+    }
+    function partStress(i) {
+      try {
+        if (typeof flStressJour !== 'function' || i == null) return null;
+        var s = flStressJour(-i, true);
+        if (!s || !s.aDesDonnees || !s.points) return null;
+        var haut = (s.echelle === 100) ? 67 : 2, n = 0, h = 0;
+        for (var q = 0; q < s.points.length; q++) {
+          var v = s.points[q] && s.points[q][1];
+          if (v == null) continue;
+          n++; if (v >= haut) h++;
+        }
+        return n >= 180 ? h / n : null;
+      } catch (e) { return null; }
+    }
+
+    var jours = {}, efforts = [], parts = [];
+    for (var q = 0; q < rows.length; q++) {
+      var rw = rows[q]; if (!rw || !rw.K) continue;
+      var K = rw.K, Kn = rw.Kn || decaler(K, 1), matin = nuit(K), soir = nuit(Kn);
+      var porte = (rw.effort != null);
+      /* le coucher du soir J, en minutes du jour J (après minuit : +1440) ;
+         hors de 18 h – 6 h, on ne sait pas où finit la journée. */
+      var cK = (soir.b != null) ? axeC(soir.b) : null;
+      if (cK != null && (cK < 1080 || cK > 1800)) cK = null;
+      var jr = { cK: cK, effort: porte ? +rw.effort : null };
+      if (porte) {
+        var liste = seances(K, 0).filter(function (s) { return matin.w == null || s.d >= matin.w; });
+        if (cK != null) liste = liste.concat(seances(Kn, 1440).filter(function (s) { return s.d < cK; }));
+        jr.seances = liste;
+        if (matin.w != null) {
+          var w0 = matin.w;
+          jr.early_workout = liste.some(function (s) { return s.d >= w0 && s.d <= w0 + FEN; }) ? 1 : 0;
+        }
+        if (cK != null) {
+          jr.late_workout = liste.some(function (s) { return s.f > cK - FEN && s.d < cK; }) ? 1 : 0;
+        }
+        jr.nap = siesteDuJour(K) ? 1 : 0;
+        efforts.push(+rw.effort);
+      }
+      var hb = habitude(Kn, 'b'), hw = habitude(Kn, 'w');
+      if (soir.b != null && hb != null) jr.regular_bedtime = Math.abs(axeC(soir.b) - hb) <= ECART ? 1 : 0;
+      if (soir.w != null && hw != null) jr.regular_wake = Math.abs(axeR(soir.w, soir.b) - hw) <= ECART ? 1 : 0;
+      jr.stress = partStress(rw.i);
+      if (jr.stress != null) parts.push(jr.stress);
+      jours[K] = jr;
+    }
+    var medEffort = efforts.length >= 8 ? mediane(efforts) : null;
+    var p75 = null;
+    if (parts.length >= 8) {
+      var tri = parts.slice().sort(function (a, b) { return a - b; });
+      p75 = tri[Math.floor(0.75 * (tri.length - 1))];
+    }
+    for (var K2 in jours) {
+      if (!Object.prototype.hasOwnProperty.call(jours, K2)) continue;
+      var j2 = jours[K2];
+      if (j2.stress != null && p75 != null) j2.high_stress_day = (j2.stress > 0 && j2.stress >= p75) ? 1 : 0;
+      if (j2.seances && medEffort != null && j2.effort != null) {
+        j2.rest_day = (!j2.seances.length && j2.effort < medEffort) ? 1 : 0;
+      }
+    }
+    function lecteur(id) {
+      return { id: id, extract: function (rw) {
+        var j = rw && jours[rw.K];
+        return (j && j[id] != null) ? j[id] : null;
+      } };
+    }
+    return ['early_workout', 'late_workout', 'regular_bedtime', 'regular_wake',
+            'high_stress_day', 'nap', 'rest_day'].map(lecteur);
+  } catch (e) { return []; }
 };

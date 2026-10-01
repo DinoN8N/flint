@@ -5989,7 +5989,7 @@ function flCaloriesMot(kcal,off){
  return +kcal>=r.attendu*1.15?'Élevée':+kcal>=r.attendu*0.85?'Normale':'Faible';
 }
 var gDay=0;
-function ajN(n){return String(Math.round(n||0)).replace(/\B(?=(\d{3})+(?!\d))/g,' ')}
+function ajN(n){return ((typeof flNombre==='function'&&flNombre(n))||String(Math.round(n||0)).replace(/\B(?=(\d{3})+(?!\d))/g,' '))}
 function ajRing(key,val,sub,frac,stat){
  set('aj'+key+'V',val);if(sub!=null)set('aj'+key+'Sub',sub);
  var arc=document.getElementById('aj'+key+'Arc');
@@ -7616,7 +7616,7 @@ window.flSommeilData=function(_argJour){try{
   var J=flJoursLongs();
   var d=new Date(+q[0],+q[1]-1,+q[2]); if(isNaN(d))return null;
   var v=new Date(d.getTime()-86400000);
-  return 'nuit de '+J[v.getDay()]+' à '+J[d.getDay()];
+  var _l=(typeof flLangue==='function')?flLangue():'fr'; return _l==='en'?('night from '+J[v.getDay()]+' to '+J[d.getDay()]):_l==='es'?('noche del '+J[v.getDay()]+' al '+J[d.getDay()]):('nuit de '+J[v.getDay()]+' à '+J[d.getDay()]);   /* 30 sept. 2026 — « nuit de Tuesday à Wednesday » en anglais */
  }catch(e){return null;}}
  var prof=(typeof getProfile==='function')?getProfile():{};
  var besoinMin=(flBesoinSommeil().h*60);
@@ -7970,7 +7970,7 @@ window.flSommeilData=function(_argJour){try{
   }catch(e){return null;}})(),
   besoinRaison: (function(){try{
     var m=(typeof flBesoinMesureA==='function')?flBesoinMesureA():null;
-    return (m&&m.valeurMin==null&&m.raison)?String(m.raison):null;
+    return (m&&m.valeurMin==null&&m.raison)?(((typeof flT==='function')&&flT(String(m.raison)))||String(m.raison)):null;   /* 30 sept. 2026 — le dictionnaire la traduit déjà */
   }catch(e){return null;}})(),
   dormiH: n?n.asleep/60:null, auLit:(n&&n.inBed!=null)?hm(n.inBed):null, auLitH:(n&&n.inBed!=null)?n.inBed/60:null, /* 7 sept. 2026 — le dénominateur de l'efficacité, voir SommeilData.auLit */
   detteH: (typeof flSansBracelet==='function'&&flSansBracelet())?null:Math.round(dette*100)/100,   /* 28 sept. 2026 — sans bracelet, pas de « dette +0h00 » fabriquée : flint-porte.js */
@@ -9432,7 +9432,7 @@ window.flRecupData=function(_argJour){try{
     reviendront ensemble, sans que personne ait à s'en souvenir. */
  hebdo=hebdo.filter(function(T){ return !_jamaisMesure[T&&T.cle]; });
  var effortRecup=(function(){
-  var J=['dim.','lun.','mar.','mer.','jeu.','ven.','sam.'],out=[];
+  var _jc=(typeof flLangue==='function'&&flLangue()!=='fr'&&typeof flJoursCourts==='function')?flJoursCourts():null,J=(_jc&&_jc.length===7)?_jc:['dim.','lun.','mar.','mer.','jeu.','ven.','sam.'],out=[];   /* 30 sept. 2026 — « ven. sam. » en anglais : la langue passe par flint-unites */
   /* v1461 — LA SEMAINE FINIT AU JOUR REGARDE, ET C EST LUI LA DERNIERE COLONNE.
      Dino, capture WHOOP a l appui : le 8 aout selectionne, la semaine va du
      dimanche 2 au samedi 8, et le 8 est la derniere colonne, surlignee. Rien
@@ -9495,7 +9495,7 @@ window.flRecupData=function(_argJour){try{
   journalAjust:(function(){try{
    if(rv&&rv.journalAjust&&rv.journalAjust.phrase)return rv.journalAjust.phrase;
    var _a=DB.get('recovAj_'+K,null);
-   return (_a!=null&&+_a!==0)?('Journal de bord : '+_a+' pts'):null;
+   return (_a!=null&&+_a!==0)?(((typeof flLangue==='function'&&flLangue()==='en')?'Evening journal: ':(typeof flLangue==='function'&&flLangue()==='es')?'Diario de la noche: ':'Journal de bord : ')+_a+' pts'):null;
   }catch(e){return null;}})(),
   metriques:metriques,hebdo:hebdo,effortRecup:effortRecup};
 }catch(e){return {aDesDonnees:false};}};
@@ -9543,7 +9543,7 @@ window.flImpactsData=function(){try{
   var ef=null;try{ef=(typeof mdGet==='function')?mdGet('effortrecup',-i):null;}catch(e){}
   if(ef!=null&&!isNaN(+ef))efforts.push(+ef);else ef=null;
   var d=new Date();d.setDate(d.getDate()-i);
-  rows.push({r:raw,
+  rows.push({r:raw,K:K,Kn:Kn,i:i,
    /* v2053 — LES MESURES VOYAGENT AVEC LE SCORE.
       Elles ne passent PAS par `raw` : le retranchement du malus de journal
       (le serpent qui se mord la queue) ne concerne que le score, qui contient
@@ -9738,10 +9738,10 @@ window.flImpactsData=function(){try{
  var fCa=fiche('cafeine',function(rw){return rw.cafeine;});
  var fAv=fiche('plane_travel',function(rw){return rw.avion;});
  if(reg){affiner(fAl,reg,1,reg.doseAlcool);affiner(fCa,reg,2,reg.doseCafeine);affiner(fAv,reg,3,1);}
- return {generatedAt:new Date().toISOString(),minAnswersPerSide:MIN_SIDE,windowDays:WIN,
+ return {generatedAt:new Date().toISOString(),minAnswersPerSide:MIN_SIDE,minAnswersTotal:MIN_TOT,windowDays:WIN,
   behaviors:[fAl,fCa,fAv,
    fiche('sleep_perf_high',function(rw){return (rw.sleep!=null&&besoinMin)?(rw.sleep>=0.85*besoinMin?1:0):null;}),
-   fiche('high_strain_day',function(rw){return (rw.effort!=null&&p75!=null)?(rw.effort>=p75?1:0):null;})]};
+   fiche('high_strain_day',function(rw){return (rw.effort!=null&&p75!=null)?(rw.effort>=p75?1:0):null;})].concat(((typeof flComportementsAuto==='function')?(flComportementsAuto(rows)||[]):[]).map(function(a){return fiche(a.id,a.extract);}))};   /* 30 sept. 2026 — les comportements que le bracelet mesure seul : flint-recup-cycle.js */
 }catch(e){return null;}};
 
 /* ═══ v1530 — CE QUE LE CYCLE DÉPLACE, EN CHIFFRES À ELLE ════════════════════
@@ -10207,7 +10207,7 @@ window.flProfilData=function(){try{
   taille:(p.height==null?null:String(Math.round(p.height))),
   sexe:(p.gender==='f'?'Femme':(p.gender==='h'?'Homme':null)),
   objectif:objet,
-  objectifSous:(function(){var _c=(but!=null&&prot!=null)?(but+' kcal · '+prot+' g de protéines / j'):null;return _garde?(_c?_garde+' · '+_c:_garde):_c;})(),   /* 28 sept. 2026 — « Sèche » sur des calories de maintien se justifie : « Maintien avant 18 ans · … » (R2) */
+  objectifSous:(function(){var _c=(but!=null&&prot!=null)?(but+' kcal · '+prot+' '+((typeof flT==='function')?flT('g de protéines / j'):'g de protéines / j')):null;return _garde?(_c?_garde+' · '+_c:_garde):_c;})(),   /* 28 sept. 2026 — « Sèche » sur des calories de maintien se justifie : « Maintien avant 18 ans · … » (R2) */
   reveil:(p.wake||null), besoin:(function(){try{var _bs=(typeof flBesoinSommeil==='function')?flBesoinSommeil():null;if(_bs&&_bs.h>0)return String(_bs.h);}catch(e){}return (p.need!=null?String(p.need):null);})(),   /* 28 sept. 2026 — la règle du Profil s ouvre sur le besoin EN USAGE : la nuit dessinée à l onboarding (7 h) n est pas un choix, la rangée disait 9 h (l âge) et la règle s ouvrait sur 7 — un « OK » l aurait choisie (relecture adversariale) */
   version:(typeof APP_VERSION!=='undefined'?APP_VERSION:null),
 
@@ -10730,7 +10730,7 @@ window.flOnboardApply=function(j){try{
  /* v2002 — la barre du bas suit tout de suite : sans rechargement, l'onglet
     Coach resterait affiché jusqu'à la prochaine ouverture de l'application. */
  try{if(typeof flAppliqueCoach==='function')setTimeout(flAppliqueCoach,0);}catch(e){}
- if(w!=null&&p.height>0&&j.kcalChoixActif!==false&&+j.kcalChoix>=800&&+j.kcalChoix<=6000){p.kcalGoal=Math.round(j.kcalChoix);p.kcalSrc='choix';}   /* 28 sept. 2026 — et jamais sur un corps incomplet : la carte aurait été calculée sur 70 kg et 175 cm inventés (E3) */   /* 12 sept. 2026 — un apport choisi ne suit pas la référence */
+ if(j.kcalAucun===true)p.kcalSansBudget=true;else if(j.kcalAucun===false)delete p.kcalSansBudget;   /* 30 sept. 2026 — « FLINT comptera sans juger » se tient */ if(w!=null&&p.height>0&&j.kcalChoixActif!==false&&+j.kcalChoix>=800&&+j.kcalChoix<=6000){p.kcalGoal=Math.round(j.kcalChoix);p.kcalSrc='choix';}   /* 28 sept. 2026 — et jamais sur un corps incomplet : la carte aurait été calculée sur 70 kg et 175 cm inventés (E3) */   /* 12 sept. 2026 — un apport choisi ne suit pas la référence */
  if(+j.pasObjectif>=1000&&+j.pasObjectif<=40000)p.stepGoal=Math.round(j.pasObjectif);
  if(/^[0-2]?[0-9]:[0-5][0-9]$/.test(String(j.coucher||'')))p.bedGoal=String(j.coucher);
  DB.set('profile',p); window._flRefCache=null; try{setTimeout(function(){try{flPousserMorpho();}catch(e){}},0);}catch(e){} try{if(j.extra&&Array.isArray(j.extra.sante)){var _br=DB.get('besoinReponses',{})||{};if(j.extra.sante.indexOf('grossesse')>=0){if(_br.grossesse!==true||!_br.grossesseA)_br.grossesseA=tk(0);_br.grossesse=true;}else{delete _br.grossesse;delete _br.grossesseA;}DB.set('besoinReponses',_br);}}catch(e){}   /* 28 sept. 2026 — la référence mise en cache pendant le calcul à blanc ignorait l activité déclarée (E7) ; la montre reçoit le corps sans attendre le prochain lancement (M4) ; la grossesse déclarée ARME le verrou du besoin mesuré, qu aucun écran ne remplissait (S7) — avec sa date, et un onboarding rejoué sans elle la RETIRE (R3, flGrossesseEtat) */
@@ -11009,8 +11009,8 @@ function flItemsPourNatif(){
 /* v1081 — L'ANALYSE D'UN REPAS DÉCRIT EN TEXTE, pour le natif (le stylo de
    l'objectif). Même canal que la photo (screen repasIA), même cerveau
    (analyzeMealText → proxy Gemini), même enveloppe desc/ingredients. */
-window.flAnalyserTexte=function(txt){
- function envoyer(d){try{window.webkit.messageHandlers.flint.postMessage(
+window.flAnalyserTexte=function(txt,jeton){ /* 30 sept. 2026 — le jeton revient avec la reponse */
+ function envoyer(d){if(jeton!=null&&d)d.jeton=String(jeton);try{window.webkit.messageHandlers.flint.postMessage(
    {cmd:'natif',screen:'repasIA',data:d});}catch(e){}}
  function echouer(r){envoyer({ok:false,raison:String(r||'')});}
  try{
@@ -11654,7 +11654,7 @@ window.flActiviteData=function(rang,jour,seanceDirecte,id){
  /* v1311 — `flEffData` rend `null` quand il n'y a pas de séance à raconter.
     Avant, il retombait sur 51 minutes, un départ à 14h14 et une charge de 8,5. */
  if(!m)return {aDesDonnees:false,
-   raison:'Le moteur n\'a trouvé aucune séance à raconter sur cette fenêtre.'};
+   raison:'Aucune séance à raconter sur ce créneau.'};
  /* v1790 — le verdict de fiabilite se calcule UNE fois et se relit : il
     voyage maintenant avec sa raison et son compte d artefacts. */
  var _fqc=false,_fqv=null;
@@ -11765,7 +11765,7 @@ window.flActiviteData=function(rang,jour,seanceDirecte,id){
     contrat, l ecran peut l afficher, et `flDiagPont` la voit passer. */
  var _m=(e&&e.message)||String(e);
  try{console.warn('[flint] flActiviteData a leve : '+_m);}catch(_){}
- return {aDesDonnees:false, raison:'Le moteur a échoué sur cette séance : '+_m};}};
+ return {aDesDonnees:false, raison:'Le calcul de cette séance a échoué : '+_m};}};
 
 /* ═══ v1482 — LA FICHE D'EFFORT D'UNE SORTIE DU TRACKER ══════════════════════
 
@@ -11898,7 +11898,7 @@ window.flActiviteParGps=function(gid){
     DIT, au lieu de laisser l'écran conclure à une panne. */
  return {aDesDonnees:false,
          raison:(g?'Cette sortie n\'a pas encore été croisée avec la mesure du cœur.'
-                  :'Le moteur ne connaît pas encore cette sortie.')};
+                  :'FLINT n\'a pas encore rangé cette sortie dans ta journée.')};
 }catch(e){return {aDesDonnees:false};}})();
  try{ if(_d&&typeof _d==='object'){
    _d.coutMs=Date.now()-_t0;
@@ -12324,7 +12324,7 @@ window.flAccueilData=function(_argJour){try{
   var J=flJoursLongs();
   var d=new Date(+q[0],+q[1]-1,+q[2]); if(isNaN(d))return null;
   var v=new Date(d.getTime()-86400000);
-  return 'nuit de '+J[v.getDay()]+' à '+J[d.getDay()];
+  var _l=(typeof flLangue==='function')?flLangue():'fr'; return _l==='en'?('night from '+J[v.getDay()]+' to '+J[d.getDay()]):_l==='es'?('noche del '+J[v.getDay()]+' al '+J[d.getDay()]):('nuit de '+J[v.getDay()]+' à '+J[d.getDay()]);   /* 30 sept. 2026 — « nuit de Tuesday à Wednesday » en anglais */
  }catch(e){return null;}}
 
  /* — sommeil — */
@@ -12586,7 +12586,7 @@ window.flAccueilData=function(_argJour){try{
               if(_JL&&_JL.traverseMinuit&&_JL.dureeMin>840)_den=_JL.dureeMin;
               return Math.max(0,Math.min(1,+(_zonesJ.couvertureMin/_den).toFixed(2)))}catch(e){return null}})(),
             fcMaxSource:(function(){try{var f=flFcMax();return f?f.src:null}catch(e){return null}})()},
-  calories:{valeur:_cKc!=null?String(_cKc).replace(/\B(?=(\d{3})+(?!\d))/g,' '):null,
+  calories:{valeur:_cKc!=null?(((typeof flNombre==='function'&&flNombre(_cKc))||String(_cKc).replace(/\B(?=(\d{3})+(?!\d))/g,' '))):null,
             sous:(_cSea>0)?'en séance':'brûlées', part:(_cKc!=null&&but>0)?Math.max(0,Math.min(1,_cKc/but)):null,
             etat:(_cSea>0)?'Séance saisie':cEtat,
             /* v1220 — DIRE QUAND ON NE COMPTE QUE LA MOITIE.
@@ -12641,7 +12641,7 @@ window.flAccueilData=function(_argJour){try{
            badge:mot,
            /* 12 sept. 2026 — la carte native du journal du soir redisait « Réponds à tes questions » après
               « Enregistrer » : elle n'avait aucun témoin. Rempli = au moins une réponse (clé sans « _ »). */
-           journalSoirRempli:(function(){try{var _j=DB.get('journal_'+tk(_off),{})||{};return _j._saved===true||Object.keys(_j).some(function(q){return q.charAt(0)!=='_'&&_j[q]!=null;});}catch(x){return false;}})()};
+           journalSoirRempli:(function(){try{var _j=DB.get('journal_'+tk(_off),{})||{};return _j._saved===true||Object.keys(_j).some(function(q){return q.charAt(0)!=='_'&&_j[q]!=null;});}catch(x){return false;}})(), journalVeilleRempli:(function(){try{var _j=DB.get('journal_'+tk(_off-1),{})||{};return _j._saved===true||Object.keys(_j).some(function(q){return q.charAt(0)!=='_'&&_j[q]!=null;});}catch(x){return false;}})()};   /* 30 sept. 2026 — la carte « Hier soir » d avant 18 h dit l état de la veille */
   }catch(e){return null;}})(),
 
   /* — TABLEAU DE BORD (screen-tableau) —
@@ -12652,7 +12652,7 @@ window.flAccueilData=function(_argJour){try{
    var t=(typeof sensorOf==='function')?sensorOf(K):null;
    var bl=(function(){try{return (DB.get('bodylog',{})||{})[K]||null;}catch(e){return null;}})();
    function nb(v,d){return v==null?null:(d?String(Math.round(v*10)/10).replace('.',flSeparateurDecimal()):String(Math.round(v)));}
-   function mil(v){return v==null?null:String(Math.round(v)).replace(/\B(?=(\d{3})+(?!\d))/g,' ');}
+   function mil(v){return v==null?null:(((typeof flNombre==='function'&&flNombre(v))||String(Math.round(v)).replace(/\B(?=(\d{3})+(?!\d))/g,' ')));}
    var rep=(n&&n.asleep)?Math.round((n.restorative||0)/n.asleep*100):null;
    return [
     {titre:'RÉCUPÉRATION', icone:'heart', lignes:[
@@ -15788,7 +15788,7 @@ function mdCalDualScrub(doc){try{
   var roCo=mk('text',{'text-anchor':'middle','font-family':'Archivo,-apple-system,system-ui,sans-serif','font-size':'17','font-weight':'700',fill:'#e34d29'});
   fixedLbls.forEach(function(t){t.style.transition='opacity .18s ease';});
   svg.style.touchAction='none';
-  function fmt(n){return n==null?'—':(''+Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g,' ');}
+  function fmt(n){return n==null?'—':(((typeof flNombre==='function'&&flNombre(n))||(''+Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g,' ')));}
   var idx=pts.length-1,ssb=false,rest={};
   function render(){var p=pts[idx];var lx=Math.max(40,Math.min(560,p.x));
    guide.setAttribute('x1',p.x);guide.setAttribute('x2',p.x);guide.setAttribute('opacity',ssb?'1':'0');
@@ -17014,13 +17014,13 @@ var FL_HEBDO={
   var n=base+dette+charge;
   return Math.max(base,Math.min(base+120,n))/60;
  }catch(e){return (getProfile().need)||null;}},fmt:flhHM,tickSteps:[0.5,1,2,3,4,6],tickFmt:function(t){return t%1===0?t+'h':flhHM(t);}},
- steps:{title:'Pas',lab:'VOS PAS',unit:'pas',col:FLEF_BLUE,kind:'bars',fmt:flhInt,vide0:true,   /* v1630 — bleu */tickFmt:function(t){return t>=1000?(t/1000)+'k':''+t;}},
+ steps:{title:'Pas',lab:'TES PAS',unit:'pas',col:FLEF_BLUE,kind:'bars',fmt:flhInt,vide0:true,   /* v1630 — bleu */tickFmt:function(t){return t>=1000?(t/1000)+'k':''+t;}},
  calories:{title:'Calories',lab:'CALORIES BRÛLÉES',heroLab:'MOYENNE / JOUR',unit:'kcal',kind:'bars',fmt:flhInt,tickFmt:function(t){return t>=1000?(Math.round(t/100)/10).toString().replace('.',flSeparateurDecimal())+'k':''+Math.round(t);}},   /* 15 sept. — `vide0` est PARTI d'ici : il effaçait aussi bien le zéro de politesse que le zéro MESURÉ. La disponibilité se décide maintenant dans `mdGet` (cas 'calories'), donc pour les lecteurs QUI PASSENT PAR LUI — ce graphique et `openMetricDetail` — et non plus pour ce seul graphique. MESURÉ, ET CE N'EST PAS « TOUS » : la tuile « Calories » du Tableau de bord est `DASH.calories.v()`, qui appelle `caloriesBurned(tk())` en direct et ne traverse jamais `mdGet` ; elle rend « 0 kcal » avant ce lot comme après, sur le jour muet du 15 septembre. Elle N'EST PAS couverte ici, et c'est délibéré : la rendre muette la mettrait en désaccord avec la tuile d'ACCUEIL, qui sur ce même jour rend `{valeur:"0", etat:null}` par une décision datée du 13 septembre — « le chiffre reste zéro ; le mot se tait » — qu'on ne rouvre pas en passant. Deux tuiles de calories qui se contrediraient, ce serait ce lot-ci à l'envers. Voir `flCalVue`. */
  effortrecup:{title:'Effort et récupération',lab:'TON EFFORT',unit:'/ 20',kind:'bars',fmt:flhDec,vu:true,ticks:[20,15,10,5,0],tickFmt:function(t){return ''+t;}},
  vo2:{title:'VO₂ max',lab:'TA VO₂ MAX',unit:'',kind:'line',fmt:flhInt},
  fcavg:{title:'FC moyenne',lab:'TA FC MOYENNE',unit:'bpm',kind:'line',fmt:flhInt},
  resp:{title:'Fréquence respiratoire',lab:'TA FRÉQ. RESPIRATOIRE',unit:'/min',kind:'line',fmt:flhDec},  /* 11 sept. 2026 — voir la rangée du Tableau de bord */
- hrzall:{title:'Zones de FC',lab:'VOS MINUTES EN ZONES 3-5',heroLab:'MOYENNE / JOUR',unit:'min',kind:'bars',fmt:flhInt,get:function(off){if(!flhJourVu(off))return null;return mdGet('hrzall',off)||0;}},
+ hrzall:{title:'Zones de FC',lab:'TES MINUTES EN ZONES 3-5',heroLab:'MOYENNE / JOUR',unit:'min',kind:'bars',fmt:flhInt,get:function(off){if(!flhJourVu(off))return null;return mdGet('hrzall',off)||0;}},
  weight:{title:'Poids',lab:'TON POIDS',unit:'kg',kind:'line',fmt:flhDec},
  leanmass:{title:'Masse corporelle maigre',lab:'TA MASSE MAIGRE',unit:'kg',kind:'line',fmt:flhDec}
 };
@@ -17187,27 +17187,28 @@ window.flPlageHabituelle=function(cle,lire,jusquA){
 function flhReadFmtH(v){var m=Math.round(Math.abs(v)*60),h=Math.floor(m/60),mm=m%60;
  return h>0?(h+'h'+(mm<10?'0':'')+mm):(mm+' min');}
 function flhReadPhrase(cfg,key,mode,cur,prev){
- if(!cur||!prev||cur.length<3||prev.length<3)return 'Pas encore assez de jours mesurés pour comparer.';
+ var _L=(typeof flLangue==='function')?flLangue():'fr',T=function(fr,en,es){return _L==='en'?en:(_L==='es'?es:fr);};   /* 30 sept. 2026 — la phrase suit la langue ; le français ne bouge pas d'un octet */
+ if(!cur||!prev||cur.length<3||prev.length<3)return T('Pas encore assez de jours mesurés pour comparer.','Not enough measured days to compare yet.','Todavía no hay suficientes días medidos para comparar.');
  function av(a){return a.reduce(function(x,y){return x+y;},0)/a.length;}
- var aC=av(cur),aP=av(prev),d=aC-aP;
- var pNow=mode==='M'?'ce mois':'cette semaine',pPrev=mode==='M'?'le mois passé':'la semaine passée';
+ var aC=av(cur),aP=av(prev),d=aC-aP,moy=T('Ta moyenne : ','Your average: ','Tu media: '),stb=T('stable par rapport à ','steady compared with ','estable respecto a ');
+ var pNow=mode==='M'?T('ce mois','this month','este mes'):T('cette semaine','this week','esta semana'),pPrev=mode==='M'?T('le mois passé','last month','el mes pasado'):T('la semaine passée','last week','la semana pasada');
  /* rhr & sleepdebt : une BAISSE est une bonne nouvelle — vocabulaire neutre
     partout, et on ne souligne « bon signe » que sur la baisse de ces deux-là. */
- var inv=(key==='rhr'||key==='sleepdebt'),head,tail,moved;
+ var inv=(key==='rhr'||key==='sleepdebt'),head,tail,moved,u=cfg.unit==='pas'?T('pas','steps','pasos'):cfg.unit;
  if(cfg.fmt===flhHM){
-  head='Ta moyenne : '+flhReadFmtH(aC)+' '+pNow;
+  head=moy+flhReadFmtH(aC)+' '+pNow;
   var dm=Math.round(Math.abs(d)*60);moved=dm>0;
-  tail=moved?(flhReadFmtH(d)+' de '+(d>0?'plus':'moins')+' que '+pPrev):('stable par rapport à '+pPrev);
+  tail=moved?(flhReadFmtH(d)+T(' de '+(d>0?'plus':'moins')+' que ',(d>0?' more':' less')+' than ',' '+(d>0?'más':'menos')+' que ')+pPrev):(stb+pPrev);
  }else if(cfg.pct){
-  head='Ta moyenne : '+Math.round(aC)+' % '+pNow;
+  head=moy+Math.round(aC)+T(' % ','% ',' % ')+pNow;
   var dp=Math.round(Math.abs(d));moved=dp>0;
-  tail=moved?(dp+' point'+(dp>1?'s':'')+' '+(d>0?'au-dessus':'au-dessous')+' de '+pPrev):('au même niveau que '+pPrev);
+  tail=moved?(dp+T(' point'+(dp>1?'s':'')+' '+(d>0?'au-dessus':'au-dessous')+' de ',' point'+(dp>1?'s':'')+' '+(d>0?'above':'below')+' ',' punto'+(dp>1?'s':'')+' '+(d>0?'por encima':'por debajo')+' de ')+pPrev):(T('au même niveau que ','at the same level as ','al mismo nivel que ')+pPrev);
  }else{
-  head='Ta moyenne : '+cfg.fmt(aC)+(cfg.unit?' '+cfg.unit:'')+' '+pNow;
+  head=moy+cfg.fmt(aC)+(u?' '+u:'')+' '+pNow;
   var dn=cfg.fmt(Math.abs(d));moved=dn!==cfg.fmt(0);
-  tail=moved?('en '+(d>0?'hausse':'baisse')+' de '+dn+' vs '+pPrev):('stable par rapport à '+pPrev);
+  tail=moved?(T('en '+(d>0?'hausse':'baisse')+' de '+dn+' vs ',(d>0?'up ':'down ')+dn+' vs ',(d>0?'al alza, ':'a la baja, ')+dn+' vs ')+pPrev):(stb+pPrev);
  }
- return head+' — '+tail+'.'+(inv&&moved&&d<0?' Bon signe.':'');}
+ return head+' — '+tail+'.'+(inv&&moved&&d<0?T(' Bon signe.',' Good sign.',' Buena señal.'):'');}
 function flhTicksAuto(mx,steps){var step;
  if(steps){step=steps[steps.length-1];for(var i=0;i<steps.length;i++){if(Math.max(mx,0.01)/steps[i]<=4){step=steps[i];break;}}}
  else{step=Math.pow(10,Math.floor(Math.log10(Math.max(mx,1)/3)));var e=mx/(3*step);if(e>=5)step*=5;else if(e>=2)step*=2;}
@@ -17745,13 +17746,13 @@ function flPlanSuivreReference(){try{
 function flNutGoals(){var _pl=null;try{_pl=flPlanSuivreReference();}catch(e){}
  var p=getProfile(), _prudC=null; try{if(p.kcalSrc==='choix'&&+p.kcalGoal>0&&typeof flPrudenceApport==='function'&&typeof flPlancherChoix==='function'){var _pc=flPrudenceApport();if(_pc&&_pc.sansDeficit&&flPlancherChoix(+p.kcalGoal)>+p.kcalGoal)_prudC=_pc.raison;}}catch(e){}   /* 28 sept. 2026 — un CHOIX relevé par le garde-fou (une carte « déficit » d un ancien natif, chez un mineur) se dit aussi (R2) */
  var kcal=+p.kcalGoal||0,prot=+p.protGoal||0; if(kcal&&p.kcalSrc==='choix'){try{if(typeof flPlancherChoix==='function')kcal=flPlancherChoix(kcal);else{var _b0=flMetaBase();if(_b0>0&&kcal<_b0)kcal=Math.round(_b0);}}catch(e){}}   /* 28 sept. 2026 — le plancher du métabolisme vaut aussi pour un apport choisi : la carte de l onboarding proposait 870 kcal à qui en brûle 877 au repos (AUDIT-NOUVEAUX-PROFILS-28-SEPT.md) */
- if(!kcal){try{kcal=(typeof flDepenseReference==='function'&&flDepenseReference())||0;}catch(e){kcal=0;}}
+ if(p.kcalSansBudget===true)kcal=0;else if(!kcal){try{kcal=(typeof flDepenseReference==='function'&&flDepenseReference())||0;}catch(e){kcal=0;}}   /* 30 sept. 2026 — « Ça ne m intéresse pas » (onboarding) : aucun budget ; les protéines restent */
  if(!prot){try{var _w=(typeof flPoidsCorps==='function')?flPoidsCorps():(+p.weight||0);var _pr2=(typeof flPrudenceApport==='function')?flPrudenceApport():null;if(_pr2&&_pr2.poidsRef)_w=_pr2.poidsRef;
                 if(_w>0)prot=Math.round(1.6*_w);}catch(e){prot=0;}}
  if(!kcal&&!prot)return {kcal:null,prot:null,carb:null,fat:null};
  var carb=p.carbGoal,fat=p.fatGoal;
- if(carb==null||fat==null){var rest=Math.max(0,(kcal||0)-(prot||0)*4);carb=Math.round(rest*0.6/4);fat=Math.round(rest*0.4/9);}
- return {kcal:kcal||null,prot:prot||null,carb:+carb,fat:+fat,prudence:(_pl&&!_pl.choix&&_pl.prudence)||_prudC||null};}   /* 28 sept. 2026 — le garde-fou appliqué, pour qu un écran le dise (R2) */
+ if(p.kcalSansBudget===true){carb=null;fat=null;}else if(carb==null||fat==null){var rest=Math.max(0,(kcal||0)-(prot||0)*4);carb=Math.round(rest*0.6/4);fat=Math.round(rest*0.4/9);}
+ return {kcal:kcal||null,prot:prot||null,carb:(carb==null?null:+carb),fat:(fat==null?null:+fat),prudence:(_pl&&!_pl.choix&&_pl.prudence)||_prudC||null};}   /* 28 sept. 2026 — le garde-fou appliqué, pour qu un écran le dise (R2) */
 /* ═══ v1923 — L AVIS FLINT NOTE LA QUALITE, ET PLUS LES PROTEINES ══════════
    Dino, 26 aout : « il note uniquement la part des proteines dans le repas.
    Mais il n y a pas que des gomusclus. Une banane, c est sain — un truc
@@ -17814,7 +17815,7 @@ window.flNoteAnalyse=function(d){try{
    de la consigne de notation du proxy — sinon deux moteurs portent le meme
    numero et le champ ne sert plus a rien. */
 var FL_SCORE_V=3;
-function flNutFmt(n){var neg=n<0;var s=(''+Math.round(Math.abs(n))).replace(/\B(?=(\d{3})+(?!\d))/g,' ');return (neg?'−':'')+s;}
+function flNutFmt(n){var neg=n<0;var s=((typeof flNombre==='function'&&flNombre(Math.abs(n)))||(''+Math.round(Math.abs(n))).replace(/\B(?=(\d{3})+(?!\d))/g,' '));return (neg?'−':'')+s;}
 var FLN_JOURSF=flJoursLongs();
 var FLN_JL=['D','L','M','M','J','V','S'];
 var FLN_MOISF=flMois();
@@ -18220,7 +18221,7 @@ var flN={when:{label:'Maintenant',min:-1,day:0},whenBack:null,retime:null,ctx:nu
  G:{goal:'Maintien',w:76,t:70,rate:0.5}};
 function flNnow(){var d=new Date();return d.getHours()*60+d.getMinutes();}
 function flNmin(t){if(t==null||t==='')return 100000;var p=(''+t).split(':');return (+p[0])*60+(+p[1]);}
-function flNInt(n){var neg=n<0;var s=(''+Math.round(Math.abs(n))).replace(/\B(?=(\d{3})+(?!\d))/g,' ');return (neg?'−':'')+s;}
+function flNInt(n){var neg=n<0;var s=((typeof flNombre==='function'&&flNombre(Math.abs(n)))||(''+Math.round(Math.abs(n))).replace(/\B(?=(\d{3})+(?!\d))/g,' '));return (neg?'−':'')+s;}
 function flNdoc(){var fr=document.getElementById('frToday');return fr&&fr.contentDocument;}
 
 /* ---- CSS (DA maquette 16) injecté une fois ---- */
@@ -19142,7 +19143,7 @@ window.flBesoinDuJour=function(off){
     gagne un troisieme etat : les defauts du profil rendaient « estime »
     inatteignable. CHANTIER-PREMIERE-SEMAINE.md §2 */
  if(objectif==null||!isFinite(objectif))
-  return {objectif:null, actif:Math.round(actif), kcal:null, source:'inconnu'};
+  return {objectif:null, actif:Math.round(actif), kcal:null, source:(p.kcalSansBudget===true?'refuse':'inconnu')};   /* 30 sept. 2026 — un refus n est pas une ignorance */
  /* ═══ 13 sept. 2026 — L'ACTIVITÉ ÉTAIT COMPTÉE DEUX FOIS, ET LA SÈCHE
     DISPARAISSAIT. Le budget valait « objectif + ce qui a été brûlé ». C'était
     juste quand l'objectif venait d'une base forfaitaire (2 400). Il vient
@@ -19435,8 +19436,8 @@ function mdBalance(doc){try{
  var K=tk(flDayOff),nt=nutTotals(K),outk=Math.round(caloriesBurned(K));var inn=Math.round(nt.kcal);
  if(!(inn>0)){if(flDayOff===0)return;inn=0;} /* aujourd'hui sans scan → maquette ; jour passé → 0 réel */
  var s=inn-outk;
- function fmt(n){var a=Math.abs(Math.round(n));var str=(''+a).replace(/\B(?=(\d{3})+(?!\d))/g,' ');return (n>0?'+':n<0?'−':'')+str;}
- function fmtU(n){return (''+Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g,' ');}
+ function fmt(n){var a=Math.abs(Math.round(n));var str=((typeof flNombre==='function'&&flNombre(a))||(''+a).replace(/\B(?=(\d{3})+(?!\d))/g,' '));return (n>0?'+':n<0?'−':'')+str;}
+ function fmtU(n){return ((typeof flNombre==='function'&&flNombre(n))||(''+Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g,' '));}
  var lab=s<=-400?'Déficit':s<-150?'Léger déficit':s<=150?'Maintien':s<400?'Léger surplus':'Surplus';
  ['screen-nutrition','screen-balance'].forEach(function(id){var sc=doc.getElementById(id);if(!sc)return;
   var svg=[].slice.call(sc.querySelectorAll('svg')).filter(function(g){return g.getAttribute('viewBox')==='0 0 670 472';})[0];if(!svg)return;
@@ -19588,7 +19589,7 @@ function mdGet(key,off){var s=sensorOf(tk(off));function n(x){return (x==null?nu
   default:return null;
  }}
 function mdNice(mx){if(mx<=0)return 10;var p=Math.pow(10,Math.floor(Math.log10(mx)));var n=mx/p;var m=n<=1?1:n<=2?2:n<=5?5:10;return m*p;}
-function mdFmt(v,unit){if(v==null)return '—';var r=(unit==='ms'||unit==='bpm'||unit==='%'||unit==='')?Math.round(v):v;var s2=(''+r).replace('.',flSeparateurDecimal());if(s2.indexOf(',')<0&&Math.abs(+r)>=1000)s2=s2.replace(/\B(?=(\d{3})+(?!\d))/g,' ');return s2;}
+function mdFmt(v,unit){if(v==null)return '—';var r=(unit==='ms'||unit==='bpm'||unit==='%'||unit==='')?Math.round(v):v;var s2=(''+r).replace('.',flSeparateurDecimal());if(Math.abs(+r)>=1000&&Math.round(+r)===+r)s2=((typeof flNombre==='function'&&flNombre(r))||s2.replace(/\B(?=(\d{3})+(?!\d))/g,' '));return s2;}
 function openMetricDetail(key){
  var G=mdGroupOf(key),m=DASH[key];if(!m)return;
  var unit=(function(){var mm=(''+m.v()).match(/([a-zA-Z%\/]+)$/);return mm?mm[1]:'';})();
@@ -22858,7 +22859,7 @@ function flEffOpen(doc){try{var o=flEffData(doc);
  var strainTxt=(''+(Math.round(o.strain*10)/10)).replace('.',flSeparateurDecimal());
  /* o.steps peut etre null (flPasParMinute sans couverture) : avant, la
     concatenation imprimait litteralement « null ». Donnee absente = « — ». */
- var stepsTxt=(o.steps==null)?'—':(''+o.steps).replace(/\B(?=(\d{3})+(?!\d))/g,' ');
+ var stepsTxt=(o.steps==null)?'—':(((typeof flNombre==='function'&&flNombre(o.steps))||(''+o.steps).replace(/\B(?=(\d{3})+(?!\d))/g,' ')));
  /* La barre sous le chiffre etait figee a width:45% — un graphique constant.
     Elle dit desormais la part de l'objectif de pas du jour couverte par CETTE
     activite, comme la barre EFFORT voisine dit strain/STRAIN_MAX. */
@@ -23617,7 +23618,7 @@ function wipeData(){if(!confirm('Vider TOUTES les données (démo incluse) et re
 function exportData(){const dump={};Object.keys(localStorage).forEach(k=>dump[k]=localStorage.getItem(k));const t=JSON.stringify(dump,null,2);try{const blob=new Blob([t],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='flint-data.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},1500);toast('⬇️ Données exportées (flint-data.json)')}catch(e){try{navigator.clipboard.writeText(t);toast('📋 Données copiées')}catch(e2){toast('Export impossible')}}}
 
 /* ===== Coach IA (réponses fondées sur les données du jour) ===== */
-const APP_VERSION='v2738';
+const APP_VERSION='v2792';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
@@ -25000,7 +25001,7 @@ document.addEventListener('visibilitychange',function(){if(document.hidden)retur
   if(!k||!isFinite(g)||g<=0||g>5000)return false;
   var t={};try{t=DB.get('portions',null)||{};}catch(e){}
   var a=Array.isArray(t[k])?t[k]:[];
-  a.push(Math.round(g));
+  var _gr=Math.round(g),_t=Date.now(),_dp=window._flPortionDerniere; if(_dp&&_dp.k===k&&_dp.g===_gr&&_t-_dp.t<10000)return true; window._flPortionDerniere={k:k,g:_gr,t:_t}; a.push(_gr);   /* 30 sept. 2026 — UNE MÊME SAISIE NE COMPTE QU UNE FOIS : le repas d un seul aliment (PontRepas.ajouterRepas) et ses poids corrigés (portionsCorrigees) la posaient deux fois, et une seule correction devenait une « habitude » (flPortionApprise en veut deux) */
   if(a.length>window.FL_PORTIONS_MAX)a=a.slice(a.length-window.FL_PORTIONS_MAX);
   t[k]=a;
   try{DB.set('portions',t);}catch(e){return false;}
@@ -29859,29 +29860,29 @@ window.flDansFenetre=function(m,d,f){ return m>=d && m<f; };
     var w=(typeof watchOf==='function')?watchOf(K):DB.get('watch_'+K,null);
     if(!w||!w.hr||!w.hr.length){
      ligne('Courbe cardiaque du jour','aucune',false);
-     ligne('Ce qu il faut faire','ouvrir l app bracelet connecte, la montre n a rien transmis');
+     ligne('Ce qu’il faut faire','ouvrir l’app, bracelet connecté : la montre n’a rien transmis');
      return {jour:K,lignes:L};
     }
-    ligne('Points de frequence cardiaque',w.hr.length+' points',true);
+    ligne('Points de fréquence cardiaque',w.hr.length+' points',true);
 
     var fm=(typeof flFcMax==='function')?flFcMax():null;
-    if(!fm){ligne('Frequence cardiaque maximale','inconnue',false);
-            ligne('Ce qu il faut faire','renseigner la date de naissance dans le profil');
+    if(!fm){ligne('Fréquence cardiaque maximale','inconnue',false);
+            ligne('Ce qu’il faut faire','renseigner la date de naissance dans le profil');
             return {jour:K,lignes:L};}
-    ligne('Frequence maximale',Math.round(fm.v)+' bpm ('+(fm.src||'?')+')',true);
+    ligne('Fréquence maximale',Math.round(fm.v)+' bpm ('+(fm.src||'?')+')',true);
 
     var rp=(typeof flFcRepos==='function')?flFcRepos(K):null;
-    ligne('Frequence de repos',rp?(rp.v+' bpm ('+rp.src+')'):'inconnue',!!rp);
+    ligne('Fréquence de repos',rp?(rp.v+' bpm ('+rp.src+')'):'inconnue',!!rp);
     var repos=(rp&&rp.v)||60;
     var seuil=Math.round(repos+0.40*(fm.v-repos));
-    ligne('Seuil « c est un effort »',seuil+' bpm',true);
+    ligne('Seuil « c’est un effort »',seuil+' bpm',true);
 
     var pts=(typeof flPtsEveil==='function')?flPtsEveil(K):w.hr;
     var au=0,maxi=0;
     (pts||[]).forEach(function(x){if(x[1]>=seuil)au++;if(x[1]>maxi)maxi=x[1];});
-    ligne('Pointe de la journee',maxi+' bpm');
+    ligne('Pointe de la journée',maxi+' bpm');
     ligne('Minutes au-dessus du seuil',au+' min',au>=6);
-    if(au<6)ligne('Ce que ca veut dire','le coeur n est jamais monte assez longtemps : soit la marche etait tres calme, soit le capteur a decroche');
+    if(au<6)ligne('Ce que ça veut dire','le cœur n’est jamais monté assez longtemps : soit la marche était très calme, soit le capteur a décroché');
 
     var pas=null;
     try{pas=(w.steps!=null)?w.steps:null;}catch(e){}
@@ -29889,29 +29890,29 @@ window.flDansFenetre=function(m,d,f){ return m>=d && m<f; };
 
     var marches=[];
     try{marches=(typeof flDetectMarches==='function')?(flDetectMarches(K)||[]):[];}catch(e){
-      ligne('Detection par la cadence','erreur : '+e.message,false);}
+      ligne('Détection par la cadence','erreur : '+e.message,false);}
     ligne('Marches vues par la cadence',marches.length,marches.length>0);
 
     var coeur=[];
     try{coeur=(typeof detectSessions==='function')?(detectSessions(K)||[]):[];}catch(e){
-      ligne('Detection par le coeur','erreur : '+e.message,false);}
-    ligne('Seances vues par le coeur',coeur.length,coeur.length>0);
+      ligne('Détection par le cœur','erreur : '+e.message,false);}
+    ligne('Séances vues par le cœur',coeur.length,coeur.length>0);
 
     var enreg=[];
     try{enreg=DB.get('sessions_'+K,[])||[];}catch(e){}
-    ligne('Seances enregistrees',enreg.length,enreg.length>0);
+    ligne('Séances enregistrées',enreg.length,enreg.length>0);
     enreg.forEach(function(x){
      var h=function(m){return Math.floor(m/60)+'h'+String(Math.round(m%60)).padStart(2,'0');};
-     ligne('  · '+(x.name||x.type||'seance'),(x.startMin!=null?h(x.startMin):'?')+' · '+(x.dur||0)+' min');
+     ligne('  · '+(x.name||x.type||'séance'),(x.startMin!=null?h(x.startMin):'?')+' · '+(x.dur||0)+' min');
     });
 
     if(!enreg.length){
      if(marches.length||coeur.length)
-      ligne('Ce qui bloque','la detection trouve quelque chose mais rien n est enregistre — le rangement des seances a echoue',false);
+      ligne('Ce qui bloque','la détection trouve quelque chose mais rien n’est enregistré — le rangement des séances a échoué',false);
      else if(pas==null)
-      ligne('Ce qui bloque','aucun pas transmis : le compteur de pas n arrive pas jusqu au moteur',false);
+      ligne('Ce qui bloque','aucun pas transmis : le compteur de pas n’arrive pas jusqu’au moteur',false);
      else
-      ligne('Ce qui bloque','ni la cadence ni le coeur n ont vu de marche continue',false);
+      ligne('Ce qui bloque','ni la cadence ni le cœur n’ont vu de marche continue',false);
     }
    }catch(e){ligne('Diagnostic interrompu',e.message,false);}
    return {jour:K,lignes:L};
@@ -33853,7 +33854,7 @@ window.flDeriverMetriques=function(k,liste){
   };
 
   window.flHrPropre=function(hr,journal){try{
-   if(!hr||hr.length<5)return hr||[];
+   if(!hr||hr.length<5)return hr||[]; var _H=hr,_M=null,_S=null,_R=function(x){if(_M)try{_M.set(_H,{s:_S,r:x});}catch(e){}return _M?x.slice():x;}; if(!journal&&typeof WeakMap==='function')try{_M=window._flHrMemo||(window._flHrMemo=new WeakMap());var _n=hr.length,_p=hr[0],_d=hr[_n-1];_S=_n+'|'+(_p&&_p[0])+'|'+(_p&&_p[1])+'|'+(_d&&_d[0])+'|'+(_d&&_d[1]);var _c=_M.get(hr);if(_c&&_c.s===_S)return _c.r.slice();}catch(e){_M=null;}   /* 30 sept. 2026 — LA MÊME COURBE N'EST NETTOYÉE QU'UNE FOIS. L'instantané du Coach la nettoyait 819 fois pour 38 journées (jusqu'à 63 fois la même), un million de points retriés : 25 à 34 % du temps à froid de l'Accueil et du Coach. Mémoire par TABLEAU (WeakMap), validée à chaque appel par la longueur et les deux extrémités : le bracelet n'écrit en place que par ajout (la longueur change) ou sur la DERNIÈRE minute (sa valeur change). Jamais avec un journal des rejets ; on rend toujours une COPIE. tests/test-hr-propre-memoire.js */
    /* On TRIE avant de lisser : une mediane sur des points dans le desordre
       melangerait des instants sans rapport. */
    hr=flMedianeGlissante(hr.slice().sort(function(x,y){return x[0]-y[0];}),5);
@@ -33872,9 +33873,9 @@ window.flDeriverMetriques=function(k,liste){
    var a=hr.slice()
             .filter(function(x){return x&&x[1]>=25&&x[1]<=230;})
             .sort(function(x,y){return x[0]-y[0];});
-   if(a.length<5)return a;
+   if(a.length<5)return _R(a);
    var base=(typeof p05==='function')?p05(a):null;
-   if(base==null)return a;
+   if(base==null)return _R(a);
    var MONTEE=50, DESCENTE=40;          /* bpm par minute, bornes physiologiques */
    var seuil=base+40, garde=[], i=0;
    while(i<a.length){
@@ -33923,7 +33924,7 @@ window.flDeriverMetriques=function(k,liste){
     }
     i=j;
    }
-   return garde;
+   return _R(garde);
   }catch(e){
    /* CE CATCH A DEJA MASQUE UNE PANNE. Une variable oubliee levait ici, l erreur
       etait avalee, la fonction rendait le BRUT, et le filtre paraissait tourner
@@ -35795,12 +35796,12 @@ window.flDeriverMetriques=function(k,liste){
     var idx={};
     lis.forEach(function(x){idx[x[0]]=x[1];});
     var pts=[], cle=Object.keys(idx).map(Number).sort(function(a,b){return a-b;});
-    var mesurees=0;
+    var mesurees=0, lo=0;   /* 30 sept. 2026 — `lo` : le balayage repartait de la PREMIÈRE mesure à chaque minute (1 440 × ~270 tours, 8 ms par jour au Mac, 95 % de flStressJour). Une clé à 13 min ou plus ne gagne jamais (dist part de 13, comparaison stricte) : on part de la première qui le peut, le curseur ne recule pas. Même courbe au point près : tests/test-stress-courbe-curseur.js */
     for(var m2=0;m2<1440;m2++){
      if(enEffort[m2]){pts.push([m2,null]);continue;}
      /* la mesure valide la plus proche, au plus a douze minutes */
-     var best=null,dist=13;
-     for(var c2=0;c2<cle.length;c2++){
+     while(lo<cle.length&&cle[lo]<=m2-13)lo++; var best=null,dist=13;
+     for(var c2=lo;c2<cle.length;c2++){
       var e=Math.abs(cle[c2]-m2);
       if(e<dist){dist=e;best=idx[cle[c2]];}
       if(cle[c2]>m2+13)break;
@@ -36243,7 +36244,7 @@ window.flDeriverMetriques=function(k,liste){
   switch(key){
    case 'sleep':case 'timeinbed':case 'sleepdebt':{var m=Math.round(v*60);return Math.floor(m/60)+'h'+String(Math.abs(m%60)).padStart(2,'0');}
    case 'sleepeff':case 'sleepresto':return Math.round(v)+' %';
-   case 'steps':case 'calories':return (''+Math.round(v)).replace(/\B(?=(\d{3})+(?!\d))/g,' ');
+   case 'steps':case 'calories':return ((typeof flNombre==='function'&&flNombre(v))||(''+Math.round(v)).replace(/\B(?=(\d{3})+(?!\d))/g,' '));
    case 'effortrecup':case 'resp':case 'weight':case 'leanmass':return (''+v).replace('.',flSeparateurDecimal());
    case 'hrv':return Math.round(v)+' ms';
    case 'hrzall':return Math.round(v)+' min';
@@ -36842,7 +36843,7 @@ function flTdProgHTML(){try{
 function flTdBalHTML(){try{
  var K=tk(window.flDayOff||0);
  var inn=Math.round(nutTotals(K).kcal),outk=Math.round(caloriesBurned(K));
- var fu=function(n){return (''+Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g,' ');};
+ var fu=function(n){return ((typeof flNombre==='function'&&flNombre(n))||(''+Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g,' '));};
  if(!(inn>0))
   return '<div style="font-family:Archivo,-apple-system,system-ui,sans-serif;font-weight:700;font-size:21px;line-height:1;color:#14110f;margin-top:2px">—</div>'
    +'<div style="font-family:-apple-system,system-ui,sans-serif;font-size:11.5px;font-weight:300;color:#8a8378;margin-top:7px;line-height:1.35">Scanne un repas pour voir ta balance du jour</div>';

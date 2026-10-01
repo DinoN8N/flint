@@ -59,10 +59,15 @@ window.flAnalyserRepas=function(url){
 };
 
 window.flRepasDepuisNatif=function(json){
- function envoyer(d){try{window.webkit.messageHandlers.flint.postMessage(
+ /* 30 sept. 2026 — LA REPONSE RAPPORTE LE JETON DE SON ANALYSE. Le natif ne
+    pose que celle de l analyse courante : une photo reprise pendant l attente
+    ne recoit plus les calories de la precedente (MemoireRepasNatif). */
+ var _jeton=null;
+ function envoyer(d){if(_jeton!=null&&d)d.jeton=_jeton;try{window.webkit.messageHandlers.flint.postMessage(
    {cmd:'natif',screen:'repasIA',data:d});}catch(e){}}
  try{
   var d=(typeof json==='string')?JSON.parse(json):json;
+  if(d&&d.jeton!=null)_jeton=String(d.jeton);
   var src=(d&&Array.isArray(d.items))?d.items:[];
   if(!src.length){envoyer({ok:false,raison:'Aucun aliment reconnu sur la photo.'});return;}
   /* Le format interne du moteur, celui que ses regles savent lire. */
@@ -214,6 +219,11 @@ window.flAjouterRepas=function(nom,kcal,prot,carb,fat,ph,time,jourOff,boisson,in
     ensuite. La vraie reponse serait un identifiant par repas ; celle-ci ferme
     le cas de loin le plus frequent, celui du repas qu on vient d enregistrer. */
  var _neuf=a[a.length-1]; _neuf.__neuf=1;
+ /* 30 sept. 2026 — L AJOUT RAPIDE : des calories CONNUES, sans analyse. Ses
+    macros ne sont pas zéro, elles sont INCONNUES : le drapeau le retient, et
+    les lectures les rendent absentes (jamais « P 0 g »). Posé seulement
+    quand il est vrai : un repas ordinaire ne porte pas la clé. */
+ if(_m.sansMacros===true)_neuf.sansMacros=true;
  a.sort(function(x,y){
   var p=function(t){if(!t)return 1e9;var m=String(t).split(':');return (+m[0]*60)+(+m[1]||0)};
   return p(x.time)-p(y.time)});
@@ -267,9 +277,6 @@ window.flModifierRepas=function(rang,nom,time,facteur,jourDelta,jour){try{
   return p(x.time)-p(y.time)};
  var d=Math.round(+jourDelta||0);
  if(d!==0){
-  /* Le repas déménage : retiré d'ici, rangé là-bas à son heure. */
-  a.splice(rang,1);
-  DB.set('meals_'+K,a.sort(tri));
   /* Le jour d'arrivée se compte depuis le jour DU REPAS, pas depuis la
      sélection courante : c'est le même piège, un cran plus loin. */
   var K2=(function(){
@@ -277,11 +284,25 @@ window.flModifierRepas=function(rang,nom,time,facteur,jourDelta,jour){try{
    var dt=new Date(+p[0],+p[1]-1,+p[2]); dt.setDate(dt.getDate()+d);
    return dt.getFullYear()+'-'+(dt.getMonth()+1)+'-'+dt.getDate();
   })();
+  /* ═══ 30 sept. 2026 — L'ARRIVÉE D'ABORD, LE DÉPART ENSUITE ══════════════
+     Le repas quittait son jour AVANT d'être écrit dans l'autre, et aucune des
+     deux écritures n'était lue : si la seconde échouait (quota plein, la panne
+     du 23 août), le repas n'existait plus nulle part — et la fonction rendait
+     `true` (audit Nutrition du 30 sept.). On écrit l'arrivée ; si elle est
+     refusée, rien n'a bougé. Puis le départ ; s'il est refusé, on retire
+     l'arrivée. Au pire, le repas existe deux fois : jamais zéro. Et le natif
+     apprend l'échec au lieu d'un `true`. */
   var b=DB.get('meals_'+K2,[])||[];
   b.push(m);
-  DB.set('meals_'+K2,b.sort(tri));
+  if(DB.set('meals_'+K2,b.sort(tri))===false)return false;
+  a.splice(rang,1);
+  if(DB.set('meals_'+K,a.sort(tri))===false){
+   var _ix=b.indexOf(m); if(_ix>=0)b.splice(_ix,1);
+   DB.set('meals_'+K2,b);
+   return false;
+  }
  }else{
-  DB.set('meals_'+K,a.sort(tri));
+  if(DB.set('meals_'+K,a.sort(tri))===false)return false;
  }
  try{renderNutrition();}catch(e){}
  return true;}catch(e){return false;}};
@@ -291,6 +312,11 @@ window.flRepasData=function(rang,jour){try{
  var a=(typeof mealsOf==='function')?mealsOf(K):(DB.get('meals_'+K,[])||[]);
  var m=a[+rang||0]; if(!m)return {aDesDonnees:false};
  var p=+m.prot||0,c=+m.carb||0,f=+m.fat||0;
+ /* 30 sept. 2026 — un ajout rapide n a pas de macros connues : absentes. */
+ if(m.sansMacros===true)return {aDesDonnees:true, rang:+rang||0, nom:m.name||'Repas', heure:m.time||null,
+  jour:(typeof nutDayLabel==='function')?nutDayLabel(K):null, kcal:Math.round(m.kcal||0),
+  prot:null, gluc:null, lip:null, partProt:null, partGluc:null, partLip:null,
+  photo:m.photo||null, ph:m.ph||null, note:null, sansMacros:true};
  /* Les parts se calculent en CALORIES, pas en grammes : un gramme de lipide
     en pèse neuf contre quatre. Un camembert en grammes mentirait d'un tiers. */
  var pk=p*4,ck=c*4,fk=f*9,tt=(pk+ck+fk)||1;
@@ -372,6 +398,97 @@ window.flRepasPasBoisson=function(noms){try{
  return n;
 }catch(e){return -1;}};
 
+/* ═══ 30 sept. 2026 — LES REPAS QU'ON REFAIT ════════════════════════════════
+   Le même petit-déjeuner cinq matins sur sept, le même yaourt à 16 h : pour
+   le noter, il fallait le rephotographier et attendre l'analyse, ou le
+   retaper. Les produits scannés avaient leur historique (v1773) ; les repas
+   photographiés ou décrits n'en avaient aucun, alors qu'ils sont tous là,
+   jour par jour, dans `meals_<K>`.
+
+   CE QU'ELLE REND : les repas des `jours` jours qui précèdent `jourOff`,
+   regroupés par NOM (casse et espaces ignorés), en JSON. Chaque groupe garde la
+   dernière version notée — c'est elle qu'on reprend, portion corrigée comprise.
+
+   L'ORDRE, ET IL EST RÉFLÉCHI. Aujourd'hui, ce qu'on mange D'HABITUDE À CETTE
+   HEURE-CI passe devant (heure de la dernière prise à deux heures près de
+   `minute`, la minute du jour ; le moteur prend l'horloge si on ne la donne
+   pas) : à 8 h, le porridge avant le dîner de la veille. Puis les plus
+   FRÉQUENTS, puis les plus RÉCENTS, puis l'ordre de la journée. Un autre jour
+   n'a pas de « maintenant » : fréquence, récence, heure.
+
+   CE QU'ELLE TAIT : un nom déjà noté ce jour-là (on ne propose pas de reprendre
+   ce qu'on vient de manger), une entrée sans nom, et une entrée à zéro calorie
+   qui n'est pas une boisson — un repas vide n'est pas une habitude.
+
+   CE N'EST PAS `flNRecentMeals` (plus bas) : celle-là sert la feuille d'ajout
+   de l'ancienne interface WEB, qui ne s'affiche plus — quatre repas des dix
+   derniers jours, sans photo ni fréquence, et des libellés écrits en dur pour
+   son écran. On ne la réutilise pas pour ne pas lier le natif à une vue morte.
+
+   ELLE N'ÉCRIT RIEN. La reprise passe par `flAjouterRepas`, la seule porte
+   d'entrée d'un repas : mêmes gardes, même tri, même rang rendu. La photo n'est
+   PAS partagée entre deux repas : le natif la copie avant (un fichier commun
+   partirait avec la première suppression). */
+window.flRepasRecents=function(n,jours,jourOff,minute){try{
+ var N=Math.max(1,Math.min(12,Math.round(+n)||5));
+ var J=Math.max(1,Math.min(60,Math.round(+jours)||30));
+ var off=(typeof jourOff==='number'&&isFinite(jourOff))?jourOff:(window.flDayOff||0);
+ var cle=function(x){return String(x||'').trim().toLowerCase().replace(/\s+/g,' ');};
+ var dejaLa={};
+ (DB.get('meals_'+tk(off),[])||[]).forEach(function(m){if(m&&m.name)dejaLa[cle(m.name)]=1;});
+ var vus={},liste=[];
+ for(var d=1;d<=J;d++){
+  var K=tk(off-d), a=DB.get('meals_'+K,[])||[];
+  for(var i=a.length-1;i>=0;i--){
+   var m=a[i]; if(!m||!m.name)continue;
+   var c=cle(m.name); if(!c||dejaLa[c])continue;
+   var kc=Math.max(0,Math.round(+m.kcal||0));
+   if(kc<=0&&!m.boisson)continue;
+   if(vus[c]){vus[c].fois++;continue;}
+   var r={nom:String(m.name),kcal:kc,
+          prot:Math.max(0,Math.round(+m.prot||0)),carb:Math.max(0,Math.round(+m.carb||0)),
+          fat:Math.max(0,Math.round(+m.fat||0)),
+          ph:(typeof m.ph==='string'&&m.ph)?m.ph:null,
+          ing:(Array.isArray(m.ing)&&m.ing.length)?m.ing.slice(0,12):null,
+          boisson:!!m.boisson,source:m.source||null,
+          grammes:(m.grammes!=null&&isFinite(+m.grammes))?+m.grammes:null,
+          confiance:(m.confiance!=null&&isFinite(+m.confiance))?+m.confiance:null,
+          confirme:(m.confirme===true)?true:((m.confirme===false)?false:null),
+          score:(m.score!=null&&isFinite(+m.score))?Math.round(+m.score):null,
+          heure:(typeof m.time==='string')?m.time:null,
+          sansMacros:(m.sansMacros===true)?true:null,   /* 30 sept. 2026 — l ajout rapide se reprend tel quel */
+          dernier:K,ecart:-d,fois:1};
+   vus[c]=r; liste.push(r);
+  }
+ }
+ var enMin=function(t){var m=/^(\d{1,2}):(\d{2})$/.exec(String(t||''));return m?(+m[1])*60+(+m[2]):null;};
+ var maint=null;
+ if(off===0){
+  maint=(minute!=null&&isFinite(+minute))?+minute:(function(){var d=new Date();return d.getHours()*60+d.getMinutes();})();
+ }
+ var proche=function(r){var m=enMin(r.heure);return (maint!=null&&m!=null&&Math.abs(m-maint)<=120)?1:0;};
+ liste.sort(function(x,y){
+  return (proche(y)-proche(x))||(y.fois-x.fois)||(y.ecart-x.ecart)
+         ||((enMin(x.heure)==null?1e9:enMin(x.heure))-(enMin(y.heure)==null?1e9:enMin(y.heure)));});
+ return JSON.stringify(liste.slice(0,N));
+}catch(e){return '[]';}};
+
+/* ═══ 30 sept. 2026 — COMPTER SANS BUDGET, PAR CHOIX ════════════════════════
+   L onboarding propose « Ça ne m intéresse pas — FLINT comptera sans juger ».
+   Le choix n allait nulle part : le plan se calculait quand même, et la page
+   annonçait « AU-DESSUS DU BUDGET » à qui avait dit ne pas en vouloir.
+   `kcalSansBudget` le retient ; `flNutGoals` rend alors un objectif calorique
+   ABSENT (les protéines restent : elles ne jugent pas une quantité), et tous
+   les lecteurs savent déjà se taire devant un budget absent (v2183).
+   `suivre` : vrai pour retrouver un objectif, faux pour compter sans. On lit
+   et on écrit la base BRUTE : `getProfile()` y mêlerait ses défauts. */
+window.flBudgetCalories=function(suivre){try{
+ var p=DB.get('profile',{})||{};
+ if(suivre===false)p.kcalSansBudget=true; else delete p.kcalSansBudget;
+ DB.set('profile',p); window._flRefCache=null;
+ return true;
+}catch(e){return false;}};
+
 window.flNutritionData=function(_argJour){try{
  /* v1459 — ELLE AUSSI IGNORAIT LE JOUR CHOISI. `tk(0)` en dur : le ruban des
     jours est pourtant SUR cette page. Meme ligne que flSommeilData et
@@ -380,7 +497,7 @@ window.flNutritionData=function(_argJour){try{
  var K=(typeof tk==='function')?tk(_off):null;
  var prof=(typeof getProfile==='function')?getProfile():{};
  var repas=[];try{repas=DB.get('meals_'+K,[])||[];}catch(e){}
- function mil(v){return v==null?null:String(Math.round(v)).replace(/\B(?=(\d{3})+(?!\d))/g,' ');}
+ function mil(v){return v==null?null:(((typeof flNombre==='function'&&flNombre(v))||String(Math.round(v)).replace(/\B(?=(\d{3})+(?!\d))/g,' ')));}
 
  var kcalBut=flBesoinDuJour(_off).objectif;   /* v1626 — plus de defaut 2500 local */
  var pris=0,P=0,G=0,L=0;
@@ -479,6 +596,9 @@ window.flNutritionData=function(_argJour){try{
     return (typeof flMetaBase==='function') && flMetaBase()==null;
   }catch(e){return false}})(),
   part: budget?Math.max(0,Math.min(1,pris/budget)):null,
+  /* 30 sept. 2026 — sans budget PAR CHOIX (voir `flBudgetCalories`) : la
+     carte dit ce qui a été mangé, pas ce qui reste. */
+  sansObjectif: prof.kcalSansBudget===true,
   jours: jours,
   macros: [
    {nom:'Protéines', actuel:Math.round(P), cible:butP, couleur:'#fb6015'},
@@ -512,6 +632,10 @@ window.flNutritionData=function(_argJour){try{
       d'aliments, sans quantité. Absent sur tous les repas d'avant : on rend
       null, et la carte n'affiche simplement pas le bloc. */
    var ing=(m.ing&&m.ing.length)?m.ing.map(String).filter(Boolean):null;
+   /* 30 sept. 2026 — l ajout rapide : ses macros sont absentes, pas nulles. */
+   if(m.sansMacros===true)return {heure:m.time||null, nom:m.name||'Repas',
+           ligne:mil(m.kcal)+' kcal', note:null, rang:i, ph:m.ph||null, ing:null,
+           kcal:Math.round(m.kcal||0), prot:null, carb:null, fat:null, sansMacros:true};
    return {heure:m.time||null, nom:m.name||'Repas',
            ligne:mil(m.kcal)+' kcal · '+mp+' P · '+mg+' G · '+ml+' L',
            note:note!=null?String(note):null,
