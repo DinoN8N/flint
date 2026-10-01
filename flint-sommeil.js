@@ -1602,8 +1602,24 @@ function nightFromChunks(dayKey) {
        On marque les trous, puis on les comble d'après ce qui les entoure. */
     var base = new Array(N), seen = new Array(N);
     for (var i = 0; i < N; i++) { base[i] = 'awake'; seen[i] = false; }
+    /* 1er oct. 2026 — ET CE QUE LA MONTRE A VRAIMENT ÉCRIT. Une page 0x6b
+       rend deux fois sa durée : les stades, puis l'activité relue en stades
+       (des zéros, et quelques valeurs comme 6f ou ff — relevé au parseur de
+       J-Style, nuits du 29 et du 30 sept.). `seen` est vrai sur les deux
+       moitiés ; `ecrit` ne l'est que sur la première, et `brut` en garde le
+       code, quelle que soit la page qui passe ensuite. La fenêtre saisie au
+       stylo en a besoin : voir `restageSleep`.
+       `hache` : la nuit vient du firmware 0120, dont CHAQUE page s'ouvre sur
+       des « 5 » — code que le 0088 n'a jamais écrit (15 jours de pages). Sous
+       le 0120, une minute non écrite peut être du sommeil oublié ; sous le
+       0088, un trou est un réveil (25 sept. : WHOOP 102 min éveillé dans le
+       trou 00:34 → 02:42, pouls 54 contre 49 en sommeil). */
+    var brut = new Array(N), ecrit = new Array(N);
+    for (var ib = 0; ib < N; ib++) { brut[ib] = 0; ecrit[ib] = false; }
+    var hache = chosen.grp.some(function (c) { return c.stages[0] === 5; });
     chosen.grp.forEach(function (c) {
-      c.stages.forEach(function (v, idx) { var mi = Math.round((c.start + idx * 60 - start) / 60); if (mi >= 0 && mi < N) { base[mi] = (v === 1 ? 'deep' : v === 2 ? 'light' : v === 3 ? 'rem' : 'awake'); seen[mi] = true; } });
+      var reelles = Math.ceil(c.stages.length / 2);
+      c.stages.forEach(function (v, idx) { var mi = Math.round((c.start + idx * 60 - start) / 60); if (mi >= 0 && mi < N) { base[mi] = (v === 1 ? 'deep' : v === 2 ? 'light' : v === 3 ? 'rem' : 'awake'); seen[mi] = true; if (idx < reelles) { brut[mi] = v; ecrit[mi] = true; } } });
     });
     /* Comblement : un trou ENTOURÉ de sommeil est du sommeil (on ne se réveille pas
        pour une minute sans raison). Un trou en bordure de nuit reste de l'éveil. */
@@ -1752,7 +1768,7 @@ function nightFromChunks(dayKey) {
        et c est le mode d echec dominant : 20 % de nuits tronquees deplacent une
        moyenne de sommeil de 91 minutes. */
     return { start: start, N: N, base: base, mv: mv, mvSrc: mvSrc,
-             seen: seen, comble: comble, courte: !!chosen.courte };
+             seen: seen, comble: comble, courte: !!chosen.courte, brut: brut, ecrit: ecrit, hache: hache };
   }
 
 function restageSleep(dayKey) {
@@ -1794,9 +1810,23 @@ function restageSleep(dayKey) {
         var mS = Math.round(s.manuelStart / 1000), mN = Math.round((s.manuelEnd - s.manuelStart) / 60000);
         if (mN >= 60 && mN <= 1000) {
           var nb = new Array(mN), nm = new Array(mN), dec = Math.round((mS - start) / 60);
+          /* ═══ 1er oct. 2026 — « LÀ OÙ ELLE EN A » VOULAIT DIRE : LÀ OÙ ELLE A ÉCRIT ═══
+             Le code prenait le stade de la montre sur TOUTE sa fenêtre, trous
+             et bourrage compris — qui valent « éveillé » dans `base`. Nuit du
+             1er oct., firmware 0120 : la montre n'a rien écrit de 03:11 à 04:30,
+             de 05:44 à 06:41 ni après 07:19 ; Dino saisit 03:11 → 08:11 et le
+             stylo rendait 1 h 14 de sommeil (4 h 08 attendues). Sur une nuit du
+             0120 (`nc.hache`), une minute que la montre a ÉCRITE garde son
+             stade (un « éveillé » écrit reste éveillé) ; une minute qu'elle n'a
+             pas écrite — trou, ou seconde moitié d'une page — est du léger,
+             comme le dit le pavé ci-dessus. Sur une nuit du 0088, rien ne
+             change : ses trous sont des réveils. Sans tranches non plus. */
           for (var im = 0; im < mN; im++) {
             var srcI = im + dec, okI = srcI >= 0 && srcI < N;
-            nb[im] = okI ? base[srcI] : 'light';
+            var ecr = (okI && nc && nc.hache && nc.ecrit) ? nc.ecrit[srcI] : null;
+            if (!okI || ecr === false) nb[im] = 'light';
+            else if (ecr === null) nb[im] = base[srcI];
+            else { var cv = nc.brut[srcI]; nb[im] = cv === 1 ? 'deep' : cv === 2 ? 'light' : cv === 3 ? 'rem' : 'awake'; }
             nm[im] = okI ? (mv[srcI] || 0) : 0;
           }
           flsLog('nuit ' + dayKey + ' : fenêtre SAISIE projetée ' + flsHHMM(flsMinuteDu(dayKey, s.manuelStart)) + '-'
@@ -2762,6 +2792,17 @@ function restageSleep(dayKey) {
           if (typeof window.flNuitResceller === 'function') {
             var rs = window.flNuitResceller(K, 'manuel');
             flsLog('saisie manuelle ' + K + ' : sceau ' + (rs && rs.ok ? 'réécrit' : ('inchangé — ' + (rs && rs.raison))));
+            /* 1er oct. 2026 — ET LA RÉCUPÉRATION SUIT. Une nuit finalisée ne
+               se rejuge plus (`flNuitVerrouillee`) : le stylo changeait la nuit
+               et laissait le score calculé sur l'ancienne (Dino, 1er oct. :
+               4 h 08 saisies, récup restée à 11). Le stylo est un geste de la
+               personne, comme « Tu t'es rendormi ? » : même porte. */
+            if (rs && rs.ok && typeof window.flNuitVerrouillee === 'function' && window.flNuitVerrouillee(K)
+                && typeof window.flRecupPublier === 'function') {
+              var rp = window.flRecupPublier(K, 'manuel', true);
+              flsLog('saisie manuelle ' + K + ' : récupération '
+                + (rp && rp.publie ? (rp.s + ' — ' + rp.raison) : ('inchangée — ' + (rp && rp.raison))));
+            }
           }
         } catch (eS) { flsLog('saisie manuelle : sceau — ' + eS.message); }
       }

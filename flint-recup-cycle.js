@@ -673,7 +673,10 @@
         var motif = motifReouverture(fige, emp, trig);
         if (!motif) { res.raison = 'score scellé — dérive tardive sans portée, ignorée'; return res; }
         var deja = +DB.get('recovReouv_' + K, 0) || 0;
-        if (deja >= 1) {
+        /* 1er oct. 2026 — le stylo n'est pas une dérive : c'est la personne qui
+           corrige SA nuit, et chaque correction a droit à son score. La limite
+           d'une réouverture reste entière pour tout le reste. */
+        if (deja >= 1 && trig !== 'manuel') {
           res.raison = 'score scellé — une réouverture a déjà eu lieu, la seconde est refusée';
           tracer({ t: new Date().toISOString(), K: K, trig: trig, cycle: cyc.etat, etat: 'finale',
                    avant: res.s, apres: res.s, publie: false, h: emp.h, raison: res.raison,
