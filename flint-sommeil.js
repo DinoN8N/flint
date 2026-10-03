@@ -177,6 +177,17 @@
          pavé de `restageSleep`). Le seul chemin d'écriture d'une nuit mesurée
          passe ici : c'est ici que l'invariant se tient. */
       if (nuit && nuit.stages && nuit.stages.length && nuit._est) delete nuit._est;
+      /* 3 oct. 2026 — au-delà de la fenêtre du re-staging (7 jours), la nuit
+         s'écrit SANS `hrTs` : ce n'est qu'une projection de `watch_<K>.hr`
+         (flsHrTs) que ses lecteurs savent refaire, et une tranche ancienne
+         encore en mémoire la reposait à chaque recalcul, après que le ménage
+         l'avait rendue (flint-menage.js, étape 3). L'objet de l'appelant n'est
+         pas touché : il sert encore après l'écriture. */
+      if (nuit && nuit.hrTs) {
+        var _pK = String(K).split('-'), _jK = new Date(+_pK[0], +_pK[1] - 1, +_pK[2]), _j0 = new Date();
+        _j0.setHours(0, 0, 0, 0);
+        if (Math.round((_j0 - _jK) / 86400000) > 7) { nuit = Object.assign({}, nuit); delete nuit.hrTs; }
+      }
       w.night = nuit;
       flsEcrire('watch_' + K, w);
       /* ═══ v2016 — INVARIANT : RIEN NE CHEVAUCHE LA NUIT ════════════════════

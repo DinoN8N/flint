@@ -3901,7 +3901,7 @@ window.flFaireDeLaPlace=function(){
     demarrage n est pas encore passee (ou que la journee a grossi depuis),
     c est le gisement le plus gros et le moins precieux : 72 % du disque le
     23 aout. On l applique en entier — c est une regle, pas un marchandage. */
- try{libere+=(window.flPurgerIntervallesExpires&&window.flPurgerIntervallesExpires())||0;}catch(e){}
+ try{libere+=(window.flPurgerIntervallesExpires&&window.flPurgerIntervallesExpires())||0;}catch(e){} try{libere+=((window.flRecompacterLarges&&window.flRecompacterLarges())||{}).octets||0;}catch(e){}   /* 3 oct. 2026 — sans rien perdre : les valeurs à emoji repassent à un octet par caractère (flint-menage.js) */
  /* ═══ v1400 — LES TROIS ETAPES VISAIENT DES ENDROITS VIDES ══════════════════
     Mesure sur l appareil de Felix, 700 cles, 3 777 Ko occupes :
 
@@ -23618,7 +23618,7 @@ function wipeData(){if(!confirm('Vider TOUTES les données (démo incluse) et re
 function exportData(){const dump={};Object.keys(localStorage).forEach(k=>dump[k]=localStorage.getItem(k));const t=JSON.stringify(dump,null,2);try{const blob=new Blob([t],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='flint-data.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},1500);toast('⬇️ Données exportées (flint-data.json)')}catch(e){try{navigator.clipboard.writeText(t);toast('📋 Données copiées')}catch(e2){toast('Export impossible')}}}
 
 /* ===== Coach IA (réponses fondées sur les données du jour) ===== */
-const APP_VERSION='v2798';
+const APP_VERSION='v2808';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
@@ -30318,13 +30318,13 @@ window.flDansFenetre=function(m,d,f){ return m>=d && m<f; };
      et il ne masque QUE ce que la détection propose — jamais une séance
      déclarée, jamais ce qui est déjà en base. Au Stop, tout est rejugé sur les
      vraies bornes : ce qui a été retenu ici reparaît s'il le mérite. */
-  window.flSeanceEnDirect=function(deb){try{
-   DB.set('flEnDirect',{deb:Math.max(0,Math.round(+deb||0)),ts:Date.now()});}catch(e){}};
+  window.flSeanceEnDirect=function(deb,ttl){try{   /* 3 oct. 2026 — `ttl` (ms) : la séance ANNONCÉE n'a pas d'horloge de survie et survit à la mort de l'app ; son jalon vit jusqu'à sa borne, et tombe au désarmement. Absent : les trois minutes du Tracker */
+   DB.set('flEnDirect',{deb:Math.max(0,Math.round(+deb||0)),ts:Date.now(),ttl:(+ttl>0?Math.round(+ttl):null)});}catch(e){}};
   window.flSeanceFinie=function(){try{DB.set('flEnDirect',null);}catch(e){}};
   window.flEnDirectDepuis=function(k){try{
    var e=DB.get('flEnDirect',null);
    if(!e||e.deb==null)return null;
-   if(Date.now()-(+e.ts||0)>180000)return null;
+   if(Date.now()-(+e.ts||0)>((+e.ttl>0)?+e.ttl:180000))return null;
    if(typeof tk==='function'&&k!==tk(0))return null;
    return +e.deb;}catch(e){return null;}};
   window.flDetecterBientot=function(jk){try{

@@ -121,12 +121,31 @@ window.flFenetreCourbes=function(viser){try{
       les scalaires, `vfcNuit`. Une vieille nuit garde TOUTE sa structure. Et
       ses deux lecteurs directs tolèrent déjà l'absence — `(w.night&&w.night.hrTs)||null`
       côté fuseau, `(s&&s.hrTs)||[]` côté échantillons : ils ne peuvent pas
-      trouver là un tableau vide qu'ils ne savent pas déjà rencontrer. */
- for(var n3=0;n3<cles.length&&!assez();n3++){
-  var k3=cles[n3], av3=taille(k3); if(!av3)continue;
+      trouver là un tableau vide qu'ils ne savent pas déjà rencontrer.
+   ══ 3 oct. 2026 — LA FRONTIÈRE DE CE CACHE EST CELLE DU RE-STAGING, 7 JOURS ══
+      Neuf jours après, la base de Dino était de nouveau PLEINE : 5 241 391
+      octets pour 5 242 880 (le plafond de WebKit, mesuré), 1,5 Ko de marge,
+      cinq refus au journal à chaque lancement, et un filet qui rendait RIEN.
+      Les 21 jours n'étaient pas la frontière de CE cache : `hrTs` n'est
+      réécrit que par `restageSleep`, que `flintSommeilRecalculer` passe sur
+      les jours 0 à 7 (et ceux d'une tranche encore en mémoire). Au-delà, il
+      ne bouge plus jamais — c'est un instantané figé, que ses deux lecteurs
+      savent refaire : `flEchantillonsNuit` reprojette `watch_<K>.hr` et garde
+      la série la plus fournie, et `flRetrouverFuseau` ne sert qu'aux jours
+      d'avant la v1767 — ceux de Dino portent TOUS leur `tz` (vérifié sur 30
+      jours de sa base). Mesuré : 15 nuits de 8 à 21 jours, 283 Ko rendus.
+      `flsEcrireNuit` cesse en même temps de le poser sur une nuit de plus de
+      7 jours, sinon une tranche ancienne le ferait revenir à chaque recalcul. */
+ var clesNuit=[];
+ try{for(var i3=0;i3<localStorage.length;i3++){var kn=localStorage.key(i3);
+  if(kn&&kn.indexOf('watch_')===0&&age(kn)>7)clesNuit.push(kn);}}catch(e){}
+ clesNuit.sort(function(a,b){return age(b)-age(a);});
+ for(var n3=0;n3<clesNuit.length&&!assez();n3++){
+  var k3=clesNuit[n3], av3=taille(k3); if(!av3)continue;
   var w3=lire(k3); if(!w3||!w3.night||!w3.night.hrTs||!w3.night.hrTs.length)continue;
   delete w3.night.hrTs;
-  if(poser(k3,w3,{night:w3.night})){libere+=av3-taille(k3);jours++;}
+  if(poser(k3,w3,{night:w3.night})){var r3=av3-taille(k3);libere+=r3;jours++;
+   try{window._flRenduSeries=(window._flRenduSeries||0)+r3;}catch(e){}}
  }
  try{if(jours)console.log('[flint] fenetre d age : '+jours+' reecriture(s), '
    +Math.round(libere/1024)+' Ko rendus');}catch(e){}
@@ -158,6 +177,71 @@ window.flMenageClesMortes=function(){try{
  return morts.length;
 }catch(e){return 0;}};
 try{setTimeout(function(){try{window.flMenageClesMortes();}catch(e){}},20000);}catch(e){}
+
+/* ─── UN SEUL EMOJI FAIT PAYER DOUBLE TOUTE LA VALEUR (3 oct. 2026) ────────
+   WebKit compte le quota (5 242 880 octets) EN OCTETS DE SA CHAÎNE INTERNE :
+   un octet par caractère tant que tous tiennent en Latin-1, DEUX par
+   caractère — pour la valeur ENTIÈRE — dès qu'un seul n'y tient pas. Mesuré
+   dans un WebKit (outil de mesure jetable) : 5 241 856 caractères « a » ou
+   « é » passent, 2 620 416 « → », et 2 555 904 seulement quand UN « → »
+   ouvre chaque bloc de 64 Ko d'ASCII. Échappé (« \u2192 »), le même bloc
+   repasse à 5 177 344.
+   Chez Dino, `sessions_<jour>` porte l'icône de chaque séance (« 🚶 », « 🏋️ »,
+   « ⚽️ ») : ses 63 journées pesaient 331 Ko au lieu de 166. Les journaux
+   (`recovJrn`, `nuitMatinJrn`) et `flGelC_` payaient de même pour un « — ».
+   306 Ko rendus en tout, sur une base pleine à 1,5 Ko près.
+   LA RÈGLE : une valeur JSON qui contient des caractères hors Latin-1 se
+   range avec ces caractères ÉCHAPPÉS (`\uXXXX`, la forme que JSON.parse lit
+   depuis toujours). Le contenu relu est le même, au caractère près : la passe
+   le PROUVE avant d'écrire (parse de l'ancienne et de la nouvelle, mêmes
+   chaînes), et ne touche jamais une valeur qui n'est pas du JSON (un texte
+   brut verrait apparaître les barres obliques). On n'échappe que si l'on y
+   gagne : six octets par caractère échappé contre deux pour TOUS les autres,
+   donc moins d'un caractère large sur cinq.
+   `DB.set` n'est pas touché : la passe tourne au démarrage et dans le filet,
+   la valeur du jour se recompacte au lancement suivant. Aucune mémoire de
+   calcul n'est prévenue — le contenu n'a pas bougé. Banc : test-memoire.js. */
+window.flEchapperLarges=function(s){try{
+ if(typeof s!=='string'||!/[^\x00-\xff]/.test(s))return s;
+ var larges=s.match(/[^\x00-\xff]/g).length;
+ if(larges*5>=s.length)return s;
+ return s.replace(/[^\x00-\xff]/g,function(c){return '\\u'+('000'+c.charCodeAt(0).toString(16)).slice(-4);});
+}catch(e){return s;}};
+window.flRecompacterLarges=function(){try{
+ var cles=[],n=0,rendu=0;
+ for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k)cles.push(k);}
+ for(var j=0;j<cles.length;j++){
+  var v=null;try{v=localStorage.getItem(cles[j]);}catch(e){continue;}
+  if(!v||!/[^\x00-\xff]/.test(v))continue;
+  var e2=window.flEchapperLarges(v);if(e2===v)continue;
+  var a=null,b=null;
+  try{a=JSON.stringify(JSON.parse(v));b=JSON.stringify(JSON.parse(e2));}catch(e){continue;}
+  if(a!==b)continue;
+  try{localStorage.setItem(cles[j],e2);}catch(e){continue;}
+  n++;rendu+=2*v.length-e2.length;
+ }
+ try{window._flRenduLarges=(window._flRenduLarges||0)+rendu;}catch(e){}
+ return {cles:n,octets:rendu};
+}catch(e){return {cles:0,octets:0};}};
+/* Le poids TEL QUE WEBKIT LE COMPTE — `flDiagStockage` compte des caractères
+   et sous-estime de moitié toute valeur large. */
+window.flPoidsWebKit=function(){try{
+ var t=0;
+ for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i)||'',v=localStorage.getItem(k)||'';
+  t+=(/[^\x00-\xff]/.test(k)?2:1)*k.length+(/[^\x00-\xff]/.test(v)?2:1)*v.length;}
+ return t;
+}catch(e){return -1;}};
+/* Au démarrage, après la fenêtre rrH (8 s) et avant la fenêtre d'âge (15 s).
+   Puis UNE ligne au journal du téléphone : ce que pèse la base et ce que ce
+   lancement a rendu — sans elle, on ne saurait dire si la base revit collée
+   au plein qu'en la rapatriant. */
+try{setTimeout(function(){try{window.flRecompacterLarges();}catch(e){}},10000);}catch(e){}
+try{setTimeout(function(){try{
+ var p=window.flPoidsWebKit();if(p<0)return;
+ var m='stockage · '+Math.round(p/1024)+' Ko sur 5 120 ('+Math.round(p*100/5242880)+' %) · rendu à ce lancement : séries de nuit '
+  +Math.round((window._flRenduSeries||0)/1024)+' Ko, caractères larges '+Math.round((window._flRenduLarges||0)/1024)+' Ko';
+ window.webkit.messageHandlers.flint.postMessage({cmd:'journal',texte:m});
+}catch(e){}},17000);}catch(e){}
 
 /* ─── TAILLER UN JOUR DE `hrfine_` AUX FENÊTRES DE SES SÉANCES (6 sept. 2026) ──
    LA COURSE DU 29 AOÛT portait 609 points à cinq secondes dans l export du

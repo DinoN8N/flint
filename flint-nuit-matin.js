@@ -1176,6 +1176,24 @@
     } catch (e) {}
   }
 
+  /* ═══ 2 oct. 2026 — LA NUIT N'EST PAS RELUE EXPRÈS (firmware 0120) ═══════
+
+     Sous le firmware 0120, lire le sommeil d'une personne qui dort la fait
+     SORTIR du sommeil (`exitSleepNow`, appelé par la première page des
+     lectures 0x53/0x6b — désassemblé). Le pont natif ne lit donc plus la nuit
+     tant que la montre ne montre aucun pas récent (`premierePageSommeil`), et
+     il le dit ici : `ms` = depuis quand la lecture attend, 0 = elle a repris.
+
+     CE QUE ÇA CHANGE POUR LE MATIN. « Plus de page depuis une heure » voulait
+     dire « levé depuis une heure » ; pendant une lecture différée, ça ne veut
+     plus rien dire. La nuit du 2 oct. a été close à 02:03 et scellée à 03:13
+     par le dernier recours (« détectée depuis plus d'une heure ») sur 1 h 52
+     de sommeil — exactement ce que cette porte interdit. */
+  window.flSommeilDiffere = function (ms) {
+    try { DB.set('flSommeilDiffere', (+ms > 0) ? +ms : 0); } catch (e) {}
+    return true;
+  };
+
   window.flNuitAutoDecision = function (K, maintenant) {
     K = K || tk(0);
     var now = maintenant || Date.now();
@@ -1188,6 +1206,18 @@
          l'herbe sous le pied pendant qu'il répond. */
       if (rec.etat === 'JOURNAL_IN_PROGRESS') {
         out.raison = 'le journal est ouvert — la main est à l\'utilisateur';
+        return out;
+      }
+      /* 2 oct. 2026 — la montre n'est pas relue exprès : on attend le premier
+         pas (voir `flSommeilDiffere`). Borne de 18 h : un drapeau oublié par un
+         pont qui s'est tu ne doit pas bloquer le matin pour toujours. */
+      var _diff = 0;
+      try { _diff = +DB.get('flSommeilDiffere', 0) || 0; } catch (e) {}
+      if (_diff > 0 && now - _diff >= 0 && now - _diff < 18 * 3600000) {
+        var _d = new Date(_diff);
+        out.raison = 'la montre n\'est pas relue depuis ' + ('0' + _d.getHours()).slice(-2) + ':'
+          + ('0' + _d.getMinutes()).slice(-2) + ' — on ne lit pas le sommeil de quelqu\'un qui dort (firmware 0120)';
+        direLaDecision(K, out.raison);
         return out;
       }
       var cyc = cycleDe(K);

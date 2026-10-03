@@ -675,8 +675,11 @@
         var deja = +DB.get('recovReouv_' + K, 0) || 0;
         /* 1er oct. 2026 — le stylo n'est pas une dérive : c'est la personne qui
            corrige SA nuit, et chaque correction a droit à son score. La limite
-           d'une réouverture reste entière pour tout le reste. */
-        if (deja >= 1 && trig !== 'manuel') {
+           d'une réouverture reste entière pour tout le reste.
+           2 oct. 2026 — « Tu t'es rendormi ? — Oui » non plus : c'est la même
+           parole. Ce matin-là la nuit est passée de 112 à 271 min à 07:37 et la
+           récup est restée à 5, la seule réouverture brûlée à 03:23. */
+        if (deja >= 1 && trig !== 'manuel' && trig !== 'rendormi') {
           res.raison = 'score scellé — une réouverture a déjà eu lieu, la seconde est refusée';
           tracer({ t: new Date().toISOString(), K: K, trig: trig, cycle: cyc.etat, etat: 'finale',
                    avant: res.s, apres: res.s, publie: false, h: emp.h, raison: res.raison,
