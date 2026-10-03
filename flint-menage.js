@@ -4,6 +4,19 @@
    `tk` se lisent NUS (jamais window.DB/window.tk — garde-liaisons),
    comme flint-recup-cycle.js. Le banc : tests/test-memoire.js, qui
    charge ce fichier en entier. */
+/* ─── LES CLÉS DU HAUT (3 oct. 2026) ─────────────────────────────────────────
+   Avec la cave (CaveBase.swift), `localStorage` est une COUCHE : ses clés
+   comptent aussi les journées descendues sur le disque de l'app. Les passes
+   qui font de la place gèrent la mémoire PLAFONNÉE, et les migrations
+   idempotentes ont déjà vu chaque journée quand elle était en haut : elles ne
+   regardent donc que le haut — relire la cave à chaque lancement coûterait un
+   aller-retour par journée d'historique, et ne rendrait pas un octet. Sans
+   couche (app plus ancienne), c'est l'énumération de toujours. */
+window.flClesChaudes=function(){
+ try{if(window.__flCave&&window.__flCave.chaudes)return window.__flCave.chaudes();}catch(e){}
+ var a=[];try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k!=null)a.push(k);}}catch(e){}
+ return a;
+};
 /* ─── LA FENETRE D AGE DES COURBES (30 aout 2026, commercialisation) ────────
    LA LECON DU 23 AOUT, GENERALISEE. Ce jour-la, la base etait PLEINE et treize
    ecritures ont echoue AVANT que le filet ne trouve quoi rendre : attendre que
@@ -70,7 +83,7 @@ window.flFenetreCourbes=function(viser){try{
   var t=Date.UTC(+p[0],(+p[1])-1,+p[2]);
   return isNaN(t)?0:Math.round((auj-t)/86400000);}   /* cle illisible : age 0, jamais touchee */
  var cles=[];
- try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);
+ try{var _kc=flClesChaudes();for(var i=0;i<_kc.length;i++){var k=_kc[i];
   if(k&&k.indexOf('watch_')===0&&age(k)>21)cles.push(k);}}catch(e){return 0;}
  cles.sort(function(a,b){return age(b)-age(a);});     /* les plus vieux d abord, par DATE */
  /* Etape 1 — le moins precieux sur TOUTES les cles : les RR bruts. */
@@ -137,7 +150,7 @@ window.flFenetreCourbes=function(viser){try{
       `flsEcrireNuit` cesse en même temps de le poser sur une nuit de plus de
       7 jours, sinon une tranche ancienne le ferait revenir à chaque recalcul. */
  var clesNuit=[];
- try{for(var i3=0;i3<localStorage.length;i3++){var kn=localStorage.key(i3);
+ try{var _kn=flClesChaudes();for(var i3=0;i3<_kn.length;i3++){var kn=_kn[i3];
   if(kn&&kn.indexOf('watch_')===0&&age(kn)>7)clesNuit.push(kn);}}catch(e){}
  clesNuit.sort(function(a,b){return age(b)-age(a);});
  for(var n3=0;n3<clesNuit.length&&!assez();n3++){
@@ -167,7 +180,7 @@ try{setTimeout(function(){try{window.flFenetreCourbes();}catch(e){}},15000);}cat
 window.flMenageClesMortes=function(){try{
  var morts=[];
  var datee=/^[A-Za-z][A-Za-z0-9]*_\d{4}-\d{1,2}-\d{1,2}$/;
- for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);
+ var _km=flClesChaudes();for(var i=0;i<_km.length;i++){var k=_km[i];
   if(!k||!datee.test(k))continue;
   var v=null;try{v=localStorage.getItem(k);}catch(e){continue;}
   if(v==='null'||v==='[]'||v==='{}'||v==='')morts.push(k);
@@ -209,7 +222,7 @@ window.flEchapperLarges=function(s){try{
 }catch(e){return s;}};
 window.flRecompacterLarges=function(){try{
  var cles=[],n=0,rendu=0;
- for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k)cles.push(k);}
+ cles=flClesChaudes();
  for(var j=0;j<cles.length;j++){
   var v=null;try{v=localStorage.getItem(cles[j]);}catch(e){continue;}
   if(!v||!/[^\x00-\xff]/.test(v))continue;
@@ -226,8 +239,8 @@ window.flRecompacterLarges=function(){try{
 /* Le poids TEL QUE WEBKIT LE COMPTE — `flDiagStockage` compte des caractères
    et sous-estime de moitié toute valeur large. */
 window.flPoidsWebKit=function(){try{
- var t=0;
- for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i)||'',v=localStorage.getItem(k)||'';
+ var t=0,LS=(window.__flCave&&window.__flCave.reel)||localStorage;   /* la mémoire plafonnée, pas la cave */
+ for(var i=0;i<LS.length;i++){var k=LS.key(i)||'',v=LS.getItem(k)||'';
   t+=(/[^\x00-\xff]/.test(k)?2:1)*k.length+(/[^\x00-\xff]/.test(v)?2:1)*v.length;}
  return t;
 }catch(e){return -1;}};

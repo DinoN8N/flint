@@ -205,7 +205,7 @@ window.flMigrerFuseaux=function(opts){
  opts=opts||{};
  var r={jours:0, mesures:0, deja:0, sans:[], erreurs:0};
  var cles=[];
- try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);
+ try{var _kc=(window.flClesChaudes?flClesChaudes():(function(){var a=[];for(var j=0;j<localStorage.length;j++)a.push(localStorage.key(j));return a;})());for(var i=0;i<_kc.length;i++){var k=_kc[i];   /* 3 oct. 2026 — le haut seulement : une journée en cave porte déjà son fuseau */
       if(k&&k.indexOf('watch_')===0)cles.push(k.slice(6));}}catch(e){return r;}
  cles.sort();
  for(var c=0;c<cles.length;c++){

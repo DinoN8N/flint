@@ -3293,7 +3293,7 @@ window.flReparerPasDoubles=function(opts){
  var P=window.flPas;
  if(!P||!P.nettoyer){r.sansRegle=1;return r;}
  var cles=[];
- try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);
+ try{var _kc=(window.flClesChaudes?flClesChaudes():(function(){var a=[];for(var j=0;j<localStorage.length;j++)a.push(localStorage.key(j));return a;})());for(var i=0;i<_kc.length;i++){var k=_kc[i];   /* 3 oct. 2026 — le haut seulement : une journée en cave a déjà reçu cette réparation (flint-menage.js, flClesChaudes) */
       if(k&&k.indexOf('watch_')===0)cles.push(k.slice(6));}}catch(e){return r;}
  cles.sort();
  for(var c=0;c<cles.length;c++){
@@ -3840,7 +3840,7 @@ window.flPurgerIntervallesExpires=function(){try{
  var garde={};
  for(var j=0;j<7;j++){try{garde['watch_'+tk(-j)]=1;}catch(e){}}
  var cles=[];
- try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);
+ try{var _kc=(window.flClesChaudes?flClesChaudes():(function(){var a=[];for(var j=0;j<localStorage.length;j++)a.push(localStorage.key(j));return a;})());for(var i=0;i<_kc.length;i++){var k=_kc[i];   /* 3 oct. 2026 — la fenêtre rrH gère la mémoire plafonnée : le haut seulement */
   if(k&&k.indexOf('watch_')===0&&!garde[k])cles.push(k);}}catch(e){return 0;}
  /* Par DATE, jamais par chaine : trie en texte, le 10 aout passe avant le
     2 aout et la purge mangerait le mauvais bout (le piege de la v1606). */
@@ -3959,7 +3959,7 @@ window.flFaireDeLaPlace=function(){
 
  if(libere<VISE)(function(){
   var cles=[];
-  try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);
+  try{var _kc=(window.flClesChaudes?flClesChaudes():(function(){var a=[];for(var j=0;j<localStorage.length;j++)a.push(localStorage.key(j));return a;})());for(var i=0;i<_kc.length;i++){var k=_kc[i];   /* 3 oct. 2026 — le filet ne touche jamais la cave : il fait de la place EN HAUT */
    if(k&&k.indexOf('hrfine_')===0)cles.push(k);}}catch(e){return;}
   function quand(k){
    var p=k.slice(7).split('-');
@@ -4215,8 +4215,8 @@ window.flDiagPont=function(){
 window.flDiagStockage=function(){
  var tot=0,par={};
  try{
-  for(var i=0;i<localStorage.length;i++){
-   var k=localStorage.key(i)||'', n=((localStorage.getItem(k))||'').length; tot+=n;
+  var LS=(window.__flCave&&window.__flCave.reel)||localStorage;for(var i=0;i<LS.length;i++){   /* 3 oct. 2026 — la mémoire plafonnée, pas la cave */
+   var k=LS.key(i)||'', n=((LS.getItem(k))||'').length; tot+=n;
    var f=k.replace(/[0-9]{4}-[0-9]{1,2}-[0-9]{1,2}$/,'<jour>');
    par[f]=(par[f]||0)+n;
   }
@@ -23618,7 +23618,7 @@ function wipeData(){if(!confirm('Vider TOUTES les données (démo incluse) et re
 function exportData(){const dump={};Object.keys(localStorage).forEach(k=>dump[k]=localStorage.getItem(k));const t=JSON.stringify(dump,null,2);try{const blob=new Blob([t],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='flint-data.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},1500);toast('⬇️ Données exportées (flint-data.json)')}catch(e){try{navigator.clipboard.writeText(t);toast('📋 Données copiées')}catch(e2){toast('Export impossible')}}}
 
 /* ===== Coach IA (réponses fondées sur les données du jour) ===== */
-const APP_VERSION='v2808';
+const APP_VERSION='v2809';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
