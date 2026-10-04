@@ -2715,4 +2715,52 @@
     } catch (e) { out.err = e && e.message; }
     return out;
   };
+
+  /* ═══ 4 oct. 2026 — LE DÉ-SPIKE NOCTURNE, ARBITRÉ PAR LE R-R ═══════════════
+     Le capteur optique écrit la nuit des pics isolés faux : 90 bpm entre deux
+     44, le plus souvent un DOUBLE-COMPTAGE du PPG (44×2≈88) quand le contact se
+     desserre. Mesuré chez Dino, nuit du 3→4 : 17 pics à 77-92 pour un pouls de
+     sommeil à 44, et le R-R (battement-à-battement, indépendant) ne montrait
+     AUCUNE accélération (médiane max 61, 0 min ≥70). WHOOP les nettoie ; nous
+     les gardions — d'où une courbe « bruitée » face à la leur.
+     SÉCURITÉ, on n'écrase JAMAIS un vrai souci cardiaque :
+     · le R-R arbitre : de vrais battements rapides (R-R ≥ pouls local +12) → GARDE ;
+     · une élévation qui DURE (> 3 min) → GARDE (un vrai épisode dure ou revient) ;
+     · on ne retire qu'un pic ISOLÉ, > pouls LOCAL +18, que le R-R ne confirme pas.
+     N'affecte QUE la courbe affichée : récup/VFC/FCR lisent le R-R, intactes.
+     Vit ici (OTA-servi) et non dans index.html (au plafond du cliquet) ni dans
+     flint-sommeil.js (lu du paquet jusqu'à v2810). Branché par `typeof`. */
+  window.flHrDespikeNuit = function (out, t0, K) { try {
+    if (!out || out.length < 7 || t0 == null || !K) return out;
+    var fast = {};
+    try {
+      var w = (typeof DB !== 'undefined' && DB.get) ? DB.get('watch_' + K, null) : null;
+      var minuit = (typeof flMinuitDe === 'function') ? flMinuitDe(K) : null;
+      var rr = (w && w.rrH) || [];
+      if (minuit != null) for (var a = 0; a < rr.length; a++) {
+        var e = rr[a]; if (!(e && e.length > 1 && e[1] && e[1].length)) continue;
+        var bons = e[1].filter(function (x) { return x >= 300 && x <= 2000; }); if (!bons.length) continue;
+        bons.sort(function (x, y) { return x - y; });
+        fast[Math.round((minuit + e[0] * 60 - t0) / 60)] = Math.round(60000 / bons[bons.length >> 1]);
+      }
+    } catch (e) {}
+    var SEUIL = 18;
+    function locMed(i) { var v = []; for (var j = Math.max(0, i - 6); j <= Math.min(out.length - 1, i + 6); j++) if (j !== i && out[j] != null) v.push(out[j]); if (!v.length) return null; v.sort(function (x, y) { return x - y; }); return v[v.length >> 1]; }
+    var i = 0, retires = 0;
+    while (i < out.length) {
+      var lm = locMed(i);
+      if (lm == null || out[i] == null || out[i] <= lm + SEUIL) { i++; continue; }
+      var j = i; while (j < out.length && out[j] != null && out[j] > lm + SEUIL) j++;   /* la salve i..j-1 */
+      var duree = j - i, confirme = false;
+      for (var k2 = i; k2 < j; k2++) { var f = fast[k2]; if (f != null && f >= lm + 12) { confirme = true; break; } }
+      if (duree <= 3 && !confirme) {
+        var g = (i > 0 && out[i - 1] != null) ? out[i - 1] : lm, d = (j < out.length && out[j] != null) ? out[j] : lm;
+        for (var k3 = i; k3 < j; k3++) { out[k3] = Math.round(g + (d - g) * ((k3 - i + 1) / (duree + 1))); retires++; }
+      }
+      i = j;
+    }
+    if (retires) try { console.log('[flint] courbe nuit : ' + retires + ' pic(s) optique(s) lisse(s) (sans appui R-R)'); } catch (e) {}
+    return out;
+  } catch (e) { return out; } };
+
 })();
