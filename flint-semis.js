@@ -708,6 +708,32 @@ window.flDemoOuvrir=function(){
    n'a pu être livrée. Le conteneur démo part EN ENTIER, avant la purge (qui
    effacerait la marque) ; la copie vivante est vidée EN PLACE (v1824 : la
    copie vivante gagne toujours la course). Banc : test-sans-bracelet.js § 6. */
+/* ═══ 4 oct. 2026 — CE QUE L'EXEMPLE A FAIT CALCULER PART AVEC LUI ═══════════
+   Retirer les journées semées ne suffisait pas : le moteur avait CALCULÉ dessus
+   pendant la visite — scores de récupération (« 64 » scellé pour aujourd'hui),
+   nuits figées, besoins de sommeil, zones, et des séances DÉTECTÉES sur le
+   pouls de l'exemple (« Activité · 91 min », vue au simulateur). Sans bracelet
+   tout cela reste caché (flSansBracelet) ; au PREMIER lien, la porte s'ouvre
+   et ces chiffres devenaient le premier jour de la personne.
+   Appelée seulement quand aucun bracelet n'a jamais été lié ici ET que la base
+   ne porte aucune mesure de bracelet : rien de ce qui part ne peut alors venir
+   d'un bracelet. Les séances DÉCLARÉES (à la main, au GPS) restent. */
+var FL_DEMO_DERIVES=/^(recov_|recovFige_|recovEtat_|recovSnap_|recovRr_|recovNuitSig_|besoinAjuste_|besoinNuit_|besoinJour_|nuitFige_|nuitScoreFige_|nuitSess_|zonesJour_)/;
+function flDemoDerivesRetirer(){
+ if(typeof flBaseAMesureBracelet==='function'&&flBaseAMesureBracelet())return 0;
+ var cles=[],n=0;
+ for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i)||'';if(FL_DEMO_DERIVES.test(k)||k.indexOf('sessions_')===0)cles.push(k);}
+ cles.forEach(function(k){try{
+  if(k.indexOf('sessions_')===0){
+   var a=DB.get(k,[])||[]; if(!Array.isArray(a))return;
+   var b=a.filter(function(s){return !(s&&s.auto);});
+   if(b.length!==a.length){DB.set(k,b);n+=a.length-b.length;}
+   return;
+  }
+  var v=localStorage.getItem(k); if(v!=null&&v!=='null'){DB.set(k,null);n++;}
+ }catch(e){}});
+ return n;
+}
 function flDemoRetirerSansBracelet(){
  if(window.flMontreConnue!==false)return 0;
  if(typeof flBraceletDejaVu==='function'&&flBraceletDejaVu())return 0;
@@ -720,6 +746,7 @@ function flDemoRetirerSansBracelet(){
   if(vif&&typeof vif==='object'){Object.keys(vif).forEach(function(f){delete vif[f];});vif.hr=[];vif.rr=[];}
   DB.set(k,null);n++;
  }catch(e){}});
+ try{n+=flDemoDerivesRetirer();}catch(e){}   /* 4 oct. 2026 — et ce qu'ils ont fait calculer */
  return n;
 }
 /* ═══ 4 oct. 2026 — LES RESTES D'UNE DÉMO FERMÉE AVANT LE CORRECTIF ════════
@@ -753,7 +780,7 @@ window.flDemoRestesRetirer=function(){try{
  if(window.flMontreConnue!==false||flDemoActive())return 0;
  if(localStorage.getItem('flintDemoData')==='1')return 0;
  if(typeof flBraceletDejaVu==='function'&&flBraceletDejaVu())return 0;
- if(DB.get('flDemoRestesVus',0)===1)return 0;
+ if(DB.get('flDemoRestesVus2',0)===1)return 0;
  var restes=[],derives=[],DER=/^(recov_|recovFige_|recovEtat_|recovSnap_|besoinAjuste_)/;
  for(var i=0;i<localStorage.length;i++){
   var k=localStorage.key(i)||'';
@@ -761,16 +788,17 @@ window.flDemoRestesRetirer=function(){try{
   if(k.indexOf('watch_')!==0)continue;
   var w=null;try{w=JSON.parse(localStorage.getItem(k)||'null');}catch(e){continue;}
   if(flDemoResteSigne(w)){restes.push(k);continue;}
-  if(w&&typeof w==='object'&&(/"(hr|actDet|rrH|spo2|temp)":\[\[/.test(JSON.stringify(w))||(+w.steps>0)||(+w.kcal>0))){DB.set('flDemoRestesVus',1);return 0;}   /* une vraie mesure : on ne touche à rien, et on ne relit plus */
+  if(w&&typeof w==='object'&&(/"(hr|actDet|rrH|spo2|temp)":\[\[/.test(JSON.stringify(w))||(+w.steps>0)||(+w.kcal>0))){DB.set('flDemoRestesVus2',1);return 0;}   /* une vraie mesure : on ne touche à rien, et on ne relit plus */
  }
- if(!restes.length){DB.set('flDemoRestesVus',1);return 0;}
+ if(!restes.length){var d0=0;try{d0=flDemoDerivesRetirer();}catch(e){}DB.set('flDemoRestesVus2',1);if(d0)window._flSansBraceletMemo=null;return d0;}   /* 4 oct. 2026 — plus de jour semé, mais peut-être ses dérivés (la v2813 les laissait) */
  restes.forEach(function(k){try{
   var vif=(typeof window.flJourMontre==='function')?window.flJourMontre(k.slice(6)):null;
   if(vif&&typeof vif==='object'){Object.keys(vif).forEach(function(f){delete vif[f];});vif.hr=[];vif.rr=[];}
   DB.set(k,null);
  }catch(e){}});
  derives.forEach(function(k){try{DB.set(k,null);}catch(e){}});
- DB.set('flDemoRestesVus',1);
+ try{flDemoDerivesRetirer();}catch(e){}
+ DB.set('flDemoRestesVus2',1);
  window._flSansBraceletMemo=null;
  return restes.length;
 }catch(e){return 0;}};
