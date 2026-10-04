@@ -1875,7 +1875,27 @@
         } catch (e) {}
         return true;
       }
-      return rec.etat === 'FINALIZED';
+      if (rec.etat !== 'FINALIZED') return false;
+      /* ═══ 4 oct. 2026 — PAS D'AFFICHAGE SUR UNE LECTURE PARTIELLE DU MATIN ══
+         Depuis la v2802, la nuit n'est plus lue pendant le sommeil (le 0120 la
+         hacherait) : elle se lit EN ENTIER au réveil, page par page sur ~1 min.
+         La nuit peut donc se finaliser sur les premières pages (réveil précoce)
+         puis se rouvrir/resceller quand les dernières arrivent. Dino, 4 oct :
+         « au réveil, un faux réveil affiché 5-10 s avant le vrai ». Tant que le
+         pont natif signale une livraison différée EN COURS (`flSommeilDiffere`,
+         posé la nuit, remis à 0 au "tout donné"), la porte reste fermée : un
+         chargement plus long, jamais un chiffre faux — ce que Dino demande.
+         Hors flux différé le drapeau est absent (tous les bancs, l'ancien
+         monde, une migration), et rien ne change. Péremption 18 h comme
+         `flNuitAutoDecision`, pour qu'un pont muet ne fige jamais la porte. */
+      try {
+        var _diff = +DB.get('flSommeilDiffere', 0) || 0;
+        if (_diff > 0 && (Date.now() - _diff) < 18 * 3600000) {
+          var _liv = DB.get(CLE_LIVRE + K, null);
+          if (!(_liv && _liv.ts)) return false;
+        }
+      } catch (e) {}
+      return true;
     } catch (e) { return true; }
   };
 
