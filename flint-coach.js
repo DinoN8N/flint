@@ -638,7 +638,7 @@ function flcJour(off,opts){
    e.zonesMin=z&&z.min?z.min.map(function(v){return flcR(v,0);}):null;
    var em=effMetricsOf(K)||{};
    e.zones13=flcR(em.zones13,0); e.zones45=flcR(em.zones45,0); e.muscu=flcR(em.strength,0);
-   e.pas=flcR(flStepsOf(K),0); e.vo2=flcR(flVo2Max(off),0);
+   e.pas=(typeof flSansBracelet==='function'&&flSansBracelet())?null:flcR(flStepsOf(K),0); e.vo2=flcR(flVo2Max(off),0);   /* 4 oct. 2026 — sans bracelet, `flStepsOf` rend 0 : « aucun pas », pas « 0 pas » */
    return e;
   },manques);
   o.seances=flcSur('seances',function(){
@@ -937,7 +937,7 @@ function flcInstantane(opts){
     s&&s.heures!=null?flcHM(s.heures*60):null, s&&s.besoinAjuste!=null?flcHM(s.besoinAjuste*60):null,
     s&&s.dette!=null?flcHM(s.dette*60):null,
     n?flcHHMM(n.couche):null, n?flcHHMM(n.reveil):null,
-    flcR(flStepsOf(K),0), flcR(ki,0), flcR(ko,0),
+    ((typeof flSansBracelet==='function'&&flSansBracelet())?null:flcR(flStepsOf(K),0)), flcR(ki,0), flcR(ko,0),
     (d<0?stressPasse[d+6]:flcR(flStressMoy(d),2)), sn&&sn.hrvSrc||null, flcJournal(jr,true)]);
   }
   var r={cols:['jour','recup','vfc','fcRepos','resp','effort','qualite','efficacite','dormi','besoin','dette',
@@ -1017,7 +1017,7 @@ function flcInstantane(opts){
   var bs=flBesoinSommeil(); r.besoinSommeil=bs?{h:flcHM(bs.min!=null?bs.min:bs.h*60), src:bs.src||null}:null;
   r.reveil=p.wake||null;
   /* la formule de la carte Profil, et on le dit : réveil − besoin de la nuit */
-  if(!L)try{var bn=flBesoinNuitDuJour(K0), w=String(p.wake||'').split(':');
+  if(!L&&!(typeof flSansBracelet==='function'&&flSansBracelet()))try{var bn=flBesoinNuitDuJour(K0), w=String(p.wake||'').split(':');   /* 4 oct. 2026 — sans bracelet, pas de conseil de coucher, au Coach non plus (Dino, 29 sept. : « il n'est pas là, je le veux pas ») */
    if(bn&&bn.min!=null&&w.length===2){r.coucherConseille=flcHHMM((+w[0])*60+(+w[1])-bn.min);
     r.coucherConseilleSrc='carte Profil : réveil − besoin de la nuit';}}catch(e){}
   r.ton=flTonCoach();
@@ -1209,7 +1209,7 @@ function flcGetHistory(a){
    case 'zones13': v=em?flcR(em.zones13,0):null; break;
    case 'zones45': v=em?flcR(em.zones45,0):null; break;
    case 'muscu': v=em?flcR(em.strength,0):null; break;
-   case 'pas': v=flcR(flStepsOf(K),0); break;
+   case 'pas': v=(typeof flSansBracelet==='function'&&flSansBracelet())?null:flcR(flStepsOf(K),0); break;
    case 'kcalBrulees': v=flcR(ko,0); break;
    case 'kcalMangees': v=flcR(ki,0); break;
    case 'balance': v=(ki==null||ko==null)?null:Math.round(ki-ko); break;

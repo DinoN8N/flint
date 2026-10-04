@@ -5183,7 +5183,7 @@ window.flNoteSeanceDetail=function(s,k){
     elle vaut comme donnée finale. */
  if(!s.auto&&s.eff!=null&&!isNaN(+s.eff))
   return {note:+s.eff,mesuree:true,declaree:true};
- var m=null;
+ var m=null; if((typeof flSansBracelet==='function'&&flSansBracelet()))return {note:null,mesuree:false,declaree:!s.auto};   /* 4 oct. 2026 — sans bracelet, aucune note CALCULÉE, même la vieille formule (actStrain) d'une activité sans bornes */
  try{
   if(s.startMin!=null&&typeof flEffortSeance==='function'){
    var f=(s.endMin!=null)?s.endMin:(s.startMin+(s.dur||0));
@@ -11665,7 +11665,7 @@ window.flActiviteData=function(rang,jour,seanceDirecte,id){
   return _fqv; }
  var verdict='Effort validé',sous='Une sortie active et régulière.';
  if(m.strain>=14){verdict='Effort intense';sous='Grosse séance — bravo.';}
- else if(m.strain<6){verdict='Effort léger';sous='Une séance tranquille.';}
+ else if(m.strain<6){verdict='Effort léger';sous='Une séance tranquille.';} if((typeof flSansBracelet==='function'&&flSansBracelet())){verdict=null;sous=null;}   /* 4 oct. 2026 — sans bracelet, la charge vaut 0 faute de pouls : « Effort léger » serait un verdict inventé */
  return {aDesDonnees:true,
   nom:m.name, verdict:verdict, sous:sous,
   debut:m.t0, fin:m.t1, minutes:m.dur, duree:hmsFull(m.totSec),
@@ -11708,11 +11708,11 @@ window.flActiviteData=function(rang,jour,seanceDirecte,id){
    for(var d=1;d<=45;d++){var kk=tk(-d);
     (DB.get('sessions_'+kk,[])||[]).forEach(function(x){
      if(x.type==='nap'||(x.name||'')!==m.name)return;
-     a.push(flNoteSeance(x,kk));});}         /* v1682 — son jour, pas le nôtre */
+     var nv=flNoteSeance(x,kk);if(nv!=null&&!isNaN(nv))a.push(+nv);});}         /* v1682 — son jour, pas le nôtre ; 4 oct. 2026 — une note ABSENTE (sans bracelet) n'est pas un zéro : « 0 » s'affichait en moyenne */
    if(!a.length)return null;
    var v=a.reduce(function(p,c){return p+c;},0)/a.length;
    return String(Math.round(v*10)/10).replace('.',flSeparateurDecimal());}catch(e){return null;}})(),
-  pasMoy:(function(){try{var a=[];
+  pasMoy:(function(){try{if(typeof flSansBracelet==='function'&&flSansBracelet())return null;var a=[];   /* 4 oct. 2026 — sans bracelet, pas de « ▼ 4160 » : cette moyenne se FABRIQUE avec la durée (×104 ou ×128), aucun pas n'a été compté */
    for(var d=1;d<=45;d++){var kk=tk(-d);
     (DB.get('sessions_'+kk,[])||[]).forEach(function(x){
      if(x.type==='nap'||(x.name||'')!==m.name)return;
@@ -11890,7 +11890,7 @@ window.flActiviteParGps=function(gid){
        du bracelet — et l'écraser par l'estimation du natif RECRÉE l'écart que
        ce commentaire voulait fermer. On ne comble donc plus qu'un vide. */
     if(d3.kcal==null&&(+g.caloriesEstimees)>0)
-     d3.kcal=String(Math.round(+g.caloriesEstimees));
+     d3.kcal=(typeof flSansBracelet==='function'&&flSansBracelet())?null:String(Math.round(+g.caloriesEstimees));   /* 4 oct. 2026 — sans bracelet, pas de calories au forfait (décision de Dino, 29 sept.) */
     return d3;
    }
   }
@@ -23619,7 +23619,7 @@ function wipeData(){if(!confirm('Vider TOUTES les données (démo incluse) et re
 function exportData(){const dump={};Object.keys(localStorage).forEach(k=>dump[k]=localStorage.getItem(k));const t=JSON.stringify(dump,null,2);try{const blob=new Blob([t],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='flint-data.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},1500);toast('⬇️ Données exportées (flint-data.json)')}catch(e){try{navigator.clipboard.writeText(t);toast('📋 Données copiées')}catch(e2){toast('Export impossible')}}}
 
 /* ===== Coach IA (réponses fondées sur les données du jour) ===== */
-const APP_VERSION='v2812';
+const APP_VERSION='v2813';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
@@ -35217,7 +35217,7 @@ window.flDeriverMetriques=function(k,liste){
      }
     }
    }catch(e){}
-   if(R.kcal==null&&g&&g.caloriesEstimees){
+   if(R.kcal==null&&g&&g.caloriesEstimees&&!(typeof flSansBracelet==='function'&&flSansBracelet())){   /* 4 oct. 2026 — sans bracelet, la sortie n'a pas de calories : Mode Sport au téléphone = temps, distance, allure (Dino, 29 sept.) */
     /* LE MET EST UN DERNIER RECOURS, ET IL FAUT LE DIRE. Il ne regarde que le
        SPORT DECLARE et la duree : choisir « VTT » suffit a produire des calories
        de VTT, meme assis sur un scooter. C est le defaut remonte par Dino. Le
@@ -37488,7 +37488,7 @@ window.flShellHonest=function(doc){try{
   }
  }catch(e){}}
  /* dans la coquille : scan + connexion auto à la montre au lancement */
- if(native)setTimeout(function(){try{if(typeof flSansBracelet==='function'&&flSansBracelet())return;native.postMessage({cmd:'start'});}catch(e){}},1500);   /* 28 sept. 2026 — sans bracelet, pas de recherche automatique : elle adoptait le premier capteur cardiaque à portée (RegleLien). L appairage volontaire passe par montreChercher(), natif. */
+ if(native)(function _flDepart(n){setTimeout(function(){try{var c=window.flMontreConnue;if(c===undefined&&n<20)return _flDepart(n+1);if(c===false){if(typeof flDemoRestesRetirer==='function')flDemoRestesRetirer();return;}if(typeof flDemoActive==='function'&&flDemoActive())return;if(typeof flSansBracelet==='function'&&flSansBracelet())return;native.postMessage({cmd:'start'});}catch(e){}},n?500:1500);})(0);   /* 28 sept. 2026 — sans bracelet, pas de recherche automatique : elle adoptait le premier capteur cardiaque à portée (RegleLien). L appairage volontaire passe par montreChercher(), natif. 4 oct. 2026 — on ATTEND le témoin natif (posé au didFinish, parfois après ces 1,5 s : `undefined` laissait passer la recherche, qui adoptait un gadget voisin — Mi Band, ceinture, tout ce qui expose 180F/180D — et la porte restait ouverte pour toujours) ; jamais pendant une démo ; témoin faux = pas de recherche, et les restes d une démo fermée par un vieux moteur partent (flint-semis.js). Muet après 11,5 s : comme avant. */
  /* v1316 — la morphologie part avec la mise en route : le pont la garde et
     corrige la montre a la premiere lecture de profil. */
  if(native)setTimeout(function(){try{flPousserMorpho();}catch(e){}},1800);

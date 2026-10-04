@@ -722,6 +722,58 @@ function flDemoRetirerSansBracelet(){
  }catch(e){}});
  return n;
 }
+/* ═══ 4 oct. 2026 — LES RESTES D'UNE DÉMO FERMÉE AVANT LE CORRECTIF ════════
+   Dino : « la dernière fois, ils avaient les calories qu'ils avaient
+   dépensées. Comment c'est possible, étant donné qu'ils portent pas la
+   montre ? » Le cas le plus courant : le bouton NOIR de l'onboarding,
+   « Découvrir avec des données d'exemple ». Il s'ouvre au PREMIER lancement,
+   donc sur le moteur EMBARQUÉ des binaires 1.0/1.1, qui n'a pas
+   `flDemoRetirerSansBracelet` ; la sortie (« Quitter la démo ») gardait les
+   nuits semées sans leur marque. Mesuré au banc : 34 journées, 31 scores de
+   récupération, et l'accueil disait « 2 291 kcal brûlées · Élevée » pour
+   toujours, porte ouverte.
+   On les reconnaît SANS la marque, à une signature qu'aucune nuit du bracelet
+   ne porte (vérifié sur les relevés de Dino) : la nuit semée a `hrSamples` et
+   pas de `stageSrc` ; la journée n'a plus de courbe de pouls, au plus six
+   points de VFC, ni compteur ni bloc d'activité. Le moindre jour qui ne
+   porte pas cette signature et porte une mesure arrête TOUT : on ne retire
+   rien d'une base qui a vu un bracelet. Les scores dérivés (récupération,
+   besoin ajusté) partent avec : sans une seule vraie nuit, ils ne viennent
+   que d'elles. Banc : test-sans-bracelet.js § 7. */
+function flDemoResteSigne(w){
+ if(!w||typeof w!=='object'||w.demo)return false;
+ var n=w.night;
+ if(!n||typeof n!=='object'||!Array.isArray(n.hrSamples)||n.stageSrc||n.stagesV8||n.source)return false;
+ if(Array.isArray(w.hr)&&w.hr.length)return false;
+ if(Array.isArray(w.hrvMontre)&&w.hrvMontre.length>6)return false;
+ if((+w.steps>0)||(+w.kcal>0))return false;
+ return !['actDet','rrH','spo2','temp','hrBrut'].some(function(f){return Array.isArray(w[f])&&w[f].length;});
+}
+window.flDemoRestesRetirer=function(){try{
+ if(window.flMontreConnue!==false||flDemoActive())return 0;
+ if(localStorage.getItem('flintDemoData')==='1')return 0;
+ if(typeof flBraceletDejaVu==='function'&&flBraceletDejaVu())return 0;
+ if(DB.get('flDemoRestesVus',0)===1)return 0;
+ var restes=[],derives=[],DER=/^(recov_|recovFige_|recovEtat_|recovSnap_|besoinAjuste_)/;
+ for(var i=0;i<localStorage.length;i++){
+  var k=localStorage.key(i)||'';
+  if(DER.test(k)){derives.push(k);continue;}
+  if(k.indexOf('watch_')!==0)continue;
+  var w=null;try{w=JSON.parse(localStorage.getItem(k)||'null');}catch(e){continue;}
+  if(flDemoResteSigne(w)){restes.push(k);continue;}
+  if(w&&typeof w==='object'&&(/"(hr|actDet|rrH|spo2|temp)":\[\[/.test(JSON.stringify(w))||(+w.steps>0)||(+w.kcal>0))){DB.set('flDemoRestesVus',1);return 0;}   /* une vraie mesure : on ne touche à rien, et on ne relit plus */
+ }
+ if(!restes.length){DB.set('flDemoRestesVus',1);return 0;}
+ restes.forEach(function(k){try{
+  var vif=(typeof window.flJourMontre==='function')?window.flJourMontre(k.slice(6)):null;
+  if(vif&&typeof vif==='object'){Object.keys(vif).forEach(function(f){delete vif[f];});vif.hr=[];vif.rr=[];}
+  DB.set(k,null);
+ }catch(e){}});
+ derives.forEach(function(k){try{DB.set(k,null);}catch(e){}});
+ DB.set('flDemoRestesVus',1);
+ window._flSansBraceletMemo=null;
+ return restes.length;
+}catch(e){return 0;}};
 window.flDemoFermer=function(){
  var etait=flDemoActive();
  try{DB.set('flDemoSession',0);}catch(e){}                    /* la porte D'ABORD */
