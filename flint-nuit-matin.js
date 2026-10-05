@@ -2770,4 +2770,32 @@
     return out;
   } catch (e) { return out; } };
 
+
+  /* ═══ 5 oct. 2026 — LE DÉ-SPIKE SUR LE CHEMIN DE L'ÉCRAN NATIF ═════════════
+     L'écran « Ma nuit » natif ne lit PAS `nuit.hrSamples` (la courbe nettoyée en
+     v2812/v2816) : il lit `fc` de `flSommeilData`, tiré de `w.hr` BRUT, borné au
+     lit puis décimé par `flIdxDense`. Dino, 5 oct., en v2816 servie : « toujours
+     pas la nouvelle courbe » — la charge Sommeil portait encore un max à 112.
+     Cet adaptateur prend les paires [minute du jour, bpm] déjà bornées et dans
+     l'ordre du sommeil, en fait une courbe minute par minute (médiane), la passe
+     à `flHrDespikeNuit` — la MÊME règle, le même arbitrage R-R — et ne remplace
+     que les minutes que la règle a lissées. Le reste garde sa densité brute. */
+  window.flHrDespikeBrutNuit = function (brut, n, K) { try {
+    if (!brut || brut.length < 7 || !n || n.bedMin == null || !K
+        || typeof window.flHrDespikeNuit !== 'function' || typeof flMinuitDe !== 'function') return brut;
+    var b = n.bedMin, wrap = (n.wakeMin != null && b > n.wakeMin);
+    var off = function (m) { return (wrap && m < b) ? m + 1440 - b : m - b; };
+    var N = 0, acc = {};
+    for (var i = 0; i < brut.length; i++) {
+      var o = off(brut[i][0]); if (o < 0) continue;
+      (acc[o] = acc[o] || []).push(brut[i][1]); if (o + 1 > N) N = o + 1;
+    }
+    if (N < 7) return brut;
+    var pm = new Array(N);
+    for (var q = 0; q < N; q++) { var a = acc[q]; if (a && a.length) { a.sort(function (x, y) { return x - y; }); pm[q] = a[a.length >> 1]; } else pm[q] = null; }
+    var t0 = flMinuitDe(K) + (wrap ? b - 1440 : b) * 60;
+    var cl = window.flHrDespikeNuit(pm.slice(), t0, K);
+    return brut.map(function (x) { var o = off(x[0]); return (o >= 0 && cl[o] != null && pm[o] != null && cl[o] !== pm[o]) ? [x[0], cl[o]] : x; });
+  } catch (e) { return brut; } };
+
 })();
