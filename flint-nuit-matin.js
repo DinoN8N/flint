@@ -2751,9 +2751,16 @@
       var lm = locMed(i);
       if (lm == null || out[i] == null || out[i] <= lm + SEUIL) { i++; continue; }
       var j = i; while (j < out.length && out[j] != null && out[j] > lm + SEUIL) j++;   /* la salve i..j-1 */
-      var duree = j - i, confirme = false;
-      for (var k2 = i; k2 < j; k2++) { var f = fast[k2]; if (f != null && f >= lm + 12) { confirme = true; break; } }
-      if (duree <= 3 && !confirme) {
+      var duree = j - i, confirme = false, aDuRR = false;
+      /* le R-R est l'arbitre, sur toute la salve (±1 min) : s'il montre un vrai
+         cœur rapide → on GARDE ; s'il est présent et montre un pouls de SOMMEIL
+         → artéfact prouvé, même si la salve dure (mauvais contact prolongé :
+         courbe à 112 pendant que le R-R est à 50, nuit du 4→5). */
+      for (var k2 = Math.max(0, i - 1); k2 <= j; k2++) { var f = fast[k2]; if (f == null) continue; aDuRR = true; if (f >= lm + 12) { confirme = true; break; } }
+      /* on lisse : une salve courte sans confirmation (artéfact optique isolé),
+         OU une salve que le R-R dément positivement (pouls de sommeil). Une
+         salve longue SANS aucun R-R reste gardée — on ne tranche pas sans preuve. */
+      if (!confirme && (duree <= 3 || aDuRR)) {
         var g = (i > 0 && out[i - 1] != null) ? out[i - 1] : lm, d = (j < out.length && out[j] != null) ? out[j] : lm;
         for (var k3 = i; k3 < j; k3++) { out[k3] = Math.round(g + (d - g) * ((k3 - i + 1) / (duree + 1))); retires++; }
       }
