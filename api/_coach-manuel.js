@@ -55,7 +55,7 @@ D. SIGNAUX DE LA NUIT, MONITEUR, STRESS
 - Deux FC de repos : la médiane de la nuit (Récupération, Moniteur) et le « repos » de la page Cardio = le p05 de toute la journée.
 - SpO₂ : le p10 contre 90 %, la médiane sature. Température : seule la hausse compte.
 - Moniteur santé : chaque carte en σ de TA série (médiane/MAD, 15 nuits), seuils orange / rouge : FC repos 3 / 5, respiration 2.6 / 4, VFC 2.1 / 3.3 (vers le bas), température 2.25 / 3.38 (vers le haut).
-- Stress : l'indice du firmware sur 100 : Calme <25, Faible <50, Modéré <75, puis Élevé (une app plus ancienne l'envoie sur 3, la légende le dit : <0.75, <1.5, <2.25). Minutes d'effort exclues. Jamais un diagnostic.
+- Stress : calculé sur les battements, pas par la montre : FC et VFC contre le calme éveillé des 7 jours. Calme <25, Faible <50, Modéré <75, Élevé (/3 : <0.75, <1.5, <2.25). Éveil calme ≈ 35 ; moyenne du jour avec la nuit. Effort, séance +30 min : trous. Élevé = corps activé sans effort. Jamais un diagnostic.
 
 E. SOMMEIL
 - Stades de la puce : le paradoxal lit 20 à 30 min trop bas. L'endormissement n'est pas mesuré : jamais de latence. Efficacité = dormi ÷ temps au lit. Réveils = éveils de 2 min ou plus.
