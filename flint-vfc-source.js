@@ -162,3 +162,201 @@ window.flVfcRetenue = function (rmssd, puce, K, w) {
     return out;
   } catch (e) { return out; }
 };
+
+/* ═══ v2827 — LE STRESS SE CALCULE SUR LES BATTEMENTS, PLUS PAR LA PUCE ═══════
+
+   POURQUOI ICI. Même métier que le reste du fichier : une mesure que la puce
+   rendait, refaite par nous sur `rrH`. Et un fichier NEUF ne voyagerait pas :
+   l'OTA ne transporte que la liste `WebRoot.updatableFiles`, compilée dans
+   l'app (v2183). `flStressCourbe` (index.html) appelle `flStressBattements`
+   par `typeof` ; sans ce fichier, elle retombe sur l'indice de la puce.
+
+   CE QUI A CASSÉ. Le 30 sept. 2026 à 09:23, juste après la mise à jour 0088 →
+   0120 (la montre se tait de 09:14 à 09:19), l'indice `hrvMontre[i][2]`
+   tombe à ~12/100 et n'en bouge plus : moyenne du jour 49-52 avant, 15-21
+   après, zéro minute « élevé » en une semaine. Le 0120 calcule sa VFC sur les
+   battements BRUTS (corrélation avec notre RMSSD non filtré 0,42 → 0,77 ; elle
+   suit le bruit, 61 → 148 ms) et son indice s'effondre avec. Félix, même app,
+   mêmes jours : normal.
+
+   ET L'ANCIEN NE VALAIT GUÈRE MIEUX. Sur 2 895 mesures de Dino et 3 987 de
+   Félix sous le 0088, l'indice MONTE avec la VFC (+0,40) et avec le bruit
+   (−0,60 avec la qualité du signal) : le « stress » de journée qu'il montrait
+   était surtout le poignet qui bouge. Le recopier aurait recopié le défaut.
+
+   CE QU'ON CALCULE. Chaque bloc `rrH` (une minute de battements toutes les
+   cinq) donne deux nombres, comparés à TA référence ÉVEILLÉ AU CALME des sept
+   derniers jours (hors sommeil, hors effort) :
+     · la FC — moitié médiane des intervalles du bloc, moitié FC minute de la
+       montre sur ±2 min (la plus stable des sources : autocorr. 5 min
+       0,71 / 0,49 / 0,63 contre 0,67 / 0,43 / 0,56 pour le bloc seul) ;
+     · la VFC — RMSSD des paires à moins de 7 % d'écart (Malik resserré). À
+       20 %, la VFC de journée sortait PLUS haute que la nuit (75-93 contre
+       64-76 ms : c'est le bruit) ; à 7 % elle ne dépend plus de la qualité
+       (pente −0,012 / −0,050 / +0,016 par dixième) et reste sous la nuit.
+   z = (½·écart de FC + ½·baisse de VFC), en σ robustes de ta référence, puis
+   100/(1+e^−(z−0,62)) : ton éveil au calme habituel vaut ~35 (« faible »),
+   +1 σ ~60, +2 σ ~80.
+
+   CE QU'ON NE NOTE PAS — des TROUS, jamais des pics (doctrine v1801) :
+   le sommeil compte, mais l'effort non : ≥ 40 pas en 8 min, une séance
+   (sieste exceptée) et les 30 min qui la suivent (mesuré : 74 → 68 → 48 puis
+   retour à la base, c'est le cœur qui redescend), la FC d'effort, et un bloc
+   dont moins de 30 % des battements sont propres (le poignet bouge).
+
+   VÉRIFIÉ (35 journées, Dino 0088 + 0120, Félix 0088) : la nuit plus calme que
+   la journée 33 fois sur 35 (médiane 10 contre 34-40) ; à l'éveil 19-29 %
+   calme, 52-61 % faible, 14-24 % modéré, 1-4 % élevé ; continuité à travers
+   le changement de firmware ; les pics de Dino tombent sur des soirées à
+   75-88 bpm sans un pas. Prototype : scratchpad 5a85c8c2, `stress/final.py`.
+
+   FIGÉ. `rrH` part au natif après sept jours : une journée passée (écart ≤ −2)
+   fige sa série dans `watch_K.stressFlint` ({v, n, p:[minute, indice, …]}),
+   et la recalcule seulement si des battements arrivent après (+12 blocs). */
+var FLSB = { SEUIL: 0.07, QMIN: 0.30, PAS: 40, FEN: 7, REF_MIN: 60,
+             CENTRE: 0.62, PENTE: 1.0, APRES: 30, V: 1 };
+
+function flsbCle(K, d) {
+  var p = String(K).split('-'), t = new Date(+p[0], +p[1] - 1, +p[2] + (d || 0));
+  return t.getFullYear() + '-' + (t.getMonth() + 1) + '-' + t.getDate();
+}
+function flsbMinuit(K) { var p = String(K).split('-'); return new Date(+p[0], +p[1] - 1, +p[2]).getTime(); }
+function flsbMediane(a) {
+  var s = a.slice().sort(function (x, y) { return x - y; }), n = s.length;
+  return n % 2 ? s[n >> 1] : (s[n / 2 - 1] + s[n / 2]) / 2;
+}
+/* σ robuste : écart interquartile / 1,349, rangs arrondis vers le bas — le
+   calcul exact du prototype, pour que le moteur rende ses chiffres. */
+function flsbSigma(a) {
+  var s = a.slice().sort(function (x, y) { return x - y; }), n = s.length;
+  return (s[Math.floor(0.75 * (n - 1))] - s[Math.floor(0.25 * (n - 1))]) / 1.349;
+}
+function flsbW(k) { try { return (typeof window.watchOf === 'function') ? window.watchOf(k) : null; } catch (e) { return null; } }
+
+/* Les fenêtres de sommeil du jour K, en minutes de K : celles de K et celles
+   de K+1 (une nuit commencée avant minuit est rangée au jour du réveil). */
+function flsbSommeils(K, w) {
+  var t0 = flsbMinuit(K), F = [];
+  [w, flsbW(flsbCle(K, 1))].forEach(function (x) {
+    ((x && x.sommeils) || []).forEach(function (s) {
+      if (s && s.debut != null && s.fin != null) F.push([(s.debut - t0) / 60000, (s.fin - t0) / 60000]);
+    });
+  });
+  if (!F.length && w.night && w.night.bedMin != null && w.night.wakeMin != null) {
+    var a = +w.night.bedMin, b = +w.night.wakeMin; if (a > b) a -= 1440; F.push([a, b]);
+  }
+  return F;
+}
+/* Les pas minute par minute, depuis `actDet` : [instant, total, kcal, [10 minutes], …]. */
+function flsbPas(K, w) {
+  var t0 = flsbMinuit(K), out = {};
+  (w.actDet || []).forEach(function (e) {
+    if (!e || !Array.isArray(e[3])) return;
+    var ms = e[0] > 1e12 ? e[0] : e[0] * 1000, m0 = Math.round((ms - t0) / 60000);
+    e[3].forEach(function (s, i) { if (s > 0) out[m0 + i] = (out[m0 + i] || 0) + s; });
+  });
+  return out;
+}
+function flsbSeances(K) {
+  var L = [];
+  try { L = (typeof DB !== 'undefined' && DB && DB.get) ? (DB.get('sessions_' + K, []) || []) : []; } catch (e) { L = []; }
+  return L.filter(function (s) { return s && s.type !== 'nap' && s.startMin != null && s.endMin != null; })
+          .map(function (s) { return [s.startMin - 2, s.endMin + FLSB.APRES]; });
+}
+
+/* Les blocs d'une journée, notés de leurs deux nombres et de leurs refus.
+   Mémoire par jour : la clé suit tout ce dont le résultat dépend. */
+function flsbBlocs(K, w) {
+  var memo = window._flsbMemo = window._flsbMemo || {};
+  var rh = w.rrH || [], ses = flsbSeances(K);
+  var cle = 'b|' + K + '|' + rh.length + '|' + (w.hr ? w.hr.length : 0) + '|' + (w.actDet ? w.actDet.length : 0)
+          + '|' + JSON.stringify(ses) + '|' + ((w.sommeils || []).length);
+  if (memo[cle]) return memo[cle];
+  if (Object.keys(memo).length > 150) memo = window._flsbMemo = {};
+  var hr = w.hr || [];
+  try { if (typeof window.flHrPropre === 'function') hr = window.flHrPropre(hr) || hr; } catch (e) {}
+  var fcMin = {}; hr.forEach(function (x) { if (x && x[1] > 0) fcMin[x[0]] = x[1]; });
+  var seuil = null;
+  try {
+    var fm = (typeof window.flFcMax === 'function') ? window.flFcMax() : null;
+    var rs = (typeof window.flFcRepos === 'function') ? window.flFcRepos(K) : null;
+    if (fm && fm.v) seuil = (rs && rs.v) ? rs.v + 0.40 * (fm.v - rs.v) : fm.v * 0.60;
+  } catch (e) {}
+  var pas = flsbPas(K, w), dorts = flsbSommeils(K, w), out = [];
+  rh.forEach(function (e) {
+    if (!e || e.length < 2 || !Array.isArray(e[1])) return;
+    var m = e[0], v = e[1].filter(function (x) { return x >= 300 && x <= 2000; });
+    if (v.length < 20) return;
+    var p20 = 0, car = 0, n7 = 0;
+    for (var i = 1; i < v.length; i++) {
+      var d = v[i] - v[i - 1], a = Math.abs(d);
+      if (a <= 0.2 * v[i - 1]) p20++;
+      if (a <= FLSB.SEUIL * v[i - 1]) { car += d * d; n7++; }
+    }
+    if (n7 < 8 || car <= 0) return;
+    var q = p20 / (v.length - 1), fb = 60000 / flsbMediane(v), mm = [];
+    for (var t = m - 2; t <= m + 2; t++) if (fcMin[t]) mm.push(fcMin[t]);
+    var fm5 = mm.length ? mm.reduce(function (s, x) { return s + x; }, 0) / mm.length : null;
+    var fc = (fm5 != null) ? (fb + fm5) / 2 : fb;
+    var np = 0; for (var u = m - 6; u <= m + 1; u++) np += pas[u] || 0;
+    /* L'effort se juge sur la PLUS HAUTE des deux FC : la moyenne qui sert
+       au calcul diluerait un bloc d'effort dans une minute calme voisine. */
+    out.push({ m: m, fc: fc, V: Math.log(Math.sqrt(car / n7)), q: q,
+               dort: dorts.some(function (f) { return m >= f[0] && m <= f[1]; }),
+               exclu: np >= FLSB.PAS || q < FLSB.QMIN || (seuil != null && Math.max(fb, fm5 || 0) >= seuil)
+                      || ses.some(function (s) { return m >= s[0] && m <= s[1]; }) });
+  });
+  return (memo[cle] = out);
+}
+
+/* La référence ÉVEILLÉ AU CALME des sept jours qui finissent à K. */
+function flsbReference(K) {
+  var R = [], sig = [];
+  for (var i = 0; i < FLSB.FEN; i++) {
+    var k = flsbCle(K, -i), w = flsbW(k);
+    if (!w || !w.rrH || !w.rrH.length) continue;
+    var B = flsbBlocs(k, w); sig.push(k + ':' + B.length);
+    B.forEach(function (b) { if (!b.exclu && !b.dort) R.push(b); });
+  }
+  var memo = window._flsbMemo = window._flsbMemo || {}, cle = 'r|' + K + '|' + sig.join(',');
+  if (memo[cle] !== undefined) return memo[cle];
+  if (R.length < FLSB.REF_MIN) return (memo[cle] = null);
+  var fc = R.map(function (b) { return b.fc; }), V = R.map(function (b) { return b.V; });
+  var ref = { mH: flsbMediane(fc), sH: Math.max(3, flsbSigma(fc)), mV: flsbMediane(V), sV: Math.max(0.08, flsbSigma(V)), n: R.length };
+  var C = R.map(function (b) { return flsbComposite(b, ref); });
+  ref.mC = flsbMediane(C); ref.sC = Math.max(0.2, flsbSigma(C));
+  return (memo[cle] = ref);
+}
+function flsbComposite(b, r) { return 0.5 * (b.fc - r.mH) / r.sH + 0.5 * (r.mV - b.V) / r.sV; }
+
+/* Rend les mesures du jour sous la forme de `hrvMontre` — [minute, null,
+   indice 0-100] — ou `null` (aucun battement, aucun figé : la puce reprend),
+   ou `{attente, raison}` quand les battements sont là mais pas encore la
+   référence (une nouvelle montre : il faut ~5 h d'éveil au calme). */
+window.flStressBattements = function (K, w, off) {
+  try {
+    if (!w) return null;
+    var fz = w.stressFlint, rh = w.rrH || [];
+    if (fz && fz.v === FLSB.V && Array.isArray(fz.p) && !(rh.length >= (fz.n || 0) + 12)) {
+      var M = [];
+      for (var i = 0; i + 1 < fz.p.length; i += 2) M.push([fz.p[i], null, fz.p[i + 1]]);
+      return { mes: M, source: 'battements', fige: true };
+    }
+    if (!rh.length) return null;
+    var ref = flsbReference(K);
+    if (!ref) return { mes: [], source: 'battements', attente: true,
+      raison: 'FLINT apprend encore ton calme : la courbe arrive après environ cinq heures de port éveillé' };
+    var mes = [], plat = [];
+    flsbBlocs(K, w).forEach(function (b) {
+      if (b.exclu) return;
+      var z = (flsbComposite(b, ref) - ref.mC) / ref.sC;
+      var s = Math.round(100 / (1 + Math.exp(-FLSB.PENTE * (z - FLSB.CENTRE))));
+      mes.push([b.m, null, s]); plat.push(b.m, s);
+    });
+    if ((off || 0) <= -2 && mes.length && typeof window.wSaveK === 'function') {
+      w.stressFlint = { v: FLSB.V, n: rh.length, p: plat };
+      try { window.wSaveK(K); } catch (e) {}
+    }
+    return { mes: mes, source: 'battements', fige: false };
+  } catch (e) { return null; }
+};

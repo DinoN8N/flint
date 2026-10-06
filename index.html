@@ -23620,7 +23620,7 @@ function wipeData(){if(!confirm('Vider TOUTES les données (démo incluse) et re
 function exportData(){const dump={};Object.keys(localStorage).forEach(k=>dump[k]=localStorage.getItem(k));const t=JSON.stringify(dump,null,2);try{const blob=new Blob([t],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='flint-data.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},1500);toast('⬇️ Données exportées (flint-data.json)')}catch(e){try{navigator.clipboard.writeText(t);toast('📋 Données copiées')}catch(e2){toast('Export impossible')}}}
 
 /* ===== Coach IA (réponses fondées sur les données du jour) ===== */
-const APP_VERSION='v2825';
+const APP_VERSION='v2827';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
@@ -35772,7 +35772,7 @@ window.flDeriverMetriques=function(k,liste){
      chose, `minutesMesurees` qui sert de denominateur aux pourcentages. */
   window.flStressCourbe=function(off){
    try{
-    var w=watchOf(((typeof flCleJourCourant==='function')?flCleJourCourant:tk)(off||0));
+    var _K=((typeof flCleJourCourant==='function')?flCleJourCourant:tk)(off||0), w=watchOf(_K), _sb=(typeof window.flStressBattements==='function')?window.flStressBattements(_K,w,off||0):null;   /* v2827 — la source : nos battements (flint-vfc-source.js) ; la puce en repli seulement sans battements ni série figée */
     if(!w||!w.hrvMontre||!w.hrvMontre.length)return null;
 
     /* ---- les minutes d effort, exclues ---- */
@@ -35785,7 +35785,7 @@ window.flDeriverMetriques=function(k,liste){
     }
 
     /* ---- les mesures de l indice, bornees a l echelle du fabricant ---- */
-    var mes=w.hrvMontre.slice().sort(function(a,b){return a[0]-b[0];})
+    if(_sb&&_sb.attente)return {points:[],mesurees:0,mesures:0,derniere:null,source:'battements',raison:_sb.raison}; var mes=(_sb?_sb.mes:w.hrvMontre).slice().sort(function(a,b){return a[0]-b[0];})
              .filter(function(x){return x.length>2&&x[2]!=null&&+x[2]>=0&&+x[2]<=100;});
     if(!mes.length)return null;
 
@@ -35818,7 +35818,7 @@ window.flDeriverMetriques=function(k,liste){
     for(var d2=mes.length-1;d2>=0;d2--){
      if(!enEffort[mes[d2][0]]){derniere=mes[d2][0];break;}
     }
-    return {points:pts, mesurees:mesurees, mesures:mes.length, derniere:derniere};
+    return {points:pts, mesurees:mesurees, mesures:mes.length, derniere:derniere, source:(_sb?'battements':'montre')};
    }catch(e){return null;}
   };
 
@@ -35846,7 +35846,7 @@ window.flDeriverMetriques=function(k,liste){
      : 'la montre n\'a rien mesuré ce jour-là'; return vide;}
 
    var _c=flStressCourbe(off||0);
-   if(!_c){vide.raison='aucun indice de stress dans les mesures de ce jour-là'; return vide;}
+   if(!_c){vide.raison='aucun indice de stress dans les mesures de ce jour-là'; return vide;} if(_c.raison){vide.raison=_c.raison; vide.source=_c.source; return vide;}
    var pts=_c.points, mesurees=_c.mesurees;
    /* GARDE 3 : douze mesures reelles, soit une heure de port. On compte les
       MESURES, pas les minutes tenues — sinon deux mesures isolees suffiraient a
@@ -35872,7 +35872,7 @@ window.flDeriverMetriques=function(k,liste){
     moyenne:Math.round(moy*100)/100,
     /* CE QUE C EST, dit par la donnee elle-meme et pas par l ecran : l ecran
        n a pas a savoir d ou vient le chiffre pour le nommer honnetement. */
-    source:'montre', echelle:(window.flEchelleStress===100?100:3),
+    source:(_c.source||'montre'), echelle:(window.flEchelleStress===100?100:3),
     moyenneVeille:(function(){if(sansVeille)return null;
      try{var v2=flStressJour((off||0)-1,true);return v2&&v2.aDesDonnees?v2.moyenne:null;}
      catch(e){return null;}})(),
