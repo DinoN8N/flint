@@ -1936,6 +1936,40 @@
      nombres, et c est exactement ce que la source unique existe pour empecher ».
      Deux tests ecrits chacun de son cote finiraient par diverger ; il y en a un.
      Epinglee par `tests/test-accueil-coherent.js` et `tests/garde-journee-coherente.js`. */
+  /* ═══ 6 oct. 2026 — LA CLÉ DE LA JOURNÉE QUI COURT, POUR CE QUI NE LIT QU'UN JOUR ══
+
+     Dino, 27 sept. à 00 h 30 : « moniteur de santé et moniteur de stress, après
+     minuit, ils disparaissent. Tant que ça n'a pas détecté de sommeil, c'est les
+     mêmes données que la journée en cours. »
+
+     La v2690 avait retenu la RANGÉE (garde native sur `journeeLogique.cles`).
+     Restaient les CHIFFRES : six lectures du moteur prenaient `tk(0)` — la date
+     du calendrier — et lisaient donc, dès 00 h 01, une journée civile neuve et
+     vide. Mesuré sur la base de l'iPhone de Dino, tronquée à 00 h 30 le 6 oct.
+     (journée logique encore ancrée au 5) : stress, SpO₂, FC, température, VFC,
+     FC de repos et respiration rendaient TOUS « vide », pendant que la récup et
+     le sommeil — qui passent déjà par la journée logique — tenaient.
+
+     UNE SEULE RÈGLE pour les six, ici, chez la journée logique dont elle
+     dérive (« une seconde règle de changement de jour finirait par tomber un
+     jour à côté de l'autre ») : pour l'écart 0, la clé d'ANCRE de la journée
+     qui court ; pour un jour passé, la date civile, comme avant.
+
+     CE QUI NE CHANGE PAS, ET C'EST VOULU : avant minuit, et après un vrai
+     sommeil, l'ancre EST la date du jour — ces six lectures rendent alors
+     exactement ce qu'elles rendaient. Seule la fenêtre « minuit passé, pas
+     encore dormi » bouge. Et une nuit sans bracelet ne fige pas l'ancre :
+     `flJourLogique` coupe sur « aucune mesure » et sur la nuit muette.
+
+     Index.html est au plafond de son cliquet : la règle vit ici, et ses six
+     lecteurs l'appellent derrière une garde `typeof`. */
+  window.flCleJourCourant=function(off){
+   var o=Math.min(0,(off|0));
+   if(o!==0)return tk(o);
+   try{if(typeof window.flJourLogique==='function'){var j=window.flJourLogique();if(j&&j.cleAncre)return j.cleAncre;}}catch(e){}
+   return tk(0);
+  };
+
   window.flJourneeEnTraitement=function(K){try{
    K=K||tk(0);
    if(K!==tk(0))return false;            /* un jour passe n a pas de matin en cours */

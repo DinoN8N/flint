@@ -9134,7 +9134,7 @@ window.flRecupData=function(_argJour){try{
     (porte unique, partagée avec flAccueilData et flDayCard) : même logique
     qu'ici avant elle, PLUS l'écriture qui fige le secours calculé. */
  var rv=(typeof flRecovLu==='function')?flRecovLu(_off):null;
- var s0=(typeof sensorOf==='function')?sensorOf(K):null;
+ var s0=(typeof sensorOf==='function')?sensorOf(K):null; if(_off===0&&s0&&s0.hrv==null&&s0.rhr==null&&s0.resp==null&&!s0.sleepMin)s0=null;   /* 6 oct. 2026 — une nuit SANS une valeur n'est pas une nuit : à 00 h 30 sans sommeil, sensorOf(6) rendait un objet vide, le repli sur l'ancre (v1471, plus bas) ne jouait jamais, et le Moniteur de santé passait à vide (VFC, FCR, respiration, sommeil). Aujourd'hui seulement : un jour passé se montre tel quel. */
  /* 6 sept. 2026 — LA MEME PORTE QUE L ACCUEIL ET LE SOMMEIL, qui l ont depuis la v2184.
     Celle-ci lisait `sensorOf(K)` en direct : VFC, FC de repos, respiration et
     SOMMEIL PAR RAPPORT AU BESOIN (la duree de la nuit, en %) etaient servis
@@ -9241,7 +9241,7 @@ window.flRecupData=function(_argJour){try{
   if(z==null)return _RCZ.a;
   return z>=-0.35?_RCZ.g:(z>=-1.1?_RCZ.a:_RCZ.r);}
  function hist(f){var o=[];for(var i=21;i>=0;i--){var v=null;
-  try{v=f(tk(_off-i));}catch(e){}   /* v1459 — la fenetre FINIT au jour choisi */
+  try{v=f(tk(_off+_dec-i));}catch(e){}   /* v1459 — la fenetre FINIT au jour choisi ; 6 oct. 2026 — au jour MONTRÉ (`_dec`, le repli sur l'ancre) */
   o.push((v==null||isNaN(v))?null:+v);}return o;}
  /* v1412 — VINGT-DEUX NUITS LUES UNE FOIS, ET NON QUATRE.
     Les quatre courbes de l'en-tête demandaient chacune sa colonne, et chacune
@@ -9251,7 +9251,7 @@ window.flRecupData=function(_argJour){try{
     que sur la page Effort, même absence d'effet sur les chiffres : ce sont les
     mêmes champs, des mêmes nuits. */
  var _n22=[]; for(var _q=21;_q>=0;_q--){var _x=null;
-  try{_x=sensorOf(tk(_off-_q));}catch(e){}   /* v1459 — idem */
+  try{_x=sensorOf(tk(_off+_dec-_q));}catch(e){}   /* v1459 — idem ; 6 oct. 2026 — le Moniteur juge SA plage sur le dernier point (`homogene`, MoniteurSante.swift) : il doit être la nuit montrée, pas le 6 vide */
   _n22.push(_x||null);}
  function colNuit(f){return _n22.map(function(x){var v=null;
   try{v=f(x);}catch(e){}
@@ -9273,7 +9273,7 @@ window.flRecupData=function(_argJour){try{
  var hR=colNuit(function(x){return x?x.rhr:null;});
  var hP=colNuit(function(x){return x?x.resp:null;});
  var hS=_n22.map(function(x,i){var v=null;   /* 28 sept. 2026 — chaque nuit sur SON besoin, comme la carte hebdo (R8) : gelé par jour passé (`besoinAjuste_`), la lecture ne coûte rien */
-  try{if(x&&x.sleepMin){var _nb=need,_bq=(typeof flBesoinJourAjuste==='function')?flBesoinJourAjuste(tk(_off-(21-i))):null;if(_bq&&_bq.min>0)_nb=_bq.min;v=Math.min(100,Math.round(x.sleepMin/_nb*100));}}catch(e){v=null;} return (v==null||isNaN(v))?null:+v;});
+  try{if(x&&x.sleepMin){var _nb=need,_bq=(typeof flBesoinJourAjuste==='function')?flBesoinJourAjuste(tk(_off+_dec-(21-i))):null;if(_bq&&_bq.min>0)_nb=_bq.min;v=Math.min(100,Math.round(x.sleepMin/_nb*100));}}catch(e){v=null;} return (v==null||isNaN(v))?null:+v;});
  var sPct=(s0&&s0.sleepMin)?Math.min(100,Math.round(s0.sleepMin/need*100)):null;
  var metriques=[
   {cle:'hrv', libelle:'VARIABILITÉ DE LA\nFRÉQUENCE CARDIAQUE',
@@ -12651,7 +12651,7 @@ window.flAccueilData=function(_argJour){try{
      source que le reste de l app ; ce qu on ne sait pas lire vaut null et
      s affichera en tiret plutot qu en zero. */
   tableau: (function(){try{
-   var t=(typeof sensorOf==='function')?sensorOf(K):null;
+   var t=(typeof sensorOf==='function')?sensorOf((_JL&&_JL.cleAncre)||K):null;   /* 6 oct. 2026 — la nuit qui a OUVERT la journée qui court : à 00 h 30 sans sommeil, la clé civile neuve n'a ni VFC ni FC de repos (flCleJourCourant) */
    var bl=(function(){try{return (DB.get('bodylog',{})||{})[K]||null;}catch(e){return null;}})();
    function nb(v,d){return v==null?null:(d?String(Math.round(v*10)/10).replace('.',flSeparateurDecimal()):String(Math.round(v)));}
    function mil(v){return v==null?null:(((typeof flNombre==='function'&&flNombre(v))||String(Math.round(v)).replace(/\B(?=(\d{3})+(?!\d))/g,' ')));}
@@ -12678,7 +12678,7 @@ window.flAccueilData=function(_argJour){try{
          v1775) : aucun ecran a changer. Il ne parait que si le bracelet se tait
          depuis plus de 90 minutes EN JOURNEE et sur le JOUR COURANT — sinon
          null, et la ligne reste comme avant. */
-      {libelle:'Pas',                  cle:'steps',    valeur:mil(flStepsOf(K)||null), unite:'pas', fleche:true,
+      {libelle:'Pas',                  cle:'steps',    valeur:mil(((_off===0&&_JLcles.length>1)?_JLcles.reduce(function(a,c){return a+(flStepsOf(c)||0);},0):flStepsOf(K))||null), unite:'pas', fleche:true,
        repere:(function(){try{var _f=(typeof flPasFraicheur==='function')?flPasFraicheur(K):null;
                              return _f?_f.phrase:null;}catch(e){return null;}})()},
       {libelle:'Calories',             cle:'calories', valeur:mil(kcal),       unite:'kcal', fleche:true},
@@ -23620,7 +23620,7 @@ function wipeData(){if(!confirm('Vider TOUTES les données (démo incluse) et re
 function exportData(){const dump={};Object.keys(localStorage).forEach(k=>dump[k]=localStorage.getItem(k));const t=JSON.stringify(dump,null,2);try{const blob=new Blob([t],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='flint-data.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},1500);toast('⬇️ Données exportées (flint-data.json)')}catch(e){try{navigator.clipboard.writeText(t);toast('📋 Données copiées')}catch(e2){toast('Export impossible')}}}
 
 /* ===== Coach IA (réponses fondées sur les données du jour) ===== */
-const APP_VERSION='v2819';
+const APP_VERSION='v2825';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
@@ -30397,7 +30397,7 @@ window.flDansFenetre=function(m,d,f){ return m>=d && m<f; };
    var mes=+pv.vo2Mesure||0;
    if(mes>=15&&mes<=90)return Math.round(mes);
    var fm=flFcMax(); if(!fm)return null;
-   var w=DB.get('watch_'+tk(Math.min(0,off|0)),null);
+   var w=DB.get('watch_'+((typeof flCleJourCourant==='function')?flCleJourCourant:tk)(Math.min(0,off|0)),null);
    var hr=(w&&w.hr)?w.hr.filter(function(x){return x&&x[1]>25&&x[1]<230;}):[];
    if(hr.length<20)return null;
    /* v1240 — meme correction : le rapport FCmax/repos n a de sens qu avec un
@@ -30551,7 +30551,7 @@ window.flDansFenetre=function(m,d,f){ return m>=d && m<f; };
     _tnMemo[k]=t;
     return t;
    }
-   var K=tk(_o), v=nuitDe(K);
+   var K=((typeof flCleJourCourant==='function')?flCleJourCourant:tk)(_o), v=nuitDe(K);
    if(v==null)return null;
    var p=String(K).split('-'), a=[];
    for(var i=1;i<=30;i++){
@@ -30638,7 +30638,7 @@ window.flDansFenetre=function(m,d,f){ return m>=d && m<f; };
      Elle y emporte sa règle de nuit ET son bas de distribution. */
 
   window.flMoyJour=function(champ,mediane,off){try{
-   var w=DB.get('watch_'+tk(Math.min(0,off|0)),null);
+   var w=DB.get('watch_'+((typeof flCleJourCourant==='function')?flCleJourCourant:tk)(Math.min(0,off|0)),null);
    var a=(w&&w[champ])?w[champ].map(function(x){return x[1];}):[];
    if(!a.length)return null;
    if(mediane){a=a.slice().sort(function(x,y){return x-y;});
@@ -30648,7 +30648,7 @@ window.flDansFenetre=function(m,d,f){ return m>=d && m<f; };
   }catch(e){return null;}};
 
   window.flCardioJour=function(off,cible){try{
-   var k=tk(Math.min(0,off|0));
+   var k=((typeof flCleJourCourant==='function')?flCleJourCourant:tk)(Math.min(0,off|0));
    var w=DB.get('watch_'+k,null);
    var hr=(w&&w.hr)?flHrPropre(w.hr).filter(function(x){return x&&x[1]>25&&x[1]<230;}):[];
    if(!hr.length)return null;
@@ -35772,7 +35772,7 @@ window.flDeriverMetriques=function(k,liste){
      chose, `minutesMesurees` qui sert de denominateur aux pourcentages. */
   window.flStressCourbe=function(off){
    try{
-    var w=watchOf(tk(off||0));
+    var w=watchOf(((typeof flCleJourCourant==='function')?flCleJourCourant:tk)(off||0));
     if(!w||!w.hrvMontre||!w.hrvMontre.length)return null;
 
     /* ---- les minutes d effort, exclues ---- */
@@ -35823,7 +35823,7 @@ window.flDeriverMetriques=function(k,liste){
   };
 
   window.flStressJour=function(off,sansVeille){try{
-   var K=tk(off||0), w=watchOf(K);
+   var K=((typeof flCleJourCourant==='function')?flCleJourCourant:tk)(off||0), w=watchOf(K);
    var vide={aDesDonnees:false, points:[], raison:null, source:'montre'};
    /* ═══ v2015 — LA RAISON DIT AUSSI QUAND LA COURBE REVIENT ═══════════════
       Le 29 août à 00h56, l'écran Stress affichait « trop peu de mesures ce jour-là

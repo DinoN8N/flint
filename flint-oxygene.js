@@ -60,7 +60,7 @@
     return _r;
    }catch(e){return _calcul(K);}
   };
-  window.flSpo2Nuit=function(off){return window.flSpo2NuitDe(tk(Math.min(0,off|0)));};
+  window.flSpo2Nuit=function(off){return window.flSpo2NuitDe(((typeof window.flCleJourCourant==='function')?window.flCleJourCourant:tk)(Math.min(0,off|0)));};
 
   /* ═══ v2181 — LE BAS DE LA NUIT, PARCE QUE LA MEDIANE NE VOIT RIEN ════════
 
@@ -128,4 +128,4 @@
     return _r;
    }catch(e){return _calcul(K);}
   };
-  window.flSpo2BasNuit=function(off){return window.flSpo2BasNuitDe(tk(Math.min(0,off|0)));};
+  window.flSpo2BasNuit=function(off){return window.flSpo2BasNuitDe(((typeof window.flCleJourCourant==='function')?window.flCleJourCourant:tk)(Math.min(0,off|0)));};

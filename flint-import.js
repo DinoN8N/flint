@@ -114,3 +114,46 @@ function flImporterBase(base){
  return {faites:faites,refusees:refusees,total:ks.length};
 }
 /* ═══ FIN FL-IMPORT ═════════════════════════════════════════════════════════ */
+
+/* ═══ 6 oct. 2026 — LA PORTE NATIVE DE LA RESTAURATION ══════════════════════
+   L'import existait (ci-dessus, depuis le 30 août) et ne s'atteignait plus :
+   sa seule porte, `flPfImport`, vit dans l'écran web du profil, caché depuis
+   la v947. Le LISEZ-MOI de l'export promettait pourtant « FLINT sait le
+   relire » — et un client qui change d'iPhone sans sauvegarde iCloud
+   repartait de zéro, son export en main.
+
+   Le natif (Mes données → « Restaurer une sauvegarde ») passe le TEXTE du
+   fichier ici, en deux temps : `appliquer` faux pour ANALYSER (ce que contient
+   le fichier, à montrer avant de confirmer), vrai pour POSER. Les mêmes
+   règles que la porte web : `flImpDetecter`, `flImpPlausible`, `flImpAccepte`,
+   `flImporterBase`, et les tracés GPS repartent au natif par le même canal
+   (`importerSeancesGPS`). Rien d'écrit tant que l'analyse n'a pas été
+   confirmée : `appliquer` faux ne touche pas au stockage. */
+window.flImportNatif=function(texte,appliquer){
+ var data=null;
+ try{data=JSON.parse(texte);}catch(e){return {ok:false,raison:'illisible'};}
+ var det=flImpDetecter(data);
+ if(!det.format||(!det.base&&!det.seances)||(det.format==='plat'&&!flImpPlausible(det.base)))
+  return {ok:false,raison:'pas-flint'};
+ var cles=det.base?Object.keys(det.base).filter(flImpAccepte):[];
+ var nG=det.seances?det.seances.length:0;
+ if(!cles.length&&!nG)return {ok:false,raison:'vide'};
+ /* La période se lit sur les journées de la montre : c'est ce que la
+    personne reconnaît (« du 12 juin au 5 octobre »), pas un nombre de clés. */
+ var jours=[];
+ cles.forEach(function(k){var m=/^watch_(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(k);
+  if(m)jours.push([+m[1],+m[2],+m[3]]);});
+ jours.sort(function(a,b){return (a[0]-b[0])||(a[1]-b[1])||(a[2]-b[2]);});
+ var cle=function(j){return j?j[0]+'-'+j[1]+'-'+j[2]:null;};
+ var resume={ok:true,format:det.format,elements:cles.length,seances:nG,journees:jours.length,
+             du:cle(jours[0]),au:cle(jours[jours.length-1]),profil:cles.indexOf('profile')>=0};
+ if(!appliquer)return resume;
+ var r=det.base?flImporterBase(det.base):{faites:0,refusees:[],total:0};
+ resume.faites=r.faites; resume.refusees=r.refusees.length;
+ if(det.seances){
+  try{window.webkit.messageHandlers.flint.postMessage({cmd:'importerSeancesGPS',seances:det.seances});
+      resume.seancesTransmises=nG;}
+  catch(e){resume.seancesTransmises=0;}
+ }
+ return resume;
+};
