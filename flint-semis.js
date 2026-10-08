@@ -7,6 +7,19 @@
    à l'identique — persistRecov, le gel du JOUR, reste au moteur.
    ═══════════════════════════════════════════════════════════════════════════ */
 function flRefuseSemis(nom){
+ /* ═══ 8 oct. 2026 — LA SESSION DE DÉMO N'OUVRE LA PORTE QU'À SON SEMEUR ═══
+    `flSemisInterdit` s'efface pendant une session de démo (v2131), et il
+    laissait alors passer TOUS les semeurs — `simulateData` compris : 185
+    jours de journaux, de séances et de repas sans marque `demo`, que ni la
+    fermeture de la session ni le balayage des marques ne savent retirer. La
+    démo officielle n'a besoin que de `flSeedDemoDays` (flDemoOuvrir, et le
+    bloc de chargement qui respecte la session) ; pendant une session, les
+    autres refusent, où qu'on soit. Banc : test-demo-session.js. */
+ var _sess=false;try{_sess=DB.get('flDemoSession',0)===1;}catch(e){}
+ if(_sess&&nom!=='flSeedDemoDays'){
+  try{console.log('[flint] semis "'+nom+'" REFUSE : pendant une session de démo, seul flSeedDemoDays sème.');}catch(e){}
+  return true;
+ }
  if(!window.flSemisInterdit||!window.flSemisInterdit())return false;
  try{console.log('[flint] semis "'+nom+'" REFUSE : on est dans l application.');}catch(e){}
  try{if(typeof toast==='function')toast('Demo indisponible dans l app');}catch(e){}
@@ -261,197 +274,17 @@ window.flHrPasFabrique=function(serie){
  }catch(e){return 0;}
 };
 
-/* ═══════════════════════════════════════════════════════════════════════════
-   v1355 — TOUT LE FAUX DEHORS. « Il doit rester que ce qui vient du backend. »
-   ═══════════════════════════════════════════════════════════════════════════
-
-   Trois semeurs ont écrit dans cette base, et deux d'entre eux ne marquent
-   RIEN : `simulateData` (185 jours de journaux, capteurs `source:'sim'`,
-   séances `auto`, repas), `flSeedTest` (séances, repas, bodylog) et
-   `flSeedDemoDays` (40 jours de passé, 62 de futur, avec la marque `demo`).
-   Une purge qui ne juge que sur la marque en laisse donc les deux tiers —
-   c'est ce qui s'est passé jusqu'ici.
-
-   CE QUI EST RETIRÉ, ET SUR QUELLE PREUVE :
-
-   1. TOUT LE FUTUR, sans discuter. Aucune mesure ne peut exister pour demain.
-      C'est la preuve la plus solide de toutes, et elle ne demande aucune
-      heuristique.
-   2. LE CAPTEUR SEMÉ se dénonce : `source: 'sim'` ou `'demo'`. La saisie à la
-      main (`saveSensorManual`) et Health Connect n'en portent pas — elles
-      survivent.
-   3. LA COURBE FABRIQUÉE et les compteurs posés avec elle (voir
-      `flHrPasFabrique`), plus le lot de RR semé (quarante valeurs, là où une
-      vraie journée en compte des milliers).
-   4. LE RESTE DE LA JOURNÉE SEMÉE. Un jour dont le capteur est marqué, ou
-      dont la courbe est fabriquée, a été écrit d'un bloc par un semeur : ses
-      séances automatiques, ses journaux et ses repas viennent du même geste.
-
-   CE QUI N'EST JAMAIS TOUCHÉ :
-   · une nuit MESURÉE (`stageSrc` ou `stages`) — même dans un conteneur semé,
-     c'est le piège déjà payé en v1288 ;
-   · une séance SAISIE À LA MAIN (pas de `auto`, pas de marque) ;
-   · les repas d'aujourd'hui et d'hier, qu'on peut avoir tapés soi-même.
-
-   ET LES REPAS PLUS ANCIENS SONT SAUVEGARDÉS AVANT D'ÊTRE RETIRÉS. C'est la
-   seule catégorie où la preuve est indirecte : un repas semé et un repas tapé
-   ont exactement la même forme (`addMeal` ne marque rien). On les range donc
-   dans `purge.total.repas` avant de vider — rien de ce qui a été tapé n'est
-   perdu, même si l'on s'est trompé.
-
-   Relançable à la main : `flPurgeToutLeFaux()` dans la console. */
-window.flPurgeToutLeFaux=function(){
- var B={futur:0,capteurs:0,courbes:0,compteurs:0,rr:0,seances:0,repas:0,
-        journaux:0,recup:0,conteneurs:0,nuitsGardees:0};
- var STORES=['watch_','sensor_','recov_','sessions_','meals_','journal_',
-             'fljrnl_','sante_','gpsjour_','besoinNuit_'];
- var sauve={};
- try{
-  /* 1 — LE FUTUR. */
-  for(var f=1;f<=400;f++){
-   var kf=tk(f);
-   STORES.forEach(function(p){
-    try{if(DB.get(p+kf,null)!=null){DB.set(p+kf,null);B.futur++;}}catch(e){}
-   });
-  }
-  /* 2 — LE PASSÉ, jour par jour, sur preuve. */
-  for(var d=0;d<=400;d++){
-   var K=tk(-d),seme=false,mesuree=false,courbeReelle=false;
-   /* a. le capteur */
-   try{
-    var sn=DB.get('sensor_'+K,null);
-    if(sn&&(sn.demo||sn.source==='sim'||sn.source==='demo')){
-     DB.set('sensor_'+K,null);B.capteurs++;seme=true;
-    }
-   }catch(e){}
-   /* b. le conteneur de la montre : on garde le mesuré, on retire le reste */
-   try{
-    var w=DB.get('watch_'+K,null);
-    if(w&&typeof w==='object'){
-     mesuree=!!(w.night&&(w.night.stageSrc||(w.night.stages&&w.night.stages.length)));
-     if(window.flHrPasFabrique(w.hr)||w.demo){
-      seme=true;
-      if(w.hr&&w.hr.length){w.hr=[];B.courbes++;}
-      if(w.steps!=null||w.kcal!=null||w.dist!=null){
-       delete w.steps;delete w.kcal;delete w.dist;B.compteurs++;
-      }
-      /* Une nuit DÉDUITE d'une courbe fabriquée est fabriquée elle aussi.
-         Une nuit mesurée, non : elle a sa provenance, on n'y touche pas. */
-      if(!mesuree&&w.night){delete w.night;}
-      delete w.demo;
-     }
-     if(w.rr&&w.rr.length&&w.rr.length<=60){w.rr=[];B.rr++;seme=true;}
-     if(!mesuree&&!(w.hr&&w.hr.length)&&!(w.rr&&w.rr.length)
-        &&w.steps==null&&w.kcal==null){
-      DB.set('watch_'+K,null);B.conteneurs++;      /* plus rien de mesuré dedans */
-     }else{
-      DB.set('watch_'+K,w);
-      courbeReelle=!!(w.hr&&w.hr.length);
-      if(mesuree)B.nuitsGardees++;
-     }
-    }
-   }catch(e){}
-   /* c. LES SÉANCES — ET CELLE-CI SE JUGE SUR TOUS LES JOURS, pas seulement
-         sur ceux qu'on a reconnus semés. Dino : « l'activité aussi, j'ai
-         l'impression qu'il y a de fausses activités. »
-         La détection automatique LIT LA COURBE CARDIAQUE du jour. Un jour sans
-         courbe réelle ne peut donc pas avoir produit une séance détectée : si
-         elle porte `auto`, elle a été écrite par un semeur, ou détectée sur une
-         courbe fabriquée qu'on vient justement de retirer. Dans les deux cas
-         elle ne mesure rien — leurs fréquences moyennes (105, 137, 111 bpm)
-         non plus.
-         Une séance SAISIE À LA MAIN n'a pas `auto` : elle vient de
-         l'utilisateur, elle reste, y compris sur un jour semé. */
-   try{
-    var ss=DB.get('sessions_'+K,null);
-    if(ss&&ss.length){
-     var garde=ss.filter(function(x){
-      if(!x)return false;
-      if(x.demo||x.source==='demo'||x.source==='sim')return false;
-      /* v1356 — CE QUE LA MONTRE A RECONNU ELLE-MEME NE SE JUGE PAS.
-         `src:'montre'` vient du canal `seance` : la montre livre le mode
-         sportif, les minutes actives, les pas, les calories et les METS. C'est
-         une MESURE, au meme titre qu'une nuit avec son hypnogramme, et elle ne
-         depend pas de la courbe cardiaque du jour. La regle du dessous
-         l'emportait pourtant sur elle : sur un jour dont le semeur avait
-         ecrase la courbe, une vraie marche livree par le bracelet se faisait
-         retirer comme une deduction. Au-dela de sept jours — ce que la montre
-         garde — elle ne serait jamais revenue. */
-      if(x.src==='montre')return true;
-      if(x.auto&&!courbeReelle)return false;
-      return true;
-     });
-     if(garde.length!==ss.length){
-      DB.set('sessions_'+K,garde);B.seances+=ss.length-garde.length;
-     }
-    }
-   }catch(e){}
-   /* c bis — LES REPAS MARQUÉS, SUR TOUS LES JOURS ET SANS ATTENDRE.
-      v1356 — Dino, en regardant « Ma journée » : « œuf brouillé, avocat, bol
-      de quinoa… tout le reste c'est complètement faux ». Ce sont les entrées
-      LITTÉRALES des tables de `flSeedDemoDays` (`Œufs brouillés & avocat`,
-      `Bowl quinoa thon`), et le semeur les écrit avec `demo:true` — la preuve
-      est donc dans l'objet lui-même. Elles étaient pourtant derrière la garde
-      `seme` d'en dessous, qui ne s'ouvre que si le capteur ou la courbe du jour
-      trahissent le semeur : un jour dont il n'aurait semé QUE les repas
-      passait entre les mailles. Un repas marqué est faux, point, quel que
-      soit le jour. */
-   try{
-    var mm=DB.get('meals_'+K,null);
-    if(mm&&mm.length){
-     var mk=mm.filter(function(x){return !(x&&(x.demo||x.source==='demo'||x.source==='sim'));});
-     if(mk.length!==mm.length){DB.set('meals_'+K,mk);B.repas+=mm.length-mk.length;}
-    }
-   }catch(e){}
-   if(!seme)continue;
-   /* d. les journaux du jour semé */
-   ['journal_','fljrnl_'].forEach(function(p){
-    try{if(DB.get(p+K,null)!=null){DB.set(p+K,null);B.journaux++;}}catch(e){}
-   });
-   /* e. la récupération d'un jour sans nuit mesurée : elle ne repose sur rien.
-         Le moteur recalcule les vraies à la demande. */
-   try{
-    if(!mesuree&&DB.get('recov_'+K,null)!=null){DB.set('recov_'+K,null);B.recup++;}
-   }catch(e){}
-   /* f. les repas — sauvegardés d'abord, et jamais ceux des deux derniers
-         jours, qu'on a pu taper soi-même ce matin. */
-   try{
-    var ms=DB.get('meals_'+K,null);
-    if(ms&&ms.length&&d>=2){
-     sauve[K]=ms;DB.set('meals_'+K,[]);B.repas+=ms.length;
-    }else if(ms&&ms.length){
-     var mg=ms.filter(function(x){return !(x&&(x.demo||x.source==='demo'
-       ||(x.name==='Journée'&&x.time==null&&x.items==null)));});
-     if(mg.length!==ms.length){DB.set('meals_'+K,mg);B.repas+=ms.length-mg.length;}
-    }
-   }catch(e){}
-  }
-  /* 3 — ON COUPE LE ROBINET, sinon tout revient au prochain semis. */
-  try{localStorage.setItem('flintDemoData','0');}catch(e){}
-  /* v2131 — et la session de démo avec : Réinitialiser ferme TOUT, la porte
-     du semis comprise. Sans cette ligne, un « Réinitialiser » pendant une
-     démo purgeait les jours et laissait la porte ouverte. */
-  try{DB.set('flDemoSession',0);}catch(e){}
-  /* ON NE RETIRE PAS `flseedtest` — LE RETIRER REARME LE SEMEUR.
-     C'est le geste qui a fait apparaitre 83 jours factices dans la base de
-     Felix le 10 aout a 09h23 (voir v1351) : une fois le garde efface, il ne
-     restait que la presence du pont natif pour retenir le semeur, et ce pont
-     n'est pas garanti present a la milliseconde ou la ligne s'execute. On le
-     POSE donc a sa valeur de blocage, ce qui est le contraire exact. */
-  ['demo','seeded'].forEach(function(k){try{localStorage.removeItem(k);}catch(e){}});
-  try{DB.set('flseedtest',494);}catch(e){}
-  try{DB.set('flDemoSeed',0);}catch(e){}
-  /* 4 — LE BILAN, gardé en base : une purge muette ne se vérifie pas. */
-  try{DB.set('purge.total.bilan',B);}catch(e){}
-  try{if(Object.keys(sauve).length)DB.set('purge.total.repas',sauve);}catch(e){}
-  console.log('[flint] purge totale — futur:'+B.futur+' capteurs:'+B.capteurs
-   +' courbes:'+B.courbes+' compteurs:'+B.compteurs+' rr:'+B.rr
-   +' seances:'+B.seances+' repas:'+B.repas+' journaux:'+B.journaux
-   +' recup:'+B.recup+' conteneurs:'+B.conteneurs
-   +' | nuits MESUREES conservees : '+B.nuitsGardees);
- }catch(e){try{console.log('[flint] purge totale : '+e.message);}catch(e2){}}
- return B;
-};
+/* ═══ 8 oct. 2026 — flPurgeToutLeFaux EST RETIRÉE ═══════════════════════════
+   La « grande purge » de la v1355 tournait une fois au démarrage
+   (`purge.total`), puis restait à portée de console. Elle jugeait sur la
+   CADENCE (une courbe à écarts égaux vidait le conteneur, ses pas et ses
+   calories), retirait les séances automatiques de tout jour sans courbe, et
+   vidait les repas de plus de deux jours de tout jour qu'elle croyait semé.
+   Elle a tourné partout sur des bases vides ; son drapeau perdu, elle
+   repassait en silence sur de vraies données. Plus rien ne l'appelle : elle
+   part. Ce qui reste juge sur la MARQUE : le balayage v1367 (index.html),
+   `flPurgeDemoDays` ci-dessous, et la fermeture de la démo.
+   Banc : test-purge-faux.js. */
 
 /* Efface tout ce que le semeur a écrit (retour à l'état réel). */
 function flPurgeDemoDays(n,fut){
@@ -508,20 +341,18 @@ function flPurgeDemoDays(n,fut){
          produit. On retire donc ces champs : le bracelet les reecrira a la
          prochaine synchronisation, avec ses vraies valeurs. Mieux vaut un ecran
          vide qu un chiffre invente. */
-      /* On juge sur PREUVE, pas sur le drapeau `demo` : une passe anterieure l a
-         deja retire de ces conteneurs, si bien qu un nettoyage conditionne a sa
-         presence ne s executerait jamais. La preuve, c est la cadence : une
-         courbe cardiaque semee a un point toutes les cinq minutes tres
-         exactement, un vrai capteur non. Quand la courbe est fabriquee, les
-         compteurs poses en meme temps le sont aussi. Idempotent : une fois la
-         courbe videe, il n y a plus de cadence, donc plus rien a retirer. */
-      /* v1348 — un seul détecteur, avec son plancher : voir flHrPasFabrique.
-         Sans lui, ce test emportait aussi les nuits réelles SANS TROU, dont
-         les écarts valent 1 minute d'un bout à l'autre. */
-      var reg=!!window.flHrPasFabrique(v.hr);
-      if(reg||v.demo){
+      /* ═══ 8 oct. 2026 — LA MARQUE D'ABORD, LA CADENCE ENSUITE ═══════════
+         On jugeait ici sur la seule cadence : « une passe antérieure a déjà
+         retiré la marque » — les purges d'août, retirées le 8 oct. Un
+         conteneur SANS marque à cadence régulière, une vraie journée livrée à
+         un point toutes les cinq minutes, perdait sa courbe, ses pas et ses
+         calories. Seul un conteneur marqué `demo` s'ouvre désormais ; la
+         cadence (flHrPasFabrique, plancher compris) dit ensuite si sa courbe
+         est celle du semeur ou celle d'un bracelet qui a écrit par-dessus.
+         Banc : test-purge-faux.js. */
+      if(v.demo){
+       if(window.flHrPasFabrique(v.hr)){v.hr=[];delete v.steps;delete v.kcal;delete v.dist;}
        delete v.demo;
-       if(reg){v.hr=[];delete v.steps;delete v.kcal;delete v.dist;}
        DB.set(p+k,v);ote++;
       }
       garde++;return;

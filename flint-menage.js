@@ -249,7 +249,17 @@ window.flPoidsWebKit=function(){try{
    lancement a rendu — sans elle, on ne saurait dire si la base revit collée
    au plein qu'en la rapatriant. */
 try{setTimeout(function(){try{window.flRecompacterLarges();}catch(e){}},10000);}catch(e){}
+/* ═══ 8 oct. 2026 — LE RELEVÉ DU POIDS, UNE FOIS PAR JOUR ═══════════════════
+   `flPoidsWebKit` relit TOUTE la base et passe une expression régulière sur
+   chaque clé et chaque valeur — plusieurs mégaoctets, dix-sept secondes après
+   CHAQUE lancement, pour une ligne de journal. Une par jour suffit à suivre
+   le remplissage : la clé `flPoidsJournalJour` porte le jour du dernier
+   relevé, posée AVANT la lecture pour qu'un relevé qui échoue ne se rejoue
+   pas à chaque lancement. Le rendu d'un lancement (séries de nuit,
+   caractères larges) ne se lit donc plus qu'au premier lancement du jour. */
 try{setTimeout(function(){try{
+ var _jp=tk();if(DB.get('flPoidsJournalJour','')===_jp)return;
+ DB.set('flPoidsJournalJour',_jp);
  var p=window.flPoidsWebKit();if(p<0)return;
  var m='stockage · '+Math.round(p/1024)+' Ko sur 5 120 ('+Math.round(p*100/5242880)+' %) · rendu à ce lancement : séries de nuit '
   +Math.round((window._flRenduSeries||0)/1024)+' Ko, caractères larges '+Math.round((window._flRenduLarges||0)/1024)+' Ko';

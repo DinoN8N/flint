@@ -2570,21 +2570,7 @@ body.stepsview header{display:none}
   <div class="pfx-row" style="cursor:default;padding-top:4px"><span><span class="pfx-lab">Polar Loop</span><span class="pfx-sub" id="pfxWatchSub">connecté</span></span><span class="pfx-val" id="pfxBatt">—</span></div>
   <button class="pfx-btn pri" type="button" onclick="pullHealthConnect()"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 11-2.64-6.36M21 3v6h-6"></path></svg>Synchroniser mon capteur</button>
   <button class="pfx-btn" type="button" id="pfWatchSim" style="display:none" onclick="setWatchWorn(window._watchWorn===false)"><span id="pfWatchLbl">Simuler : retirer le bracelet</span></button>
-  <!-- v1440 — LE BOUTON D'ESSAI DU MODE SÉANCE, demandé par Dino.
-       « Rajoute un autre bouton pour nous, au-delà du FLINT Tracker : un bouton
-       temporaire où quand on clique dessus ça active le mode sport. »
-       FLINT Tracker fait beaucoup — GPS, chrono, parcours, séance enregistrée.
-       Pour ESSAYER le mode sur une marche de dix minutes, c'est trop. Ce
-       bouton-ci ne fait qu'une chose : ouvrir ou fermer le mode.
-       POURQUOI IL COMPTE : sur la randonnée du 12 août, l'erreur face à WHOOP
-       tombe de 47 bpm hors mode à 8,6 dedans. La cause n'est pas encore prouvée
-       — le capteur s'améliorait déjà avant — et ce bouton est justement là pour
-       le trancher sans redemander d'effort à personne.
-       TEMPORAIRE, ET ÉTIQUETÉ COMME TEL : il disparaîtra quand la question sera
-       réglée. Un bouton d'essai qui reste devient une fonction qu'on n'a jamais
-       décidée. -->
-  <button class="pfx-btn" type="button" onclick="flBasculerModeSeance()"><span id="pfModeSeanceLbl">Essai : activer le mode sport de la montre</span></button>
-  <div class="pfx-sub" id="pfModeSeanceSub" style="margin:-4px 2px 8px;opacity:.75">La montre mesure le cœur toutes les 5 s. À couper après l'effort — il empêche la lecture du sommeil.</div>
+  <!-- 8 oct. 2026 — le bouton « Essai : activer le mode sport » est retiré : voir l'en-tête du 8 oct. à la place de flBasculerModeSeance. -->
   <div class="pfx-k" style="margin:16px 2px 8px">Ou saisir la nuit à la main</div>
   <div class="pfx-ingrid" style="margin-top:0">
     <div><span class="pfx-inlab">HRV (ms)</span><input aria-label="HRV (ms)" id="snHrv" class="pfx-in" type="text" inputmode="decimal"></div>
@@ -2615,7 +2601,7 @@ body.stepsview header{display:none}
 <div class="pfx-card">
   <button class="pfx-btn" type="button" style="margin-top:0" onclick="exportData()">Exporter mes données</button>
   <button class="pfx-btn" type="button" onclick="forceUpdate()">Forcer la mise à jour</button>
-  <button class="pfx-btn" type="button" onclick="simulateData()">Recharger la démo (28 jours)</button>
+  <!-- 8 oct. 2026 — « Recharger la démo (28 jours) » retiré : il appelait simulateData, 185 jours sans marque demo (voir flRefuseSemis, flint-semis.js). -->
   <button class="pfx-btn danger" type="button" onclick="wipeData()">Vider les données capteur</button>
   <p style="font-family:-apple-system,system-ui,sans-serif;font-size:11px;font-weight:300;color:rgb(167,162,154);margin:12px 2px 0;text-align:center" id="verLine"></p>
 </div>
@@ -3243,118 +3229,15 @@ window.flPasFraicheur=function(K){try{
 }catch(e){return null;}};
 
 
-/* ═══ v1887 — LA REPARATION DES PAS DOUBLES ════════════════════════════════
-
-   CE QU ELLE REPARE. Du 12 au 26 aout 2026, chaque tranche de pas a ete ecrite
-   deux fois, a deux heures d ecart. La moitie des pas de chaque journee est un
-   fantome. La regle qui les reconnait vit dans pas.js, elle est eprouvee sur le
-   releve reel du depot, et elle ne retire RIEN d une journee saine.
-
-   ELLE EST IDEMPOTENTE, et le banc le verifie explicitement : la relancer sur
-   une base deja reparee ne retire pas un bloc de plus. C est la condition pour
-   qu elle puisse tourner a chaque demarrage sans manger la journee un peu plus
-   chaque fois.
-
-   ELLE LAISSE UNE TRACE, ET C EST LA SEULE CHOSE QUI SURVIT AUX BLOCS RETIRES.
-   `flPasRepares` garde, par jour repare, le total d avant, le total d apres, le
-   nombre de blocs et le decalage mesure. On ne peut pas ressusciter un bloc
-   avec ca, mais on peut TOUT VERIFIER, et savoir exactement ce que la passe a
-   fait le jour ou quelqu un se demandera pourquoi un chiffre a change.
-
-   `opts.simuler` — elle regarde et rend le compte rendu SANS RIEN ECRIRE.
-   C est le mode qui permet de montrer avant de faire. */
-window.flReparerPasDoubles=function(opts){
- opts=opts||{};
- var r={jours:0, repares:0, blocs:0, pas:0, detail:[], erreurs:0, sansRegle:0};
- /* ═══ v1917 — ELLE NE RELIT PLUS TOUTE LA BASE A CHAQUE LANCEMENT ═════════
-    CE QU ELLE COUTAIT, ET C EST MOI QUI L AI INTRODUIT. Cette passe fait un
-    `DB.get` de CHAQUE journee — vingt-sept chez Dino, plusieurs centaines de
-    kilo-octets chacune : plus de treize megaoctets a decoder, a chaque
-    demarrage et a chaque retour au premier plan.
-    Le 26 aout a 16 h 19, l app demarre a …942 et la fiche d un jour passe est
-    demandee a …948 : en plein dans ce travail. Le moteur n a rendu sa reponse
-    qu apres 34 secondes, et elle est arrivee trop tard pour etre acceptee —
-    « fiche ⊘ REFUSEE · reponse perimee ». Ecran vide, « en attente » partout.
-    Ce n etait pas une lenteur du calcul : `flActiviteData` repond en 51 ms sur
-    ces memes donnees, mesure au banc. C etait une FAMINE, provoquee par moi.
-    LE DRAPEAU EST PERSISTANT. Une fois qu un passage complet n a rien trouve a
-    reparer, il n y a plus aucune raison de relire la base — les tranches
-    doubles sont filtrees A L ENTREE depuis la v1900, donc rien ne peut plus
-    s en ajouter. Il porte le numero de version : une correction future qui
-    aurait besoin d un nouveau passage n aura qu a changer la cle. */
- var CLE_FINI='flPasRepareFiniV1917';
- try{ if(!opts.force && DB.get(CLE_FINI,false)){r.dejaFini=1;return r;} }catch(e){}
- /* `window.flPas` ET PAS `flPas` : la regle vit dans pas.js, donc du point de
-    vue de ce fichier c est une variable qui peut ne pas exister — un web
-    perime, un semis pas encore fait. Une lecture nue LEVE des le premier
-    passage, le try/catch du pont la transforme en « pas de donnees », et
-    l ecran s ouvre vide sans une trace. C est le defaut du 6 aout, et le garde
-    de build l a rattrape ici meme. */
- var P=window.flPas;
- if(!P||!P.nettoyer){r.sansRegle=1;return r;}
- var cles=[];
- try{var _kc=(window.flClesChaudes?flClesChaudes():(function(){var a=[];for(var j=0;j<localStorage.length;j++)a.push(localStorage.key(j));return a;})());for(var i=0;i<_kc.length;i++){var k=_kc[i];   /* 3 oct. 2026 — le haut seulement : une journée en cave a déjà reçu cette réparation (flint-menage.js, flClesChaudes) */
-      if(k&&k.indexOf('watch_')===0)cles.push(k.slice(6));}}catch(e){return r;}
- cles.sort();
- for(var c=0;c<cles.length;c++){
-  var K=cles[c], w=null;
-  try{w=DB.get('watch_'+K,null);}catch(e){r.erreurs++;continue;}
-  if(!w||typeof w!=='object'||!w.actDet||!w.actDet.length)continue;
-  r.jours++;
-  var net=P.nettoyer(w.actDet);
-  if(!net.retires)continue;
-  var avant=P.total(w.actDet), apres=P.total(net.blocs);
-  r.repares++; r.blocs+=net.retires; r.pas+=net.pas;
-  r.detail.push({jour:K, avant:avant, apres:apres,
-                 blocs:net.retires, decalage:net.decalage});
-  if(opts.simuler)continue;
-  /* LES CALORIES SUIVENT LES PAS. Elles etaient sommees sur les memes blocs,
-     donc elles etaient doublees exactement pareil — les laisser en l etat
-     ferait un total de pas juste a cote d une depense fausse. */
-  var sp=0,kc=0;
-  net.blocs.forEach(function(x){sp+=(+x[1]||0);kc+=(+x[2]||0);});
-  w.actDet=net.blocs;
-  if(sp>0)w.steps=Math.round(sp);
-  if(kc>0)w.kcal=Math.round(kc);
-  try{DB.set('watch_'+K,w);
-      /* v1906 — LE DISQUE NE SUFFIT PAS : sans ceci, l ecran continue de servir
-         la journee doublee et le prochain wSaveK la reecrit depuis le cache. */
-      if(typeof window.flWatchReprendre==='function')window.flWatchReprendre(K);}
-  catch(e){r.erreurs++;}
- }
- /* Rien a reparer sur toute la base : on ne repassera plus. On ne pose PAS le
-    drapeau si des erreurs d ecriture sont survenues — le stockage plein est un
-    echec temporaire, et la prochaine occasion doit reessayer. */
- if(!opts.simuler&&!r.repares&&!r.erreurs){try{DB.set(CLE_FINI,true);}catch(e){}}
- if(!opts.simuler&&r.repares){
-  /* ═══ v1893 — LE TÉMOIN NE S'EMPILE PLUS ══════════════════════════════
-     `concat` ajoutait une entrée à CHAQUE passage. Tant que la passe ne
-     tournait qu'au démarrage, un doublon restait rare ; depuis la v1892 elle
-     se relance à chaque retour au premier plan, et l'empilement est devenu la
-     norme : quatre entrées pour deux jours, avec les mêmes avant/après.
-     LES DONNÉES ÉTAIENT SAINES — `nettoyer` est idempotente et rien n'a été
-     divisé deux fois, c'est vérifié. Mais le TÉMOIN surcomptait les jours
-     réparés, et c'est précisément lui qu'on lit comme preuve : la session
-     voisine a failli en conclure onze jours traités là où il y en avait deux.
-     Un compteur de preuve qui ment est pire qu'un compteur absent.
-     LA PREMIÈRE RÉPARATION D'UN JOUR EST LA VRAIE : c'est elle qui porte le
-     total d'avant. Une seconde passe sur un jour déjà propre ne retire rien,
-     donc elle n'a rien à raconter. */
-  try{var j=DB.get('flPasRepares',null)||{le:null,jours:[]};
-      j.le=(typeof tk==='function'?tk():null);
-      var vus={};
-      (j.jours||[]).forEach(function(x){if(x&&x.jour)vus[x.jour]=x;});
-      r.detail.forEach(function(x){if(x&&x.jour&&!vus[x.jour])vus[x.jour]=x;});
-      j.jours=flJoursTries(vus).map(function(k2){return vus[k2];});   /* v2492 — par DATE, sinon le temoin range octobre avant septembre */
-      DB.set('flPasRepares',j);}catch(e){}
-  /* Les pas nourrissent la detection de marches et toutes les moyennes : les
-     jours repares doivent etre relus, pas gardes en cache. */
-  try{r.detail.forEach(function(d){
-       if(window.flDetecterBientot)flDetecterBientot(d.jour);});}catch(e){}
-  try{if(typeof window.flRafraichirDouce==='function')window.flRafraichirDouce();}catch(e){}
- }
- return r;
-};
+/* ═══ 8 oct. 2026 — LA RÉPARATION DES PAS DOUBLES EST RETIRÉE ══════════════
+   `flReparerPasDoubles` (v1887) refaisait les journées du 12 au 26 août 2026,
+   où chaque tranche de pas avait été écrite deux fois. Le filtre d'ENTRÉE
+   (`flPas.nettoyer`, à la réception des tranches depuis la v1900) l'empêche :
+   rien ne peut plus s'ajouter, et les bases touchées sont réparées depuis
+   août. Il ne restait qu'un passage caché qui, son drapeau perdu
+   (`flPasRepareFiniV1917`), relisait toute la base et réécrivait des
+   journées à chaque retour au premier plan. Le témoin `flPasRepares` reste
+   en base, lisible. */
 
 var _jlMemo=null, _jlCle='';
 /* Trente jours : au-dela, on ne cherche plus une frontiere, on consulte une
@@ -6288,99 +6171,15 @@ setTimeout(function(){try{
   console.log('[fuseaux] '+r.mesures+' jour(s) etiquete(s), '+r.deja+' deja, '
    +r.sans.length+' sans repere'+(r.sans.length?' : '+r.sans.join(', '):''));
 }catch(e){}},5200);
-/* v1887 — la reparation des pas doubles, apres la passe de fuseaux et loin des
-   quatre premieres secondes. Idempotente : les jours deja propres sont sautes,
-   et une base saine ne la fait rien ecrire du tout. */
-/* ═══ v1892 — ELLE NE DÉPEND PLUS D'UNE FENÊTRE DE 6,4 SECONDES ════════════
-
-   CE QUI S'EST PASSÉ LE 26 AOÛT. La v1889 posée, l'app lancée : la passe de
-   fuseaux (5,2 s) est passée, celle-ci (6,4 s) NON. Le téléphone s'était
-   verrouillé entre les deux — 1,2 seconde d'écart a suffi. Onze journées de
-   Dino sont restées fausses, et il fallait lui demander d'ouvrir l'app et de
-   regarder l'écran pendant dix secondes.
-
-   FAIRE DÉPENDRE UNE RÉPARATION DE DONNÉES D'UNE FENÊTRE DE TEMPS EST UN
-   DÉFAUT DE CONCEPTION, pas un réglage à ajuster. On ne rallonge donc pas le
-   délai : on donne à la passe PLUSIEURS OCCASIONS, et elle s'arrête d'elle-même
-   dès qu'il n'y a plus rien à faire.
-
-   Trois occasions, et elles se complètent :
-     · le démarrage, comme avant ;
-     · CHAQUE RETOUR AU PREMIER PLAN — c'est le geste que fait l'utilisateur
-       cent fois par jour, et il ne dépend d'aucune horloge ;
-     · le réveil du web après une longue veille (`pageshow`).
-
-   ELLE NE COÛTE RIEN QUAND IL N'Y A RIEN À FAIRE. `flPas.nettoyer` ne retire
-   rien d'une journée saine, donc une base réparée ne provoque plus une seule
-   écriture. Et le drapeau `_flPasFait` évite même la lecture : dès qu'une passe
-   se termine sans rien réparer, on cesse d'y revenir pour cette session. */
-/* ═══ v1900 — LA REPARATION DES TRANCHES DE SOMMEIL ════════════════════════
-   Meme defaut que les pas, meme regle, meme prudence : sur une serie saine
-   elle ne retire rien et n ecrit rien. Elle recalcule les nuits ensuite, sinon
-   la base garderait des nuits etirees au-dessus de tranches assainies.
-   Rend { avant, apres, retires, decalage } — et {retires:0} quand tout va bien. */
-window.flReparerSommeilDouble=function(opts){
- opts=opts||{};
- var r={avant:0, apres:0, retires:0, decalage:0, sansRegle:0};
- var P=window.flPas;
- if(!P||!P.nettoyerTranches){r.sansRegle=1;return r;}
- var ch=null;
- try{ch=DB.get('flintSleepChunks',null);}catch(e){return r;}
- if(!Array.isArray(ch)||!ch.length)return r;
- r.avant=ch.length;
- var net=P.nettoyerTranches(ch);
- r.apres=net.tranches.length; r.retires=net.retires; r.decalage=net.decalage;
- if(opts.simuler)return r;
- /* ═══ v1910 — LES TRANCHES PROPRES NE SUFFISENT PAS ═══════════════════════
-    VU SUR LE TELEPHONE DE DINO, 15 h 36, APRES LA POSE. Les tranches etaient
-    nettoyees — plus une seule paire en double — et sa nuit du 19 au 20 aout
-    affichait TOUJOURS 22 h 48 et 7 h 26 au lieu de 00 h 44 et 6 h 11.
-
-    LA CAUSE ETAIT DANS CETTE LIGNE. Elle sortait des qu il n y avait plus rien
-    a retirer. Or `flsPoserTranche` nettoie DEJA a l entree depuis la v1900 :
-    a la premiere synchro les tranches deviennent propres, et cette passe ne
-    recalcule alors plus jamais. Les nuits ecrites AVANT restent en base,
-    fausses, au-dessus de tranches devenues justes.
-
-    « Il n y a rien a retirer » ne veut pas dire « il n y a rien a reparer ».
-    Le recalcul se fait donc UNE FOIS apres la mise a jour, meme sans retrait,
-    et un drapeau evite de le refaire a chaque retour au premier plan. */
- var CLE_RECALC='flSommeilRecalculV1910';
- var dejaFait=false;
- try{dejaFait=!!DB.get(CLE_RECALC,false);}catch(e){}
- if(!net.retires&&dejaFait)return r;
- if(net.retires){try{DB.set('flintSleepChunks',net.tranches);}catch(e){r.retires=0;return r;}}
- /* LES NUITS SE REFONT DEPUIS LES TRANCHES ASSAINIES. Sans cet appel, la base
-    porterait des nuits calculees sur les copies — le defaut resterait visible
-    a l ecran alors que sa cause aurait disparu. */
- try{if(typeof window.flintSommeilRecalculer==='function'){
-      window.flintSommeilRecalculer();
-      r.recalcul=1;
-      try{DB.set(CLE_RECALC,true);}catch(e){}
-     }}catch(e){}
- /* ═══ v1906 — LE RECALCUL ECRIT LE DISQUE, PAS LE CACHE ════════════════════
-    `flsEcrireNuit` ecrit dans localStorage UNIQUEMENT — c est ecrit noir sur
-    blanc dans le commentaire de la v1329. Sans la reprise ci-dessous, le
-    disque porterait la nuit assainie et l ecran continuerait de servir la nuit
-    etiree : « le disque etait propre, la copie vivante non, et la copie
-    vivante gagne toujours la course ».
-    On ne reprend que les jours TOUCHES — ceux que les tranches designent, plus
-    la veille de chacun, puisqu une nuit commence la veille au soir. */
- try{
-  var jours={};
-  net.tranches.forEach(function(c){
-   var d=new Date((+c.start||0)*1000);
-   for(var k=-1;k<=1;k++){
-    var dd=new Date(d.getTime()+k*86400000);
-    jours[dd.getFullYear()+'-'+(dd.getMonth()+1)+'-'+dd.getDate()]=1;
-   }
-  });
-  if(typeof window.flWatchReprendre==='function')
-   Object.keys(jours).forEach(function(K){window.flWatchReprendre(K,['night','sommeils']);});
- }catch(e){}
- return r;
-};
-
+/* ═══ 8 oct. 2026 — LA RÉPARATION DES TRANCHES DE SOMMEIL EST RETIRÉE ═════
+   `flReparerSommeilDouble` (v1900) et son recalcul unique
+   (`flSommeilRecalculV1910`) refaisaient les nuits du 12 au 23 août 2026,
+   recollées sur des tranches en double. `flsPoserTranche` les filtre À
+   L'ENTRÉE depuis la v1900 (`flPas.nettoyerTranches`, flint-sommeil.js), et
+   les pas le sont à la réception (`flPas.nettoyer`). Le drapeau perdu, le
+   recalcul réécrivait TOUTES les nuits au premier retour au premier plan.
+   Restent ici, aux trois mêmes occasions (démarrage, retour au premier plan,
+   réveil), le figeage de la VFC et le sceau de la récupération. */
 function _flPasseReparation(quand){
  /* v2034 — LE RATTRAPAGE DU FIGEAGE DE LA VFC, aux memes occasions que les
     autres reparations. Le figeage nominal se fait a l arrivee de la nuit ;
@@ -6396,30 +6195,6 @@ function _flPasseReparation(quand){
     republier. `flRecupSceller` ne fait rien si la nuit n est pas finale, et
     rien non plus si elle est deja scellee. */
  try{if(typeof window.flRecupSceller==='function')window.flRecupSceller('reparation');}catch(e){}
- if(window._flPasFait)return;
- try{
-  var rp=flReparerPasDoubles();
-  if(rp&&rp.sansRegle){
-   console.log('[pas doubles] ⚠️ pas.js absent — aucune reparation possible');
-   window._flPasFait=1;                 /* sans la regle, revenir ne sert a rien */
-   return;
-  }
-  if(rp&&rp.repares)
-   console.log('[pas doubles] '+quand+' — '+rp.repares+' jour(s) repare(s), '
-    +rp.blocs+' bloc(s) fantome(s) retire(s), '+rp.pas+' pas rendus a la verite');
-  /* PLUS RIEN A REPARER : on le note, et on ne repasse plus de la session.
-     On ne le note PAS si des erreurs d ecriture sont survenues — le stockage
-     plein est un echec temporaire, et la prochaine occasion doit reessayer. */
-  if(rp&&!rp.repares&&!rp.erreurs)window._flPasFait=1;
- }catch(e){}
- /* Le sommeil suit le meme chemin et les memes occasions : meme defaut, meme
-    cause, et rien a gagner a le reparer a un autre moment. */
- try{
-  var rs=flReparerSommeilDouble();
-  if(rs&&rs.retires)
-   console.log('[sommeil double] '+quand+' — '+rs.retires+' tranche(s) fantome(s) '
-    +'retiree(s) sur '+rs.avant+', decalage '+rs.decalage+' s');
- }catch(e){}
 }
 /* v1917 — 20 s, et non 6,4 : les six premieres secondes appartiennent aux
    ecrans que l utilisateur ouvre. Une reparation d historique n a aucune raison
@@ -7724,7 +7499,11 @@ window.flSommeilData=function(_argJour){try{
      vitesse. Sans courbe, l ecran montre son cadre vide — et un cadre vide se
      lit comme « pas encore mesure », alors qu une jolie courbe inventee se lit
      comme une nuit. */
-  if(w&&w.hr&&w.hr.length&&typeof window.flHrPasFabrique==='function'
+  /* 8 oct. 2026 — UNE HEURISTIQUE NE CACHE JAMAIS UNE MESURE : la cadence
+     seule cachait aussi une vraie nuit livrée à un point toutes les cinq
+     minutes. On ne cache plus que le conteneur qui PORTE la marque `demo`
+     (flSeedDemoDays) ; la cadence ne fait plus que confirmer. */
+  if(w&&w.demo&&w.hr&&w.hr.length&&typeof window.flHrPasFabrique==='function'
      &&window.flHrPasFabrique(w.hr)){
    try{console.log('[flint] '+K+' : courbe cardiaque fabriquee, non dessinee.');}catch(e){}
    w=null;
@@ -11461,23 +11240,11 @@ window.flRetirerActiviteGPS=function(gps){try{
    jour (« j'ai oublié de le noter hier »). Les deux journées se recalculent
    d'elles-mêmes : les compteurs se LISENT depuis les magasins. */
 
-/* v1095 — LES REPAS SANS HEURE REÇOIVENT MIDI, une fois pour toutes. Les
-   repas d'avant v1093 n'avaient pas d'heure : la frise les affichait « — »
-   et ils ne se rangeaient nulle part. Midi est un défaut honnête et VISIBLE
-   (corrigeable d'un appui long), pas une devinette. */
-try{if(DB.get('flMigrHeures')!==1095){
- for(var _mh=-220;_mh<=1;_mh++){
-  var _kh=tk(_mh);
-  try{
-   var _mm=DB.get('meals_'+_kh,null);
-   if(!_mm||!_mm.length)continue;
-   var _chg=false;
-   _mm.forEach(function(x){if(x&&!(typeof x.time==='string'&&/^\d{1,2}:\d{2}$/.test(x.time))){x.time='12:00';_chg=true;}});
-   if(_chg)DB.set('meals_'+_kh,_mm);
-  }catch(e){}
- }
- DB.set('flMigrHeures',1095);
-}}catch(e){}
+/* ═══ 8 oct. 2026 — LA MIGRATION DES REPAS SANS HEURE EST RETIRÉE ═════════
+   `flMigrHeures` (v1095) donnait midi aux repas d'avant la v1093. Elle a
+   tourné partout, sur des bases vides pour tout moteur postérieur ; son
+   drapeau perdu (sauvegarde partielle, base recopiée), elle réécrivait
+   l'heure de 220 jours de repas sans que personne le voie. */
 
 /* v1093 — MODIFIER UNE SÉANCE (heure, durée, intensité, nom). */
 window.flModifierSeance=function(rang,nom,start,dur,intens,jour){try{
@@ -23620,44 +23387,22 @@ function wipeData(){if(!confirm('Vider TOUTES les données (démo incluse) et re
 function exportData(){const dump={};Object.keys(localStorage).forEach(k=>dump[k]=localStorage.getItem(k));const t=JSON.stringify(dump,null,2);try{const blob=new Blob([t],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='flint-data.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},1500);toast('⬇️ Données exportées (flint-data.json)')}catch(e){try{navigator.clipboard.writeText(t);toast('📋 Données copiées')}catch(e2){toast('Export impossible')}}}
 
 /* ===== Coach IA (réponses fondées sur les données du jour) ===== */
-const APP_VERSION='v2827';
+const APP_VERSION='v2838';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
 
-/* v1288 — LE MÉNAGE PASSE UNE FOIS, ET IL PASSE DANS L'APP.
-   Sans condition de coquille, contrairement à la ligne du dessus : les jours
-   fabriqués sont dans la base de Dino, donc c'est DANS l'app qu'il faut les
-   retirer. Le drapeau garantit un seul passage ; le bilan reste lisible dans
-   `purge.sim.bilan`. */
-try{
- /* v1351 — la purge des quatre-vingt-trois jours du 10 août. Nouveau drapeau :
-    l'ancien était déjà posé, donc la purge existante ne se relançait pas. Elle
-    balaie 200 jours en arrière ET 70 en avant, ce qui couvre bien les dates
-    d'octobre 2026 que le semeur avait écrites dans le futur. */
- if(DB.get('purge.demo1351')!==1){
-  if(typeof flPurgeDemoDays==='function'){flPurgeDemoDays(200,70);}
-  try{DB.set('flseedtest',494);}catch(e){}
-  DB.set('purge.demo1351',1);
- }
- if(DB.get('purge.seeded')!==1286){
-  /* Le semis WEB posait `seeded`, le semis COQUILLE posait `flDemoSeed`. La
-     purge existante ne se déclenchait que sur le second : les jours nés du
-     premier — dont les treize jours de repas au hasard — n'ont jamais été
-     nettoyés. On la lance donc aussi pour celui-là, sur 200 jours pour
-     couvrir les 185 de `simulateData`. */
-  if(DB.get('seeded')!=null||DB.get('demo')!=null||DB.get('flseedtest')!=null){
-   flPurgeDemoDays(200,70);
-   /* v1351 — ON NE SUPPRIME PLUS `flseedtest` : le retirer REARME le semeur.
-      C'est ce geste, ici, qui a laissé passer les 83 jours factices du 10 août.
-      On le POSE à sa valeur de blocage, ce qui est le contraire exact. */
-   ['seeded','demo'].forEach(function(k){try{localStorage.removeItem(k);}catch(e){}});
-   try{DB.set('flseedtest',494);}catch(e){}
-   console.log('[flint] purge : semis web nettoye (seeded/demo/flseedtest)');
-  }
-  DB.set('purge.seeded',1286);
- }
-}catch(e){}
+/* ═══ 8 oct. 2026 — LES PURGES UNIQUES v1288 ET v1351 SONT RETIRÉES ═══════
+   `purge.demo1351` et `purge.seeded` relançaient `flPurgeDemoDays` sur 270
+   jours dès que leur drapeau manquait. Elles ont tourné une fois partout —
+   sur des bases vides pour tout moteur postérieur à août, binaires 1.0 et
+   1.1 compris — et ne pouvaient plus que repasser par accident, une base
+   recopiée sans ses drapeaux, sans que personne le voie. Le balayage des
+   marques (v1367, plus bas) reste le filet, à chaque lancement.
+   CE QU'ON GARDE : le verrou `flseedtest=494` que la v1351 posait au
+   passage. C'est lui qui retient flSeedTest dans un navigateur neuf (la
+   ligne sous l'en-tête v1351) ; sans lui, 185 jours inventés y entreraient. */
+try{if(DB.get('flseedtest')!==494)DB.set('flseedtest',494);}catch(e){}
 /* ═══ v1351 — LE SEMIS DE DÉMO A TOURNÉ SUR LES VRAIES DONNÉES DE FÉLIX ══════
    Le 10 août à 09h23, quatre-vingt-trois jours factices sont apparus dans sa
    base, de juillet à OCTOBRE 2026, chacun avec 288 points de fréquence et le
@@ -23697,18 +23442,17 @@ try{
     l appareil du founder : 88 nuits en base, dont 2 seulement etaient reelles.
     On purge desormais des qu un semis a eu lieu, quelle que soit sa version. */
  if(!_demoOn&&DB.get('flDemoSeed')){flPurgeDemoDays(60,70);DB.set('flDemoSeed',0);}
- /* NETTOYAGE DES COMPTEURS SEMES, passe autonome.
-    La purge ci-dessus remet flDemoSeed a 0 en fin de course : elle ne repassera
-    donc jamais, et un nettoyage range a l interieur d elle serait mort-ne. Or
-    il reste du faux dans les conteneurs qu elle a PRESERVES : elle gardait le
-    conteneur entier pour sauver la nuit mesuree, avec les compteurs de la demo
-    autour. Releve sur l appareil : 12 967 pas affiches pour le 1er aout contre
-    3 512 reellement comptes par la montre, et une courbe cardiaque a un point
-    toutes les cinq minutes tres exactement sur vingt-quatre heures.
-    On juge sur PREUVE, pas sur le drapeau `demo` que la passe precedente a deja
-    retire : la cadence. Un capteur ne produit pas d intervalles parfaitement
-    egaux ; quand la courbe est fabriquee, les compteurs poses en meme temps le
-    sont aussi. Le bracelet les reecrira a la prochaine synchronisation. */
+ /* ═══ 8 oct. 2026 — DEUX MÉNAGES DE DÉMARRAGE RETIRÉS ═══════════════════
+    `flNettoyageSeme` (v1082/v1288) vidait sur 220 jours toute courbe dont la
+    CADENCE ressemblait au semeur, avec ses pas, ses calories, ses RR et les
+    séances automatiques du jour. Une heuristique seule : une vraie journée
+    livrée à un point toutes les cinq minutes y passait. Il a tourné une fois
+    partout ; son drapeau perdu, il repassait en silence. Le dédoublonnage de
+    `hrfine_` (v1431) réparait les copies de la v1426 ; la clé à la SECONDE
+    (v1694, réception de `fcContinue`) rend le doublon impossible. Sur ce
+    format il ne trouvait plus rien, et sur l'ancien son motif « suite = son
+    début répété » réduisait aussi une série stable réelle (douze fois 60 →
+    un seul 60). Les deux partent. */
  /* ═══ v1430 — LA SÉANCE QUE LE LOGICIEL A FABRIQUÉE, RETIRÉE AU DÉMARRAGE ═══
     Le 11 août à 22 h, le pont a mis la montre en mode séance pour ouvrir le
     canal cardiaque à cinq secondes. La montre a fait plus que mesurer : elle a
@@ -23727,36 +23471,6 @@ try{
     l applique aux siestes depuis longtemps ; elle manquait aux séances. Une
     saisie manuelle n est jamais touchée — elle appartient au porteur, même mal
     datée. */
- /* ═══ v1431 — LES DOUBLONS DE LA v1426, RETIRES DE CE QUI EST DEJA ECRIT ═══
-    La v1426 empilait les receptions d une meme minute au lieu de les remplacer.
-    Resultat en base : des suites du type [66,67,87,72,69, 66,67,87,72,69, 66,67]
-    — six vraies valeurs et six copies. La source est bouchee juste au-dessus,
-    mais ces minutes-la sont deja ecrites, et un battement compte deux fois n est
-    pas deux battements.
-
-    ON NE RETIRE QUE LA REPETITION EXACTE : si la suite est exactement son debut
-    repete, on garde le motif. Une suite qui ne se repete pas parfaitement n est
-    pas touchee. Au repos, douze valeurs identiques se reduisent a une — on ne
-    perd aucune information, seulement des copies. */
- try{
-  var _nd=0;
-  for(var _e=0;_e<10;_e++){
-   var _ke='hrfine_'+tk(-_e), _he=null;
-   try{_he=DB.get(_ke,null);}catch(e){}
-   if(!_he||typeof _he!=='object')continue;
-   var _chg=false;
-   Object.keys(_he).forEach(function(_m){
-    var v=_he[_m]; if(!Array.isArray(v)||v.length<2)return;
-    for(var p=1;p<v.length;p++){
-     var ok=true;
-     for(var i=0;i<v.length;i++){ if(v[i]!==v[i%p]){ok=false;break;} }
-     if(ok){ if(p<v.length){_he[_m]=v.slice(0,p);_chg=true;_nd++;} break; }
-    }
-   });
-   if(_chg)DB.set(_ke,_he);
-  }
-  if(_nd)console.log('[flint] '+_nd+' minute(s) de FC fine dédoublonnée(s)');
- }catch(e){}
  try{
   var _lim=Date.now()+60000, _nf=0;
   for(var _f=0;_f<10;_f++){
@@ -23773,82 +23487,6 @@ try{
   }
   if(_nf)console.log('[flint] '+_nf+' séance(s) retirée(s) : elles se terminaient dans le futur');
  }catch(e){}
- try{if(DB.get('flNettoyageSeme')!==1082){
-  var _net=0;
-  for(var _d=0;_d<220;_d++){
-   var _k=tk(-_d),_c=null;
-   try{_c=DB.get('watch_'+_k);}catch(e){}
-   if(!_c||typeof _c!=='object')continue;
-   /* v1348 — même détecteur que partout ailleurs, plancher compris. */
-   if(!window.flHrPasFabrique(_c.hr))continue;
-   _c.hr=[];delete _c.steps;delete _c.kcal;delete _c.dist;delete _c.demo;
-   DB.set('watch_'+_k,_c);_net++;
-  }
-  /* SCORES DE RECUPERATION SEMES. Releve : 53 scores dates dans le FUTUR, du
-     4 aout au 3 octobre, et un pour aujourd hui. Un score de recuperation pour
-     octobre n existe pas. On retire ceux du futur sans discuter, et ceux du
-     passe qui ne reposent sur aucune nuit mesuree. Le moteur recalcule les
-     vrais a la demande, rien n est perdu. */
-  for(var _f=-220;_f<=90;_f++){
-   var _kf=tk(_f);
-   try{
-    if(DB.get('recov_'+_kf)==null)continue;
-    var _c2=DB.get('watch_'+_kf),_vraie=false;
-    if(_c2&&typeof _c2==='object'&&_c2.night&&(_c2.night.stageSrc||(_c2.night.stages&&_c2.night.stages.length)))_vraie=true;
-    if(_f>0||!_vraie){DB.set('recov_'+_kf,null);_net++;}
-   }catch(e){}
-  }
-  /* SEANCES NEES D UNE FAUSSE COURBE. La detection automatique lit la courbe
-     cardiaque du jour ; sur les jours semes, elle a donc detecte de vraies
-     seances dans de fausses donnees, et les a marquees real:true. Leurs
-     frequences moyennes (105, 137, 111 bpm) ne mesurent rien. On retire les
-     seances automatiques des jours dont la courbe a ete videe ; celles saisies
-     a la main sont conservees, elles viennent de l utilisateur. */
-  for(var _g=-220;_g<=0;_g++){
-   var _kg=tk(_g);
-   try{
-    var _s2=DB.get('sessions_'+_kg);
-    if(!_s2||!_s2.length)continue;
-    var _c3=DB.get('watch_'+_kg);
-    if(_c3&&typeof _c3==='object'&&_c3.hr&&_c3.hr.length)continue;   /* courbe reelle : on garde */
-    var _garde=_s2.filter(function(x){return !(x&&x.auto);});
-    if(_garde.length!==_s2.length){DB.set('sessions_'+_kg,_garde);_net++;}
-   }catch(e){}
-  }
-  /* LES INTERVALLES RR SEMES. La passe precedente jugeait sur la cadence de la
-     COURBE cardiaque et laissait donc passer les RR, qui n en ont pas. Releve
-     sur l appareil : le 1er aout portait exactement 40 intervalles, tous entre
-     1059 et 1226 ms, la ou les vraies journees en comptent 3 000 allant de 0 a
-     8706. Quarante est le nombre exact que produisait le semeur, et sa formule,
-     60000 divise par la frequence de repos plus deux, donne 1250 ms pour ce
-     jour-la, le centre du lot.
-     Trois conditions ensemble, parce qu aucune ne suffit seule : peu de valeurs,
-     AUCUNE aberration, et une amplitude etroite. Un enregistrement reel contient
-     toujours des artefacts, des zeros et des valeurs extremes ; un lot ne
-     presentant que du physiologique parfait n a pas ete mesure, il a ete
-     calcule. La vraie variabilite du jour ne s en trouve pas perdue : elle vient
-     du canal de la montre, 285 points ce 1er aout. */
-  for(var _r2=-220;_r2<=0;_r2++){
-   var _kr=tk(_r2);
-   try{
-    var _cr=DB.get('watch_'+_kr);
-    if(!_cr||typeof _cr!=='object')continue;
-    var _rr=_cr.rr;
-    if(!_rr||!_rr.length||_rr.length>60)continue;
-    var _min=1e9,_max=-1e9,_ab=0;
-    for(var _i2=0;_i2<_rr.length;_i2++){
-     var _v2=+_rr[_i2];
-     if(!(_v2>300&&_v2<2000)){_ab++;break;}
-     if(_v2<_min)_min=_v2; if(_v2>_max)_max=_v2;
-    }
-    if(_ab)continue;                       /* une aberration : c est du reel */
-    if(_max-_min>400)continue;             /* large dispersion : c est du reel */
-    _cr.rr=[];DB.set('watch_'+_kr,_cr);_net++;
-   }catch(e){}
-  }
-  DB.set('flNettoyageSeme',1082);
-  if(_net)console.log('[flint] compteurs semes retires de '+_net+' jour(s)');
- }}catch(e){}
 }catch(e){}
 
 /* ═══ v1348 — LE SEMEUR A ENSEMENCÉ LE FUTUR, ET LE FUTUR EST DEVENU AUJOURD'HUI ═══
@@ -23884,20 +23522,10 @@ try{
    plus être re-mesurée, et « mieux vaut vide qu'inventé » ne vaut que tant
    qu'on peut remplacer le vide par du mesuré.
 
-   LA PREUVE, PAS LE SOUPÇON. Deux marques, et une seule suffit :
-     · le conteneur porte encore `demo` (le semeur le pose) ;
-     · plus de 90 % des intervalles sont IDENTIQUES, et cet intervalle vaut au
-       moins 3 minutes. Le seuil de 3 est vital : le vrai stockage est à la
-       MINUTE (médiane par minute, cf. `fcContinue` et `rrH` plus bas), donc une
-       nuit réellement couverte de bout en bout a, elle aussi, 90 % d'écarts
-       identiques — de 1 minute. Sans ce plancher, ce ménage effacerait les
-       meilleures nuits mesurées, celles qui n'ont aucun trou. */
-/* v1355 — LA GRANDE PURGE PASSE UNE FOIS, ET ELLE PASSE DANS L'APP.
-   Demande du founder : « enlève toutes les fausses données, il doit rester que
-   ce qui vient du backend de Félix. » Les jours fabriqués sont dans SA base,
-   sur SON téléphone : c'est donc au démarrage de l'app qu'il faut les retirer,
-   pas dans un outil qu'il faudrait aller chercher. Un seul passage — le
-   drapeau le garantit — et le bilan reste lisible dans `purge.total.bilan`. */
+   LA PREUVE, PAS LE SOUPÇON. 8 oct. 2026 : une seule marque, `demo`, que
+   le semeur pose. La cadence (un point toutes les 3 min ou plus, à plus de
+   90 %) ne suffit plus à elle seule — voir l'en-tête du 8 oct. au-dessus du
+   ménage. */
 try{
 /* ═══ v1367 — LE BALAYAGE DES MARQUES, À CHAQUE LANCEMENT ═══════════════════
 
@@ -23943,18 +23571,25 @@ try{
  })();
 }catch(e){}
 
- try{if(typeof flSecoursRetirer==='function')flSecoursRetirer();}catch(e){} if(DB.get('purge.total')!==1367){   /* 28 sept. 2026 — AVANT la purge : l archive secours.json, porte fermée et retirée des bases qui ne sont pas la sienne (flint-porte.js) */
-  window.flPurgeToutLeFaux();
-  DB.set('purge.total',1367);
- }
+ try{if(typeof flSecoursRetirer==='function')flSecoursRetirer();}catch(e){}   /* 28 sept. 2026 — l archive secours.json, porte fermée et retirée des bases qui ne sont pas la sienne (flint-porte.js) */
+ /* 8 oct. 2026 — la grande purge unique (`purge.total` → flPurgeToutLeFaux, v1355) est retirée : elle jugeait
+    sur la cadence et vidait les repas de tout jour « semé » ; son drapeau perdu, elle repassait en silence.
+    Le balayage des marques juste au-dessus, sans drapeau, reste le filet. */
 }catch(e){}
 
+/* ═══ 8 oct. 2026 — LA MARQUE SEULE, JAMAIS LA CADENCE ══════════════════════
+   Ce ménage vidait aussi la courbe, les pas, les calories et la distance
+   d'aujourd'hui et d'hier dès que `flHrPasFabrique` trouvait des écarts
+   égaux. Il a été écrit contre un semeur qui n'écrit plus rien dans l'app
+   (v1356) ; un faux positif — une vraie journée livrée à un point toutes les
+   cinq minutes, une courbe de banc — effaçait des mesures. Il ne s'ouvre
+   plus que sur la marque `demo`, que `flSeedDemoDays` pose sur chaque
+   conteneur qu'il écrit. Banc : garde-demo-rechargement.js. */
 try{ if(DB.get('flDemoSession',0)!==1)[0,-1].forEach(function(_dj){/* 14 sept. 2026 (v2332) — sauf pendant une session de démo, même raison que le balayage plus haut : ce ménage retirait courbe, pas et calories d'aujourd'hui et d'hier au premier rechargement après l'ouverture de la démo. */
   var _kj=tk(_dj),_cj=null;
   try{_cj=DB.get('watch_'+_kj);}catch(e){}
   if(!_cj||typeof _cj!=='object')return;
-  var _pas=window.flHrPasFabrique(_cj.hr),_fab=!!_cj.demo||!!_pas;
-  if(!_fab)return;
+  if(!_cj.demo)return;
   _cj.hr=[];delete _cj.steps;delete _cj.kcal;delete _cj.dist;delete _cj.demo;
   /* LES INTERVALLES, SOUS CONDITION. Le semeur en pose exactement quarante ;
      une vraie journée en compte des milliers. On ne retire donc que le lot
@@ -23963,9 +23598,7 @@ try{ if(DB.get('flDemoSession',0)!==1)[0,-1].forEach(function(_dj){/* 14 sept. 2
      réécrira. Effacer sans compter aurait emporté de vraies mesures. */
   if(_cj.rr&&_cj.rr.length&&_cj.rr.length<=60)_cj.rr=[];
   DB.set('watch_'+_kj,_cj);
-  try{console.log('[flint] '+_kj+' : courbe fabriquee retiree'
-   +(_pas?(' (un point toutes les '+_pas+' min)'):' (conteneur marque demo)')
-   +' — le bracelet la reecrira.');}catch(e){}
+  try{console.log('[flint] '+_kj+' : courbe de la demo retiree (conteneur marque demo) — le bracelet la reecrira.');}catch(e){}
  });
 }catch(e){}
 if(DB.get('demo')&&!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})()&&!sensorOf(tk()))seedTodayShowcase();
@@ -24561,43 +24194,14 @@ document.addEventListener('visibilitychange',function(){if(document.hidden)retur
     try{if('Notification' in window){if(Notification.permission==='granted'){new Notification('FLINT — bracelet retiré',{body:'Remets ton bracelet : plus aucune mesure tant qu\'il n\'est pas au poignet.'});}else if(Notification.permission!=='denied'){Notification.requestPermission();}}}catch(e){}
     if(typeof toast==='function')toast('Bracelet retiré — remets-le');
   };
-  /* ═══ v1440 — L ESSAI DU MODE SÉANCE, DEPUIS L ÉCRAN ════════════════════
-     Un seul geste, un seul effet : la montre entre ou sort du mode où elle
-     mesure le cœur toutes les cinq secondes. Rien d autre — pas de GPS, pas de
-     chrono, aucune séance enregistrée. FLINT Tracker fait tout ça et c est trop
-     pour essayer le mode sur une marche de dix minutes.
-
-     L ÉTAT VIT DANS L ÉCRAN, PAS DANS LA MONTRE. On ne peut pas lui demander en
-     permanence où elle en est sans la harceler, donc on retient ce qu on a
-     demandé en dernier. Si les deux divergent, la borne de quatre heures posée
-     dans la montre tranche en fermant.
-
-     ET ON PRÉVIENT DU COÛT. Le mode empêche le découpage du sommeil — mesuré la
-     nuit du 11 au 12 : zéro pour cent de paradoxal contre seize chez WHOOP. Le
-     libellé le dit, et un rappel part si on le laisse ouvert le soir. */
-  window.flBasculerModeSeance=function(){
-   var on=!(DB.get('flModeSeanceEssai',0)===1);
-   try{ if(window.webkit&&webkit.messageHandlers&&webkit.messageHandlers.nat)
-     webkit.messageHandlers.nat.postMessage({cmd:'modeSeance', on:on}); }catch(e){}
-   DB.set('flModeSeanceEssai', on?1:0);
-   if(on) DB.set('flModeOuvertPar', Date.now());   /* la séance qu il crée sera écartée */
-   window.flMajModeSeance();
-   try{ toast(on?'Mode sport activé — pense à couper après l effort'
-                :'Mode sport coupé'); }catch(e){}
-   try{ haptic(12); }catch(e){}
-  };
-  window.flMajModeSeance=function(){
-   var on=DB.get('flModeSeanceEssai',0)===1;
-   var l=document.getElementById('pfModeSeanceLbl');
-   if(l)l.textContent=on?'Essai : COUPER le mode sport de la montre'
-                        :'Essai : activer le mode sport de la montre';
-   var sb=document.getElementById('pfModeSeanceSub');
-   if(sb)sb.textContent=on
-     ? 'ACTIF depuis '+(new Date(+DB.get('flModeOuvertPar',Date.now()))).toTimeString().slice(0,5)
-       +' — à couper avant de dormir, il empêche la lecture du sommeil.'
-     : 'La montre mesure le cœur toutes les 5 s. À couper après l effort — il empêche la lecture du sommeil.';
-  };
-  try{ window.flMajModeSeance(); }catch(e){}
+  /* ═══ 8 oct. 2026 — L'ESSAI DU MODE SÉANCE EST RETIRÉ ═══════════════════
+     Le bouton du profil web (v1440) postait vers `messageHandlers.nat`, que la
+     coquille n'a jamais déclaré : la montre ne changeait pas de mode, le toast
+     « Mode sport activé » mentait, et le geste écrivait quand même
+     `flModeOuvertPar` — de quoi faire jeter, pendant deux minutes, la VRAIE
+     séance que le bracelet ouvrirait. Restent la LECTURE de `flModeOuvertPar`
+     (décodage des séances de la montre) et le message `seanceOuverte` du
+     pont, dont le natif se sert. */
   window.setWatchWorn=function(worn){worn=!!worn;var was=window._watchWorn!==false;window._watchWorn=worn;try{DB.set('watchWorn',worn?1:0)}catch(e){}var bn=document.getElementById('flintWatchBanner');if(bn)bn.classList.toggle('on',!worn);var pl=document.getElementById('pfWatchLbl');if(pl)pl.textContent=worn?'Simuler : retirer le bracelet':'Simuler : remettre le bracelet';if(!worn&&was)window.notifyWatchOff();};
   /* (30 aout 2026, commercialisation) — le bouton « Simuler : retirer le
      bracelet » est un outil de banc : il reste cache sur le telephone
@@ -35334,80 +34938,13 @@ window.flDeriverMetriques=function(k,liste){
    return d;
   }catch(e){return {aDesDonnees:false};}};
 
-  /* ══════ RATTRAPAGE DES DETECTIONS FAUSSES, UNE FOIS ══════
-
-     La v1109 a refonde la detection : le seuil valait la frequence de repos plus
-     vingt-cinq, soit 75 bpm, et quarante-huit pour cent de la journee passait
-     au-dessus. Mais un correctif de detection ne repare que l avenir : la
-     detection ne repasse pas sur un jour deja ecrit.
-
-     Releve sur l appareil apres la v1109 : le 2 aout portait toujours SEPT
-     seances, de quarante-cinq minutes a deux heures quarante-cinq, a 86 a 92 bpm
-     de moyenne et entierement en zone 1. Recalculees par la detection actuelle,
-     il n en reste AUCUNE. Ce sont bien les fantomes dont Felix s est plaint, une
-     activite de minuit a 1h35 et une autre de 9h35 a 12h20.
-
-     ON NE TOUCHE QU AUX DETECTIONS AUTOMATIQUES. Une seance saisie a la main ou
-     portant un parcours GPS est une declaration de l utilisateur : elle n est
-     jamais recalculee ni supprimee. Et une detection n est pas une mesure, c est
-     une conclusion tiree des mesures : la refaire ne perd rien, la courbe
-     cardiaque brute reste intacte. */
-  window.flRattraperDetections=function(){try{
-   /* v1307 — LES SÉANCES DÉJÀ STOCKÉES NE SE RECALCULENT JAMAIS SEULES.
-      La fausse séance du 9 août portait un effort de 1141,8 quand le recalcul
-      sur les mêmes données en rend 14,8 : elle avait été détectée pendant que
-      la série cardiaque contenait des doublons, puis figée dans la base. Le
-      dédoublonnage de la v1253 a nettoyé la série, pas la séance.
-      On relance donc le rattrapage une fois de plus, avec le nouveau critère de
-      densité. Le garde-fou ci-dessous reste entier : une détection qui ne rend
-      RIEN sur un jour qui en portait a échoué, on ne détruit pas là-dessus. */
-   if(DB.get('purgeDetect1308',0))return 0;
-   var efface=0, jours=0;
-   for(var i=0;i<60;i++){
-    var K=tk(-i);
-    var ss=DB.get('sessions_'+K,null);
-    if(!ss||!ss.length)continue;
-    /* v1308 — ON RAMASSE D'ABORD LES FANTOMES QUE LA v1307 A ECRITS.
-       Elle stockait la sortie brute de `detectSessions`, sans `name` ni `real`,
-       et `syncSessions` prenait ces objets pour des saisies manuelles : ils ne
-       repartaient plus jamais. Une vraie saisie porte toujours un nom, donc une
-       entree sans nom ne peut etre que cet accident. */
-    var avant=ss.length;
-    ss=ss.filter(function(x){return x&&x.name;});
-    if(ss.length!==avant){efface+=avant-ss.length; DB.set('sessions_'+K,ss);}
-    if(!ss.length)continue;
-    var auto=ss.filter(function(x){return x.auto&&!x.gps&&x.type!=='nap';});
-    if(!auto.length)continue;
-    var garde=ss.filter(function(x){return !(x.auto&&!x.gps&&x.type!=='nap');});
-    var nv=[];
-    var _w=watchOf(K), _nm=(_w&&_w.sessNames)||{};
-    try{nv=(detectSessions(K)||[]).map(function(d3){return faconnerSeance(d3,_nm,K);});}catch(e){continue;}
-    /* ═══ v1238 — ZERO N EST PAS UN RESULTAT DE DETECTION ══════════════════
-       Ce rattrapage remplace les seances automatiques de SOIXANTE jours par ce
-       que la detection retrouve aujourd hui. Or `detectSessions` commence par
-       `if(!fm)return []` : le jour ou la FC max manque — age absent, seuil de
-       pointe releve, profil incomplet — il rend zero pour TOUS les jours, et
-       cette boucle efface deux mois d activites en une passe. Dino : « quand je
-       reviens sur les jours precedents, il n y a rien, ça oublie tout ».
-       Une detection qui ne trouve RIEN sur un jour qui en portait n a pas
-       reussi a ne rien trouver — elle a echoue. On ne detruit pas sur un echec
-       silencieux. */
-    if(!nv.length&&auto.length){
-     console.log('[flint] rattrapage : '+K+' garde ses '+auto.length+
-                 ' seance(s), la detection n a rien rendu');
-     continue;
-    }
-    if(auto.length===nv.length)continue;
-    efface+=auto.length-nv.length; jours++;
-    DB.set('sessions_'+K,garde.concat(nv));
-   }
-   DB.set('purgeDetect1308',1);
-   if(efface)console.log('[flint] rattrapage v1308 : '+efface+' séance(s) fantôme(s) retirée(s) sur '+jours+' jour(s)');
-   return efface;
-  }catch(e){return 0;}};
-  /* Lance une fois, tout de suite : `DB` lit directement le stockage local, il
-     n y a rien a attendre. Le drapeau `purgeDetect1109` fait le reste. */
-  try{flRattraperDetections();}catch(e){}
+  /* ═══ 8 oct. 2026 — LE RATTRAPAGE UNIQUE DES DÉTECTIONS EST RETIRÉ ═══════
+     `flRattraperDetections` (v1109/v1308, drapeau `purgeDetect1308`)
+     remplaçait les séances automatiques de soixante jours par ce que la
+     détection rendait au lancement. Il a tourné une fois partout, sur des
+     bases vides pour tout moteur postérieur à août ; son drapeau perdu, il
+     réécrivait deux mois d'activités en silence. La passe par version de
+     détecteur, juste en dessous, passe par `syncSessions` et ses gardes. */
 
   /* ═══ v1417 — LES JOURS PASSES PROFITENT DU NOUVEAU DETECTEUR ═══════════════
 
@@ -37462,32 +36999,15 @@ window.flShellHonest=function(doc){try{
      /* pas d'unite sur une valeur absente : « — ms » ne veut rien dire */
      if(_us&&(_us.textContent||'').trim()!==wantU)_us.textContent=wantU;}});}
  }catch(e){}};
- /* --- PURGE DÉMO (coquille, une fois) : efface les 185 j de données seedées (flSeedTest)
-    déjà présentes dans le localStorage du téléphone. Préserve : watch_*, repas réels du jour,
-    profil, objectifs. --- */
- if(SHELL){try{
-  /* v694 : la purge existe pour retirer les données de démo de la coquille.
-     Quand le mode démo est EXPLICITEMENT demandé, elle n'a pas lieu d'être —
-     sinon elle efface le jeu qu'on vient de semer quelques lignes plus haut. */
-  var _demoWanted=(function(){try{return localStorage.getItem('flintDemoData')==='1'||DB.get('flDemoSession',0)===1;}catch(e){return false;}})();  /* v2131 — la session de démo aussi */
-  if(!_demoWanted&&DB.get('flShellPurged')!==3){
-   var SHOWCASE=['Petit-déj — flocons & œufs','Déjeuner — poulet riz','Collation — skyr & banane','Snack — amandes'];
-   var today=tk(0);
-   for(var pd=0;pd<220;pd++){
-    var pk=tk(-pd);
-    /* (30 aout 2026, commercialisation) — RETIRER, C'EST RETIRER. Cette boucle
-       retirait la cle PUIS la recreait a null/[]/{} : 220 jours x 6 familles
-       = les « 1 320 cles qui ne contiennent rien » du telephone de Dino, que
-       chaque flJours rebalaie ensuite pour rien. On retire, on previent les
-       memoires de calcul (DB.marque), et rien ne renait. */
-    ['sensor_','recov_','sessions_','journal_','hydro_'].forEach(function(pre){try{var _k=pre+pk;localStorage.removeItem(_k);DB.marque(_k);}catch(e){}});
-    if(pk!==today){try{var _km='meals_'+pk;localStorage.removeItem(_km);DB.marque(_km);}catch(e){}}
-   }
-   try{var tm=(DB.get('meals_'+today,[])||[]).filter(function(m){return SHOWCASE.indexOf(m.name)<0;});DB.set('meals_'+today,tm);}catch(e){}
-   try{DB.set('bodylog',{});}catch(e){}
-   try{DB.set('demo',0);DB.set('flseedtest',494);DB.set('seeded',11);DB.set('flShellPurged',3);}catch(e){}
-  }
- }catch(e){}}
+ /* ═══ 8 oct. 2026 — LA PURGE DÉMO DE COQUILLE (flShellPurged) EST RETIRÉE ══
+    Elle retirait 220 jours de capteurs, récupérations, séances, journaux,
+    hydratation et repas, plus tout `bodylog`, dès que `flShellPurged` ne
+    valait pas 3 — sans regarder une seule marque. Elle a tourné au premier
+    lancement de chaque coquille, binaires 1.0 et 1.1 compris, sur une base
+    vide ; elle ne pouvait plus que repasser sur une base recopiée sans son
+    drapeau, et y effacer la vraie vie de quelqu'un. Les restes d'une démo
+    se retirent sur leur marque (balayage v1367, flDemoFermer) ou leur
+    signature (flDemoRestesRetirer, ci-dessous). */
  /* dans la coquille : scan + connexion auto à la montre au lancement */
  if(native)(function _flDepart(n){setTimeout(function(){try{var c=window.flMontreConnue;if(c===undefined&&n<20)return _flDepart(n+1);if(c===false){if(typeof flDemoRestesRetirer==='function')flDemoRestesRetirer();return;}if(typeof flDemoActive==='function'&&flDemoActive())return;if(typeof flSansBracelet==='function'&&flSansBracelet())return;native.postMessage({cmd:'start'});}catch(e){}},n?500:1500);})(0);   /* 28 sept. 2026 — sans bracelet, pas de recherche automatique : elle adoptait le premier capteur cardiaque à portée (RegleLien). L appairage volontaire passe par montreChercher(), natif. 4 oct. 2026 — on ATTEND le témoin natif (posé au didFinish, parfois après ces 1,5 s : `undefined` laissait passer la recherche, qui adoptait un gadget voisin — Mi Band, ceinture, tout ce qui expose 180F/180D — et la porte restait ouverte pour toujours) ; jamais pendant une démo ; témoin faux = pas de recherche, et les restes d une démo fermée par un vieux moteur partent (flint-semis.js). Muet après 11,5 s : comme avant. */
  /* v1316 — la morphologie part avec la mise en route : le pont la garde et

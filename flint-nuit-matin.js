@@ -1755,7 +1755,6 @@
          PAS que ce chemin sert. On recoupe donc ici, en tête de la passe, avant
          que quiconque ne lise l'état. Le pré-contrôle de `flNuitRecouper` rend
          l'appel gratuit quand il n'y a rien à recouper — le cas normal. */
-      retirerLeSceauDu8Septembre();   /* v2268 — le correctif daté, avant toute lecture d'état */
       try { if (typeof window.flNuitRecouper === 'function') window.flNuitRecouper(K); }
       catch (e) {}
       window.flNuitDetecter(K, now);
@@ -2509,69 +2508,15 @@
     return true;
   };
 
-  /* ═══ v2268 — LE SCEAU DU 8 SEPTEMBRE, RETIRÉ ═════════════════════════════
-
-     CE QUI S'EST PASSÉ, relevé sur la base de Félix (releves/, 8 sept.).
-     Il s'est réveillé à 05h31, est resté éveillé dix minutes, s'est rendormi
-     jusqu'à 08h05. À 09h36 la session a scellé la nuit sur ce qu'elle savait
-     alors : `nuitFige_` = 288 min, réveil 05h31, cause RENDORMISSEMENT. Le
-     bracelet a continué de livrer toute la matinée (le badge « arrive encore »
-     était là à 16h30), le moteur a recollé la nuit ENTIÈRE — 00h19 → 08h05,
-     409 min de sommeil, 57 d'éveil, 51 tranches, tout est juste — et le sceau
-     n'a jamais été réécrit.
-
-     L'ÉCRAN MONTRAIT DONC DEUX NUITS À LA FOIS : l'en-tête et la courbe
-     venaient du sceau (4h48, fin à 05h31), les barres de stades du moteur
-     (1h39 + 3h18 + 1h52). Les parts se calculant sur le total du sceau, elles
-     additionnaient 150 %. Un écran qui affiche 150 % ne se discute pas.
-
-     POURQUOI LA RÉPARATION AUTOMATIQUE N'A PAS JOUÉ. Elle existe et elle a
-     raison : rejouée sur ces données, `flNuitMesureArrivee` dit « le bracelet
-     a livré sa nuit : 288 → 409 min (121 min d'écart) » et `flNuitPromouvoir`
-     accepte. C'est la FINALISATION qui cale derrière, et le sceau reste. La
-     cause de ce blocage reste ouverte : elle se mesurera sur le téléphone, pas
-     ici, et ce bloc ne prétend pas la corriger.
-
-     CE QU'IL FAIT, ET RIEN DE PLUS : il oublie CETTE session-là, par
-     `flNuitOublier`, la fonction que ce fichier expose déjà pour ça — elle ne
-     touche à AUCUNE mesure, elle retire le sceau, le score scellé et le
-     réveil déclaré, et la machine se refrappe à la détection suivante sur la
-     nuit complète.
-
-     TROIS GARDES, parce qu'un correctif daté qui se trompe est pire que le
-     défaut. ① une seule date, écrite en clair ; ② il ne part QUE si le moteur
-     rend une nuit PLUS LONGUE que le sceau d'au moins une demi-heure — on ne
-     répare qu'une amputation, jamais l'inverse, la règle de la porte du matin
-     vaut ici aussi ; ③ il se désarme sur son propre drapeau, et se retient de
-     se désarmer tant que le moteur n'a rien à dire, pour ne pas brûler sa
-     chance avant que la nuit soit posée. */
-  /* ⚠ IL NE S'EXÉCUTE PAS AU CHARGEMENT, et c'est la leçon de marche.js puis
-     de flint-recup-cycle.js : les `<script src="flint-*.js">` d'index.html sont
-     à la ligne 2896, `const DB` à la 2935 et `const tk` à la 3010. Un accès à
-     `DB` pendant l'analyse de ce fichier lèverait (zone morte temporelle), le
-     `try` avalerait, et le correctif ne partirait JAMAIS sans que rien ne le
-     dise. Il est donc appelé depuis la passe, qui ne tourne qu'au geste. */
-  var sceau8SeptFait = false;
-  function retirerLeSceauDu8Septembre() {
-    if (sceau8SeptFait) return;
-    try {
-      if (+DB.get('flSceauRetire8Sept', 0) === 1) return;
-      var K = '2026-9-8';
-      var f = DB.get(CLE_NUIT + K, null);
-      if (!f || f.asleep == null) { DB.set('flSceauRetire8Sept', 1); sceau8SeptFait = true; return; }
-      var w = null;
-      try { w = (typeof window.watchOf === 'function') ? window.watchOf(K) : null; } catch (e) {}
-      var n = w && w.night;
-      if (!n || n.sleepMin == null) return;      /* rien à comparer : on réessaiera */
-      if ((+n.sleepMin || 0) - (+f.asleep || 0) < 30) { DB.set('flSceauRetire8Sept', 1); sceau8SeptFait = true; return; }
-      window.flNuitOublier(K);
-      DB.set('flSceauRetire8Sept', 1);
-      sceau8SeptFait = true;
-      tracer(f.id || null, 'seal dropped', 'CORRECTIF', 'FINALIZED',
-             'sceau du ' + K + ' retiré : ' + f.asleep + ' min scellés contre '
-             + n.sleepMin + ' rendus par le moteur');
-    } catch (e) {}
-  }
+  /* ═══ 8 oct. 2026 — LE CORRECTIF DATÉ DU 8 SEPTEMBRE EST RETIRÉ ══════════
+     `retirerLeSceauDu8Septembre` (v2268) oubliait, par `flNuitOublier`, la
+     nuit du 2026-9-8 de Félix, scellée trop tôt (288 min contre 409). Il
+     tournait en tête de CHAQUE `flNuitPasse`, sur toutes les bases : une
+     date écrite en clair dans le moteur de tout le monde, et un
+     `flNuitOublier` qui, son drapeau perdu, se rejouait sur la base d'un
+     autre dont la nuit du 8 septembre aurait la même forme. Un correctif
+     pour une nuit d'une personne n'a pas sa place dans le moteur de tous :
+     il part, appel compris. */
 
   /* La nuit figée, pour les écrans qui veulent la nuit TELLE QU'ELLE A ÉTÉ
      PUBLIÉE plutôt que telle que le moteur la recalcule. Rend `null` tant que
