@@ -134,6 +134,7 @@
   var CLE_REVEIL = 'reveilDit_';    /* le réveil DÉCLARÉ, par jour */
   var CLE_LIVRE = 'nuitSommeilLivre_'; /* la montre a TOUT donné du sommeil, par jour */
   var CLE_LAPSE = 'nuitAttenteLapsee_'; /* l'attente du matin a lapsé ce jour-là — la nuit qui arrive ensuite est CELLE-LÀ, pas une migration */
+  var CLE_LIVRE_DIFF = 'nuitLivreeApresReport_'; /* 12 oct. 2026 — la nuit GARDÉE par la montre (lecture différée) vient d'être rendue, par jour */
   var CLE_RENDORMI = 'rendormiDit_';   /* 29 sept. 2026 — la réponse à « Tu t'es rendormi ? », par jour (lue aussi par la porte du matin, flint-sommeil.js) */
   var JRN = 'nuitMatinJrn';         /* le journal horodaté, une nuit de bout en bout */
   var JRN_CAP = 200;
@@ -1190,9 +1191,79 @@
      par le dernier recours (« détectée depuis plus d'une heure ») sur 1 h 52
      de sommeil — exactement ce que cette porte interdit. */
   window.flSommeilDiffere = function (ms) {
-    try { DB.set('flSommeilDiffere', (+ms > 0) ? +ms : 0); } catch (e) {}
+    try {
+      var avant = +DB.get('flSommeilDiffere', 0) || 0, t = Date.now();
+      DB.set('flSommeilDiffere', (+ms > 0) ? +ms : 0);
+      /* 12 oct. 2026 — LE PASSAGE À ZÉRO EST UN FAIT : la montre vient de
+         rendre la nuit qu'elle gardait. Le pont ne remet le drapeau à zéro
+         qu'à la LIVRAISON (« tout donné », « page déjà connue »), jamais à
+         l'envoi. On le date : c'est la preuve que la nuit est là en entier ET
+         que la personne est debout (la lecture ne reprend que sur des pas ou
+         sur l'app ouverte en journée). Voir `livraisonDiffereeEnCours`. */
+      if (!(+ms > 0) && avant > 0 && t - avant >= 0 && t - avant < 18 * 3600000) {
+        var K0 = tk(0);
+        DB.set(CLE_LIVRE_DIFF + K0, { ts: t, depuis: avant });
+        var d0 = new Date(avant);
+        tracer(window.flNuitSessionId(K0), 'held night delivered', null, null,
+               'la montre a rendu la nuit gardée depuis ' + ('0' + d0.getHours()).slice(-2) + ':'
+               + ('0' + d0.getMinutes()).slice(-2));
+      }
+    } catch (e) {}
     return true;
   };
+
+  /* ═══ 12 oct. 2026 — PAS DE NUIT SCELLÉE PENDANT QUE LA MONTRE LA GARDE ═══
+
+     LA NUIT DU 8 AU 9 OCTOBRE, LUE DANS LE JOURNAL DU TÉLÉPHONE DE DINO :
+
+       03:57  la nuit est détectée sur ses premières pages (00:19 → 03:25,
+              176 min) — il s'était levé à 03:54 ;
+       04:27  le fond lance la finalisation (« debout depuis 60 min ») onze
+              secondes AVANT que le pont ne diffère la lecture du sommeil ;
+       04:37  « parking timed out » : la nuit de 2h56 est SCELLÉE, récup 24,
+              alors que Dino dort jusqu'à 09:20 ;
+       09:26  l'app s'ouvre, la montre rend la nuit page par page. Dès la
+              PREMIÈRE page, le rendormissement rouvre la nuit (176 → 200 min)
+              et la rescelle : 3h20, récup 17 — c'est l'écran que Dino a vu ;
+       09:27  les pages suivantes arrivent, la réouverture est REFUSÉE
+              soixante-dix fois (une seule par nuit) ;
+       09:52  la promotion de la mesure rattrape enfin : 7h11, récup 50.
+
+     Dino : « on est juste censé avoir la version finale ». Deux règles :
+       · tant que la montre garde la nuit (lecture différée, firmware 0120),
+         rien ne se scelle pour le compte du fond, et rien ne se rouvre ;
+       · quand elle vient de la rendre, on attend que les dernières pages
+         soient posées (quinze secondes sans tranche) avant de juger.
+     Le geste de la personne (« Traiter ») garde son plafond de trois
+     minutes : on ne lui tient jamais l'écran plus longtemps. */
+  var CALME_PAGES_MS = 15000;
+  function livraisonDiffereeEnCours(K, now) {
+    try {
+      var d = +DB.get('flSommeilDiffere', 0) || 0;
+      if (d > 0 && now - d >= 0 && now - d < 18 * 3600000) {
+        var dd = new Date(d);
+        return { gardee: true,
+                 raison: 'la montre garde la nuit depuis ' + ('0' + dd.getHours()).slice(-2) + ':'
+                 + ('0' + dd.getMinutes()).slice(-2) + ' — on ne scelle pas une nuit qu\'on n\'a pas lue' };
+      }
+      var l = DB.get(CLE_LIVRE_DIFF + K, null);
+      if (l && l.ts && now - l.ts >= 0 && now - l.ts < 120000) {
+        var t = (window._watchLive && +window._watchLive.tNuit) || 0;
+        if (t && now - t >= 0 && now - t < CALME_PAGES_MS)
+          return { raison: 'les dernières pages de la nuit arrivent' };
+      }
+    } catch (e) {}
+    return null;
+  }
+  /* La nuit gardée vient d'être rendue (moins de trente minutes) : c'est une
+     déclaration au même titre qu'un geste — la nuit est complète et la
+     personne est debout. */
+  function livreeApresReport(K, now) {
+    try {
+      var l = DB.get(CLE_LIVRE_DIFF + K, null);
+      return !!(l && l.ts && now - l.ts >= 0 && now - l.ts < 30 * 60000);
+    } catch (e) { return false; }
+  }
 
   window.flNuitAutoDecision = function (K, maintenant) {
     K = K || tk(0);
@@ -1558,6 +1629,33 @@
       rec.essais = (rec.essais || 0) + 1;
       res.etat = rec.etat;
 
+      /* ── 1 bis · LA MONTRE GARDE-T-ELLE ENCORE LA NUIT ? (12 oct. 2026) ──
+         Voir le pavé de `livraisonDiffereeEnCours`. Le fond REND la main : la
+         session redevient « détectée », la personne garde son « Traiter » au
+         réveil, et la décision automatique repartira après la livraison. Une
+         réouverture ou une promotion en cours se gare sans rien perdre ; son
+         plafond de trois minutes se compte depuis la livraison. Le geste de la
+         personne, lui, garde le plafond compté depuis son doigt. */
+      var garde = livraisonDiffereeEnCours(K, now);
+      if (garde && !(cause === USER && rec.tFinal0 && (now - rec.tFinal0) >= ATTENTE_MAX_MS)) {
+        if (garde.gardee && cause === AUTO && rec.etat === 'AUTO_FINALIZING') {
+          rec.etat = 'DETECTED'; rec.cause = null; rec.tFinal0 = null;
+          rec.raison = garde.raison;
+          ecrire(K, rec);
+          tracer(rec.id, 'finalization postponed', cause, rec.etat, garde.raison);
+          res.etat = rec.etat; res.attente = true; res.raison = garde.raison;
+          return res;
+        }
+        if (cause !== USER) rec.tFinal0 = now;
+        if (rec.raison !== garde.raison)
+          tracer(rec.id, 'finalization waits for the watch', cause, rec.etat, garde.raison);
+        rec.raison = garde.raison;
+        ecrire(K, rec);
+        res.attente = true; res.raison = garde.raison;
+        armerReprise();
+        return res;
+      }
+
       /* ── 2 · LA NUIT EST-ELLE JUGEABLE ? ──────────────────────────────── */
       var cyc = cycleDe(K);
       /* `RENDORMISSEMENT` vaut déclaration au même titre qu'un geste : la nuit
@@ -1565,7 +1663,12 @@
       /* `MESURE_ARRIVEE` vaut déclaration au même titre : la nuit du bracelet
          arrive COMPLÈTE, d'un bloc, avec son hypnogramme et ses intervalles —
          il n'y a rien à observer et rien à attendre. */
-      var declare = (cause === USER || cause === RENDORMI || cause === MESURE);
+      /* 12 oct. 2026 — et la nuit GARDÉE que la montre vient de rendre : elle
+         arrive entière, la personne est debout. Sans ça, le fond attendait sa
+         fenêtre de grâce et l'écran restait sur « traitement » (8 oct. :
+         09:23 → 09:30) pour une nuit qui ne pouvait plus bouger. */
+      var livreDiff = (cause === AUTO && livreeApresReport(K, now));
+      var declare = (cause === USER || cause === RENDORMI || cause === MESURE || livreDiff);
       var dit = null;
       try { dit = window.flNuitReveilDit(K); } catch (e) {}
       var cycleOk = !!(cyc && (cyc.etat === 'finale'
@@ -1575,6 +1678,9 @@
       if (cycleOk && cyc.etat === 'collecte')
         tracer(rec.id, 'observation window skipped', cause, rec.etat,
                'battements complets jusqu\'au réveil — la fenêtre d\'observation n\'a plus rien à établir');
+      else if (cycleOk && livreDiff && cyc.etat === 'grace')
+        tracer(rec.id, 'observation window skipped', cause, rec.etat,
+               'la montre vient de rendre toute la nuit gardée — la personne est debout');
       /* ═══ v2210 — UN RÉVEIL DÉCLARÉ FERME LA FENÊTRE D'OBSERVATION ═════════
 
          La fenêtre de deux minutes établit UNE chose : « la montre a fini de
@@ -1770,6 +1876,12 @@
          chose sur elle — s'est-elle recollée depuis le sceau — et une seule
          fois. Voir le pavé de `flNuitRendormissement`. */
       if (e.etat === 'FINALIZED') {
+        /* 12 oct. 2026 — PAS PENDANT LA LIVRAISON. Le 9 octobre, la réouverture
+           unique est partie sur la PREMIÈRE page rendue (3h20, récup 17) et a
+           refusé les suivantes. On juge la nuit quand elle est là en entier.
+           Voir `livraisonDiffereeEnCours`. */
+        var gardeF = livraisonDiffereeEnCours(K, now);
+        if (gardeF) { out.attente = gardeF.raison; return out; }
         /* ═══ v2210 — LA PROMOTION SE DEMANDE AVANT LE RENDORMISSEMENT ═══════
 
            Les deux événements produisent le même symptôme — la nuit ne vaut
@@ -2402,6 +2514,86 @@
       return p;
     } catch (e) { return null; }
   }
+
+  /* ═══ 12 oct. 2026 — LA PUCE S'ARRÊTE, LE CŒUR DORT ENCORE ════════════════
+
+     LA NUIT DU 8 AU 9 OCTOBRE. La puce clôt sa dernière page à 08:28 sur un
+     micro-éveil (FC 71 pendant une minute) et n'écrit plus rien. Dino dort
+     pourtant jusqu'à ~09:20 : FC 45-57 jusqu'à 08:48, puis 51-48 de 09:19 à
+     09:24, et pas un seul pas de 03:54 à 09:23. Le lever se lit à 09:25 (FC 68,
+     puis 62). La question du rendormissement ci-dessus ne pouvait rien : elle
+     ne recolle que le sommeil que la puce a ÉCRIT.
+
+     LA RÈGLE, et elle ne tranche rien seule — elle DEMANDE, comme la porte du
+     matin. Après le réveil de la puce : aucun pas, et un cœur resté au niveau
+     de la nuit (médiane à 5 bpm ou moins de celle de la dernière partie du
+     sommeil, au moins dix mesures), jusqu'à un lever net — le premier pas, ou
+     deux mesures de suite à 12 bpm ou plus au-dessus. Au moins vingt minutes.
+
+     MESURÉE AVANT D'ÊTRE ÉCRITE, sur les huit nuits du téléphone qui portent
+     encore leur courbe (2 → 9 oct.). Elle demande deux fois : le 9 (08:28 →
+     09:25, +57 min, cœur à +2 de la nuit) et le 3 (07:46 → 08:18) — mais ce
+     matin-là Dino avait touché « Traiter » à 07:48 : un réveil DÉCLARÉ avant
+     le lever ferme la question. Les six autres matins sont réveillés pour de
+     bon (cœur à +6 à +9, ou lever en moins de vingt minutes).
+
+     « OUI » PREND LE CHEMIN DU STYLO (`flSommeilManuel`) : la fenêtre va du
+     coucher au lever, les minutes que la puce n'a pas écrites comptent en
+     sommeil léger, le sceau et la récupération suivent dans la même seconde. */
+  var POULS_RENDORMI = { margeLever: 12, margeSommeil: 5, mesuresMin: 10, dureeMin: 20, horizon: 240 };
+  function rendormiParLePouls(K) {
+    try {
+      var w = DB.get('watch_' + K, null);
+      var n = w && w.night;
+      if (!n || n.source !== 'ble' || n.wakeMin == null || !Array.isArray(n.hrTs)) return null;
+      var W = Math.round(+n.wakeMin);
+      if (!(W > 0 && W < 14 * 60)) return null;
+      var m0 = (typeof flMinuitMsDe === 'function') ? flMinuitMsDe(K) : null;
+      if (m0 == null || isNaN(m0)) return null;
+      var pas = (typeof window.flPasParMinute === 'function') ? window.flPasParMinute(K) : null;
+      if (!pas || !pas.length) return null;          /* sans les pas, « sans un pas » ne se dit pas */
+      var fc = {};
+      for (var i = 0; i < n.hrTs.length; i++) {
+        var x = n.hrTs[i];
+        if (!x || !(+x[0] > 0)) continue;
+        var mi = Math.floor((+x[1] * 1000 - m0) / 60000);
+        if (mi >= 0 && mi < 1440) fc[mi] = +x[0];
+      }
+      function mediane(a) { a = a.slice().sort(function (p, q) { return p - q; });
+        var k = a.length >> 1; return a.length % 2 ? a[k] : (a[k - 1] + a[k]) / 2; }
+      var bed = (n.bedMin != null && +n.bedMin < W) ? Math.max(0, +n.bedMin) : 0;
+      var nuitFc = [];
+      for (var m = Math.max(bed, W - POULS_RENDORMI.horizon); m < W; m++) if (fc[m] != null) nuitFc.push(fc[m]);
+      if (nuitFc.length < 20) return null;
+      var plancher = mediane(nuitFc), seuil = plancher + POULS_RENDORMI.margeLever;
+      var apres = [];
+      for (var a = W + 1; a <= W + POULS_RENDORMI.horizon && a < 1440; a++) if (fc[a] != null) apres.push(a);
+      var lever = null;
+      for (var b = W + 1; b <= W + POULS_RENDORMI.horizon && b < 1440; b++) {
+        if (+pas[b] > 0) { lever = b; break; }
+        if (fc[b] != null && fc[b] >= seuil) {
+          var suite = null;
+          for (var j = 0; j < apres.length; j++) if (apres[j] > b) { suite = apres[j]; break; }
+          if (suite != null && fc[suite] >= seuil) { lever = b; break; }
+        }
+      }
+      if (lever == null || lever - W < POULS_RENDORMI.dureeMin) return null;
+      var entre = [];
+      for (var e = W + 1; e < lever; e++) if (fc[e] != null) entre.push(fc[e]);
+      if (entre.length < POULS_RENDORMI.mesuresMin) return null;
+      if (mediane(entre) > plancher + POULS_RENDORMI.margeSommeil) return null;
+      /* Un réveil déclaré (« Traiter », le réveil dit) AVANT le lever : la
+         personne était là, éveillée — on ne lui demande pas si elle dormait. */
+      var dit = null;
+      try { dit = window.flNuitReveilDit(K); } catch (er) {}
+      if (dit != null && dit < m0 + lever * 60000) return null;
+      return { source: 'pouls', debutMin: W, finMin: lever, dormi: lever - W,
+               debut: m0 + W * 60000, fin: m0 + lever * 60000,
+               bedMin: (n.bedMin != null ? +n.bedMin : null), plancher: plancher };
+    } catch (e) { return null; }
+  }
+  window.flNuitRendormiParLePouls = rendormiParLePouls;
+
   window.flNuitRendormiQuestion = function (K) {
     K = K || tk(0);
     try {
@@ -2410,7 +2602,7 @@
          coûter qu'une lecture de la base. */
       if (K !== tk(0)) return null;                          /* la nuit du jour seulement */
       if (DB.get(CLE_RENDORMI + K, null)) return null;       /* on ne redemande jamais */
-      var p = rendormiPropose(K);
+      var p = rendormiPropose(K) || rendormiParLePouls(K);
       if (!p) return null;
       if (typeof flNuitSansMesure === 'function' && flNuitSansMesure(K)) return null;
       return { debut: hhmmDe(p.debutMin), fin: hhmmDe(p.finMin), dormiMin: p.dormi };
@@ -2427,14 +2619,32 @@
       } catch (e) {}
     }
     try {
-      var q = window.flNuitRendormiQuestion(K), p = rendormiPropose(K);
+      var q = window.flNuitRendormiQuestion(K), p = rendormiPropose(K) || rendormiParLePouls(K);
       if (!q || !p) { res.raison = 'aucune question en cours pour ' + K; return res; }
-      DB.set(CLE_RENDORMI + K, { rep: res.rep, ts: now, debut: p.debut, fin: p.fin, dormi: p.dormi });
+      DB.set(CLE_RENDORMI + K, { rep: res.rep, ts: now, debut: p.debut, fin: p.fin, dormi: p.dormi,
+                                 source: p.source || 'porte' });
       var rec = lire(K);
       tracer(rec && rec.id, oui ? 'resleep confirmed' : 'resleep denied', USER, rec && rec.etat,
-             q.debut + ' → ' + q.fin + ', ' + q.dormiMin + ' min de sommeil après la porte');
+             q.debut + ' → ' + q.fin + ', ' + q.dormiMin + ' min de sommeil '
+             + (p.source === 'pouls' ? 'après l\'arrêt de la puce (pouls de nuit, aucun pas)' : 'après la porte'));
       res.ok = true;
       if (!oui) { rafraichir(); return res; }
+      /* 12 oct. 2026 — la puce n'a rien écrit après son réveil : il n'y a pas
+         de sommeil à recoller, il y a une fenêtre à étendre. C'est le geste du
+         stylo, au lever lu sur le cœur et les pas. */
+      if (p.source === 'pouls') {
+        var rm = null;
+        try {
+          if (typeof window.flSommeilManuel === 'function' && p.bedMin != null)
+            rm = window.flSommeilManuel(K, p.bedMin, p.finMin);
+        } catch (e) { rm = { ok: false, raison: e.message }; }
+        res.etendue = !!(rm && rm.ok);
+        res.raison = res.etendue ? ('nuit étendue jusqu\'à ' + q.fin) : ('extension refusée — ' + ((rm && rm.raison) || 'stylo absent'));
+        tracer(rec && rec.id, res.etendue ? 'resleep resealed' : 'resleep refused', USER, rec && rec.etat,
+               res.raison);
+        rafraichir();
+        return res;
+      }
 
       try { if (typeof window.flintSommeilRecalculer === 'function') window.flintSommeilRecalculer(); }
       catch (e) { res.recalcul = e.message; }
