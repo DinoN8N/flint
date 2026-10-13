@@ -186,6 +186,20 @@
     try {
       var j = DB.get(JRN, []) || [];
       if (!Array.isArray(j)) j = [];
+      /* 13 oct. 2026 — UN REFUS QUI SE RÉPÈTE EFFACE LA NUIT QUI L'EXPLIQUE.
+         Le matin du 13, « reopen refused » est tombé cent quarante fois en
+         treize minutes : le journal plafonne à 200 lignes, et la veille — la
+         détection, les sceaux, les livraisons — avait été poussée dehors.
+         Deux événements identiques de suite se replient en un seul, daté du
+         DERNIER et compté. On ne perd pas l'information : on perd la redite. */
+      var prec = j.length ? j[j.length - 1] : null;
+      if (prec && prec.id === l.id && prec.ev === l.ev && prec.detail === l.detail
+          && prec.cause === l.cause && prec.etat === l.etat) {
+        prec.t = l.t; prec.n = (+prec.n || 1) + 1;
+        DB.set(JRN, j);
+        try { console.log('[nuit] ' + ligne(l) + ' (×' + prec.n + ')'); } catch (e) {}
+        return prec;
+      }
       j.push(l);
       if (j.length > JRN_CAP) j = j.slice(j.length - JRN_CAP);
       DB.set(JRN, j);
@@ -1194,6 +1208,14 @@
     try {
       var avant = +DB.get('flSommeilDiffere', 0) || 0, t = Date.now();
       DB.set('flSommeilDiffere', (+ms > 0) ? +ms : 0);
+      /* 13 oct. 2026 — ON A ESSAYÉ DE RETIRER LA MARQUE « tout donné » quand la
+         montre reprend la nuit (le 13, elle l'a reprise à 01:13, 01:39, 01:50
+         après avoir dit l'avoir tout donnée à 01:02). Le banc a montré que la
+         marque sert AUSSI la porte de publication : la retirer cachait une nuit
+         déjà publiée dès qu'une lecture différée partait l'après-midi. Et elle
+         ne servait à rien : la promotion sait désormais lire la mesure du
+         bracelet sans attendre le découpage (voir `dureeMesuree`), ce qui rend
+         la nuit promouvable quoi qu'en dise la marque. */
       /* 12 oct. 2026 — LE PASSAGE À ZÉRO EST UN FAIT : la montre vient de
          rendre la nuit qu'elle gardait. Le pont ne remet le drapeau à zéro
          qu'à la LIVRAISON (« tout donné », « page déjà connue »), jamais à
@@ -2187,6 +2209,32 @@
     } catch (er) { return false; }
   }
 
+  /* ═══ 13 oct. 2026 — LE MOTEUR N'A PAS DÉCOUPÉ, LE BRACELET A MESURÉ ══════
+
+     LA NUIT DU 12 AU 13 OCTOBRE. La nuit est scellée à 01:43 sur une
+     ESTIMATION (21:50 → 01:39, 200 min, score 31) pendant que Dino dort — son
+     cœur est à 45, le plus bas de la nuit. À 09:09 la montre rend enfin ce
+     qu'elle gardait : `watch_<K>.sommeils` porte un `mainSleep/ble` de
+     221 min (03:32 → 08:35), et `watch_<K>.night` le confirme. La promotion
+     aurait dû partir là. Elle n'est jamais partie : `sleepNight(K)` rendait
+     `null` — « les intervalles R-R de la nuit arrivent encore, pas de nuit
+     découpée pour ce jour » — et la porte abandonnait sur cette seule ligne.
+     La réouverture, elle, était déjà brûlée depuis 01:39. Résultat : cent
+     quarante refus en silence entre 09:10 et 09:23, et 3h20 affichées pour une
+     nuit que WHOOP voit à 6h42.
+
+     LA MESURE DU BRACELET EST DÉJÀ DANS LA MAIN — `m`, deux lignes plus haut.
+     Le découpage du moteur est un CONFORT (il rend les stades, les bornes) ;
+     il n'est pas la condition d'existence de la nuit. Quand il manque, la
+     durée mesurée par le bracelet suffit à dire « l'estimation ne tient pas ».
+     La règle de promotion ne s'élargit pas d'un pouce : c'est toujours une
+     estimation qui cède devant une mesure, une seule fois (`nuitPromu_`). */
+  function dureeMesuree(n, m) {
+    if (n && n.asleep != null) return { min: +n.asleep, via: 'moteur' };
+    if (m && m.sleepMin != null) return { min: +m.sleepMin, via: 'bracelet' };
+    return null;
+  }
+
   window.flNuitMesureArrivee = function (K) {
     K = K || tk(0);
     var out = { promouvoir: false, raison: null };
@@ -2199,12 +2247,14 @@
       if (m1 && scoreSurEstimation(K, rf, m1)) {
         var n1 = null;
         try { n1 = (typeof sleepNight === 'function') ? sleepNight(K) : null; } catch (e) {}
-        var d1 = (n1 && n1.asleep != null) ? Math.abs((+rf.e.sleepMin || 0) - (+n1.asleep || 0)) : 0;
+        var q1 = dureeMesuree(n1, m1);
+        var d1 = q1 ? Math.abs((+rf.e.sleepMin || 0) - q1.min) : 0;
         if (d1 > SEUIL_RENDORMI_MIN) {
           out.promouvoir = true;
           out.ecart = d1;
-          out.raison = 'le score portait encore sur l\'estimation : ' + rf.e.sleepMin + ' → ' + n1.asleep
-                     + ' min (' + d1 + ' min d\'écart) — une estimation ne tient pas devant une mesure';
+          out.via = q1.via;
+          out.raison = 'le score portait encore sur l\'estimation : ' + rf.e.sleepMin + ' → ' + q1.min
+                     + ' min (' + d1 + ' min d\'écart, ' + q1.via + ') — une estimation ne tient pas devant une mesure';
           return out;
         }
       }
@@ -2213,7 +2263,9 @@
       if (!m) { out.raison = 'le bracelet n\'a toujours pas livré sa nuit'; return out; }
       var n = null;
       try { n = (typeof sleepNight === 'function') ? sleepNight(K) : null; } catch (e) {}
-      if (!n || n.asleep == null) { out.raison = 'le moteur ne rend plus cette nuit'; return out; }
+      var q = dureeMesuree(n, m);
+      if (!q) { out.raison = 'le bracelet a livré sa nuit sans durée exploitable'; return out; }
+      n = { asleep: q.min };
       /* On compare au SCEAU, pas à la dernière lecture : c'est l'écart que
          l'utilisateur a sous les yeux. Le même seuil que partout ici. */
       var d = Math.abs((+f.asleep || 0) - (+n.asleep || 0));
