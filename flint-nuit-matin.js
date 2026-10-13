@@ -1279,7 +1279,39 @@
   }
   /* La nuit gardée vient d'être rendue (moins de trente minutes) : c'est une
      déclaration au même titre qu'un geste — la nuit est complète et la
-     personne est debout. */
+     personne est debout. 13 oct. : SEULEMENT si la journée a repris — une
+     levée de nuit rend aussi la nuit gardée (voir `journeeReprise`). */
+  /* ═══ 13 oct. 2026 — LE FOND NE SCELLE PAS UNE NUIT QUI N'EST PAS FINIE ══
+
+     LA NUIT DU 12 AU 13 OCTOBRE, lue dans le journal du téléphone. À 01:15
+     Dino se lève (98 pas), la montre reprend la lecture et rend la nuit
+     qu'elle gardait ; à 01:38 le fond SCELLE une nuit estimée de 2h35
+     (21:15 → 00:15, récup 25) — « la montre vient de rendre toute la nuit
+     gardée, la personne est debout » (v2846). Debout, il l'était : deux
+     minutes, pour aller aux toilettes. Sans la v2846 le même sceau tombait
+     trois minutes plus tard (« parking timed out ») : c'est le défaut du 9
+     octobre à 04:37, qui ne passait pas par le drapeau de la montre.
+
+     LA RÈGLE : la décision AUTOMATIQUE n'existe que si la journée a repris —
+     le cycle le dit (`finale` : une vraie marche depuis le réveil, ou quatre
+     heures sans recollement possible), ou l'heure du réveil DÉCLARÉ au profil
+     est passée. Une levée de nuit n'est ni l'une ni l'autre. Le geste de la
+     personne (« Traiter ») n'est pas concerné : il décide quand il veut.
+     Sans réveil au profil lisible, rien ne change (on ne sait pas juger). */
+  function journeeReprise(K, now, cyc) {
+    try {
+      if (cyc && cyc.etat === 'finale') return { ok: true, raison: cyc.raison || 'cycle final' };
+      var r = reveilProfilMin();
+      if (r == null) return { ok: true, raison: 'aucun réveil déclaré lisible' };
+      var m0 = (typeof flMinuitMsDe === 'function') ? flMinuitMsDe(K) : null;
+      if (m0 == null || isNaN(m0)) return { ok: true, raison: 'jour illisible' };
+      var hh = ('0' + Math.floor(r / 60)).slice(-2) + ':' + ('0' + (r % 60)).slice(-2);
+      if (now >= m0 + r * 60000) return { ok: true, raison: 'le réveil déclaré (' + hh + ') est passé' };
+      return { ok: false, raison: 'la nuit n\'est pas finie — ni vraie marche depuis le réveil, ni le réveil déclaré ('
+               + hh + ') — une levée de nuit ne clôt rien' };
+    } catch (e) { return { ok: true, raison: 'jugement impossible : ' + e.message }; }
+  }
+
   function livreeApresReport(K, now) {
     try {
       var l = DB.get(CLE_LIVRE_DIFF + K, null);
@@ -1314,6 +1346,9 @@
         return out;
       }
       var cyc = cycleDe(K);
+      /* 13 oct. 2026 — la journée a-t-elle repris ? Voir `journeeReprise`. */
+      var jr = journeeReprise(K, now, cyc);
+      if (!jr.ok) { out.raison = jr.raison; direLaDecision(K, out.raison); return out; }
       var debout = !!(cyc && cyc.etat === 'grace' && cyc.depuisReveil != null
                       && cyc.depuisReveil >= AUTO_APRES_REVEIL_MIN);
       /* ═══ 20 sept. 2026 — LE DERNIER RECOURS NE DEMANDE RIEN AU CYCLE ═════
@@ -1689,7 +1724,7 @@
          arrive entière, la personne est debout. Sans ça, le fond attendait sa
          fenêtre de grâce et l'écran restait sur « traitement » (8 oct. :
          09:23 → 09:30) pour une nuit qui ne pouvait plus bouger. */
-      var livreDiff = (cause === AUTO && livreeApresReport(K, now));
+      var livreDiff = (cause === AUTO && livreeApresReport(K, now) && journeeReprise(K, now, cyc).ok);
       var declare = (cause === USER || cause === RENDORMI || cause === MESURE || livreDiff);
       var dit = null;
       try { dit = window.flNuitReveilDit(K); } catch (e) {}
