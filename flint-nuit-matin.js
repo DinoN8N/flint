@@ -1964,7 +1964,25 @@
     return faits;
   };
 
+  /* ═══ 14 oct. 2026 (v2857) — LE RATTRAPAGE PART PAR TOUS LES CHEMINS ════
+     La v2856 l'avait branché sur DEUX des huit sorties de la passe. Or la nuit
+     du jour, quand elle est déjà FINALIZED et qu'elle n'a pas bougé, sort sur
+     `if (!ro.ok) return out;` — exactement le cas de Dino le 14 octobre : la
+     nuit du 12 au 13 avait sa vraie matière dans le moteur (6h23 contre 3h41
+     scellées) et le rattrapage n'était jamais appelé. Vérifié sur le téléphone,
+     deux relances de suite : le sceau ne bougeait pas.
+     On enveloppe donc la passe au lieu de chercher ses sorties une par une. */
   window.flNuitPasse = function (cause, maintenant) {
+    var now = maintenant || Date.now();
+    var out = passeDuJour(cause, now);
+    try {
+      var rattr = window.flNuitRattraperPassees(now);
+      if (rattr && rattr.length) out.rattrapees = rattr;
+    } catch (e) {}
+    return out;
+  };
+
+  function passeDuJour(cause, maintenant) {
     var now = maintenant || Date.now();
     var K = tk(0);
     var out = { K: K, etat: null, agi: null };
@@ -2045,22 +2063,11 @@
 
       var d = window.flNuitAutoDecision(K, now);
       out.decision = d;
-      if (!d.auto) { rattraperApres(out, now); return out; }
+      if (!d.auto) return out;
       var ra = window.flNuitFinaliser(K, AUTO, now);
       out.agi = 'auto'; out.resultat = ra; out.etat = ra.etat || out.etat;
-      rattraperApres(out, now);
       return out;
     } catch (e2) { out.panne = e2.message; return out; }
-  };
-
-  /* LE RATTRAPAGE PART APRÈS LA NUIT DU JOUR, et une fois par passe. Il est
-     silencieux quand il n'y a rien à faire : `flNuitRouvrir` sort à sa
-     première ligne sur une nuit qui n'a pas bougé. */
-  function rattraperApres(out, now) {
-    try {
-      var f = window.flNuitRattraperPassees(now);
-      if (f && f.length) out.rattrapees = f;
-    } catch (e) {}
   }
 
   /* ─────────────────────────────────────────────────────────────────────────
