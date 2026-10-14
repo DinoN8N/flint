@@ -1625,21 +1625,186 @@ function nightFromChunks(dayKey) {
        le 0120, une minute non écrite peut être du sommeil oublié ; sous le
        0088, un trou est un réveil (25 sept. : WHOOP 102 min éveillé dans le
        trou 00:34 → 02:42, pouls 54 contre 49 en sommeil). */
-    var brut = new Array(N), ecrit = new Array(N);
-    for (var ib = 0; ib < N; ib++) { brut[ib] = 0; ecrit[ib] = false; }
+    var brut = new Array(N), ecrit = new Array(N), bourrage = new Array(N);
+    for (var ib = 0; ib < N; ib++) { brut[ib] = 0; ecrit[ib] = false; bourrage[ib] = false; }
     var hache = chosen.grp.some(function (c) { return c.stages[0] === 5; });
+    /* ═══ 14 oct. 2026 (v2854) — LA MOITIÉ DE BOURRAGE NE SE PEINT PLUS
+           SUR LA NUIT ═══════════════════════════════════════════════
+
+       Le commentaire juste au-dessus le dit depuis le 1er octobre : une page
+       0x6b rend DEUX FOIS sa durée, les stades puis l'activité relue en stades.
+       `ecrit` ne marquait que la première moitié — mais `base` et `seen`
+       étaient posés sur LES DEUX. L'activité, qui ne vaut ni 1 ni 2 ni 3,
+       tombait donc dans le `else` et se peignait en ÉVEIL, et `seen` interdisait
+       au combleur juste en dessous de la voir comme un trou.
+
+       POURQUOI ÇA NE SE VOYAIT PAS : les pages font 240 min et la montre en
+       envoie une toutes les deux heures. La moitié réelle de la page suivante
+       recouvrait donc exactement le bourrage de la précédente. Le défaut était
+       là depuis toujours, entièrement masqué par ce chevauchement.
+
+       CE QUI L'A DÉMASQUÉ, nuit du 13 au 14 octobre 2026 : des pages de 86 min
+       espacées de ~100 min, donc SANS chevauchement (six minutes couvertes deux
+       fois, contre 302 à 428 les nuits d'avant). Les quatre moitiés de bourrage
+       sont restées à nu, et elles tombent EXACTEMENT sur les quatre « trous »
+       de la nuit :
+
+           page 02:20 +86   réel 02:20→03:02   bourrage 03:03→03:46
+           page 04:15 +86   réel 04:15→04:57   bourrage 04:58→05:41
+           page 05:35 +86   réel 05:35→06:17   bourrage 06:18→07:01
+           page 07:01 +124  réel 07:01→08:02   bourrage 08:03→09:05
+
+       214 minutes d'« éveil » inventées, et la porte du matin a fermé sur l'une
+       d'elles : nuit affichée 02:29→06:19, 1h43 de sommeil, 2h07 d'éveil, ZÉRO
+       paradoxal — quand WHOOP mesurait 02:40→08:51 et 5h42. Pendant ces 214
+       minutes la montre rendait le pouls EN CONTINU, médiane 46 à 51 bpm.
+
+       ON NE PEINT DONC QUE LA MOITIÉ RÉELLE. Ce n'est pas inventer du sommeil :
+       c'est rendre à ces minutes leur statut de TROU, et le combleur ci-dessous
+       décide comme il l'a toujours fait — entouré de sommeil c'est du sommeil,
+       en bordure de nuit ça reste de l'éveil. `seen` dit désormais « la montre
+       a écrit un stade ici », ce que le diagnostic de couverture plus bas
+       (`nc.seen`) voulait dire depuis le début. */
+    /* ═══ 14 oct. 2026 (v2854) — LA MOITIÉ DE BOURRAGE NE SE PEINT PLUS
+           SUR LA NUIT ═══════════════════════════════════════════════
+
+       Le commentaire juste au-dessus le dit depuis le 1er octobre : une page
+       0x6b rend DEUX FOIS sa durée, les stades puis l'activité relue en stades.
+       `ecrit` ne marquait que la première moitié — mais `base` et `seen`
+       étaient posés sur LES DEUX. L'activité, qui ne vaut ni 1 ni 2 ni 3,
+       tombait donc dans le `else` et se peignait en ÉVEIL, et `seen` interdisait
+       au combleur juste en dessous de la voir comme un trou.
+
+       POURQUOI ÇA NE SE VOYAIT PAS : les pages font 240 min et la montre en
+       envoie une toutes les deux heures. La moitié RÉELLE de la page suivante
+       recouvrait donc exactement le bourrage de la précédente. Le défaut était
+       là depuis toujours, entièrement masqué par ce chevauchement.
+
+       CE QUI L'A DÉMASQUÉ, nuit du 13 au 14 octobre 2026 : des pages de 86 min
+       espacées de ~100 min, donc SANS chevauchement (six minutes couvertes deux
+       fois, contre 302 à 428 les nuits d'avant). Les quatre moitiés de bourrage
+       sont restées à nu, et elles tombent EXACTEMENT sur les quatre « trous »
+       de la nuit :
+
+           page 02:20 +86   réel 02:20→03:02   bourrage 03:03→03:46
+           page 04:15 +86   réel 04:15→04:57   bourrage 04:58→05:41
+           page 05:35 +86   réel 05:35→06:17   bourrage 06:18→07:01
+           page 07:01 +124  réel 07:01→08:02   bourrage 08:03→09:05
+
+       214 minutes d'« éveil » inventées, et la porte du matin a fermé sur l'une
+       d'elles : nuit affichée 02:29→06:19, 1h43 de sommeil, 2h07 d'éveil, ZÉRO
+       paradoxal — quand WHOOP mesurait 02:40→08:51 et 5h42. Pendant ces 214
+       minutes la montre rendait le pouls EN CONTINU, médiane 46 à 51 bpm.
+
+       COMMENT ON RECONNAÎT LE BOURRAGE, et c'est une signature, pas un seuil.
+       Alphabet des 277 pages encore en base (août à octobre, firmwares 0088 ET
+       0120), les deux moitiés comptées séparément :
+
+           1re moitié  {1:4975, 2:12154, 3:4300, 4:530, 6:67, 10:25, 11:8, 15:124}
+           2e  moitié  {0:21751, puis 356 valeurs éparses de 1 à 15}
+
+       LA PREMIÈRE MOITIÉ NE PORTE JAMAIS DE ZÉRO — 277 fois sur 277. La seconde
+       en est faite à 97 %. On exige donc les deux : aucun zéro devant, une
+       majorité de zéros derrière. 271 pages sur 277 le vérifient ; les six
+       autres sont très courtes et se peignent en entier, ce qui est le repli
+       sûr (c'est le comportement d'avant).
+
+       ET POURQUOI PAS « LA MOITIÉ » TOUT COURT : les jeux d'essai de la maison
+       fabriquent des pages SIMPLES — une nuit écrite d'un bloc, ses éveils
+       codés 0 EN PLEIN MILIEU. Leur première moitié porte donc des zéros, ils
+       tombent du bon côté, et leur nuit n'est pas coupée en deux. Sans cette
+       distinction, six bancs deviennent rouges — dont le rendormissement du
+       matin et le cas Félix du 24 août. */
     chosen.grp.forEach(function (c) {
-      var reelles = Math.ceil(c.stages.length / 2);
-      c.stages.forEach(function (v, idx) { var mi = Math.round((c.start + idx * 60 - start) / 60); if (mi >= 0 && mi < N) { base[mi] = (v === 1 ? 'deep' : v === 2 ? 'light' : v === 3 ? 'rem' : 'awake'); seen[mi] = true; if (idx < reelles) { brut[mi] = v; ecrit[mi] = true; } } });
+      var n0 = c.stages.length, moitie = Math.ceil(n0 / 2);
+      var zeroDevant = false, zeroDerriere = 0;
+      for (var q = 0; q < n0; q++) {
+        if (c.stages[q] !== 0) continue;
+        if (q < moitie) zeroDevant = true; else zeroDerriere++;
+      }
+      var doublee = !zeroDevant && zeroDerriere * 2 > (n0 - moitie);
+      var reelles = doublee ? moitie : n0;
+      if (doublee) {
+        /* ON GARDE LA TRACE DE CE QUE LA MONTRE A ENREGISTRÉ SANS NOUS LE DIRE.
+           Le bourrage n'est pas du vide : c'est une minute que la page COUVRE
+           et dont elle ne rend pas le stade. Le combleur en a besoin pour
+           distinguer « la montre a enregistré ici » de « rien n'est arrivé ». */
+        for (var qb = moitie; qb < n0; qb++) {
+          var mb = Math.round((c.start + qb * 60 - start) / 60);
+          if (mb >= 0 && mb < N) bourrage[mb] = true;
+        }
+      }
+      c.stages.forEach(function (v, idx) {
+        if (idx >= reelles) return;
+        var mi = Math.round((c.start + idx * 60 - start) / 60);
+        if (mi < 0 || mi >= N) return;
+        base[mi] = (v === 1 ? 'deep' : v === 2 ? 'light' : v === 3 ? 'rem' : 'awake');
+        seen[mi] = true; brut[mi] = v; ecrit[mi] = true;
+      });
     });
     /* Comblement : un trou ENTOURÉ de sommeil est du sommeil (on ne se réveille pas
        pour une minute sans raison). Un trou en bordure de nuit reste de l'éveil. */
+    /* ═══ 14 oct. 2026 (v2854) — SOUS LE 0120, L'EN-TÊTE D'UNE PAGE N'EST PAS
+           UN RÉVEIL ═════════════════════════════════════════════════
+
+       Le combleur exige du sommeil DES DEUX CÔTÉS du trou. Or sous le 0120
+       chaque page s'ouvre sur des « 5 » (c'est la définition même de `hache`,
+       vingt lignes plus haut), et un 5 tombe dans le `else` : de l'éveil. La
+       nuit du 13 au 14 octobre 2026, chacun des quatre trous est précédé de
+       vrai sommeil et SUIVI de trois minutes d'en-tête — trois minutes
+       refusaient 44 minutes de sommeil, quatre fois.
+
+       POURQUOI C'EST BORNÉ AU 0120, et ce n'est pas une précaution : c'est la
+       règle écrite juste au-dessus, avec sa preuve. Sous le 0088 un trou EST un
+       réveil — 25 sept., WHOOP compte 102 min d'éveil dans le trou 00:34→02:42,
+       pouls 54 contre 49 en sommeil. Vérifié au banc sur les 24 nuits d'août
+       (0088) que l'export WHOOP étiquette : enjamber l'en-tête sans distinguer
+       le firmware casse SIX des quinze nuits déjà justes, en inventant 70 à
+       120 minutes de sommeil. Borné au 0120, aucune n'est touchée — `hache` y
+       est faux, la fonction rend le stade tel quel.
+
+       ON N'ENJAMBE QUE CE QUI OUVRE UNE PAGE. Pas « tout éveil court » : un
+       réveil de trois minutes existe. Un en-tête, lui, commence à la PREMIÈRE
+       minute d'une page, et c'est vérifiable sans seuil. */
+    var ouvrePage = new Array(N);
+    for (var op = 0; op < N; op++) ouvrePage[op] = false;
+    chosen.grp.forEach(function (c) {
+      var mi0 = Math.round((c.start - start) / 60);
+      if (mi0 >= 0 && mi0 < N) ouvrePage[mi0] = true;
+    });
+    function voisinUtile(i, pas, toutBourrage) {
+      if (base[i] !== 'awake' || !hache || !ouvrePage[i] || !toutBourrage) return base[i];
+      for (var k = i; k >= 0 && k < N; k += pas) {
+        if (!seen[k]) continue;
+        if (base[k] !== 'awake') return base[k];
+        if (k !== i && ouvrePage[k]) return 'awake';
+      }
+      return 'awake';
+    }
     var comble = 0;
     for (var g0 = 0; g0 < N; g0++) {
       if (seen[g0]) continue;
       var g1 = g0; while (g1 < N && !seen[g1]) g1++;
-      var avant = null; for (var a0 = g0 - 1; a0 >= 0; a0--) if (seen[a0]) { avant = base[a0]; break; }
-      var apres = null; for (var a1 = g1; a1 < N; a1++) if (seen[a1]) { apres = base[a1]; break; }
+      /* LE BOURRAGE EXPLIQUE-T-IL CE TROU ? C'est la garde de la clémence
+         ci-dessous, et un banc l'a exigée.
+
+         DEUX TROUS, DEUX RÉPONSES, mesurés :
+         · nuit d'insomnie du 1er octobre — trou de 202 min, dont 45 couvertes
+           par le bourrage d'une page et 157 JAMAIS transmises. Dino était
+           réveillé : par convention WHOOP ce trou appartient à la nuit, en
+           ÉVEIL, et le banc `test-nuit-courte-insomnie.js` l'exige.
+         · nuit du 13 au 14 octobre — quatre trous de 73, 38, 44 et 59 min.
+           Trois sont du bourrage PUR ; le premier mèle 44 min de bourrage et
+           29 min non transmises. Le pouls y court en continu à 46-51 bpm.
+
+         LA RÈGLE, SANS SEUIL ABSOLU : le bourrage doit expliquer la MAJEURE
+         PARTIE du trou. 157 contre 45, le trou n'est pas le fait de la
+         pagination et on le juge sur ses bords nus ; 29 contre 44, il l'est. */
+      var nBourrage = 0, nNu = 0;
+      for (var qt = g0; qt < g1; qt++) { if (bourrage[qt]) nBourrage++; else nNu++; }
+      var toutBourrage = nBourrage > nNu;
+      var avant = null; for (var a0 = g0 - 1; a0 >= 0; a0--) if (seen[a0]) { avant = voisinUtile(a0, -1, toutBourrage); break; }
+      var apres = null; for (var a1 = g1; a1 < N; a1++) if (seen[a1]) { apres = voisinUtile(a1, +1, toutBourrage); break; }
       if (avant && apres && avant !== 'awake' && apres !== 'awake') {
         for (var gm = g0; gm < g1; gm++) { base[gm] = 'light'; comble++; }
       }

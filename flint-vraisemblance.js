@@ -174,3 +174,90 @@ window.flZonesFiche=function(K){
   });
  }catch(e){return null;}
 };
+
+/* ═══ 14 oct. 2026 — UNE SÉANCE QUE LE CAPTEUR A MANQUÉE SE VOIT À SA FORME ═══
+
+   L'ÉTALON : trente et une séances de Dino dont WHOOP, au même poignet, donne
+   la FC maximale (`whoop-export/`, 13 → 30 sept.). CASSÉE = 25 bpm d'écart ou
+   plus sur le maximum ; PROPRE = 10 ou moins. Dix-neuf cassées, douze propres.
+   Et l'écart n'est pas une nuance : -68, -60, -56, -51, -47, +60, +68.
+
+   TROIS FORMES, et aucune n'est un seuil de battements. On ne juge jamais
+   qu'un cœur bat trop vite ou trop lentement — on juge que la SÉRIE n'a pas
+   la forme d'une séance.
+
+   ① ELLE SE TAIT. Le canal rend DOUZE valeurs par minute quand il tient le
+      pouls : les douze séances propres valent 11,7 à 12,7, onze d'entre elles
+      serrées au maximum du canal. Quand le capteur perd le pouls, il n'invente
+      pas — il n'envoie plus rien : 1,4 · 3,2 · 3,6 · 3,7 · 3,8 · 3,9 · 4,8 ·
+      4,9 · 5,2 · 5,2 · 5,4 · 5,5 · 5,8 · 6,6 · 7,9. Le silence EST la mesure.
+
+   ② UN PIC PARASITE. L'écart entre le maximum et la médiane de la séance.
+      Une vraie séance, même un football qui monte à 179, reste sous 64 ; les
+      deux sur-lectures valent 90 et 94 (16 et 22 sept.), celle du 13 octobre
+      83 — une marche de retour lue comme un effort à 174.
+
+   ③ ELLE EST TROP PLATE. Le même écart, par le bas. Une séance d'au moins dix
+      minutes dont le maximum dépasse la médiane de 25 bpm ou moins n'a pas
+      la forme d'un effort : les propres font 29 à 64. Deux cassées à pleine
+      couverture se prennent ici (15 et 23) — le capteur parlait beaucoup, et
+      disait la même chose faux.
+
+   CE QUE ÇA DONNE, mesuré : dix-huit cassées sur dix-neuf vues, onze propres
+   sur douze respectées. La seule fausse alerte (17 sept. 13:33, couverture
+   6,1) est une séance juste pendant laquelle la montre a peu parlé — on la
+   déclare douteuse à tort, et c'est le prix assumé : une séance marquée
+   douteuse se relit, une séance fausse comptée ne se rattrape jamais.
+
+   LES SEUILS SONT PRIS LARGES. Les écarts de 11 à 24 bpm ne sont pas cherchés.
+   Mieux vaut laisser passer vingt battements que d'effacer un effort réel.
+
+   CE QUE CETTE FONCTION NE FAIT PAS : corriger. Le pouls juste n'existe nulle
+   part — la montre n'enregistre AUCUN intervalle entre battements pendant une
+   séance (63 séances sur 63, mesuré). Elle dit « cette série n'est pas une
+   séance », et c'est à l'appelant de ne pas la compter. */
+window.flFcSeanceSuspecte = function (serie, dureeMin) {
+  try {
+    /* ⚠️ LE GARDE PORTE SUR LA DURÉE, PAS SUR LE NOMBRE DE POINTS. La
+       première version exigeait soixante valeurs : la séance la plus cassée
+       de l'étalon (26 sept., 1,4 valeur/minute) en rend cinquante-six sur
+       quarante minutes et se faisait donc épargner — le juge refusait
+       précisément le cas qu'il existe pour voir. Vingt points suffisent à
+       calculer une médiane ; c'est la DURÉE qui dit si la question se pose. */
+    if (!serie || serie.length < 20) return null;
+    var v = [], t = [], i;
+    for (i = 0; i < serie.length; i++) {
+      var p = serie[i];
+      if (!p || !(p[1] > 0)) continue;
+      t.push(+p[0]); v.push(+p[1]);
+    }
+    if (v.length < 20) return null;
+    var duree = (dureeMin > 0) ? +dureeMin
+              : Math.max(1, (t[t.length - 1] - t[0]) / 60);
+    if (!(duree >= 10)) return null;   /* sous dix minutes, on ne juge pas */
+
+    var tri = v.slice().sort(function (a, b) { return a - b; });
+    var med = tri.length % 2 ? tri[tri.length >> 1]
+                             : (tri[(tri.length >> 1) - 1] + tri[tri.length >> 1]) / 2;
+    var mx = tri[tri.length - 1];
+    var couv = v.length / duree;
+    var relief = mx - med;
+
+    var motifs = [];
+    if (couv < 8)
+      motifs.push('la montre n\'a rendu que ' + (Math.round(couv * 10) / 10)
+                  + ' valeurs par minute, là où elle en rend douze quand elle tient le pouls');
+    if (relief >= 70)
+      motifs.push('un pic à ' + mx + ' très au-dessus du reste de la séance (médiane ' + Math.round(med) + ')');
+    if (relief <= 25)
+      motifs.push('la courbe est trop plate pour un effort : ' + Math.round(relief)
+                  + ' bpm entre la médiane et le maximum');
+    if (!motifs.length) return null;
+    return {
+      verdict: (couv < 8) ? 'perdLePouls' : (relief >= 70 ? 'surlit' : 'tropPlate'),
+      raison: motifs.join(', et '),
+      couverture: Math.round(couv * 10) / 10,
+      relief: Math.round(relief), max: mx, mediane: Math.round(med)
+    };
+  } catch (e) { return null; }
+};
