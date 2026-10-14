@@ -1261,6 +1261,16 @@
   var CALME_PAGES_MS = 15000;
   function livraisonDiffereeEnCours(K, now) {
     try {
+      /* ═══ 14 oct. 2026 (v2856) — CE GARDE PARLE DE LA NUIT EN COURS ═══════
+         `flSommeilDiffere` est un drapeau GLOBAL : « la montre n'a pas encore
+         rendu sa nuit ». Il n'a rien à dire d'une nuit d'avant-hier, dont la
+         montre a déjà donné tout ce qu'elle avait. Posé sur un jour passé il
+         bloquait le rattrapage : la nuit du 12 au 13 octobre, rouverte à
+         6h23 après l'arrivée de sa page de 01:22 (v2855), restait indéfiniment
+         en FINALIZING et l'écran gardait 3h41.
+         On le borne donc au jour courant. Le chemin du matin — le seul pour
+         lequel il a été écrit — ne change pas d'un iota. */
+      if (K !== tk(0)) return null;
       var d = +DB.get('flSommeilDiffere', 0) || 0;
       if (d > 0 && now - d >= 0 && now - d < 18 * 3600000) {
         var dd = new Date(d);
@@ -1904,6 +1914,56 @@
      jamais lancer deux traitements pour la même nuit. Les deux propriétés
      viennent du même endroit : l'état est sur le disque, pas en mémoire, donc
      une relance de l'app ne peut pas le perdre ni le doubler. */
+  /* ═══ 14 oct. 2026 (v2856) — UNE NUIT PASSÉE DONT LA MATIÈRE ARRIVE EN
+         RETARD SE RATTRAPE ═══════════════════════════════════════════════════
+
+     LE CAS, vécu et mesuré le 14 octobre. La montre tenait depuis deux jours
+     une page de sommeil commençant à 01:22 — le DÉBUT de la nuit du 12 au 13 —
+     et le pont la refusait (v2855 : 72 débuts refusés, 36 jamais livrés). La
+     v2855 posée, la page est entrée et le moteur a rendu la vraie nuit :
+
+         scellé le 13 au matin   03:32 → 08:35   3h41
+         moteur après la page    01:32 → 08:33   6h23
+         WHOOP                   01:37 → 09:02   6h42
+
+     MAIS L'ÉCRAN MONTRAIT TOUJOURS 3h41, et rien n'allait le chercher : la
+     passe du matin ne travaille que sur `tk(0)`. Trois heures de sommeil
+     retrouvées restaient invisibles.
+
+     ON N'INVENTE AUCUN MÉCANISME : on applique aux jours passés les DEUX
+     fonctions du chemin du jour, `flNuitRouvrir` puis `flNuitFinaliser`. Et
+     leurs gardes jouent inchangés — `flNuitRouvrir` exige FINALIZED, exige un
+     écart au-delà de `SEUIL_NUIT_MIN` (5 min, donc jamais pour du bruit) et
+     refuse la SECONDE réouverture par `nuitReouv_<K>`. Une nuit passée ne peut
+     donc bouger qu'UNE fois, et seulement si sa matière a vraiment changé.
+
+     TROIS JOURS, PAS HUIT. Le moteur balaie huit jours, mais une page qui
+     arrive avec plus de trois jours de retard ne décrit plus une nuit que
+     quiconque regarde — et rouvrir huit nuits d'un coup ferait bouger huit
+     scores de récupération dans la même seconde. Le cas mesuré est à deux
+     jours ; trois laisse une marge sans ouvrir la porte en grand.
+
+     APRÈS LE JOUR COURANT, JAMAIS AVANT : le matin de Dino passe en premier,
+     c'est l'interdit n° 1 (« une nuit provisoire affichée puis remplacée »).
+     Ce rattrapage ne touche que des nuits dont plus personne n'attend rien. */
+  window.flNuitRattraperPassees = function (maintenant) {
+    var now = maintenant || Date.now();
+    var faits = [];
+    for (var recul = 1; recul <= 3; recul++) {
+      var K = tk(-recul);
+      try {
+        var rec = lire(K);
+        if (!rec || rec.etat !== 'FINALIZED') continue;
+        if ((+DB.get('nuitReouv_' + K, 0) || 0) >= 1) continue;
+        var ro = window.flNuitRouvrir(K, now);
+        if (!ro.ok) continue;
+        var rf = window.flNuitFinaliser(K, RENDORMI, now);
+        faits.push({ K: K, raison: ro.raison, etat: rf.etat || null });
+      } catch (e) {}
+    }
+    return faits;
+  };
+
   window.flNuitPasse = function (cause, maintenant) {
     var now = maintenant || Date.now();
     var K = tk(0);
@@ -1985,12 +2045,23 @@
 
       var d = window.flNuitAutoDecision(K, now);
       out.decision = d;
-      if (!d.auto) return out;
+      if (!d.auto) { rattraperApres(out, now); return out; }
       var ra = window.flNuitFinaliser(K, AUTO, now);
       out.agi = 'auto'; out.resultat = ra; out.etat = ra.etat || out.etat;
+      rattraperApres(out, now);
       return out;
     } catch (e2) { out.panne = e2.message; return out; }
   };
+
+  /* LE RATTRAPAGE PART APRÈS LA NUIT DU JOUR, et une fois par passe. Il est
+     silencieux quand il n'y a rien à faire : `flNuitRouvrir` sort à sa
+     première ligne sur une nuit qui n'a pas bougé. */
+  function rattraperApres(out, now) {
+    try {
+      var f = window.flNuitRattraperPassees(now);
+      if (f && f.length) out.rattrapees = f;
+    } catch (e) {}
+  }
 
   /* ─────────────────────────────────────────────────────────────────────────
      ⑧ LA PORTE DE PUBLICATION — ce que les écrans ont le droit de montrer
