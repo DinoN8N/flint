@@ -2715,8 +2715,29 @@
       if (!(W > 0 && W < 14 * 60)) return null;
       var m0 = (typeof flMinuitMsDe === 'function') ? flMinuitMsDe(K) : null;
       if (m0 == null || isNaN(m0)) return null;
+      /* ═══ 15 oct. 2026 (v2859) — CETTE FONCTION N'A JAMAIS RENDU UN SEUL
+             RÉSULTAT, ET C'EST UNE FORME QUI LA TUAIT ═══════════════════════
+
+         `flPasParMinute` rend `flPas.journee(…).minutes`, c'est-à-dire
+         `{ m: [...], vu: [...] }` — deux tableaux dans un objet. Tous ses
+         autres lecteurs font `pm.m[minute]` et `pm.vu[minute]`
+         (index.html 19293, 22355, 32476 ; flint-vraisemblance.js 104).
+         Ici seulement, on testait `pas.length` — `undefined` sur un objet,
+         donc faux, donc `return null` À CHAQUE APPEL. Le garde juste en
+         dessous (« sans les pas, "sans un pas" ne se dit pas ») était donc
+         impossible à satisfaire, et la question « tu t'es rendormi ? » fondée
+         sur le pouls n'a jamais été posée une seule fois.
+
+         CE QUE ÇA A COÛTÉ, nuit du 14 au 15 octobre 2026 : la montre arrête de
+         découper à 07:14 ; le pouls reste à 49-51 bpm jusqu'à 08:10 puis saute
+         à 57 avec un pic à 111. WHOOP place le réveil à 08:10. Cinquante-six
+         minutes de sommeil que cette fonction était écrite pour retrouver.
+
+         `vu` dit quelles minutes sont DÉCRITES : une minute non décrite ne
+         vaut pas « zéro pas », elle vaut « on ne sait pas ». On la saute,
+         comme les autres lecteurs. */
       var pas = (typeof window.flPasParMinute === 'function') ? window.flPasParMinute(K) : null;
-      if (!pas || !pas.length) return null;          /* sans les pas, « sans un pas » ne se dit pas */
+      if (!pas || !pas.m || !pas.m.length) return null;   /* sans les pas, « sans un pas » ne se dit pas */
       var fc = {};
       for (var i = 0; i < n.hrTs.length; i++) {
         var x = n.hrTs[i];
@@ -2735,11 +2756,34 @@
       for (var a = W + 1; a <= W + POULS_RENDORMI.horizon && a < 1440; a++) if (fc[a] != null) apres.push(a);
       var lever = null;
       for (var b = W + 1; b <= W + POULS_RENDORMI.horizon && b < 1440; b++) {
-        if (+pas[b] > 0) { lever = b; break; }
+        if (pas.vu && pas.vu[b] && +pas.m[b] > 0) { lever = b; break; }
+        /* ═══ 15 oct. 2026 (v2859) — UN PIC DE DEUX MINUTES N'EST PAS UN LEVER
+           L'ancien test demandait que la mesure SUIVANTE soit aussi au-dessus
+           du seuil. Deux échantillons, parfois consécutifs à la minute : un
+           simple retournement dans le lit les produit. Nuit du 14 au 15
+           octobre, plancher 52 donc seuil 64 : le pouls fait 65 à 07:20 et
+           07:21, puis retombe à 60, 62, 52, 57, 48… et reste entre 45 et 55
+           jusqu'à 08:30. Le lever était donc placé à 07:20, six minutes après
+           la fin de nuit — sous le minimum de vingt — et la fonction rendait
+           `null` SANS JAMAIS ATTEINDRE les pas de 08:33, qui eux sont une
+           preuve de lever autrement plus solide.
+
+           ON DEMANDE UNE MONTÉE SOUTENUE : la MÉDIANE des cinq minutes qui
+           suivent doit tenir le seuil. C'est l'idiome de `hrSm` du moteur de
+           sommeil (lissage sur cinq minutes), pas un réglage neuf.
+
+           MESURÉ sur les sept nuits que l'export WHOOP étiquette, écart moyen
+           au réveil : 36,3 min aujourd'hui, 24,1 avec deux échantillons,
+           20,6 avec la montée soutenue. AUCUNE nuit n'empire dans les deux
+           cas, et les trois nuits déjà justes ne reçoivent aucune proposition. */
         if (fc[b] != null && fc[b] >= seuil) {
-          var suite = null;
-          for (var j = 0; j < apres.length; j++) if (apres[j] > b) { suite = apres[j]; break; }
-          if (suite != null && fc[suite] >= seuil) { lever = b; break; }
+          /* LES CINQ MESURES SUIVANTES, PAS LES CINQ MINUTES. Le canal se tait
+             par bouffées : un trou de mesures au lever (vécu le 9 oct.,
+             09:00 → 09:26) viderait une fenêtre en minutes et ferait rater le
+             lever. On prend donc les cinq valeurs DISPONIBLES à partir d'ici. */
+          var f5 = [];
+          for (var k5 = b; k5 <= b + 60 && f5.length < 5; k5++) if (fc[k5] != null) f5.push(fc[k5]);
+          if (f5.length >= 3 && mediane(f5) >= seuil) { lever = b; break; }
         }
       }
       if (lever == null || lever - W < POULS_RENDORMI.dureeMin) return null;
