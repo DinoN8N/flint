@@ -1058,6 +1058,46 @@
            finalisation se gare proprement le temps que la matière tombe. */
         out.aTraiter = !!(cyc && cyc.etat !== 'sommeil');
       }
+      /* ═══ 18 oct. 2026 — L'ÉCRAN DU MATIN « TA NUIT EST LÀ » (natif) ═══════
+         Dino a choisi un geste plein écran à la place du bouton « Traiter ».
+         Deux faits à lui donner, et l'écran n'en devine aucun :
+           · `reveil` — l'heure où la nuit finit, lue par la MONTRE (fin du
+             cycle). Le geste ne la fixe pas : il ne fait que la plafonner
+             (`flNuitBorneFin`), donc l'oublier jusqu'à 17 h ne rallonge rien ;
+           · `matin` — le plein écran n'a sa place qu'au matin : le cycle est
+             final (vraie marche, ou quatre heures), ou l'heure du réveil
+             déclaré au profil est à moins d'une heure et demie. Une levée de
+             3 h garde la petite carte, sinon un geste à moitié endormi
+             scellerait une nuit coupée. Sans réveil au profil, on ne sait pas
+             juger : `matin` reste vrai, comme avant la règle. */
+      try {
+        /* Pendant que la montre rend encore la nuit, l'heure n'est pas sûre (le
+           cycle lit encore la nuit partielle) : on ne la donne pas. */
+        var _enLivraison = !!livraisonDiffereeEnCours(K, now);
+        if (cyc && cyc.finNuit != null && out.aTraiter && !_enLivraison) {
+          var _dR = new Date(cyc.finNuit);
+          out.reveil = ('0' + _dR.getHours()).slice(-2) + ':' + ('0' + _dR.getMinutes()).slice(-2);
+        }
+        var _rP = reveilProfilMin(), _m0 = (typeof flMinuitMsDe === 'function') ? flMinuitMsDe(K) : null;
+        out.matin = !!((cyc && cyc.etat === 'finale') || _rP == null || _m0 == null || isNaN(_m0)
+                       || now >= _m0 + (_rP - 90) * 60000);
+        /* `glisser` — LE seul fait que l'écran lit pour montrer le geste. Le
+           matin, une nuit prête, et la personne VIENT de se réveiller. Levée
+           depuis une heure (réveil déclaré passé) ou après une vraie marche, le
+           fond valide seul : pas de geste, l'écran passe au calcul puis au
+           score.
+           PENDANT LA LIVRAISON (les dix secondes où la montre rend la nuit à
+           l'ouverture), on ne juge pas « levée depuis une heure » sur la nuit
+           partielle : le geste paraît, sans heure ; glissé tôt, il attend la
+           nuit entière (`flNuitFinaliser` garde le geste, trois minutes au
+           plus). C'est aussi ce qui garde une SURFACE à une nuit qui attend un
+           doigt quand la montre se tait : le bouton « Traiter » n'existe plus
+           (Dino, 18 oct. : « au lieu de cliquer sur Traiter, on slide »). */
+        var _autoPret = !!(cyc && (cyc.etat === 'finale'
+                          || (cyc.depuisReveil != null && cyc.depuisReveil >= AUTO_APRES_REVEIL_MIN
+                              && journeeReprise(K, now, cyc).ok)));
+        out.glisser = !!(out.aTraiter && out.matin && (_enLivraison || !_autoPret));
+      } catch (e) {}
       return out;
     } catch (e) { out.panne = e.message; out.raison = 'état : ' + e.message; return out; }
   };
@@ -1359,8 +1399,11 @@
       /* 13 oct. 2026 — la journée a-t-elle repris ? Voir `journeeReprise`. */
       var jr = journeeReprise(K, now, cyc);
       if (!jr.ok) { out.raison = jr.raison; direLaDecision(K, out.raison); return out; }
-      var debout = !!(cyc && cyc.etat === 'grace' && cyc.depuisReveil != null
-                      && cyc.depuisReveil >= AUTO_APRES_REVEIL_MIN);
+      /* 18 oct. 2026 — « debout » vaut aussi en `collecte` quand la montre vient
+         de rendre la nuit gardée : la signature bouge parce que les pages
+         arrivent, pas parce que la personne dort. */
+      var debout = !!(cyc && cyc.depuisReveil != null && cyc.depuisReveil >= AUTO_APRES_REVEIL_MIN
+                      && (cyc.etat === 'grace' || (cyc.etat === 'collecte' && livreeApresReport(K, now))));
       /* ═══ 20 sept. 2026 — LE DERNIER RECOURS NE DEMANDE RIEN AU CYCLE ═════
 
          CE MATIN-LÀ, la session est restée WAITING_FOR_USER de 08:32 à 09:55 —
@@ -1393,7 +1436,18 @@
          Mesuré sur la base du 20 septembre : finalisation à 09:25, et le score
          est 68 — le même que celui qu'il a fini par obtenir. */
       var detectDepuis = (rec.tDetect != null) ? Math.round((now - rec.tDetect) / 60000) : null;
-      var recours = (detectDepuis != null && detectDepuis >= AUTO_APRES_REVEIL_MIN);
+      /* ═══ 18 oct. 2026 — LE RECOURS COMPTE DEPUIS LE RÉVEIL QUAND ON LE SAIT ══
+         Dino : « si la personne vient à peine de se réveiller et veut voir sa
+         nuit, elle glisse ; si elle a eu le temps de marcher, d'aller au
+         travail, une heure après, elle n'a pas besoin de glisser ». Or ses
+         nuits sont souvent détectées à 2 ou 3 h du matin : « détectée depuis
+         plus d'une heure » était vrai à la seconde du réveil, et le fond
+         scellait avant qu'il puisse glisser (8 oct. : 09:23, réveil 08:52). Le
+         recours reste le filet d'un cycle MUET (20 sept.) ; quand le cycle
+         connaît le réveil et qu'il date de moins d'une heure, la main est à
+         la personne. */
+      var recours = (detectDepuis != null && detectDepuis >= AUTO_APRES_REVEIL_MIN)
+                    && !(cyc && cyc.depuisReveil != null && cyc.depuisReveil < AUTO_APRES_REVEIL_MIN);
       if (!recours && (!cyc || (cyc.etat !== 'finale' && !debout))) {
         out.raison = 'la nuit peut encore bouger (' + (cyc ? cyc.etat : 'cycle absent') + ')';
         direLaDecision(K, out.raison);
@@ -1735,19 +1789,27 @@
          fenêtre de grâce et l'écran restait sur « traitement » (8 oct. :
          09:23 → 09:30) pour une nuit qui ne pouvait plus bouger. */
       var livreDiff = (cause === AUTO && livreeApresReport(K, now) && journeeReprise(K, now, cyc).ok);
+      /* 18 oct. 2026 — et la personne levée depuis une heure (la règle de Dino) :
+         la nuit ne bouge plus, un rendormissement garderait sa réouverture.
+         Sans ça, le fond attendait encore trois minutes de « traitement ». */
+      var leveDepuisUneHeure = !!(cause === AUTO && cyc && cyc.depuisReveil != null
+                                  && cyc.depuisReveil >= AUTO_APRES_REVEIL_MIN && journeeReprise(K, now, cyc).ok);
       var declare = (cause === USER || cause === RENDORMI || cause === MESURE || livreDiff);
       var dit = null;
       try { dit = window.flNuitReveilDit(K); } catch (e) {}
+      /* La levée d'une heure ne vaut qu'en `grace` (la nuit est posée) : en
+         `collecte`, l'automatique garde sa fenêtre d'observation (v2190). */
       var cycleOk = !!(cyc && (cyc.etat === 'finale'
-                    || (cyc.etat === 'grace' && declare)
+                    || (cyc.etat === 'grace' && (declare || leveDepuisUneHeure))
                     || (cyc.etat === 'collecte' && declare
                         && cyc.depuisReveil != null && nuitLivreeEntiere(K))));
       if (cycleOk && cyc.etat === 'collecte')
         tracer(rec.id, 'observation window skipped', cause, rec.etat,
                'battements complets jusqu\'au réveil — la fenêtre d\'observation n\'a plus rien à établir');
-      else if (cycleOk && livreDiff && cyc.etat === 'grace')
+      else if (cycleOk && (livreDiff || leveDepuisUneHeure) && cyc.etat === 'grace')
         tracer(rec.id, 'observation window skipped', cause, rec.etat,
-               'la montre vient de rendre toute la nuit gardée — la personne est debout');
+               livreDiff ? 'la montre vient de rendre toute la nuit gardée — la personne est debout'
+                         : 'levée depuis ' + cyc.depuisReveil + ' min — la nuit ne bouge plus');
       /* ═══ v2210 — UN RÉVEIL DÉCLARÉ FERME LA FENÊTRE D'OBSERVATION ═════════
 
          La fenêtre de deux minutes établit UNE chose : « la montre a fini de
