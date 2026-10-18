@@ -4556,8 +4556,9 @@ function loadAvg(n,off){let t=0,c=0;const d=new Date();d.setDate(d.getDate()-(of
    GEN. 17 (v2318) la memoire de baseStat porte la provenance de la cible.
    GEN. 18 (v2319) la normale cardio penche vers le recent (demi-vie 7 j).
    GEN. 19-20 (v2520, v2521) une VFC est refusee si elle ne couvre pas les deux tiers de la nuit (§49-50). La ligne Z n a jamais bouge d un octet.
-   GEN. 21 (28 sept.) l ancre du sommeil glisse de 70 vers SA mediane en n/8 des la 3e nuit : saut de la 9e nuit -16,8 -> -4,8 (AUDIT-NOUVEAUX-PROFILS-28-SEPT.md). */
-var RECOV_ALGO_GEN=21;
+   GEN. 21 (28 sept.) l ancre du sommeil glisse de 70 vers SA mediane en n/8 des la 3e nuit : saut de la 9e nuit -16,8 -> -4,8 (AUDIT-NOUVEAUX-PROFILS-28-SEPT.md).
+   GEN. 22 (18 oct.) pas de VFC de la puce sur une nuit mesuree a moins de 50 % au pouls ; le score d une telle nuit SORT du registre (16 oct. : 89, WHOOP 62). */
+var RECOV_ALGO_GEN=22;
 window.flRecovRejuger=function(){
  try{
   var deja=+DB.get('recovGen',0)||0;
@@ -4598,7 +4599,13 @@ window.flRecovRejuger=function(){
    var r=DB.get('recov_'+k,null);
    if(r==null||isNaN(+r))continue;
    var v=null; try{v=recovery(-i);}catch(e){v=null;}
-   if(!v||v.s==null){gardes++;continue;}
+   /* gen. 22 — irrecalculable reste garde (mesures purgees), SAUF la nuit qu on sait non mesuree : son score sort. */
+   if(!v||v.s==null){var _wn=null;try{_wn=(DB.get('watch_'+k,null)||{}).night||null;}catch(e){}
+    if(_wn&&_wn.hrCoverage!=null&&+_wn.hrCoverage<50&&!(_wn.vfcNuit&&_wn.vfcNuit.src==='rmssd')){
+     if(DB.get('recovAvant_'+k,null)==null)DB.set('recovAvant_'+k,Math.round(+r));
+     DB.set('recov_'+k,null);try{DB.set('recovFige_'+k,null);}catch(e){}
+     chg.push({k:k,avant:Math.round(+r),apres:null,raison:'nuit sans pouls ('+_wn.hrCoverage+' %)'});}
+    else gardes++;continue;}
    var apres=Math.round(v.s),avant=Math.round(+r);
    /* Le sceau se rapatrie MEME QUAND LE SCORE NE BOUGE PAS : le desaccord du
       1er septembre (sceau 78, registre 69) existait sans qu'un rejugement
@@ -23387,7 +23394,7 @@ function wipeData(){if(!confirm('Vider TOUTES les données (démo incluse) et re
 function exportData(){const dump={};Object.keys(localStorage).forEach(k=>dump[k]=localStorage.getItem(k));const t=JSON.stringify(dump,null,2);try{const blob=new Blob([t],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='flint-data.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},1500);toast('⬇️ Données exportées (flint-data.json)')}catch(e){try{navigator.clipboard.writeText(t);toast('📋 Données copiées')}catch(e2){toast('Export impossible')}}}
 
 /* ===== Coach IA (réponses fondées sur les données du jour) ===== */
-const APP_VERSION='v2859';
+const APP_VERSION='v2861';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
@@ -27415,7 +27422,9 @@ window.flMetriquesCourse=function(id,debutSec,finSec,estCourse){
     var _fx=null;try{_fx=flMinuitMsDe(K)+r.night.wakeMin*60000;}catch(e){}
     if(_fx!=null&&_fx<=lim)return null;
    }
-   var n=computeNight(flEchNuit(K,lim),lim);
+   /* 18 oct. 2026 — la nuit estimée se lit au pouls ET aux pas (flNuitDuCoeur, flint-sommeil.js : 31 nuits contre WHOOP,
+      réveil 50 → 8 min) ; sans pouls mesuré, elle n existe pas. computeNight ne sert plus qu a un web sans le satellite. */
+   var n=(typeof window.flNuitDuCoeur==='function')?window.flNuitDuCoeur(K,lim):computeNight(flEchNuit(K,lim),lim);
    if(!n||n.K!==K)return null;
    var av=r&&r.night;
    if(av&&av._est&&av.bedMin===n.bedMin&&av.wakeMin===n.wakeMin&&av.sleepMin===n.sleepMin)return null;
@@ -27800,7 +27809,11 @@ window.flMetriquesCourse=function(id,debutSec,finSec,estCourse){
     /* gen.14 — le desaccord RMSSD/puce se NOTE sur la nuit (flint-vfc-source.js), il ne remplace plus rien : WHOOP a donne raison au RMSSD (81/87/79 contre nos 81/85/76, la puce a 65/64/62). Un resume bascule sur la puce par la gen.13 est restaure. */
     if(hrv!=null&&typeof flVfcRetenue==='function'&&(hrvSrc==='rmssd'&&(!_fz||_fz.desaccord==null)||(_fz&&_fz.src==='puce'&&_fz.rmssd!=null))){var _vr=flVfcRetenue(_fz&&_fz.rmssd!=null?_fz.rmssd:hrv,hrvPuce,k,w);if(_vr&&_vr.hrv!=null){hrv=_vr.hrv;hrvSrc=_vr.src;}}
    }catch(e){}
-   if(hrv==null&&hrvPuce!=null){hrv=hrvPuce;hrvSrc='puce';}
+   /* 18 oct. 2026 — LA VFC DE LA PUCE NE REMPLACE PAS UNE NUIT QU ON N A PAS MESUREE. 16 oct. : l app arretee 45 h, la montre
+      avait perdu le pouls de la nuit (13 % mesure) mais garde ses VFC ; la puce (77) a servi et la recup a dit 89 — WHOOP 62.
+      Sans pouls sur la moitie de la nuit au moins, il n y a pas de variabilite a croire : l ecran dit « pas de variabilite ». */
+   if(hrv==null&&hrvPuce!=null){var _cvN=(w.night&&w.night.hrCoverage!=null)?+w.night.hrCoverage:null;
+    if(_cvN==null||_cvN>=50){hrv=hrvPuce;hrvSrc='puce';}}
    /* v2048 — LA RESPIRATION, ENFIN UNE VALEUR. Le résumé figé d'abord (il
       survit à la purge de `rrH` à sept jours), le calcul ensuite tant que les
       battements sont là. Aucun repli au-delà : sans battements, la respiration

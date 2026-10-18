@@ -3072,6 +3072,198 @@ function restageSleep(dayKey) {
       } catch (e) {}
     } catch (e) { flsLog('recalcul : ' + e.message); }
   };
+
+  /* ═══ 18 oct. 2026 — LA NUIT LUE PAR FLINT, SANS LE SOMMEIL DU FABRICANT ═══
+
+     Dino, 17 oct. : « notre manière d'interpréter les choses doit être ultra
+     prête, que ce soit avec cette montre-là ou avec une autre ». La nuit
+     ESTIMÉE (celle qu'on écrit quand la montre ne rend pas de sommeil) venait
+     de `computeNight` : la plus longue plage de pouls sous « 5e centile + 12 ».
+     Rejouée contre l'export WHOOP sur 31 nuits (17 sept. → 17 oct.) :
+     endormissement à 39 min (médiane), réveil à 50, durée à 100, et 18 nuits
+     sur 31 à plus d'une heure d'une borne. Avec une montre sans sommeil, ce
+     maillon-là aurait été tout FLINT.
+
+     CE DÉTECTEUR-CI lit ce que TOUTE montre du contrat rend : le pouls à la
+     minute (`watch_<jour>.hr`) et les pas à la minute (`actDet`). Rien du
+     fabricant. Cinq temps :
+       1 · lissage : médiane centrée de 15 min (trois mesures au moins) ;
+       2 · le PLANCHER de la nuit : la plus basse médiane de 3 h mesurée à
+           moitié au moins — il suit la personne, malade comprise ;
+       3 · le CŒUR de la nuit : la plus longue plage calme (pouls ≤ plancher
+           + 6, aucun pas), trous de mesure ≤ 30 min et éveils ≤ 20 min
+           tolérés, plages à moins d'une heure fusionnées ;
+       4 · le LEVER : après six heures, le premier vrai pas (20 en 5 min) —
+           sauf si l'heure qui suit la salve redevient calme et basse (≤ 4 au-
+           dessus du plancher, 45 min sans pas) : c'était les toilettes ; ou,
+           après le cœur, une montée qui dure 30 min ou que des pas suivent ;
+       5 · les éveils internes : pouls ≥ plancher + 6, ou un pas.
+     SANS POULS, PAS DE NUIT : moins de la moitié des minutes mesurées, ou
+     moins de 70 % des heures à vingt mesures, et on rend `null` (la nuit du
+     16 oct. : 76 mesures en dix heures — `computeNight` y voyait 22:05 →
+     03:13).
+
+     MESURÉ (outil `calib/detecteur.py`, session c3e88e1d) : sur 30 nuits,
+     endormissement 13 min (médiane), réveil 8, durée 31 ; réglé sur une
+     moitié des nuits et jugé sur l'autre : 10-15 / 9-11 / 25-29. Le raté
+     connu : une nuit de fièvre (17 oct.) où deux salves de pas à 06:00 et
+     06:15 précèdent trois heures de retour au lit. Les réglages sont ceux de
+     la recherche, pas des chiffres ronds choisis à la main. */
+  var NUIT_COEUR = { calme: 6, montee: 8, eveil: 6, pasLever: 20, trou: 30, bref: 20, fusion: 60,
+                     couverture: 0.5, nuitMin: 360, monteeMin: 30, retour: 4, retourMin: 45, salve: 30 };
+  window.flNuitCoeurReglages = NUIT_COEUR;
+  window.flNuitDuCoeur = function (K, borne) {
+    try {
+      var p = NUIT_COEUR;
+      var q = String(K).split('-');
+      var minuit = new Date(+q[0], +q[1] - 1, +q[2]).getTime();
+      if (isNaN(minuit)) return null;
+      var t0 = minuit - 12 * 3600000, N = 26 * 60;
+      var lim = (borne != null) ? +borne : Date.now();
+      var H = new Array(N), P = new Array(N), i, j;
+      for (i = 0; i < N; i++) { H[i] = null; P[i] = 0; }
+      var dv = new Date(minuit - 12 * 3600000);
+      var Kv = dv.getFullYear() + '-' + (dv.getMonth() + 1) + '-' + dv.getDate();
+      var mv = new Date(dv.getFullYear(), dv.getMonth(), dv.getDate()).getTime();
+      [[Kv, mv, 720], [K, minuit, 0]].forEach(function (jr) {
+        var w = flsLire('watch_' + jr[0], null) || {};
+        var hr = Array.isArray(w.hr) ? w.hr : [];
+        for (var a = 0; a < hr.length; a++) {
+          var x = hr[a];
+          if (!x || x[0] == null || !(+x[1] > 0) || x[0] < jr[2]) continue;
+          var ms = jr[1] + x[0] * 60000;
+          if (ms > lim) continue;
+          var k = Math.floor((ms - t0) / 60000);
+          if (k >= 0 && k < N) H[k] = +x[1];
+        }
+        var bl = Array.isArray(w.actDet) ? w.actDet : [];
+        for (var b = 0; b < bl.length; b++) {
+          var B = bl[b], cs = (B && Array.isArray(B[3])) ? B[3] : null;
+          if (!cs) continue;
+          var d0 = Math.floor(+B[0] / 60) * 60000;
+          for (var c = 0; c < cs.length; c++) {
+            var mc = d0 + c * 60000;
+            if (mc > lim) continue;
+            var kc = Math.floor((mc - t0) / 60000);
+            if (kc >= 0 && kc < N) P[kc] += (+cs[c] || 0);
+          }
+        }
+      });
+      function med(v) { v = v.slice().sort(function (x, y) { return x - y; });
+        var n = v.length; return !n ? null : (n % 2 ? v[n >> 1] : (v[n / 2 - 1] + v[n / 2]) / 2); }
+      var R = new Array(N), p5 = new Array(N);
+      for (i = 0; i < N; i++) {
+        var v = [];
+        for (j = Math.max(0, i - 7); j < Math.min(N, i + 8); j++) if (H[j] != null) v.push(H[j]);
+        R[i] = v.length >= 3 ? med(v) : null;
+        var sp = 0;
+        for (j = Math.max(0, i - 2); j < Math.min(N, i + 3); j++) sp += P[j];
+        p5[i] = sp;
+      }
+      /* LA BORNE TIENT AUSSI APRÈS LE LISSAGE : la médiane centrée de 15 min
+         rendait encore une valeur sept minutes après la dernière mesure, et la
+         nuit finissait cinq minutes après « maintenant » (banc §4) — le défaut
+         que la v2210 avait fermé pour `computeNight`. */
+      var kB = Math.floor((lim - t0) / 60000);
+      for (i = Math.max(0, kB + 1); i < N; i++) R[i] = null;
+      var F = null;
+      for (i = 8 * 60; i < N - 180; i += 10) {
+        var w3 = [];
+        for (j = i; j < i + 180; j++) if (H[j] != null) w3.push(H[j]);
+        if (w3.length >= 90) { var m3 = med(w3); if (F == null || m3 < F) F = m3; }
+      }
+      if (F == null) return null;
+      function calme(k) { return R[k] != null && R[k] <= F + p.calme && p5[k] <= 0; }
+      var seg = [], s0 = null, hors = 0, vide = 0;
+      for (i = 0; i < N; i++) {
+        if (R[i] == null) {
+          vide++;
+          if (s0 != null && vide > p.trou) { seg.push([s0, i - vide]); s0 = null; }
+          continue;
+        }
+        vide = 0;
+        if (calme(i)) { if (s0 == null) s0 = i; hors = 0; }
+        else if (s0 != null) {
+          hors++;
+          if (hors > p.bref) { seg.push([s0, i - hors]); s0 = null; hors = 0; }
+        }
+      }
+      if (s0 != null) seg.push([s0, N - 1]);
+      seg = seg.filter(function (x) { return x[1] - x[0] >= 60; });
+      if (!seg.length) return null;
+      seg.sort(function (x, y) { return x[0] - y[0]; });
+      var fus = [seg[0].slice()];
+      for (i = 1; i < seg.length; i++) {
+        if (seg[i][0] - fus[fus.length - 1][1] <= p.fusion) fus[fus.length - 1][1] = seg[i][1];
+        else fus.push(seg[i].slice());
+      }
+      var cr = fus[0];
+      for (i = 1; i < fus.length; i++) if (fus[i][1] - fus[i][0] > cr[1] - cr[0]) cr = fus[i];
+      var a0 = cr[0], b0 = cr[1], fin = b0;
+      function montee(k) {
+        if (R[k] == null || R[k] < F + p.montee) return false;
+        var n = 0, x = k;
+        while (x < N && n < p.monteeMin) { if (R[x] != null && R[x] < F + p.montee) break; x++; n++; }
+        if (n >= p.monteeMin) return true;
+        for (var y = k; y < Math.min(N, k + 30); y++) if (p5[y] >= p.pasLever) return true;
+        return false;
+      }
+      function retour(k) {
+        function pasDans(u) { for (var z = u; z < Math.min(N, u + 10); z++) if (p5[z] > 10) return true; return false; }
+        var x = k;
+        while (x < N && pasDans(x)) x++;
+        if (x - k > p.salve) return false;
+        var j0 = x + 5, j1 = Math.min(N, j0 + p.retourMin);
+        if (j1 - j0 < p.retourMin) return false;
+        var vv = [];
+        for (var z = j0; z < j1; z++) { if (p5[z] > 10) return false; if (R[z] != null) vv.push(R[z]); }
+        return vv.length >= Math.floor(p.retourMin / 2) && med(vv) <= F + p.retour;
+      }
+      var k = a0 + p.nuitMin, kl = Math.min(N, b0 + 240);
+      while (k < kl) {
+        if (p5[k] >= p.pasLever) {
+          if (retour(k)) { while (k < kl && p5[k] > 10) k++; k += 5; continue; }
+          fin = k; break;
+        }
+        if (k >= b0 && montee(k)) { fin = k; break; }
+        k++;
+      }
+      if (fin > kB) fin = kB;
+      if (fin <= a0) return null;
+      var mes = 0, hTot = 0, hOk = 0;
+      for (i = a0; i <= fin; i++) if (H[i] != null) mes++;
+      for (i = a0; i <= fin; i += 60) {
+        var nh = 0;
+        for (j = i; j < Math.min(fin + 1, i + 60); j++) if (H[j] != null) nh++;
+        hTot++; if (nh >= 20) hOk++;
+      }
+      var couv = mes / Math.max(1, fin - a0 + 1);
+      if (couv < p.couverture || hOk < 0.7 * hTot) {
+        flsLog('nuit ' + K + ' : lue au cœur — pouls sur ' + Math.round(couv * 100) + ' % de la nuit, aucune nuit rendue');
+        return null;
+      }
+      var eveil = 0, dorm = [];
+      for (i = a0; i < fin; i++) {
+        if ((R[i] != null && R[i] >= F + p.eveil) || P[i] > 0) eveil++;
+        else if (R[i] != null) dorm.push(R[i]);
+      }
+      var tot = fin - a0, dormi = Math.max(0, tot - eveil);
+      dorm.sort(function (x, y) { return x - y; });
+      var deep = 0, rem = 0, light = 0;
+      if (dorm.length) {
+        var q1 = dorm[Math.floor(dorm.length * 0.25)], q3 = dorm[Math.floor(dorm.length * 0.78)];
+        for (i = 0; i < dorm.length; i++) { if (dorm[i] <= q1) deep++; else if (dorm[i] >= q3) rem++; else light++; }
+        var f = dormi / dorm.length;
+        deep = Math.round(deep * f); rem = Math.round(rem * f); light = Math.max(0, dormi - deep - rem);
+      }
+      var bed = new Date(t0 + a0 * 60000), wake = new Date(t0 + fin * 60000);
+      return { K: wake.getFullYear() + '-' + (wake.getMonth() + 1) + '-' + wake.getDate(),
+               sleepMin: dormi, timeInBed: tot,
+               bedMin: bed.getHours() * 60 + bed.getMinutes(), wakeMin: wake.getHours() * 60 + wake.getMinutes(),
+               deep: deep, rem: rem, light: light, awake: eveil, lowestHr: dorm.length ? dorm[0] : null,
+               plancher: F, couverture: Math.round(couv * 100), lecteur: 'coeur', _est: true };
+    } catch (e) { try { flsLog('nuit lue au cœur : ' + e.message); } catch (e2) {} return null; }
+  };
 })();
 
 
