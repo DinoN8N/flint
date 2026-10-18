@@ -1244,10 +1244,16 @@
      plus rien dire. La nuit du 2 oct. a été close à 02:03 et scellée à 03:13
      par le dernier recours (« détectée depuis plus d'une heure ») sur 1 h 52
      de sommeil — exactement ce que cette porte interdit. */
-  window.flSommeilDiffere = function (ms) {
+  window.flSommeilDiffere = function (ms, derrierePages) {
     try {
       var avant = +DB.get('flSommeilDiffere', 0) || 0, t = Date.now();
       DB.set('flSommeilDiffere', (+ms > 0) ? +ms : 0);
+      /* 0 n'est envoyé qu'à la livraison (« tout donné », « page déjà
+         connue »). `derrierePages` (18 oct. 2026) : le pont garantit que
+         l'appel passe DERRIÈRE toutes les tranches — il vide leur retenue,
+         puis emprunte la même file. Les poses d'avant ne le garantissaient
+         pas (tranches retenues jusqu'à 45 s pendant une fiche en vol) : elles
+         ne passent pas l'argument, et gardent le calme de six secondes. */
       /* 13 oct. 2026 — ON A ESSAYÉ DE RETIRER LA MARQUE « tout donné » quand la
          montre reprend la nuit (le 13, elle l'a reprise à 01:13, 01:39, 01:50
          après avoir dit l'avoir tout donnée à 01:02). Le banc a montré que la
@@ -1270,6 +1276,7 @@
                'la montre a rendu la nuit gardée depuis ' + ('0' + d0.getHours()).slice(-2) + ':'
                + ('0' + d0.getMinutes()).slice(-2));
       }
+      if (!(+ms > 0) && derrierePages === true) marquerLivraisonClose(t);
     } catch (e) {}
     return true;
   };
@@ -1302,6 +1309,24 @@
      d'intervalle (9 oct. : 46,6 → 47,7 → 48,8 s). Quinze faisaient attendre le
      geste pour rien (18 oct. : 7 s de « traitement » après le journal). */
   var CALME_PAGES_MS = 6000;
+  /* ═══ 18 oct. 2026 — LA MONTRE A TOUT DONNÉ : ON REPART À LA SECONDE ═════
+     Dino : « je ne veux plus jamais qu'il soit là, le but c'est que ça charge
+     instantanément ». Ce qui restait entre la dernière page et le score n'était
+     pas du calcul : six secondes de calme comptées après la dernière tranche,
+     puis l'échelle de reprise (4 s, 8 s…) de la finalisation garée. Ce matin-là
+     (18 oct.) : « tout donné » à 10:07:55, la nuit scellée à 10:08:12.
+     La marque est datée, et la nuit qui attendait repart tout de suite — la
+     décision automatique comme le geste. Une nuit déjà scellée n'est pas
+     touchée : la montre rend sa nuit gardée toute la journée. */
+  function marquerLivraisonClose(t) {
+    try { (window._watchLive = window._watchLive || {}).tClos = t; } catch (e) {}
+    try {
+      var rec = lire(tk(0));
+      if (!rec || rec.etat === 'FINALIZED') return;
+      if (repriseT) { try { clearTimeout(repriseT); } catch (e) {} repriseT = null; }
+      setTimeout(function () { try { window.flNuitPasse('REPRISE'); } catch (e) {} }, 0);
+    } catch (e) {}
+  }
   function livraisonDiffereeEnCours(K, now) {
     try {
       /* ═══ 14 oct. 2026 (v2856) — CE GARDE PARLE DE LA NUIT EN COURS ═══════
@@ -1324,7 +1349,11 @@
       var l = DB.get(CLE_LIVRE_DIFF + K, null);
       if (l && l.ts && now - l.ts >= 0 && now - l.ts < 120000) {
         var t = (window._watchLive && +window._watchLive.tNuit) || 0;
-        if (t && now - t >= 0 && now - t < CALME_PAGES_MS)
+        /* 18 oct. 2026 — la marque « tout donné » posée APRÈS la dernière
+           page dit exactement ce que le calme devinait : plus rien n'arrive.
+           Le calme ne reste que pour une page tombée après la marque. */
+        var tc = (window._watchLive && +window._watchLive.tClos) || 0;
+        if (t && now - t >= 0 && now - t < CALME_PAGES_MS && !(tc && tc >= t))
           return { raison: 'les dernières pages de la nuit arrivent' };
       }
     } catch (e) {}
