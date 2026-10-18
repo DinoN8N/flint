@@ -1298,7 +1298,10 @@
          soient posées (quinze secondes sans tranche) avant de juger.
      Le geste de la personne (« Traiter ») garde son plafond de trois
      minutes : on ne lui tient jamais l'écran plus longtemps. */
-  var CALME_PAGES_MS = 15000;
+  /* Six secondes : les pages d'une nuit rendue arrivent à moins de 1,2 s
+     d'intervalle (9 oct. : 46,6 → 47,7 → 48,8 s). Quinze faisaient attendre le
+     geste pour rien (18 oct. : 7 s de « traitement » après le journal). */
+  var CALME_PAGES_MS = 6000;
   function livraisonDiffereeEnCours(K, now) {
     try {
       /* ═══ 14 oct. 2026 (v2856) — CE GARDE PARLE DE LA NUIT EN COURS ═══════
@@ -1799,10 +1802,21 @@
       try { dit = window.flNuitReveilDit(K); } catch (e) {}
       /* La levée d'une heure ne vaut qu'en `grace` (la nuit est posée) : en
          `collecte`, l'automatique garde sa fenêtre d'observation (v2190). */
+      /* ═══ 18 oct. 2026 — LEVÉ DEPUIS UNE HEURE, PAS DE FENÊTRE NON PLUS ══════
+         Dino : « je ne veux plus jamais voir l'attente de trois minutes sur
+         l'écran Traitement ; le but, c'est que ça charge instantanément ». La
+         fenêtre d'observation (deux minutes de signature stable) établit « la
+         montre a fini de livrer » faute de preuve ; levé depuis une heure, on
+         l'accepte sur une PREUVE POSITIVE — battements complets jusqu'au réveil,
+         ou la nuit gardée que la montre vient de rendre — exactement le
+         raccourci que le geste a depuis la v2190. Sans preuve, la fenêtre reste. */
+      var preuveLivree = !!(leveDepuisUneHeure && cyc && cyc.depuisReveil != null
+                            && (nuitLivreeEntiere(K) || livreeApresReport(K, now)));
       var cycleOk = !!(cyc && (cyc.etat === 'finale'
                     || (cyc.etat === 'grace' && (declare || leveDepuisUneHeure))
                     || (cyc.etat === 'collecte' && declare
-                        && cyc.depuisReveil != null && nuitLivreeEntiere(K))));
+                        && cyc.depuisReveil != null && nuitLivreeEntiere(K))
+                    || (cyc.etat === 'collecte' && preuveLivree)));
       if (cycleOk && cyc.etat === 'collecte')
         tracer(rec.id, 'observation window skipped', cause, rec.etat,
                'battements complets jusqu\'au réveil — la fenêtre d\'observation n\'a plus rien à établir');
