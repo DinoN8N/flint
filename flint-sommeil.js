@@ -2697,7 +2697,8 @@ function restageSleep(dayKey) {
          évalue `flintSommeilTranche` directement, sans passer par
          `flintNative`). L'horodatage vit sur `_watchLive`, qui est une vraie
          propriété de `window` (posée par `window._watchLive={...}`). */
-      try { (window._watchLive = window._watchLive || {}).tNuit = Date.now(); } catch (e2) {}
+      /* 19 oct. 2026 — la date ne se pose plus ici : plus bas, et pour une
+         tranche NEUVE seulement (voir après `deja`). */
       /* v2044 — et on arme le réveil de fin de livraison : quand cette rafale
          s'arrêtera, quelqu'un doit RELIRE le score, sinon la publication
          attend le prochain hasard (vécu : 52 affiché, 70 publiable, app posée
@@ -2712,7 +2713,14 @@ function restageSleep(dayKey) {
       var deja = toutes.some(function (c) {
         return c.start === tranche.start && (c.stages || []).length === stades.length;
       });
+      /* ═══ 19 oct. 2026 — SEULE UNE TRANCHE NEUVE DIT « LA NUIT ARRIVE » ═════
+         La montre rend sept jours d'historique derrière la nuit. Une tranche
+         déjà connue ne change rien à la nuit ; la dater tenait pourtant la
+         collecte et le calme du matin (`livraisonDiffereeEnCours`) éveillés
+         pendant que l'historique défilait — la famille des verrous morts de la
+         v2045 : un fait d'ARRIVÉE qui n'apporte rien. */
       if (!deja) {
+        try { (window._watchLive = window._watchLive || {}).tNuit = Date.now(); } catch (e2) {}
         toutes.push({ start: tranche.start, unit: tranche.unit || 1, stages: stades, activity: mouvement });
         /* ═══ v1900 — LA MEME TRANCHE, DEUX HORLOGES ══════════════════════
            Le `deja` ci-dessus compare `c.start === tranche.start`. C'est juste
