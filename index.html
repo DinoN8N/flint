@@ -9646,7 +9646,8 @@ window.flTendancesData=function(mi,pi){try{
   var slh=sn?sl/sn:null;
   bilan={recup:rn?String(Math.round(rec/rn)):null,
    delta:(d==null?null:((d>=0?'+':'')+d+' vs sem. dernière')),
-   sommeil:slh==null?null:(Math.floor(slh)+'h'+String(Math.round((slh%1)*60)).padStart(2,'0')),
+   /* 20 oct. 2026 — les minutes se comptent sur le TOTAL arrondi : arrondir la seule fraction écrivait « 7h60 » à 7,995 h. */
+   sommeil:slh==null?null:(function(m){return Math.floor(m/60)+'h'+String(m%60).padStart(2,'0');})(Math.round(slh*60)),
    effort:st?String(Math.round(str)):null, seances:(vu&&!(typeof flSansBracelet==='function'&&flSansBracelet()))?String(ses):null};   /* 28 sept. 2026 — sans bracelet, ni charge ni compte de séances : flint-porte.js */
  }catch(e){}
  /* corrélations du journal — reprend behaviorCorr */
@@ -23395,7 +23396,7 @@ function wipeData(){if(!confirm('Vider TOUTES les données (démo incluse) et re
 function exportData(){const dump={};Object.keys(localStorage).forEach(k=>dump[k]=localStorage.getItem(k));const t=JSON.stringify(dump,null,2);try{const blob=new Blob([t],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='flint-data.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},1500);toast('⬇️ Données exportées (flint-data.json)')}catch(e){try{navigator.clipboard.writeText(t);toast('📋 Données copiées')}catch(e2){toast('Export impossible')}}}
 
 /* ===== Coach IA (réponses fondées sur les données du jour) ===== */
-const APP_VERSION='v2876';
+const APP_VERSION='v2878';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
