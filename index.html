@@ -9622,16 +9622,12 @@ window.flTendancesData=function(mi,pi){try{
  var ticks=[40,105,170,235,300].map(function(y){
   var v=mn+(300-y)/(300-40)*(mx-mn);return fmt(v).replace('h','');});
  /* moyennes 7 jours */
- function a7n(f){var s=0,n=0;for(var i=0;i<7;i++){var v=null;
+ function a7(f,dec){var s=0,n=0;for(var i=0;i<7;i++){var v=null;
   try{v=f(tk(_o-i));}catch(e){}
   if(v!=null&&!isNaN(v)){s+=+v;n++;}}
-  return n?s/n:null;}
- function a7(f,dec){var r=a7n(f);if(r==null)return null;return dec?(Math.round(r*10)/10).toFixed(1).replace('.',flSeparateurDecimal()):String(Math.round(r));}
- /* 20 oct. 2026 — des heures en « 7h05 ». Les minutes se comptent sur le TOTAL
-    arrondi : arrondir la seule fraction écrivait « 7h60 » à 7,995 h. */
- function flHeuresLisibles(h){if(h==null||isNaN(h))return null;var m=Math.round(h*60);return Math.floor(m/60)+'h'+String(m%60).padStart(2,'0');}
+  if(!n)return null;var r=s/n;return dec?(Math.round(r*10)/10).toFixed(1).replace('.',flSeparateurDecimal()):String(Math.round(r));}
  var m7=[{nom:'Récup moy', valeur:a7(METR[0][3]), unite:'%'},
-  {nom:'Sommeil moy', valeur:flHeuresLisibles(a7n(METR[3][3])), unite:''},   /* 20 oct. 2026 — « 7h05 » comme le bilan juste en dessous, pas « 7,1 h » */
+  {nom:'Sommeil moy', valeur:a7(METR[3][3],1), unite:'h'},
   {nom:'HRV moy', valeur:a7(METR[1][3]), unite:'ms'},
   /* v2492 — LA TUILE CHARGE PASSE PAR `a7`, COMME SES TROIS VOISINES. Elle appelait `loadAvg(7)`, qui repart de `new Date()` : le 15 septembre, flDayOff 0 / -20 / -30 donnaient héros « 21 », « 519 », « 1152 » et tuile « 21 » les trois fois, pendant que Sommeil (7,0→5,7→6,1) et HRV (75→60→58) suivaient. Sur « 1 sem », tuile et héros désignent la MÊME grandeur : ils doivent dire le même nombre. `a7` lit `tk(_o-i)` et ne moyenne que les jours connus — c'est le défaut que le pavé v1461 en tête de cette fonction dit avoir corrigé, et qui avait survécu ici. */
   {nom:'Charge', valeur:a7(METR[4][3]), unite:''}];
@@ -9650,7 +9646,7 @@ window.flTendancesData=function(mi,pi){try{
   var slh=sn?sl/sn:null;
   bilan={recup:rn?String(Math.round(rec/rn)):null,
    delta:(d==null?null:((d>=0?'+':'')+d+' vs sem. dernière')),
-   sommeil:flHeuresLisibles(slh),
+   sommeil:slh==null?null:(Math.floor(slh)+'h'+String(Math.round((slh%1)*60)).padStart(2,'0')),
    effort:st?String(Math.round(str)):null, seances:(vu&&!(typeof flSansBracelet==='function'&&flSansBracelet()))?String(ses):null};   /* 28 sept. 2026 — sans bracelet, ni charge ni compte de séances : flint-porte.js */
  }catch(e){}
  /* corrélations du journal — reprend behaviorCorr */
@@ -23399,7 +23395,7 @@ function wipeData(){if(!confirm('Vider TOUTES les données (démo incluse) et re
 function exportData(){const dump={};Object.keys(localStorage).forEach(k=>dump[k]=localStorage.getItem(k));const t=JSON.stringify(dump,null,2);try{const blob=new Blob([t],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='flint-data.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},1500);toast('⬇️ Données exportées (flint-data.json)')}catch(e){try{navigator.clipboard.writeText(t);toast('📋 Données copiées')}catch(e2){toast('Export impossible')}}}
 
 /* ===== Coach IA (réponses fondées sur les données du jour) ===== */
-const APP_VERSION='v2874';
+const APP_VERSION='v2876';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
