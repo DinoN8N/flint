@@ -2148,6 +2148,16 @@
           out.resultat = rp; out.etat = rp.etat || 'FINALIZING';
           return out;
         }
+        /* 21 oct. 2026 — la montre s'est tue, le pouls dormait encore, aucun
+           pas : la nuit se prolonge SANS QUESTION (voir `flNuitRendormiQuestion`).
+           Même extension que le « oui » : le stylo jusqu'au lever lu au cœur. */
+        try {
+          var ca = rendormiCandidat(K);
+          if (ca && ca.p.source === 'pouls') {
+            var ra = window.flNuitRendormiRepondre(K, true, now, true);
+            if (ra && ra.ok) { out.agi = 'prolongee'; out.raison = ra.raison; return out; }
+          }
+        } catch (e) {}
         var ro = window.flNuitRouvrir(K, now);
         if (!ro.ok) return out;
         out.agi = 'reouverture'; out.raison = ro.raison;
@@ -2908,21 +2918,39 @@
   }
   window.flNuitRendormiParLePouls = rendormiParLePouls;
 
+  /* Le candidat au rendormissement, quelle que soit sa source. Du moins cher
+     au plus cher : `flNuitEtat` passe ici à chaque lecture d'une nuit
+     publiée, et le cas courant — rien de proposé — ne doit coûter qu'une
+     lecture de la base. */
+  function rendormiCandidat(K) {
+    if (K !== tk(0)) return null;                          /* la nuit du jour seulement */
+    if (DB.get(CLE_RENDORMI + K, null)) return null;       /* on ne redemande jamais */
+    var p = rendormiPropose(K) || rendormiParLePouls(K);
+    if (!p) return null;
+    if (typeof flNuitSansMesure === 'function' && flNuitSansMesure(K)) return null;
+    return { p: p, q: { debut: hhmmDe(p.debutMin), fin: hhmmDe(p.finMin), dormiMin: p.dormi } };
+  }
+  /* ═══ 21 oct. 2026 — ON NE DEMANDE PAS « RENDORMI ? » À QUI NE S'EST PAS
+         RÉVEILLÉ ═══════════════════════════════════════════════════════════
+     Dino, ce matin-là : « il me demande si je me suis rendormi entre 5 h 30 et
+     7 h 09 — mais je ne me suis pas réveillé ». Il avait raison : la montre
+     avait arrêté d'écrire à 05:30 (trois blocs de deux heures, 23:30 → 05:30,
+     puis rien), et le pouls dormait encore jusqu'à 07:09, sans un pas. La
+     source « pouls » ne propose QUE ce cas-là — aucune montée soutenue, aucun
+     pas entre la fin de la puce et le lever (`rendormiParLePouls`) — donc il
+     n'y a eu aucun réveil à confirmer : c'est la montre qui s'est tue. La nuit
+     se prolonge seule (`flNuitPasse`, branche FINALIZED) ; la question ne
+     reste posée que quand la MONTRE montre un vrai réveil suivi d'un nouveau
+     sommeil (`rendormiPropose`). */
   window.flNuitRendormiQuestion = function (K) {
     K = K || tk(0);
     try {
-      /* Du moins cher au plus cher : `flNuitEtat` passe ici à chaque lecture
-         d'une nuit publiée, et le cas courant — rien de proposé — ne doit
-         coûter qu'une lecture de la base. */
-      if (K !== tk(0)) return null;                          /* la nuit du jour seulement */
-      if (DB.get(CLE_RENDORMI + K, null)) return null;       /* on ne redemande jamais */
-      var p = rendormiPropose(K) || rendormiParLePouls(K);
-      if (!p) return null;
-      if (typeof flNuitSansMesure === 'function' && flNuitSansMesure(K)) return null;
-      return { debut: hhmmDe(p.debutMin), fin: hhmmDe(p.finMin), dormiMin: p.dormi };
+      var c = rendormiCandidat(K);
+      if (!c || c.p.source === 'pouls') return null;
+      return c.q;
     } catch (e) { return null; }
   };
-  window.flNuitRendormiRepondre = function (K, oui, maintenant) {
+  window.flNuitRendormiRepondre = function (K, oui, maintenant, auto) {
     K = K || tk(0);
     var now = maintenant || Date.now();
     var res = { ok: false, rep: oui ? 'oui' : 'non', raison: null };
@@ -2933,12 +2961,13 @@
       } catch (e) {}
     }
     try {
-      var q = window.flNuitRendormiQuestion(K), p = rendormiPropose(K) || rendormiParLePouls(K);
+      var c = rendormiCandidat(K), q = c && c.q, p = c && c.p;
       if (!q || !p) { res.raison = 'aucune question en cours pour ' + K; return res; }
       DB.set(CLE_RENDORMI + K, { rep: res.rep, ts: now, debut: p.debut, fin: p.fin, dormi: p.dormi,
-                                 source: p.source || 'porte' });
+                                 source: p.source || 'porte', auto: auto === true });
       var rec = lire(K);
-      tracer(rec && rec.id, oui ? 'resleep confirmed' : 'resleep denied', USER, rec && rec.etat,
+      tracer(rec && rec.id, auto === true ? 'night extended' : (oui ? 'resleep confirmed' : 'resleep denied'),
+             auto === true ? AUTO : USER, rec && rec.etat,
              q.debut + ' → ' + q.fin + ', ' + q.dormiMin + ' min de sommeil '
              + (p.source === 'pouls' ? 'après l\'arrêt de la puce (pouls de nuit, aucun pas)' : 'après la porte'));
       res.ok = true;
