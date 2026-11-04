@@ -803,3 +803,79 @@
     } catch (e) { return []; }
   };
 })();
+
+/* ═══ 28 OCT. 2026 — UNE SÉANCE DÉCLARÉE BORNE LA MARCHE, MÊME SANS PAS À LA MINUTE ═══
+
+   Le soir du 28 : « Musculation » déclarée 19:24 → 19:52, et une « Activité »
+   détectée aux pas 19:48 → 19:58 (448 pas de l'iPhone) — quatre minutes DANS la
+   séance, une carte en double dans Ma journée. `flPartitionnerMarches` découpe
+   une marche aux frontières des séances déclarées… mais seulement quand le pas
+   est connu MINUTE PAR MINUTE : sans lui (« finesse tranche » — le Fitcare donne
+   ses pas à l'heure, la Santé de l'iPhone par tranches), elle rendait la marche
+   ENTIÈRE. On ne peut alors ni enrichir la séance, ni rejuger les restes sur
+   leurs minutes ; on peut toujours ne pas mentir : la part dans la séance tombe
+   (la séance porte ces minutes), et un reste ne survit que s'il a la durée d'une
+   marche (`minDuree`), ses pas au prorata. Banc : test-marche-bornee-sans-minute.js. */
+window.flBornerMarchesSansMinute = function (marches, frontieresTout, tol, minDuree) {
+  try {
+    /* Seules les séances déclarées SANS tracé : un Tracker (gps) se marie à la marche
+       qui le chevauche (amorçage, test-partition-debordement § 6-bis) ; une saisie
+       à la main ne se marie à rien (v1859), c'est elle qui fait le doublon. */
+    var murs = (frontieresTout || []).filter(function (t) { return t && !t.gps; });
+    if (!marches || !marches.length || !murs.length) return marches || [];
+    var out = [];
+    marches.forEach(function (m) {
+      var touches = murs.filter(function (t) { return t.fin + tol > m.startMin && t.deb - tol < m.endMin; });
+      if (!touches.length) { out.push(m); return; }
+      var ranges = [[m.startMin, m.endMin]];
+      touches.forEach(function (t) {
+        var nr = [], d = t.deb - tol, f = t.fin + tol;
+        ranges.forEach(function (r) {
+          var a = r[0], b = r[1];
+          if (f <= a || d >= b) { nr.push(r); return; }
+          if (d > a) nr.push([a, Math.min(b, d)]);
+          if (f < b) nr.push([Math.max(a, f), b]);
+        });
+        ranges = nr;
+      });
+      var tot = Math.max(1, m.endMin - m.startMin);
+      ranges.forEach(function (r) {
+        if (r[1] - r[0] < minDuree) return;
+        var c = JSON.parse(JSON.stringify(m));
+        c.startMin = r[0]; c.endMin = r[1]; c.avgHr = null; c.maxHr = null;
+        if (c.pasTotal != null) c.pasTotal = Math.round(c.pasTotal * (r[1] - r[0]) / tot);
+        out.push(c);
+      });
+    });
+    return out;
+  } catch (e) { return marches; }
+};
+
+/* ═══ 28 OCT. 2026 — ET CE QUI EST DÉJÀ EN BASE S'EN VA AUSSI ═══════════════════
+   `flReconcilierSeances` garde toute détection au pas stockée que la détection
+   fraîche ne recouvre pas (v1238 : une absence de mesure n'est pas une mesure
+   d'absence). Juste — sauf pour celle que la règle ci-dessus vient d'interdire :
+   l'« Activité » 19:48 du 28 restait, puisque plus rien de frais ne la recouvrait.
+   Une détection au pas STOCKÉE qui chevauche une séance DÉCLARÉE à la main (sans tracé)
+   est donc retirée ; ce qui en dépasse, s'il a la durée d'une marche, revient par
+   la détection fraîche. Rien d'autre ne bouge : ni le frais, ni les déclarées,
+   ni la montre. */
+window.flRetirerDetectionsDansSeances = function (contribs, debutDe, finDe, estDetectionPas, k) {
+  try {
+    /* 28 oct. (relecture) — aujourd'hui et hier seulement : la règle est neuve, elle ne
+       réécrit pas l'historique des journées passées à chaque fusion. */
+    if (k) {
+      var cle = function (o) { var d = new Date(); d.setDate(d.getDate() - o); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); };
+      var kk = String(k).replace(/-0(\d)/g, '-$1');
+      if (kk !== cle(0) && kk !== cle(1)) return contribs;
+    }
+    var murs = [];   /* saisies à la main sans tracé seulement (voir ci-dessus) */
+    contribs.forEach(function (c) { if (c && c.geste === true && !c.gps) murs.push([debutDe(c), finDe(c)]); });
+    if (!murs.length) return contribs;
+    return contribs.filter(function (c) {
+      if (!c || c._frais || !estDetectionPas(c)) return true;
+      var d = debutDe(c), f = finDe(c);
+      return !murs.some(function (w) { return d < w[1] && w[0] < f; });
+    });
+  } catch (e) { return contribs; }
+};

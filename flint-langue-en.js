@@ -651,5 +651,11 @@ window.FL_LANG.en={
  "Grosse séance — bravo.":"Big session — well done.",
  "Une séance tranquille.":"An easy session.",
  "re:^ajusté à ta charge — ta dette est au plafond — sieste de la veille déduite \\((\\d+) min\\)$":"adjusted to your strain — your debt is at the ceiling — yesterday's nap deducted ($1 min)",
- "re:^ajusté à ta dette et à ta charge — sieste de la veille déduite \\((\\d+) min\\)$":"adjusted to your debt and your strain — yesterday's nap deducted ($1 min)"
+ "re:^ajusté à ta dette et à ta charge — sieste de la veille déduite \\((\\d+) min\\)$":"adjusted to your debt and your strain — yesterday's nap deducted ($1 min)",
+ /* 31 oct. 2026 — la VFC en minutes, la récup sans VFC (flint-recup-cycle.js) */
+ "re:^1 minute de VFC cette nuit : il en faut 6 pour la calculer\\.$":"1 minute of HRV last night: 6 are needed to compute it.",
+ "re:^(\\d+) minutes de VFC cette nuit : il en faut 6 pour la calculer\\.$":"$1 minutes of HRV last night: 6 are needed to compute it.",
+ "re:^(\\d+) minutes de VFC cette nuit, groupées sur une partie de la nuit : trop peu réparties pour la calculer\\.$":"$1 minutes of HRV last night, bunched in one part of the night: too unevenly spread to compute it.",
+ "Aucune minute de VFC exploitable cette nuit.":"No usable minute of HRV last night.",
+ "Récup calculée sans VFC : pouls de repos, sommeil, respiration, température.":"Recovery computed without HRV: resting heart rate, sleep, breathing, temperature."
 };

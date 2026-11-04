@@ -262,7 +262,7 @@ window.flMesureDans=function(deb,fin){
    la veille (elles l'ignorent aujourd'hui), ce sera ici, et ce sera une
    génération de récupération — pas un effet de bord de ce correctif. */
 window.flNuitDuSoir=function(n){return !!(n&&n.bedMin!=null&&n.wakeMin!=null&&+n.wakeMin<0);};
-var FL_CANAUX_NUIT=['hr','hrvMontre','rrH','spo2','temp'];
+var FL_CANAUX_NUIT=['hr','hrvMontre','rrH','spo2','temp','tempPhoto'];   /* 28 oct. 2026 — la température des photos (flTempNuitPhoto) */
 window.flMatiereNuit=function(K,w){try{
  if(!w||w._matiereNuit||!flNuitDuSoir(w.night))return w;
  var m0=flMinuitMsDe(K); if(m0==null||isNaN(m0))return w;
@@ -724,3 +724,152 @@ window.flSecoursRetirer=function(){try{
  try{console.log('[flint] archive secours retirée de cette base : '+cles.length+' clés');}catch(e){}
  return cles.length;
 }catch(e){return 0;}};
+
+/* ═══ v2990 — LE BRACELET RETIRÉ : SES MINUTES EN QUARANTAINE, JAMAIS À LA POUBELLE ═══
+
+   Dino, 29 oct. 2026 : « fais-moi un chantier qui règle le problème, pour que ce
+   soit nickel quand le bracelet est retiré… pense bien à tout ». Le soir même, il
+   retire son bracelet 45 min (21:26 → 22:11) : le lien tombe quatre fois, chaque
+   coupure faisait oublier le retrait, et 18 minutes de faux pouls (96 figé, puis
+   75-121 inventés) sont entrées dans sa journée. Avant, c'était l'inverse : le
+   froid de son foot l'avait dit « posé », et 75 minutes PORTÉES avaient disparu
+   — coupées de la mémoire du bracelet à l'import, sans retour possible.
+
+   LE NATIF JUGE (`RegleNonPortFitcare`, RegleNonPort.swift) ; ICI ON APPLIQUE, ET
+   TOUT EST RÉVERSIBLE. Le canal `nonport` porte des fenêtres {id, debut, fin
+   (secondes), raison, statut}. Une fenêtre ouverte ou fermée met ses minutes en
+   QUARANTAINE : `watch_K.hrMasque` [[minute, bpm, id]] pour le pouls,
+   `watch_K.masques[canal]` pour la VFC, la SpO2, le stress, la respiration et la
+   peau du bracelet. Une fenêtre RETIRÉE (le natif a trouvé, après coup, des pas
+   avec un pouls dedans) les rend à leur canal. La mémoire du bracelet n'est plus
+   découpée à l'import : elle arrive entière, et ce fichier la trie.
+
+   POURQUOI LES LECTEURS N'ONT RIEN À SAVOIR. Les minutes masquées sortent de
+   `hr` : la courbe du jour montre un trou (pas de hachures — un trou), les
+   calories actives ne voient pas de faux 121, le stress n'a rien à estimer, la
+   nuit au cœur (`flNuitDuCoeur`) et les siestes ne trouvent pas de pouls donc pas
+   de nuit, la FC de repos, les normales, la VFC et la récup n'ont rien d'autre à
+   lire, la détection des séances non plus. Un seul écrivain du masque, ici ;
+   cent soixante-neuf lecteurs de `hr` intacts.
+
+   LA PORTE. Le routeur d'index.html diffuse chaque message natif en
+   `flintWatch` APRÈS l'avoir rangé : on écoute `nonport` (les fenêtres),
+   `hrhistory` (la mémoire du bracelet) et `nightlog` (le brut rejoué, dont
+   `hrSuspect`, les trames reçues pendant le retrait). La nuit est recoupée
+   quand une minute a bougé. Banc : tests/test-retrait.js. */
+var RETRAIT_CLE='flRetraitFenetres', RETRAIT_JOURS=8,
+    RETRAIT_CANAUX=['hrvMontre','spo2','stressMontre','respMontre','tempPhoto'];
+
+window.flRetraitFenetres=function(){try{var l=DB.get(RETRAIT_CLE,[]);return Array.isArray(l)?l:[];}catch(e){return [];}};
+
+/* Les jours qu'une fenêtre touche (clés locales). */
+function _retraitJours(f){
+ var out={},a=(+f.debut)*1000,b=(+f.fin)*1000;
+ if(!(b>=a))return [];
+ for(var t=a;t<b+43200000;t+=43200000){var K=flCleLocaleDe(Math.min(t,b),null);if(K)out[K]=1;}
+ return Object.keys(out);
+}
+
+/* Les fenêtres reçues : rangées par id (la dernière version gagne), 8 jours, puis
+   appliquées aux jours qu'elles touchent — y compris une fenêtre retirée, qui rend. */
+window.flRetraitNoter=function(data){try{
+ var neuves=(data&&Array.isArray(data.fenetres))?data.fenetres:(data&&data.id!=null?[data]:[]);
+ if(!neuves.length)return 0;
+ var l=flRetraitFenetres(),par={},jours={},lim=Date.now()/1000-RETRAIT_JOURS*86400;
+ l.forEach(function(f){if(f&&f.id!=null)par[f.id]=f;});
+ neuves.forEach(function(f){
+  if(!f||f.id==null||!(+f.fin>=+f.debut))return;
+  var a=par[f.id];
+  if(a&&a.debut===f.debut&&a.fin===f.fin&&a.statut===f.statut)return;   /* déjà là, telle quelle */
+  if(a)_retraitJours(a).forEach(function(K){jours[K]=1;});
+  par[f.id]={id:+f.id,debut:+f.debut,fin:+f.fin,raison:f.raison||'',statut:f.statut||'ouverte',preuve:f.preuve||''};
+  _retraitJours(par[f.id]).forEach(function(K){jours[K]=1;});
+ });
+ var garde=Object.keys(par).map(function(k){return par[k];}).filter(function(f){return f.fin>lim;});
+ DB.set(RETRAIT_CLE,garde);
+ var n=0;Object.keys(jours).forEach(function(K){if(flRetraitAppliquer(K))n++;});
+ return n;
+}catch(e){return 0;}};
+
+/* LA RE-MATÉRIALISATION D'UN JOUR : chaque minute dans une fenêtre active va en
+   quarantaine, chaque minute en quarantaine hors de toute fenêtre active revient.
+   Idempotente : rejouée cent fois, elle rend le même jour. */
+window.flRetraitAppliquer=function(K){try{
+ if(typeof wGet!=='function'||typeof wSaveK!=='function')return false;
+ var m0=flMinuitMsDe(K);if(isNaN(m0))return false;m0=m0/1000;
+ var act=flRetraitFenetres().filter(function(f){return f.statut!=='retiree';});
+ var w=wGet(K);if(!w)return false;
+ /* v2993 — LA MINUTE DU JOUR EST UNE HEURE LOCALE, PAS « MINUIT + N × 60 » : un jour de changement
+    d'heure (25 h le 25 oct.) décalait toutes les minutes d'après 3 h d'une heure. */
+ var _kp=String(K).split('-').map(Number);
+ function idDe(min){var t=new Date(_kp[0],_kp[1]-1,_kp[2],Math.floor(min/60),min%60,30).getTime()/1000;for(var i=0;i<act.length;i++)if(act[i].debut<=t&&t<act[i].fin)return act[i].id;return null;}
+ function trier(serie,quar){
+  var garde=[],sort=[],rend=[],reste=[],vues={};
+  (serie||[]).forEach(function(p){if(!p)return;var id=idDe(p[0]);if(id==null)garde.push(p);else sort.push([p[0],p[1],id]);});
+  (quar||[]).forEach(function(p){if(!p)return;var id=idDe(p[0]);if(id==null)rend.push([p[0],p[1]]);else reste.push(p);});
+  if(!sort.length&&!rend.length)return null;
+  garde.forEach(function(p){vues[p[0]]=1;});
+  rend.forEach(function(p){if(!vues[p[0]])garde.push(p);});
+  garde.sort(function(a,b){return a[0]-b[0];});
+  var q={};reste.forEach(function(p){q[p[0]]=p;});sort.forEach(function(p){q[p[0]]=p;});   /* une minute, une valeur : la plus récente */
+  return {serie:garde,quar:Object.keys(q).map(function(k){return q[k];}).sort(function(a,b){return a[0]-b[0];})};
+ }
+ var bouge=false,r=trier(w.hr,w.hrMasque);
+ if(r){w.hr=r.serie;w.hrMasque=r.quar;bouge=true;}
+ RETRAIT_CANAUX.forEach(function(c){
+  var q=(w.masques&&w.masques[c])||null;
+  if(!(w[c]&&w[c].length)&&!(q&&q.length))return;
+  var x=trier(w[c],q);if(!x)return;
+  w[c]=x.serie;w.masques=w.masques||{};w.masques[c]=x.quar;bouge=true;
+ });
+ if(!bouge)return false;
+ wSaveK(K);
+ try{if(typeof window.flNuitRecouper==='function')window.flNuitRecouper(K);}catch(e){}
+ try{console.log('[flint] retrait du bracelet : '+K+' — '+(w.hrMasque||[]).length+' minute(s) de pouls en quarantaine');}catch(e){}
+ return true;
+}catch(e){return false;}};
+
+/* LES TRAMES REÇUES PENDANT LE RETRAIT ([[ts, bpm, id]], `SerieBrute.suspects`) :
+   une minute (la médiane) en quarantaine, avec l'id de sa fenêtre — jamais dans
+   `hr`. Si la fenêtre est un jour retirée, la re-matérialisation les rend. */
+window.flRetraitSuspects=function(pts){try{
+ if(!pts||!pts.length||typeof wGet!=='function'||typeof wSaveK!=='function')return 0;
+ var par={};
+ pts.forEach(function(p){
+  if(!p||p.length<2||!(p[1]>25&&p[1]<240))return;
+  var K=flCleLocaleDe(p[0]*1000,null),mn=flMinuteLocaleDe(p[0]*1000,null);if(!K||mn==null)return;
+  var j=(par[K]=par[K]||{});(j[mn]=j[mn]||{v:[],id:p[2]}).v.push(p[1]);
+ });
+ var n=0;
+ Object.keys(par).forEach(function(K){
+  var w=wGet(K),q=w.hrMasque||[],vues={},neuf=0;
+  q.forEach(function(p){vues[p[0]]=1;});
+  (w.hr||[]).forEach(function(p){vues[p[0]]=1;});
+  Object.keys(par[K]).forEach(function(mn){
+   if(vues[mn])return;
+   var a=par[K][mn].v.sort(function(x,y){return x-y;});
+   q.push([+mn,a[(a.length-1)>>1],par[K][mn].id]);neuf++;
+  });
+  if(!neuf)return;
+  w.hrMasque=q;wSaveK(K);n+=neuf;
+  flRetraitAppliquer(K);   /* une fenêtre déjà retirée les rend tout de suite */
+ });
+ return n;
+}catch(e){return 0;}};
+
+/* Les minutes masquées d'un jour : ce qu'un écran ou l'export peut dire (« bracelet
+   retiré 45 min »), sans jamais les compter comme mesurées. */
+window.flMinutesRetirees=function(K){try{var w=DB.get('watch_'+K,null);return (w&&w.hrMasque)?w.hrMasque.length:0;}catch(e){return 0;}};
+
+(function(){
+ if(typeof document==='undefined'||!document.addEventListener)return;
+ document.addEventListener('flintWatch',function(ev){try{
+  var d=ev&&ev.detail;if(!d)return;
+  if(d.type==='nonport'){flRetraitNoter(d.data);return;}
+  if(d.type!=='hrhistory'&&d.type!=='nightlog')return;
+  if(d.type==='nightlog'&&d.data&&d.data.hrSuspect)flRetraitSuspects(d.data.hrSuspect);
+  var l=flRetraitFenetres();if(!l.length)return;
+  var jours={};l.forEach(function(f){_retraitJours(f).forEach(function(K){jours[K]=1;});});
+  Object.keys(jours).forEach(function(K){flRetraitAppliquer(K);});
+ }catch(e){}});
+})();

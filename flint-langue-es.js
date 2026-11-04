@@ -643,5 +643,11 @@ window.FL_LANG.es={
  "Grosse séance — bravo.":"Gran sesión — ¡bravo!",
  "Une séance tranquille.":"Una sesión tranquila.",
  "re:^ajusté à ta charge — ta dette est au plafond — sieste de la veille déduite \\((\\d+) min\\)$":"ajustado a tu carga: tu deuda está en el techo — siesta del día anterior descontada ($1 min)",
- "re:^ajusté à ta dette et à ta charge — sieste de la veille déduite \\((\\d+) min\\)$":"ajustado a tu deuda y a tu carga — siesta del día anterior descontada ($1 min)"
+ "re:^ajusté à ta dette et à ta charge — sieste de la veille déduite \\((\\d+) min\\)$":"ajustado a tu deuda y a tu carga — siesta del día anterior descontada ($1 min)",
+ /* 31 oct. 2026 — la VFC en minutes, la récup sans VFC (flint-recup-cycle.js) */
+ "re:^1 minute de VFC cette nuit : il en faut 6 pour la calculer\\.$":"1 minuto de VFC esta noche: hacen falta 6 para calcularla.",
+ "re:^(\\d+) minutes de VFC cette nuit : il en faut 6 pour la calculer\\.$":"$1 minutos de VFC esta noche: hacen falta 6 para calcularla.",
+ "re:^(\\d+) minutes de VFC cette nuit, groupées sur une partie de la nuit : trop peu réparties pour la calculer\\.$":"$1 minutos de VFC esta noche, agrupados en una parte de la noche: demasiado poco repartidos para calcularla.",
+ "Aucune minute de VFC exploitable cette nuit.":"Ningún minuto de VFC aprovechable esta noche.",
+ "Récup calculée sans VFC : pouls de repos, sommeil, respiration, température.":"Recuperación calculada sin VFC: pulso en reposo, sueño, respiración, temperatura."
 };

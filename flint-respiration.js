@@ -200,11 +200,34 @@ window.flRespirationNuit=function(K){
  var am=a.getHours()*60+a.getMinutes(), bm=b.getHours()*60+b.getMinutes();
  if(typeof flNuitDuSoir==='function'&&flNuitDuSoir(n)){am=+n.bedMin;bm=+n.wakeMin;}
  function dans(m){return (am<=bm)?(m>=am&&m<=bm):(m>=am||m<=bm);}
+ /* ═══ 25 oct. 2026 — RECOLLER LES MINUTES QUI SE SUIVENT ═══════════════
+    La respiration se lit dans une OSCILLATION de 2,5 a 6,7 secondes : il faut
+    une suite longue de battements pour la resoudre. Les blocs `ppi` du
+    bracelet J-Style en portaient ~200, soit ~230 s de cœur, et tombaient
+    toutes les cinq minutes — parfait.
+
+    Un capteur qui diffuse en direct ne range pas pareil : `rrH` recoit UNE
+    ENTREE PAR MINUTE, ~18 battements chacune. Mesure sur la nuit du 25 : 178
+    blocs presents, 177 REFUSES, un seul exploitable. Pas une panne — vingt
+    secondes de cœur ne peuvent pas montrer un cycle de quatre.
+
+    Or des minutes CONSECUTIVES d'un flux en direct sont des battements
+    continus : on les recolle. La nuit du 25 rend alors treize blocs de plus
+    de soixante battements, dont un de 790 secondes.
+
+    AUCUN EFFET SUR L'ANCIEN BRACELET : ses blocs sont espaces de cinq
+    minutes, donc jamais consecutifs, donc jamais fusionnes. Le recollage ne
+    touche que ce que le direct produit. */
+ var groupes=[], gc=null;
+ for(var q0=0;q0<rh.length;q0++){
+  var e0=rh[q0];
+  if(!e0||e0.length<2||!dans(e0[0])||!Array.isArray(e0[1]))continue;
+  if(gc && e0[0]===gc.fin+1){ gc.v=gc.v.concat(e0[1]); gc.fin=e0[0]; }
+  else { gc={deb:e0[0], fin:e0[0], v:e0[1].slice()}; groupes.push(gc); }
+ }
  var vals=[], refuses=0;
- for(var q=0;q<rh.length;q++){
-  var e=rh[q];
-  if(!e||e.length<2||!dans(e[0])||!Array.isArray(e[1]))continue;
-  var f=window.flRespirationBloc(e[1]);
+ for(var q=0;q<groupes.length;q++){
+  var f=window.flRespirationBloc(groupes[q].v);
   if(f==null){refuses++;continue;}
   vals.push(f);
  }
@@ -348,4 +371,80 @@ window.flRespirationBloc=function(rr){
   }
  }
  return fk*pas*60;
+};
+
+/* ═══ 27 oct. 2026 — LA RESPIRATION DE LA NUIT, TELLE QUE LE FITCARE LA DONNE ══
+
+   CE QUI SE PASSAIT. Le repli v2898 (« la respiration du bracelet, en repli
+   déclaré ») attendait une SÉRIE : au moins trois valeurs de `respMontre` DANS
+   la fenêtre de sommeil. Le Fitcare n'en écrit qu'UNE par nuit — son fichier
+   `.resp` porte une seule valeur (journal du 27 oct., 07:05:33 : « 1 paquet,
+   1 valeur »), datée de 23 h la VEILLE (le 25 : [1380, 14]). Hors fenêtre, et
+   seule : le repli ne s'est jamais déclenché.
+
+   ET NOTRE CALCUL NE PEUT PAS PRENDRE LE RELAIS. La respiration se lit dans
+   des battements CONTINUS ; en mode quotidien le Fitcare n'en livre qu'un sur
+   trois environ — nuit du 27 : 2 456 battements en 149 minutes, 2 relevés
+   exploitables sur les 12 qu'il faut. Ce n'est pas un seuil à baisser, c'est
+   une matière qui manque.
+
+   LA RÈGLE. La valeur du bracelet que la nuit couvre : datée entre quatre
+   heures avant l'endormissement et le réveil, la plus proche du réveil. Elle
+   sert sous l'étiquette 'puce' (le chiffre du bracelet), avec le même
+   garde-fou que la VFC de la puce — le pouls doit couvrir la moitié de la
+   nuit — et sa normale ne se compare qu'à elle-même (baseStat filtre la
+   provenance ET le bracelet). Banc : test-moniteur-fitcare.js.
+
+   28 oct. 2026 — ET LA PHOTO DU MATIN. Depuis v2959, la photo de l'instant du
+   bracelet (objet 95, champ 6) verse sa respiration dans `respMontre`, datée de
+   la photo. Ce champ porte la valeur de la NUIT (14 à 03:06, encore 14 à 10:14 le
+   28 ; WHOOP 13,7). Mais la première photo après une mise à jour, une relance ou
+   une reconnexion tombe souvent APRÈS le réveil : le 28, 10:14, 10:23, 10:46 —
+   toutes hors fenêtre, et la carte est restée vide. La fenêtre s'étend donc à
+   cinq heures après le réveil, en second choix seulement : une valeur de la nuit
+   passe toujours avant, et après le réveil c'est la PREMIÈRE qui compte (la plus
+   proche de la nuit). Jamais au-delà de midi (le pilote ne verse plus rien
+   l'après-midi). Banc : test-moniteur-fitcare.js § 2 bis. */
+window.flRespBraceletNuit = function (K, w) {
+  try {
+    var n = w && w.night;
+    if (!n || typeof watchOf !== 'function') return null;
+    var p = String(K).split('-'), jour0 = new Date(+p[0], (+p[1]) - 1, +p[2]);
+    var s0 = +n.sleepStart, s1 = +n.sleepEnd;
+    /* sans horodatage, la fenêtre se lit en minutes : réveil le jour K, coucher la veille s'il est « après » le réveil */
+    if (!(s0 > 0 && s1 > 0)) {
+      if (n.bedMin == null || n.wakeMin == null) return null;
+      var f = new Date(jour0); f.setHours(0, +n.wakeMin, 0, 0);
+      var c = new Date(jour0); if (+n.bedMin > +n.wakeMin) c.setDate(c.getDate() - 1); c.setHours(0, +n.bedMin, 0, 0);
+      s0 = c.getTime(); s1 = f.getTime();
+    }
+    var de = s0 - 4 * 3600e3, a = s1, meilleur = null, apres = null, dansNuit = [];
+    var midi = new Date(jour0); midi.setHours(12, 0, 0, 0);
+    var tard = Math.min(s1 + 5 * 3600e3, midi.getTime());
+    for (var d = -1; d <= 0; d++) {
+      var j = new Date(jour0); j.setDate(j.getDate() + d);
+      var kk = j.getFullYear() + '-' + (j.getMonth() + 1) + '-' + j.getDate();
+      var ww = (d === 0) ? w : watchOf(kk);
+      ((ww && ww.respMontre) || []).forEach(function (x) {
+        if (!x || !(x[1] >= 4 && x[1] <= 40)) return;
+        var t = new Date(j); t.setHours(0, x[0], 0, 0);
+        var ts = t.getTime();
+        if (ts >= s0 && ts <= s1) dansNuit.push(x[1]);
+        if (ts >= de && ts <= a && (!meilleur || ts > meilleur.ts)) meilleur = { ts: ts, v: x[1] };
+        else if (ts > a && ts <= tard && (!apres || ts < apres.ts)) apres = { ts: ts, v: x[1] };
+      });
+    }
+    /* ═══ 4 nov. 2026 — LA MOYENNE DE LA NUIT, PAS SON DERNIER RELEVÉ ═══════════════════════════════
+       Le Fitcare ne rendait qu'UNE respiration par nuit quand cette lecture a été écrite (son `.resp`) ;
+       il en donne maintenant une quinzaine (ses photos de l'instant, ~toutes les 30 min), en nombres
+       ENTIERS. Garder la dernière affichait « 13 » quand WHOOP disait 13,8. Leur moyenne sur la fenêtre
+       du sommeil porte la décimale, et elle est plus juste : 1er nov. 13,5 (WHOOP 13,9), 2 nov. 13,1
+       (WHOOP 13,8) — au lieu de 13 et 13. Repli inchangé quand aucun relevé n'est dans la nuit. */
+    if (dansNuit.length) {
+      var somme = 0; for (var i = 0; i < dansNuit.length; i++) somme += dansNuit[i];
+      return { v: Math.round(somme / dansNuit.length * 10) / 10, n: dansNuit.length };
+    }
+    meilleur = meilleur || apres;
+    return meilleur ? { v: Math.round(meilleur.v * 10) / 10, n: 1 } : null;
+  } catch (e) { return null; }
 };

@@ -28,6 +28,49 @@
      Meme sceau que flFcRepos (v1957) : les compteurs d ecritures des familles lues ; une
      ecriture les jette tous. Le calcul d origine est INTACT dans `_calcul`, a l interieur
      de la fonction (les bancs prelevent par le nom). Sans DB.tampon, memoire inactive. */
+
+  /* ═══ 27 oct. 2026 — DOUZE RELEVÉS, C'ÉTAIT LA CADENCE DE L'ANCIEN BRACELET ══════
+
+     La carte Oxygène de Dino disait « pas de mesure » toutes les nuits depuis le
+     Fitcare. Le bracelet MESURE pourtant : 96 à 100 %, un relevé par heure
+     (fichier `.spo2` du 27 oct. : 9 valeurs de 0 h à 8 h). Dans la nuit du 27
+     (1 h 30 → 6 h 29), cinq relevés. Il en fallait douze.
+
+     Le douze venait du J-Style, qui mesurait toutes les vingt minutes : sur une
+     nuit de sept heures, ~21 relevés, et douze en exigeait un peu plus de la
+     moitié (v1781). Une heure de cadence ne peut JAMAIS en donner douze sur une
+     nuit ordinaire : le seuil ne demandait plus « assez de la nuit », il
+     demandait un autre bracelet.
+
+     LA RÈGLE GARDE SON SENS, PAS SON CHIFFRE : à partir de 45 min de cadence,
+     il faut la moitié des relevés que la nuit peut contenir, et jamais moins de
+     quatre. Sous 45 min (l'ancien bracelet), rien ne change : douze.
+     Et LE BAS DE LA NUIT : le 10e centile de ~24 relevés tombait sur le 2e ou
+     3e plus bas — assez bas pour voir un décrochage, assez haut pour qu'un
+     accident isolé ne suffise pas (v2181). Sur moins de douze relevés, le
+     centile glisse vers le minimum ; on prend donc le 2e plus bas, la même
+     protection contre un bras mal posé. Banc : test-moniteur-fitcare.js. */
+  window.flSpo2Plancher = function (w, b, r) {
+    try {
+      var m = (w.spo2 || []).map(function (x) { return x[0]; }).sort(function (x, y) { return x - y; });
+      var g = [];
+      for (var i = 1; i < m.length; i++) if (m[i] > m[i - 1]) g.push(m[i] - m[i - 1]);
+      if (!g.length) return 12;
+      g.sort(function (x, y) { return x - y; });
+      var cad = g[g.length >> 1];
+      if (cad < 45) return 12;
+      var duree = ((r - b) + 1440) % 1440;
+      return Math.max(4, Math.ceil(0.5 * duree / cad));
+    } catch (e) { return 12; }
+  };
+  /* ═══ 2 nov. 2026 — UNE NUIT À 100 % PARTOUT N'EST PAS UNE MESURE ═══════════════════════════
+     Nuit du 1er au 2 nov., Fitcare : neuf relevés horaires, NEUF à 100 %. WHOOP, même nuit : 95 %
+     (plage 95-100). Une saturation tenue à 100 % toute une nuit n'existe pas chez l'adulte (95-99 à
+     l'air ambiant) : c'est le plafond du capteur. La veille, le même bracelet rendait 96, 97, 98 —
+     ces nuits-là restent mesurées. Une nuit dont TOUS les relevés sont à 100 est donc « pas de
+     mesure » : mieux vaut un tiret qu'un faux 100 % (et un « bas de la nuit » à 100 qui dirait tout
+     va bien). Banc : tests/test-moniteur-comme-whoop.js. */
+  window.flSpo2Plafonne=function(v){return !!(v&&v.length&&v.every(function(x){return x>=100;}));};
   window._flSpo2NuitMemo={__sceau:null};
   window.flSpo2NuitDe=function(K){
    var _calcul=function(K){try{
@@ -43,7 +86,8 @@
     }).map(function(x){return x[1];})
       /* Bornes physiologiques. Un zero est une non-lecture, pas une asphyxie. */
       .filter(function(x){return x>=70&&x<=100;});
-   if(v.length<12)return null;
+   if(v.length<((typeof window.flSpo2Plancher==='function')?window.flSpo2Plancher(w,b,r):12))return null;
+   if(window.flSpo2Plafonne(v))return null;   /* 2 nov. 2026 — que des 100 % : le capteur plafonne, ce n'est pas une mesure */
    v.sort(function(x,y){return x-y;});
    var m=v.length%2?v[v.length>>1]:(v[v.length/2-1]+v[v.length/2])/2;
    return Math.round(m);
@@ -110,8 +154,10 @@
      return (b<=r)?(m>=b&&m<=r):(m>=b||m<=r);
     }).map(function(x){return x[1];})
       .filter(function(x){return x>=70&&x<=100;});
-   if(v.length<12)return null;
+   if(v.length<((typeof window.flSpo2Plancher==='function')?window.flSpo2Plancher(w,b,r):12))return null;
+   if(window.flSpo2Plafonne(v))return null;   /* 2 nov. 2026 — même règle pour le bas de la nuit */
    v.sort(function(x,y){return x-y;});
+   if(v.length<12)return Math.round(v[Math.min(1,v.length-1)]);   /* 27 oct. — peu de relevés : le 2e plus bas (voir flSpo2Plancher) */
    var i=(v.length-1)*0.10, lo=Math.floor(i);
    var p=v[lo]+(v[Math.min(lo+1,v.length-1)]-v[lo])*(i-lo);
    return Math.round(p);

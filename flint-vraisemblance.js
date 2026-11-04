@@ -261,3 +261,155 @@ window.flFcSeanceSuspecte = function (serie, dureeMin) {
     };
   } catch (e) { return null; }
 };
+
+/* ═══ 28 oct. 2026 — LA MUSCULATION A UN PLANCHER, LA SÉANCE A SON TOTAL ═══════════
+
+   LE CAS. Le 28 au soir, « Musculation » déclarée 19:24 → 19:52 (28 min, pouls moyen
+   85, max 97) : 0 kcal. Les calories d'une séance viennent du cœur (Keytel 2005,
+   au-dessus de 60 % de la FC max) ou des blocs de mouvement du bracelet ; or soulever
+   des charges fait peu monter le cœur et peu bouger le poignet. Le seuil n'a jamais
+   été atteint : zéro. Faux — la séance a eu lieu et elle a coûté.
+
+   LE PLANCHER VIENT DE LA LITTÉRATURE, PAS D'UN CONCURRENT. Compendium of Physical
+   Activities (Ainsworth et al., 2011), code 02054 : « resistance (weight) training,
+   multiple exercises, 8-15 repetitions at varied resistance » = 3,5 MET. Le MET est
+   un multiple de la dépense AU REPOS ; on le corrige par le métabolisme de base de
+   la personne (Mifflin-St Jeor, ou Katch-McArdle si la masse maigre est connue — le
+   poids, la taille, l'âge et le sexe de l'onboarding) plutôt que par les 3,5 ml/kg/min
+   standard, qui surestiment le repos de beaucoup d'adultes (Byrne et al., 2005).
+   Dépense ACTIVE d'une minute de muscu = (3,5 − 1) × métabolisme de base / 1 440.
+   Chez Dino (1 881 kcal/j) : 3,3 kcal/min.
+
+   OÙ IL S'APPLIQUE, ET SEULEMENT LÀ. Une séance DÉCLARÉE (geste) de musculation ou de
+   renforcement ; une minute où le cœur, MESURÉ, bat au-dessus du repos ÉVEILLÉ — la
+   borne basse de la rampe de la journée (`flRampeBornes`, Karvonen 7 % de la réserve ;
+   à défaut, repos + 10) : le 10 oct., une « Musculation » de 95 min à 53 bpm de
+   moyenne aurait sinon pris 310 kcal pour un corps au repos ; et il ne remplace que
+   ce qui est plus petit que lui — une minute
+   au-dessus du seuil garde Keytel. Une minute que rien ne couvre reste sans calorie :
+   une absence de mesure n'est pas une mesure (v1726). Profil sans poids ni taille :
+   pas de plancher (comme Keytel). La fiche et la journée appliquent la MÊME règle
+   (flKcalMuscuPlancher, flPlancherMuscuJour), sinon la journée contredirait la fiche.
+
+   LE TOTAL. WHOOP, Polar et Apple affichent la dépense TOTALE d'une séance —
+   métabolisme compris : 39 séances d'octobre appariées, FLINT actif rendait 0,68 ×
+   WHOOP en médiane, FLINT + métabolisme 1,02. FLINT garde l'ACTIF partout où l'on
+   additionne (la journée, le plan, le Coach : le métabolisme y est compté à part, une
+   fois) et ne montre le total QUE sur la fiche : « Dépense : 245 kcal, dont 170
+   actives » (texte validé par Dino le 28 oct.). `dur` est la durée d'EFFORT, arrêts
+   retirés (v14 sept.) : total = actif + métabolisme / 1 440 × dur.
+   Banc : tests/test-calories-muscu.js. */
+window.FL_MET_MUSCU = 3.5;
+window.flEstMuscuDeclaree = function (s) {
+  try {
+    if (!s || s.geste !== true || s.type === 'nap') return false;
+    var n = String(s.name || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    return /muscu|renforcement|weight|strength|fuerza|pesas/.test(n);
+  } catch (e) { return false; }
+};
+window._flMuscuMemo = window._flMuscuMemo || {};
+/* Le pouls de chaque minute de la journée K, et la borne du repos éveillé. */
+window.flMuscuPoulsEtRepos = function (k) {
+  var hr = {}, bas = null;
+  try {
+    var pts = (typeof flPtsEveil === 'function') ? (flPtsEveil(k) || []) : [];
+    for (var i = 0; i < pts.length; i++) { var q = Math.ceil(pts[i][0]); if (!(hr[q] >= pts[i][1])) hr[q] = pts[i][1]; }
+    var r0 = (typeof flFcRepos === 'function') ? flFcRepos(k) : null;
+    var rep = (r0 && r0.v != null) ? +r0.v : ((typeof r0 === 'number') ? r0 : null);
+    var fm = (typeof flFcMax === 'function') ? flFcMax() : null;
+    var be = (rep > 0 && fm && fm.v && typeof flRampeBornes === 'function') ? flRampeBornes(fm.v, rep) : null;
+    bas = be ? be.bas : (rep > 0 ? rep + 10 : null);
+  } catch (e) {}
+  return { hr: hr, bas: bas };
+};
+window.flKcalMuscuPlancher = function (k, s, debut, fin) {
+  try {
+    if (!window.flEstMuscuDeclaree(s)) return null;
+    if (typeof flMetriquesCanoniques !== 'function' || typeof flMetaBase !== 'function') return null;
+    var sm = (debut != null) ? debut : s.startMin;
+    if (sm == null && s.start) { var p = String(s.start).split(':'); sm = (+p[0]) * 60 + (+p[1]); }
+    var du = (fin != null && sm != null) ? (fin - sm) : (+s.dur || 0);
+    if (sm == null || !(du > 0)) return null;
+    var bmr = flMetaBase(); if (!(bmr > 0)) return null;
+    var jour = (typeof tk === 'function') ? tk() : null, fige = (jour != null && k !== jour);
+    var cle = k + '|' + sm + '|' + (sm + du) + '|' + Math.round(bmr);
+    if (fige && window._flMuscuMemo[cle] !== undefined) return window._flMuscuMemo[cle];
+    var m = flMetriquesCanoniques(k, sm, sm + du, s.pauses), pm = m && m._parMinute, r = null;
+    var pr = window.flMuscuPoulsEtRepos(k);
+    if (pm && pr.bas != null) {
+      var pl = (window.FL_MET_MUSCU - 1) * bmr / 1440, tot = 0, n = 0;
+      for (var q = Math.round(sm); q < Math.round(sm + du); q++) {
+        if (pm.src[q] === 'cardio') { tot += pm.kc[q]; n++; }
+        else if (pm.src[q] === 'mouvement' || pm.vu[q]) {
+          tot += (pr.hr[q] >= pr.bas) ? Math.max(pm.kc[q] || 0, pl) : (pm.kc[q] || 0); n++;
+        }
+      }
+      r = n ? Math.round(tot) : null;
+    }
+    if (fige) window._flMuscuMemo[cle] = r;
+    return r;
+  } catch (e) { return null; }
+};
+/* La même règle, dans la journée (flCaloriesDetail, passe des séances saisies) : une
+   minute COUVERTE par le bracelet que l'effort plein n'a pas prise vaut au moins le
+   plancher ; le podomètre n'y apporte ensuite que ce qui dépasse (`cardioMin`, v1997). */
+window.flPlancherMuscuJour = function (sx, deb, dur, couvert, enZone, cardioMin, bmr, ajout, k) {
+  try {
+    if (!window.flEstMuscuDeclaree(sx) || !(bmr > 0)) return 0;
+    var pr = window.flMuscuPoulsEtRepos(k); if (pr.bas == null) return 0;
+    var pl = (window.FL_MET_MUSCU - 1) * bmr / 1440, plus = 0;
+    var ps = (typeof window.flPausesDe === 'function') ? window.flPausesDe(sx) : [];
+    for (var q = deb; q < deb + dur; q++) {
+      var c = ((q % 1440) + 1440) % 1440;
+      if (!couvert[c] || enZone[c] || !(pr.hr[q] >= pr.bas)) continue;
+      if (ps.length && typeof window.flEnPause === 'function' && window.flEnPause(q, ps)) continue;
+      var avant = cardioMin[c] || 0;
+      if (pl > avant) { plus += pl - avant; if (typeof ajout === 'function') ajout(q, 1, pl - avant); cardioMin[c] = pl; }
+    }
+    return plus;
+  } catch (e) { return 0; }
+};
+window.flKcalTotalSeance = function (actif, dur) {
+  try {
+    if (actif == null || !isFinite(+actif) || !(+dur > 0) || typeof flMetaBase !== 'function') return null;
+    var bmr = flMetaBase(); if (!(bmr > 0)) return null;
+    return Math.round(+actif + bmr / 1440 * (+dur));
+  } catch (e) { return null; }
+};
+
+/* ═══ 29 oct. 2026 — LA FICHE DE SÉANCE COMPTE LE CŒUR COMME LA JOURNÉE ═════════════
+
+   `flMetriquesCanoniques` se dit « le moteur du jour appliqué à la fenêtre de
+   l'activité — mêmes formules, même seuil » (v1723). C'était vrai jusqu'à la v1997 :
+   la journée est alors passée à une RAMPE sous le seuil (cubique, de la borne basse
+   du repos éveillé au seuil, Karvonen 7 % → 46,8 % de la réserve, `flRampeBornes`),
+   et la fiche est restée à l'interrupteur — une minute à 110 bpm valait 0 sur la fiche
+   et une part de Keytel dans la journée. Mesuré le 28 oct. sur les deux séances
+   Fitcare du 27 (rejeu du moteur sur la base du téléphone) : 63 et 345 kcal au total
+   sur la fiche, 90 et 462 à la rampe, 91 et 460 chez WHOOP. La fiche sous-comptait
+   précisément les séances dont le pouls tourne autour du seuil.
+
+   On rend donc à la fiche la règle de la journée, et SEULEMENT pour les calories : une
+   minute à la rampe porte la source 'rampe' — elle paie, elle n'est pas une minute
+   d'EFFORT (les bornes du Mode Sport, v1756, ne lisent que 'cardio' et 'mouvement') ;
+   et le mouvement garde le plus grand des deux sur elle (la règle de la v1997). Sans
+   pouls de repos connu, l'ancien interrupteur à 60 % de la FC max. */
+window._flRampeMemo = { k: null, t: 0, be: null, rep: null };
+window.flNetCardioRampe = function (k, v, fcMax, bmin) {
+  try {
+    var M = window._flRampeMemo, t = Date.now();
+    if (M.k !== k || t - M.t > 60000) {
+      var r0 = (typeof flFcRepos === 'function') ? flFcRepos(k) : null;
+      var rep = (r0 && r0.v != null) ? +r0.v : ((typeof r0 === 'number') ? r0 : null);
+      M.k = k; M.t = t; M.rep = rep;
+      M.be = (rep > 0 && fcMax > 0 && typeof flRampeBornes === 'function') ? flRampeBornes(fcMax, rep) : null;
+    }
+    var seuil = M.be ? M.be.seuil : fcMax * 0.60, bas = M.be ? M.be.bas : seuil;
+    var km = (typeof flKeytel === 'function') ? flKeytel(v) : null;
+    if (km == null || !(km - bmin > 0)) return null;
+    var part = (v >= seuil) ? 1 : ((v <= bas || seuil <= bas) ? 0 : (v - bas) / (seuil - bas));
+    part = part * part * part;
+    if (!(part > 0)) return null;
+    return { net: (km - bmin) * part, plein: v >= seuil };
+  } catch (e) { return null; }
+};

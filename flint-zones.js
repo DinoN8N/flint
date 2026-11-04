@@ -386,3 +386,35 @@
   window.flZoneDeBpm=function(bpm,k,B){B=B||flZonesBpm(k);
    for(var i=4;i>=0;i--)if(bpm>=B[i])return i+1;
    return 0;};
+
+  /* ═══ 27 oct. 2026 — LE SEUIL D'EFFORT DU MODE SPORT AUTOMATIQUE ══════════
+     Le natif allume le mode sport du bracelet quand le pouls reste au-dessus
+     de ce seuil deux minutes (ArmementEffort.swift). Ce seuil est le BAS DE TA
+     ZONE 1 — la frontière que la détection des séances (`detectSessions`) et
+     les zones affichées partagent déjà : un effort, c'est ce qui entre dans la
+     première zone. Il part au natif à chaque connexion du bracelet (le routeur
+     `flintNative('status')`), et seulement quand il change. Rend le seuil
+     envoyé, ou null. Banc : test-seuil-effort.js.
+
+     29 oct. 2026 (v2983) — DEUX SEUILS DE PLUS, LUS DANS LES MÊMES ZONES. Allumer à
+     repos + 50 % de la réserve (le milieu de la zone 1), éteindre sous repos + 35 %.
+     Les bornes 1 et 2 sont repos + 40 % et + 60 % : leur écart vaut 20 % de la réserve,
+     d'où les deux seuils sans relire ni le repos ni la maximale — et des zones posées à
+     la main donnent des seuils à leur image. Écart absurde (< 8 ou > 60 bpm) : +15 et
+     −8 autour du bas de la zone 1. */
+  window.flSeuilsEffort=function(z){
+   if(!z||!(z[0]>=60&&z[0]<=220))return null;
+   var s=Math.round(z[0]), d=(+z[1])-(+z[0]), e, o;
+   if(d>=8&&d<=60){e=Math.round(z[0]+d*0.5);o=Math.round(z[0]-d*0.25);}
+   else{e=s+15;o=s-8;}
+   return {bpm:s,entree:Math.max(s,Math.min(220,e)),sortie:Math.max(60,Math.min(s,o))};
+  };
+  window.flEnvoyerSeuilEffort=function(){try{
+   var z=(typeof window.flZonesBpm==='function')?window.flZonesBpm(tk()):null;
+   var S=window.flSeuilsEffort(z);
+   if(!S)return null;
+   var cle=S.bpm+'/'+S.entree+'/'+S.sortie;
+   var h=window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint;
+   if(h&&cle!==window._flSeuilEffortEnvoye){h.postMessage({cmd:'seuilEffort',bpm:S.bpm,entree:S.entree,sortie:S.sortie});window._flSeuilEffortEnvoye=cle;}
+   return S.bpm;
+  }catch(e){return null;}};

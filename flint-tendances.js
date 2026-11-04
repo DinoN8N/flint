@@ -101,7 +101,10 @@ const TREND={
   explP:'Le sommeil réparateur regroupe le sommeil profond (récupération physique, réparation musculaire, immunité) et le sommeil paradoxal/REM (mémoire, apprentissage, équilibre émotionnel). Ensemble, ils devraient représenter au moins 30 à 45 % de ta nuit. C\'est la part qui tu régénère vraiment : un sommeil long mais pauvre en profond et en REM repose moins qu\'une nuit plus courte mais riche en sommeil réparateur.'},
  sleeprestoh:{label:'Sommeil réparateur (heures)',unit:'',icon:'ti-zzz',short:'réparateur (heures)',chart:'stack',moy:true,timefmt:true,grp:'sommeil',
   stack:[{key:'deep',label:'SOL (PROFOND)',c:'#6C4FF0'},{key:'rem',label:'SP / REM',c:'#22BCCB'}],
-  stackVals:function(k){var n=sleepNight(k);if(!n)return null;return {deep:(n.deep||0)/60,rem:(n.rem||0)/60}},
+  /* 26 oct. 2026 — une nuit dont les stades sont indetermines ne vaut pas
+     zero : elle n'a pas de barre. Sinon la tendance plonge un jour sur deux
+     sans qu'aucun sommeil ait manque. */
+  stackVals:function(k){var n=sleepNight(k);if(!n||n.stadesIndetermines)return null;return {deep:(n.deep||0)/60,rem:(n.rem||0)/60}},
   val:function(k){var n=sleepNight(k);return n?n.restorative/60:null},
   verdict:function(v){return v>=3.5?{t:'Élevé',c:'#5A52B5'}:v>=2.5?{t:'Suffisant',c:'#8A8580'}:{t:'Faible',c:'#C8901A'}},
   sent:function(av,a30,r){return 'Tu as cumulé en moyenne '+hHM(av)+' de sommeil réparateur '+(r==='M'?'ce mois-ci':r==='S'?'cette semaine':'sur cette période')+' (profond + paradoxal)'+(a30!=null?', '+(av>=a30?'plus':'moins')+' que tes '+hHM(a30)+' habituels.':'.')},

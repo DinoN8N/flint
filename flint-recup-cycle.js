@@ -275,6 +275,33 @@
 
       if (out.depuisReveil < 0) { out.etat = 'sommeil'; out.raison = 'la nuit court encore'; return out; }
 
+      /* ═══ 29 oct. 2026 — JAMAIS DE DEMI-NUIT : TANT QUE LA NUIT ARRIVE, ON NE JUGE PAS ═══
+         Le matin du 29, 26 442 trames attendaient dans la file du pont ; la nuit a été lue
+         sans elles — « réveil 04:04 », 3 h 15 — et ce cycle l'a tenue pour une nuit finie
+         dont on attendait seulement un éventuel rendormissement (« réveil de 221 min »).
+         Une absence de mesure n'est pas un réveil. Le pont dit maintenant la taille de sa
+         file (`fileTrames`, flint-sommeil.js) : tant qu'elle n'est pas vide, collecte — ni
+         proposition, ni scellement, ni « finale » à quatre heures. Borné : au-delà de six
+         heures après ce réveil supposé, ou si le pont n'a rien dit depuis dix minutes, on
+         revient aux règles d'avant. Banc : tests/test-nuit-file-en-attente.js. */
+      try {
+        var _file = +window.flTramesEnAttente || 0, _fileA = +window.flTramesEnAttenteA || 0;
+        if (_file > 0 && (now - _fileA) < 600000 && out.depuisReveil < 360) {
+          out.etat = 'collecte'; out.fileEnAttente = _file;
+          out.raison = 'les mesures de la nuit arrivent encore (' + _file + ' en file) — on ne juge pas une demi-nuit';
+          return out;
+        }
+      } catch (e) {}
+      /* ═══ 30 oct. 2026 (v2994) — UN JOUR FITCARE, LA NUIT DU BRACELET EST ATTENDUE ═══
+         Le 30 : nuit posée à 08:00:48 au cœur seul (23:52), fichier de nuit du bracelet arrivé à
+         08:07:30 (endormissement 00:57, WHOOP 00:51). Tant qu'il manque — 30 min au plus après le
+         réveil — on reste en collecte : ni « Ta nuit est là », ni sceau sur un endormissement que
+         le cœur seul ne sait pas lire (`flNuitAttendBracelet`, flint-sommeil.js). */
+      try {
+        var _ab = (typeof window.flNuitAttendBracelet === 'function') ? window.flNuitAttendBracelet(K, now) : null;
+        if (_ab) { out.etat = 'collecte'; out.attendBracelet = true; out.raison = _ab.raison; return out; }
+      } catch (e) {}
+
       /* ── LA FENÊTRE DE GRÂCE D'ABORD, ET C'EST L'ORDRE QUI COMPTE ──────────
          Si on testait la livraison avant, une nuit dont la montre n'a JAMAIS
          transmis le premier quart d'heure (`bordManquant`) resterait en
@@ -575,8 +602,11 @@
        · la fonction REND ce qui a vraiment été écrit, et la publication
          rétrograde son état en conséquence. `DB.set` fait déjà de la place et
          réessaie une fois (doctrine maison) : ici on ne réessaie pas, on dit. */
-  function ecrire(K, s, emp, ajust, final, cyc) {
+  function ecrire(K, s, emp, ajust, final, cyc, sansVfc) {
     var res = { score: false, sceau: !final ? null : false };
+    /* 31 oct. 2026 — la provenance voyage avec le nombre : un score sans VFC
+       le dit dans son sceau ET dans son état publié (flRecupProvenance). */
+    var _sv = (sansVfc === true);
     if (final) {
       /* 1er oct. 2026 — le sceau dit SUR QUELLE NUIT il a été calculé : une
          estimation par le pouls ou une mesure. `flNuitMesureArrivee` en a
@@ -588,7 +618,7 @@
         if (_nn) _srcNuit = ((_nn.stages && _nn.stages.length) || _nn.source === 'ble' || _nn.source === 'manuel')
                             ? (_nn.source || 'ble') : (_nn._est ? 'estimation' : (_nn.source || null));
       } catch (e) {}
-      res.sceau = !!DB.set('recovFige_' + K, { s: s, h: emp.h, e: emp.e, nuit: _srcNuit,
+      res.sceau = !!DB.set('recovFige_' + K, { s: s, h: emp.h, e: emp.e, nuit: _srcNuit, sansVfc: _sv,
                                                ts: new Date().toISOString(), cycleGen: CYCLE_GEN });
       if (!res.sceau) {
         try { if (typeof window.flAlerteRecup === 'function')
@@ -604,7 +634,7 @@
       if (ajust) DB.set('recovAj_' + K, ajust);
       else if (DB.get('recovAj_' + K, null) != null) DB.set('recovAj_' + K, 0);
     } catch (e) {}
-    DB.set('recovEtat_' + K, { etat: (final && res.sceau) ? 'finale' : 'provisoire', h: emp.h,
+    DB.set('recovEtat_' + K, { etat: (final && res.sceau) ? 'finale' : 'provisoire', h: emp.h, sansVfc: _sv,
                                ts: new Date().toISOString(), cycle: cyc.etat, cycleGen: CYCLE_GEN });
     return res;
   }
@@ -694,7 +724,7 @@
         var sn = Math.round(vr.s), avant = res.s;
         DB.set('recovReouv_' + K, deja + 1);
         if (DB.get('recovAvant_' + K, null) == null) DB.set('recovAvant_' + K, avant);
-        var _er = ecrire(K, sn, emp, (vr.journalAjust && vr.journalAjust.total) || 0, true, cyc);
+        var _er = ecrire(K, sn, emp, (vr.journalAjust && vr.journalAjust.total) || 0, true, cyc, vr.sansVfc === true);
         if (_er && _er.sceau === false) res.etat = 'provisoire';
         memo = null;
         if (forcerFinale !== true) {          /* même raison qu'à la publication */
@@ -948,7 +978,7 @@
         return res;
       }
 
-      var _ec = ecrire(K, neuf, emp, (v.journalAjust && v.journalAjust.total) || 0, final, cyc);
+      var _ec = ecrire(K, neuf, emp, (v.journalAjust && v.journalAjust.total) || 0, final, cyc, v.sansVfc === true);
       /* un sceau qui n'a pas pu s'écrire n'est pas un sceau : l'état publié le dit */
       if (final && _ec && _ec.sceau === false) final = false;
       try { DB.set('recovSnap_' + K, emp.e); } catch (e) {}
@@ -1085,6 +1115,9 @@ window.flRecovLu=function(off){
   }
   if(!_p||_p.s==null)return null;
   var _rv={s:Math.round(_p.s),etat:_p.etat,fige:(_p.etat==='finale')};
+  /* 31 oct. 2026 — le score publié dit s'il est sans VFC (sceau / état écrits par `ecrire`) */
+  try{var _pv=(typeof window.flRecupProvenance==='function')?window.flRecupProvenance(tk(0)):null;
+   _rv.sansVfc=_pv?(_pv==='sansVfc'):!!(_brut&&_brut.s!=null&&Math.round(_brut.s)===_rv.s&&_brut.sansVfc);}catch(e){}
   var _zz0=_rv.s>=67?['HAUTE','var(--green)','Ton corps est bien récupéré. Conditions optimales pour performer.','PRÊT']
         :_rv.s>=34?['MODÉRÉE','var(--amber)','Récupération correcte. Vise une charge modérée aujourd\'hui.','OK']
         :['BASSE','var(--accent)','Récupération basse. Priorise le repos et le sommeil.','REPOS'];
@@ -1180,6 +1213,8 @@ window.flRecovLu=function(off){
      — une correction qui échoue ne doit pas EFFACER un jour du registre. */
   else if(_reg){ _v={s:Math.round(+_r),fige:!_sn}; if(_sn)_v.etat='provisoire'; }
  }
+ /* 31 oct. 2026 — la provenance d'un jour passé : celle du calcul s'il vient d'être fait, sinon celle que le sceau ou l'état publié déclarent */
+ if(_v&&_v.s!=null&&typeof _v.sansVfc!=='boolean'){ if(_v.c)_v.sansVfc=(_v.sansVfc===true); else { var _pv2=(typeof window.flRecupProvenance==='function')?window.flRecupProvenance(K):null; if(_pv2)_v.sansVfc=(_pv2==='sansVfc'); } }
  if(_v&&_v.s!=null&&!_v.zone){
   var s=_v.s;
   var zz=s>=67?['HAUTE','var(--green)','Ton corps est bien récupéré. Conditions optimales pour performer.','PRÊT']
@@ -1598,4 +1633,168 @@ window.flComportementsAuto = function (rows) {
     return ['early_workout', 'late_workout', 'regular_bedtime', 'regular_wake',
             'high_stress_day', 'nap', 'rest_day'].map(lecteur);
   } catch (e) { return []; }
+};
+
+/* ═══ 31 oct. 2026 — UNE RÉCUP TOUJOURS DONNÉE : LE SCORE « SANS VFC » ═══════
+
+   LA DEMANDE DE DINO, validée : « Une récup toujours donnée. Quand la VFC
+   manque, le score se calcule sur le pouls de repos, la respiration, le
+   sommeil et la température, affiché “sans VFC”. »
+
+   LE MATIN QUI L'A DÉCLENCHÉE. Le 31 oct., pas de récup : le Fitcare n'avait
+   livré que QUATRE minutes de R-R exploitables sur huit heures. `flRmssdNuit`
+   refuse (moins de 6 minutes), `sensorOf` rend une VFC vide, le repli sur la
+   VFC de la puce est interdit au Fitcare (180 cette nuit, 93-167 contre 57-76
+   chez WHOOP), et `recovery()` s'arrêtait net. Sur les six nuits Fitcare, 8,
+   28, 85, 63, 191 et 4 minutes exploitables : la VFC manquera souvent.
+
+   LES POIDS NE SONT PAS CEUX DU SCORE COMPLET MOINS LA VFC — et c'est mesuré.
+   Avec la VFC, la FC de repos ne pèse que 0,0955 parce qu'elle est REDONDANTE
+   avec elle (v1204). Sans la VFC, c'est elle qui porte l'information : la
+   remettre à zéro (« imputer la VFC à sa normale ») laisse le score aveugle
+   au cœur. Le logit sans VFC est donc RÉAJUSTÉ, par la méthode de la v1204
+   (moindres carrés sur le logit de la récup WHOOP), sur les QUATRE AUTRES
+   corps du dossier (Personnes 2, 4, 5 et 6 : 1 043 jours) — JAMAIS sur Dino,
+   pour que la validation sur ses nuits soit hors échantillon :
+
+        Z' = 0,7629 − 0,6439·zFCrepos + 0,5547·zSommeil − 0,0334·zResp − 0,08·pTemp
+
+   (la température garde son poids réglé à la main, comme dans le score
+   complet). Les z sont EXACTEMENT ceux du score complet — mêmes normales,
+   même borne ±2,5, même rampe de maturité, même porte sommeil — et la suite
+   aussi : ouverture du haut (λ 1,3), veto de la nuit catastrophique, journal
+   de bord (l'alcool y reçoit sa pénalité entière : zH vaut 0, aucune
+   physiologie n'a montré qu'il avait été payé).
+
+   VALIDÉ AVANT D'ÊTRE BRANCHÉ, tolérance écrite avant tout calcul :
+   médiane ≤ 12 / p90 ≤ 25 contre WHOOP, ≤ 10 / ≤ 20 contre le score complet,
+   r ≥ 0,5 et mieux qu'une constante, au plus un jour HAUTE quand WHOOP dit
+   BASSE. Les chiffres : tests/test-recup-sans-vfc.js (en-tête).
+   Validation croisée corps par corps (ajusté sans lui, testé sur lui), écart
+   médian à WHOOP : 10 · 10 · 10 · 10 points (imputation : 17 · 12 · 10 · 13).
+
+   TROIS VERROUS, et chacun empêche un mensonge :
+     · LE SCORE LE DIT. `sansVfc:true`, `recupModele:'sansVfc'`, la VFC
+       absente de `c`, `recupEcarts` et `recupContrib` (nulle, pas zéro : zéro
+       dirait « à ta normale »), et le nombre de minutes de VFC. Le sceau et
+       l'état publié portent `sansVfc` (`ecrire`), les charges natives
+       `scoreSansVfc` / `sansVfc`.
+     · IL N'ENTRE DANS AUCUNE NORMALE DE VFC. Il n'écrit ni `hrv`, ni
+       `vfcNuit`, ni `hrvSrc` : `baseStat('hrv')` ne lit que ces champs-là,
+       la nuit sans VFC reste donc une nuit sans VFC pour toutes les normales.
+       Et au registre, il ne remplace JAMAIS un score qui avait une VFC
+       (`flRecovRejuger` garde le jour).
+     · IL NE S'AFFICHE QUE SI L'ÉCRAN SAIT LE DIRE. Le natif ne voyage pas
+       avec l'OTA : une app qui ne sait pas écrire « sans VFC » afficherait le
+       nombre nu. Même précédent que le stress sur 100 (v2710,
+       `window.flEchelleStress`) : le natif DEMANDE le score sans VFC en posant
+       `window.flRecupSansVfc=1` à `atDocumentStart`. Sans lui, rien ne change.
+
+   CE QU'IL EXIGE DE LA NUIT : une nuit du bracelet (`_watch`), du sommeil, une
+   FC de repos, sa normale (`baseStat('rhr')`), et un pouls mesuré sur la
+   moitié de la nuit au moins quand la couverture est connue (règle du 18 oct. :
+   en dessous, il n'y a rien à croire). Banc : tests/test-recup-sans-vfc.js. */
+window.RECUP_SANS_VFC = { c: 0.7629, fcRepos: -0.6439, sommeil: 0.5547, respiration: -0.0334, temperature: -0.08 };
+
+/* La phrase du refus de VFC, en MINUTES. Le « 48 % » d'avant était l'ÉTENDUE
+   entre la première et la dernière minute exploitable : quatre minutes
+   éparpillées pouvaient en faire 48 %. Ce qui décide, et ce qui se comprend,
+   c'est le nombre de minutes. `assez` : six minutes ou plus, mais groupées. */
+window.flVfcMinutesPhrase = function (n, assez) {
+  n = Math.max(0, n | 0);
+  if (n === 0) return 'Aucune minute de VFC exploitable cette nuit.';
+  var m = n + (n > 1 ? ' minutes' : ' minute') + ' de VFC cette nuit';
+  return assez ? m + ', groupées sur une partie de la nuit : trop peu réparties pour la calculer.'
+               : m + ' : il en faut 6 pour la calculer.';
+};
+
+window.flRecupSansVfcPermis = function (t, off) {
+  try {
+    if (window.flRecupSansVfc !== 1) return null;
+    if (!t || t.hrv != null || !t._watch) return null;
+    if (!(t.sleepMin > 0) || t.rhr == null) return null;
+    var K = tk(Math.min(0, off || 0));
+    var w = null; try { w = DB.get('watch_' + K, null); } catch (e) {}
+    var cov = (w && w.night && w.night.hrCoverage != null) ? +w.night.hrCoverage : null;
+    if (cov != null && cov < 50) return null;
+    var rm = null; try { rm = (typeof flRmssdNuit === 'function') ? flRmssdNuit(K) : null; } catch (e) {}
+    var C = window.RECUP_SANS_VFC;
+    var o = { K: K, minutes: (rm && rm.minutes != null) ? rm.minutes : 0,
+              raison: (rm && rm.raison) || null, Z: null, zE: null, z0: null, ctb: null };
+    o.calculer = function (zR, zS, zP, pT) {
+      var Z = C.c + C.fcRepos * zR + C.sommeil * zS + C.respiration * zP + C.temperature * pT;
+      var z0 = Math.log(0.67 / 0.33), zE = Z > z0 ? z0 + 1.3 * (Z - z0) : Z;
+      o.Z = Z; o.zE = zE; o.z0 = z0;
+      o.ctb = { vfc: null, fcRepos: +(C.fcRepos * zR).toFixed(4), sommeilMin: +(C.sommeil * zS).toFixed(4),
+                respiration: +(C.respiration * zP).toFixed(4), temperature: +(C.temperature * pT).toFixed(4) };
+      return zE;
+    };
+    /* le même plafond [1, 100] et la même logistique que le score complet */
+    o.score = function (zR, zS, zP, pT) {
+      var zE = o.calculer(zR, zS, zP, pT);
+      return Math.max(1, Math.min(100, Math.round(100 / (1 + Math.exp(-zE)))));
+    };
+    o.habiller = function (r) {
+      if (!r || o.Z == null) return r;
+      r.sansVfc = true; r.recupModele = 'sansVfc';
+      r.vfcMinutes = o.minutes; r.vfcRaison = o.raison;
+      if (r.c && r.c[0]) r.c[0] = ['HRV', '—', null];
+      if (r.recupEcarts) r.recupEcarts.vfc = null;
+      r.recupContrib = o.ctb;
+      r.recupEchelle = { z: +o.Z.toFixed(3), ouvert: +o.zE.toFixed(3), z0: +o.z0.toFixed(3), lambda: 1.3 };
+      r.recupPoids = { c: C.c, fcRepos: C.fcRepos, sommeil: C.sommeil, respiration: C.respiration, temperature: C.temperature };
+      /* la normale de VFC d'un jour SANS VFC n'a pas de provenance (filtre
+         inactif) : elle mélangerait les sources. On ne la publie pas. */
+      r.bH = null;
+      r.recupFiabilite = Math.max(0, Math.min(1, +(((r.bR && r.bR.n) || 0) / 20).toFixed(2)));
+      return r;
+    };
+    return o;
+  } catch (e) { return null; }
+};
+
+/* D'où vient le score PUBLIÉ d'un jour : 'sansVfc', 'complet', ou null si
+   rien ne le dit. Le sceau d'abord, l'état publié ensuite (tous deux écrits
+   par `ecrire`) ; `s` (sensorOf du jour), quand on l'a, tranche les scores
+   écrits sans état — un score complet exige une VFC. `s === true` le lit
+   paresseusement. */
+window.flRecupProvenance = function (K, s) {
+  try {
+    var f = DB.get('recovFige_' + K, null);
+    if (f && f.s != null) return f.sansVfc === true ? 'sansVfc' : 'complet';
+    var r = DB.get('recov_' + K, null);
+    if (r == null || isNaN(+r)) return null;
+    var e = DB.get('recovEtat_' + K, null);
+    if (e && typeof e.sansVfc === 'boolean') return e.sansVfc ? 'sansVfc' : 'complet';
+    /* `s === true` : « lis le jour toi-même, seulement s'il le faut » */
+    if (s === true) { try { s = (typeof sensorOf === 'function') ? sensorOf(K) : null; } catch (x2) { s = null; } }
+    if (s) return s.hrv == null ? 'sansVfc' : 'complet';
+    return null;
+  } catch (x) { return null; }
+};
+
+/* La question des écrans : « le score que je montre est-il sans VFC ? » */
+window.flRecupEstSansVfc = function (K, rv, rvd, s) {
+  try {
+    if (!rv || rv.s == null) return null;
+    if (typeof rv.sansVfc === 'boolean') return rv.sansVfc;
+    var p = window.flRecupProvenance(K, s || null);
+    if (p) return p === 'sansVfc';
+    return !!(rvd && rvd.sansVfc);
+  } catch (e) { return null; }
+};
+
+/* La phrase de la carte VFC quand elle est vide : le refus en minutes, et, si
+   la récup du jour s'en est passée, ce qu'elle a pris à la place. */
+window.flVfcMotif = function (K, rv, rvd, s) {
+  try {
+    var r = (typeof flRmssdNuit === 'function') ? (flRmssdNuit(K) || {}) : {};
+    var T = function (x) { return (typeof flT === 'function') ? flT(x) : x; };
+    var a = r.raison ? T(r.raison) : null;
+    if (window.flRecupEstSansVfc(K, rv, rvd, s) === true) {
+      var b = T('Récup calculée sans VFC : pouls de repos, sommeil, respiration, température.');
+      return a ? a + ' ' + b : b;
+    }
+    return a;
+  } catch (e) { return null; }
 };

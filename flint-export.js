@@ -294,6 +294,15 @@ function flExpJour(K) {
   return {
     K: K,
     nuit: n, montre: w, nuitMontre: nuitDeMontre,
+    /* v2990 — les minutes de pouls d'un bracelet RETIRÉ, en quarantaine (`hrMasque`,
+       flint-porte.js) : l'export les compte à part, jamais comme mesurées. */
+    minutesRetirees: (w && w.hrMasque) ? w.hrMasque.length : 0,
+    /* v2994 — dont celles d'un pouls SANS BATTEMENTS (id négatif, flint-sommeil.js) ; d'où vient
+       l'endormissement ; et les déverrouillages du téléphone rangés ce jour-là (`watch_.verrou`). */
+    minutesSansBattements: (w && w.hrMasque) ? w.hrMasque.filter(function (x) { return x && +x[2] < 0; }).length : 0,
+    debutSource: (n && n.onsetSrc) || null,
+    deverrouillages: (w && w.verrou) ? w.verrou.length : 0,
+    photosPas: (w && w.pasPhoto) ? w.pasPhoto.length : 0,
     /* Le fuseau du jour, lu UNE fois : les trois tables qui portent des heures
        de cadran le servent, et aucune ne le recalcule pour son compte. */
     fuseau: flExpFuseau(K),

@@ -742,6 +742,43 @@
   }
 
 
+  /* ═══ 27 oct. 2026 — LES PAS DU FITCARE, HEURE PAR HEURE ═════════════════
+
+     Le Fitcare ne diffuse aucun pas en direct et n'écrit pas de blocs
+     d'activité (`actDet`) : il garde un fichier `.step`, une valeur par heure,
+     sur QUATRE octets (le SDK lit `getInt`). Nous le lisions sur un octet, et
+     le moteur le versait dans `steps`, qui est le TOTAL du jour — un nombre :
+     l'écriture échouait en silence. Les journées Fitcare prenaient donc les pas
+     de l'iPhone (Santé, 4 786 le 25, 6 123 le 26) ou un total recopié d'un
+     jour sur l'autre (1 466 le 26 ET le 27).
+
+     La série vit désormais dans `pasHeure` ([minute, pas], zéros compris : une
+     heure immobile est une heure MESURÉE). Elle donne le total et la
+     couverture en heures — exactement ce que l'arbitrage avec Santé attend
+     (`arbitrerPas`). Elle n'entre PAS dans `actDet` : le moteur du sommeil lit
+     les blocs comme une preuve d'éveil à la minute, et une heure résumée à sa
+     première minute y deviendrait un réveil inventé. */
+  /* ═══ 28 oct. 2026 — UNE VALEUR PAR PAQUET, PAS PAR HEURE : LE MAXIMUM DE L'HEURE ══
+     Le vrai `.step` du 27 octobre n'a pas 24 valeurs à la minute 1 de chaque heure :
+     42 paquets à des minutes quelconques (07:05, 08:02, 08:05, 08:15…), et la même
+     heure revient plusieurs fois avec le compte DÉJÀ fait (3 016 à 19:30 puis à 19:56,
+     127 quatre fois entre 15:20 et 15:49). Chaque paquet porte le compte de L'HEURE
+     D'HORLOGE en cours au moment où il est écrit. La somme brute rendait 16 097 pas ;
+     le maximum de chaque heure d'horloge en rend 10 186 — le bracelet lui-même disait
+     10 426 « pas du jour » à 22:25 (objet 95). Sur une série d'une valeur par heure,
+     les deux lectures sont identiques. */
+  function pasHeure(serie) {
+    var h = {};
+    (serie || []).forEach(function (x) {
+      if (!Array.isArray(x) || !(x[1] >= 0)) return;
+      var k = Math.floor((+x[0] || 0) / 60);
+      if (!(k in h) || +x[1] > h[k]) h[k] = +x[1];
+    });
+    var pas = 0; Object.keys(h).forEach(function (k) { pas += h[k]; });
+    return { pas: Math.round(pas), heures: Object.keys(h).length };
+  }
+  racine.flPasHeure = pasHeure;
+
   racine.flPas = { fraicheurPas: fraicheurPas, phraseFraicheur: phraseFraicheur,
                    SILENCE_ALERTE: SILENCE_ALERTE,
                    nettoyer: nettoyer, total: total, signature: signature,

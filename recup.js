@@ -88,7 +88,7 @@
 
   /* ══════════════════════════════════════════════════════════════════════════
      LE DÉTAIL D'UNE SÉANCE DE RÉCUPÉRATION. Rend `null` pour tout le reste —
-     et c'est LUI qui décide de la fiche, exactement comme `flMarcheDetail` :
+     et c'est LUI qui décide de la fiche, comme le faisait `flMarcheDetail` (retiré en v2985) :
      une charge qui porte `recup` ouvre la fiche Récup, une charge qui ne la
      porte pas garde sa fiche d'effort. Pas de seuil, pas de bascule : la
      catégorie vit déjà dans le catalogue (`FL_ACT_CAT`), le nom est la clé.

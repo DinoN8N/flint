@@ -178,6 +178,8 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
  if(/(pourquoi|score|recup\b|si bas|si haut|explique)/.test(n)){
   var c=rv.c.slice().sort(function(a,b){return Math.abs(b[2])-Math.abs(a[2])});
   var top=c[0],dir=top[2]>=0?'portée surtout par ta ':'pénalisée surtout par ta ',second=c[1]?(' et ta '+c[1][0]+' ('+c[1][1]+')'):'';
+  /* 31 oct. 2026 — un score sans VFC ne se décrit pas avec les poids du score complet (flint-recup-cycle.js) */
+  if(rv.sansVfc===true)return 'Ton score est de <b>'+s+'%</b> ('+zone+'), calculé <b>sans VFC</b> (trop peu de battements mesurés cette nuit), '+dir+top[0]+' ('+top[1]+')'+second+'. Sans la VFC, la FC au repos pèse le plus, puis le sommeil, la température et la respiration.';
   return 'Ton score est de <b>'+s+'%</b> ('+zone+'), '+dir+top[0]+' ('+top[1]+')'+second+'. Dans le calcul, la VFC pèse le plus, puis le sommeil, la FC au repos et la respiration.';
  }
  if(/(sommeil|dormi|dormir|nuit|reveil|coucher)/.test(n)){
