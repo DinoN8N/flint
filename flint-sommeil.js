@@ -2270,6 +2270,17 @@ function restageSleep(dayKey) {
       var covFrac = N > 0 ? hrCov / N : 0;
       var stageSrc = covFrac >= RESTAGE.minHrCoverage ? 'flint-hr'
                    : (covFrac >= RESTAGE.partialCoverage ? 'flint-partiel' : 'montre');
+      /* ═══ 5 nov. 2026 — UNE NUIT LUE AU CŒUR GARDE AUSSI SES STADES ══════════════════════════
+         Deux calculs écrivaient la même nuit à tour de rôle : `flNuitDuCoeur` (431 min, 7 réveils
+         d'une minute) puis ce re-staging, qui repassait le même pouls et les effaçait (438 min).
+         `flNuitRecouper` comparait son calcul au résultat de celui-ci, ne le retrouvait jamais,
+         réécrivait à chaque livraison : 437 → 430 → 437 → 438 → 431 le 5 nov., et « Ma nuit »
+         affichait 7h11 sur 7h18 de stades. Contre WHOOP (13 nuits), la lecture brute est un peu
+         plus proche (65 min d'écart contre 67) et ses réveils tombent sur les siens (00:39 / 00:43,
+         01:32 / 01:40, 03:28-03:42). On garde donc CE QUE LE CŒUR A LU ; les autres champs (couverture,
+         provenance, courbe) restent calculés ici. La puce d'un ancien bracelet (`nc`) ne change
+         pas. Banc : tests/test-nuit-un-seul-calcul.js. */
+      if (bornesFixes && !manuel && !nc && s.stadesSource === 'coeur') { for (var mz = 0; mz < N; mz++) stgArr[mz] = base[mz]; }
       // NE PAS écraser par le prior brut : les corrections 2/2b/2c (éveils isolés,
       // miroir, miettes de REM) ne dépendent PAS de la FC et NETTOIENT le bruit de
       // la puce. Les avoir annulées faisait chuter une nuit de 10 h à 3h39 : chaque
@@ -3645,12 +3656,58 @@ function restageSleep(dayKey) {
       var nf = wK.nuitFitcare;
       var b = (nf && +nf.debut > 0) ? (Math.round(+nf.debut / 60) + (nf.valide ? 'v' : 'o')) : '-';
       var fin = (+finMs > 0) ? +finMs : ((wK.night && +wK.night.sleepEnd > 0) ? +wK.night.sleepEnd : minuit + 14 * 3600000);
+      /* 5 nov. 2026 — le premier morceau de la nuit du bracelet est une matière lue. Rien d'ajouté sur une
+         nuit d'un seul morceau : sa signature ne change pas, elle n'est pas relue pour autant. */
+      if (typeof window.flNuitDebutBracelet === 'function') {
+        var mB = window.flNuitDebutBracelet(wK, minuit - 12 * 3600000, fin, wV);
+        if (mB && mB.morceaux > 1) b += 'c' + Math.round(mB.debut / 60);
+      }
       var ev = flsVerrouEvenements([Kv, K]).filter(function (x) { return x[0] * 1000 >= minuit - 12 * 3600000 && x[0] * 1000 < fin; });
       var m = 0;
       (Array.isArray(wV.hrMasque) ? wV.hrMasque : []).forEach(function (x) { if (x && x[0] >= 720) m++; });
       (Array.isArray(wK.hrMasque) ? wK.hrMasque : []).forEach(function (x) { if (x) m++; });
       return 'b' + b + '|t' + ev.length + (ev.length ? ':' + ev[ev.length - 1][0] : '') + '|m' + m;
     } catch (e) { return ''; }
+  };
+
+  /* ═══ 5 nov. 2026 — LA NUIT DU BRACELET PEUT ÊTRE EN PLUSIEURS MORCEAUX ═══════════════════════
+     Nuit du 4 au 5 : levé vers 3 h, le bracelet écrit deux enregistrements, 23:31 → 02:48 et
+     03:28 → 07:48. Seul le dernier colle au réveil : le premier partait dans `siestesFitcare` et
+     l'endormissement était comparé à 03:28. FLINT a écrit 00:44. Ici, on part du dernier morceau qui
+     chevauche notre nuit (15 min au moins) et on remonte vers ceux qui le précèdent, tant que le trou
+     reste un éveil de nuit (`CLASSIF.reveilCoupeNuit`, 4 h, comme une insomnie) et que le morceau est
+     nocturne : une sieste de l'après-midi ne devient pas un début de nuit. Rend le début en secondes.
+
+     SA FIN N'EST PAS DEMANDÉE : on ne prend au bracelet que son DÉBUT, et le réveil reste au cœur. Le
+     Fitcare fige sa mémoire le temps d'une connexion : à 07:48:31, il rend 03:28 → 05:59 (lien ouvert
+     depuis 06:01), et la nuit entière seulement à 07:49 après réouverture du lien. Le début était déjà
+     juste à la première lecture : l'exiger « collé au réveil » faisait attendre pour rien. */
+  window.flNuitDebutBracelet = function (w, debutMs, finMs, wVeille) {
+    try {
+      var vus = {}, l = [];
+      /* Un morceau fini avant minuit est rangé au jour de sa fin : on regarde aussi la veille. */
+      [w, wVeille].forEach(function (j) {
+        [j && j.nuitFitcare].concat(Array.isArray(j && j.siestesFitcare) ? j.siestesFitcare : []).forEach(function (x) {
+          if (!x || !(+x.debut > 0) || !(+x.fin > +x.debut)) return;
+          var c = Math.round(+x.debut / 60);
+          if (!vus[c] || +x.fin > +vus[c].fin) vus[c] = x;
+        });
+      });
+      Object.keys(vus).forEach(function (c) { l.push(vus[c]); });
+      l.sort(function (a, b) { return +a.debut - +b.debut; });
+      function chevauche(x) { return Math.min(+x.fin * 1000, finMs) - Math.max(+x.debut * 1000, debutMs) >= 15 * 60000; }
+      var i = l.length - 1;
+      while (i >= 0 && !chevauche(l[i])) i--;
+      if (i < 0) return null;
+      var cur = l[i], n = 1;
+      for (var j = i - 1; j >= 0; j--) {
+        var s = l[j], trou = (+cur.debut - +s.fin) / 60;
+        if (trou > CLASSIF.reveilCoupeNuit) break;
+        if (flsPartNocturne(+s.debut * 1000, +s.fin * 1000) < CLASSIF.partNuitMini) break;
+        cur = s; n++;
+      }
+      return { debut: +cur.debut, morceaux: n, dernier: l[i] };
+    } catch (e) { return null; }
   };
 
   /* v2995 (revue) — un fichier de nuit du bracelet appartient à une nuit lue au cœur s'il la
@@ -3805,8 +3862,18 @@ function restageSleep(dayKey) {
       var avant = null;
       for (var q2 = s - 1; q2 >= 0 && out[s][0] - out[q2][0] <= 3; q2--) if (out[q2][1] <= 1.3 * b) { avant = q2; break; }
       if (avant == null || out[s][1] - out[avant][1] < 30) continue;
+      /* 5 nov. 2026 — UN CREUX D'UNE MINUTE NE COUPE PAS LE PALIER. Nuit du 4 au 5 : 54 → 91 → 102 … 105 → 84 → 53
+         pendant 21 min, sans un pas. Une seule minute à 99 (seuil 1,85 × 54 = 99,9) coupait le palier en deux bouts
+         de moins de 9 min : rien n'était corrigé, l'éveil de 22 min a repoussé l'endormissement de 23:32 à 00:44.
+         Une minute sous le seuil (mais à 1,6 fois le repos au moins) est gardée si la suivante y revient. */
+      function dansPalier(v) { return v >= 1.85 * b && v <= 2.15 * b; }
       var e = s;
-      while (e + 1 < out.length && out[e + 1][0] - out[e][0] <= 2 && out[e + 1][1] >= 1.85 * b && out[e + 1][1] <= 2.15 * b) e++;
+      while (e + 1 < out.length && out[e + 1][0] - out[e][0] <= 2) {
+        if (dansPalier(out[e + 1][1])) { e++; continue; }
+        if (out[e + 1][1] >= 1.6 * b && out[e + 1][1] <= 2.15 * b && e + 2 < out.length
+            && out[e + 2][0] - out[e + 1][0] <= 2 && dansPalier(out[e + 2][1])) { e += 2; continue; }
+        break;
+      }
       if (out[e][0] - out[s][0] < 9 || out[e][0] - out[s][0] > 180) { s = e; continue; }
       var pal = out.slice(s, e + 1).map(function (y) { return y[1]; }), mp = pal.reduce(function (a, c) { return a + c; }, 0) / pal.length;
       if (Math.sqrt(pal.reduce(function (a, c) { return a + (c - mp) * (c - mp); }, 0) / pal.length) > 4) { s = e; continue; }
@@ -4423,44 +4490,38 @@ function restageSleep(dayKey) {
          02:40:16 — exactement la fin du téléphone. La règle du bracelet corrige l'aveuglement du cœur
          « couché éveillé » ; quand le téléphone l'a déjà corrigé, le bracelet n'est comparé qu'à
          l'endormissement QUI EN SORT (ici 9 min : gardé au téléphone). Sans téléphone, rien ne change. */
-      /* v2995 (revue) — LE FICHIER DOIT ÊTRE CELUI DE CETTE NUIT : il chevauche la fenêtre du cœur
-         et finit à moins de `finBracelet` (45 min) de notre réveil (mesuré : +7 à +27). Une sieste
-         ou un fichier mal daté ne déplace rien. */
+      /* ═══ 5 nov. 2026 — L'ENDORMISSEMENT EST CELUI DU BRACELET (décision de Dino) ════════════════
+         « Sur l'endormissement, il faut impérativement qu'on écoute le bracelet. » Dès qu'un fichier
+         de cette nuit existe (`flNuitDebutBracelet` : il chevauche la fenêtre du cœur), son début
+         fait foi, quel que soit l'écart au cœur ou au téléphone. Le
+         cœur et le téléphone ne décident plus que les nuits sans fichier. Une nuit en plusieurs
+         morceaux commence au premier (`flNuitDebutBracelet`).
+
+         CE QUE ÇA COÛTE, mesuré le 3 nov. sur 7 nuits contre WHOOP : 9 min d'écart moyen, 22 au
+         pire, contre 4 et 9 pour la règle hybride qu'elle remplace. Ce choix a été fait en
+         connaissance de cause : une règle hybride aveugle au premier morceau a écrit 00:44 pour
+         23:31 le 5 nov.
+
+         Le réveil reste au cœur. Un début à moins d'une heure de la fin n'est pas cette nuit. Un
+         fichier qui ne chevauche pas notre nuit (sieste, fichier mal daté) ne déplace rien. */
       try {
-        if (nfB && +nfB.debut > 0 && !window.flNuitFitcareCollee(nfB, t0 + a0 * 60000, t0 + fin * 60000)) {
+        var dB = window.flNuitDebutBracelet(flsLire('watch_' + K, null) || {}, t0 + a0 * 60000, t0 + fin * 60000,
+                                            flsLire('watch_' + flsCle(new Date(t0)), null) || {});
+        if (!dB && nfB && +nfB.debut > 0) {
           flsLog('nuit ' + K + ' : fichier du bracelet ' + hmB(Math.round((+nfB.debut * 1000 - t0) / 60000)) + '→' + hmB(Math.round((+nfB.fin * 1000 - t0) / 60000))
-            + ' ignoré — ce n\'est pas cette nuit (chevauchement, ou fin à plus de ' + p.finBracelet + ' min de notre réveil)');
-          nfB = null;
+            + ' ignoré — ce n\'est pas cette nuit (il ne la chevauche pas)');
         }
-        if (nfB && +nfB.debut > 0) {
-          var kD = Math.round((+nfB.debut * 1000 - t0) / 60000);
-          /* ═══ 3 nov. 2026 — LE BRACELET PLUS TÔT QUE NOUS, AUSSI ══════════════════════════════
-             « Plus tôt que nous : jamais (aucune preuve) », disait la v2994. La preuve est venue la
-             nuit du 2 au 3 nov. : Dino pose son téléphone à 02:01, un faux pouls (le double, 13 min)
-             fait croire au cœur qu'il est éveillé jusqu'à 02:16 ; le bracelet dit 02:00, WHOOP 01:55.
-             Dino : « garder l'endormissement du bracelet… et prendre notre réveil à nous ». Mesuré
-             sur les 7 nuits où l'on a les trois (WHOOP, le fichier du bracelet, FLINT) :
-               toujours le bracelet → 9 min d'écart moyen, 22 au pire (le 29 : 00:38 / WHOOP 00:16) ;
-               la règle d'avant      → 6 min, 21 au pire (le 3 nov.) ;
-               CETTE RÈGLE           → 4 min, 9 au pire.
-             Puis les bords du faux pouls ont été nommés (`flPoulsDedouble`, plus haut) : le cœur seul
-             lit alors 01:55 le 3 nov. (0 min de WHOOP au lieu de 6), le bracelet n'y est plus nécessaire.
-             Le bracelet est pris quand il CORRIGE le cœur : nettement plus tard (30 à 90 min — couché
-             éveillé, v2994), ou PLUS TÔT (jusqu'à 90 min — le cœur trompé par un artefact ou un pic),
-             sauf si le téléphone a parlé : un endormissement repoussé par le téléphone est une borne,
-             et un déverrouillage entre les deux prouve l'éveil. Entre 0 et 30 min plus tard, les deux
-             lectures se valent et le cœur (sa règle des pics) est le plus juste. */
-          var plusTot = a0 - kD, telEntre = perT.some(function (iv) { return iv[1] > kD && iv[0] < a0; });
-          var bracPlusTard = kD - a0 >= p.bandeMin && kD - a0 <= p.reveilBracelet;
-          var bracPlusTot = plusTot > 0 && plusTot <= p.reveilBracelet && srcDebut !== 'telephone' && !telEntre;
-          if ((bracPlusTard || bracPlusTot) && kD < fin - 60) {
-            flsLog('nuit ' + K + ' : endormissement du BRACELET retenu, ' + hmB(kD) + ' au lieu de ' + hmB(a0) + ' lu au '
-              + (srcDebut === 'telephone' ? 'téléphone' : 'cœur') + (bracPlusTot ? ' (le bracelet s\'endort AVANT nous)' : '')
-              + (nfB.valide ? '' : ' (sa nuit était encore ouverte : son début, lui, est fixé)'));
+        if (dB) {
+          /* La MINUTE du bracelet, sans arrondi : 23:31:51 reste 23:31, l'heure qu'il écrit. */
+          var kD = Math.floor((dB.debut * 1000 - t0) / 60000);
+          if (kD >= 0 && kD < fin - 60) {
+            if (kD !== a0) flsLog('nuit ' + K + ' : endormissement du BRACELET retenu, ' + hmB(kD) + ' au lieu de ' + hmB(a0) + ' lu au '
+              + (srcDebut === 'telephone' ? 'téléphone' : 'cœur')
+              + (dB.morceaux > 1 ? ' (sa nuit est en ' + dB.morceaux + ' morceaux)' : '')
+              + (dB.dernier && dB.dernier.valide ? '' : ' (sa nuit était encore ouverte : son début, lui, est fixé)'));
             a0 = kD; srcDebut = 'bracelet';
-          } else if (kD !== a0) {
-            flsLog('nuit ' + K + ' : endormissement du bracelet ' + hmB(kD) + ' NON retenu (cœur ' + hmB(a0) + ')'
-              + (kD > a0 && kD - a0 < p.bandeMin ? ' — moins de ' + p.bandeMin + ' min d\'écart' : ''));
+          } else {
+            flsLog('nuit ' + K + ' : endormissement du bracelet ' + hmB(kD) + ' NON retenu (hors de la fenêtre de la nuit)');
           }
         }
       } catch (eD) {}
@@ -5282,6 +5343,8 @@ window.flStadesNuit = function (n) {
       if (!n || n.source === 'manuel' || n.lecteur !== 'coeur' || n.onsetSrc === 'bracelet' || !(+n.sleepEnd > 0)) return null;
       var nf = w.nuitFitcare;
       if (nf && typeof window.flNuitFitcareCollee === 'function' && window.flNuitFitcareCollee(nf, +n.sleepStart, +n.sleepEnd)) return null;
+      /* 5 nov. 2026 — on ne prend au bracelet que son début : dès qu'un fichier chevauche la nuit, plus rien à attendre. */
+      if (typeof window.flNuitDebutBracelet === 'function' && window.flNuitDebutBracelet(w, +n.sleepStart, +n.sleepEnd)) return null;
       var now = maintenant || Date.now(), att = ((window.flNuitCoeurReglages || {}).attenteBracelet || 30) * 60000;
       if (now < +n.sleepEnd || now - +n.sleepEnd >= att) return null;
       /* v2995 (revue) — DÈS QUE L'ATTENTE COMMENCE, ON DEMANDE au bracelet sa mémoire, UNE fois par

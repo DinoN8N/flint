@@ -71,12 +71,24 @@
      mesure » : mieux vaut un tiret qu'un faux 100 % (et un « bas de la nuit » à 100 qui dirait tout
      va bien). Banc : tests/test-moniteur-comme-whoop.js. */
   window.flSpo2Plafonne=function(v){return !!(v&&v.length&&v.every(function(x){return x>=100;}));};
+  /* ═══ 5 nov. 2026 — LE FITCARE NE DONNE PAS ENCORE UN OXYGÈNE FIABLE ═══════════════════════════
+     Mesuré : 121 relevés sur 156 à 100 %, la même valeur huit heures de suite, et le bouton de mesure
+     de LEUR app (F24H) rend aussi 100 %, WHOOP lisant 95,85 % sur la même nuit. Le chiffre naît dans le
+     bracelet, on ne le répare pas ici. Le plafond ci-dessus ne suffisait pas : une nuit où un seul relevé
+     passait sous 100 sortait un chiffre et une carte VERTE, qui rassure sans rien prouver, sur une donnée
+     de santé. Donc : sur le Fitcare (et les nuits mêlées), pas de chiffre, la carte dit « Pas de mesure ».
+     L'ancien bracelet mesure vraiment et ne change pas. Quand Fitcare aura corrigé son firmware, passer
+     FL_SPO2_FITCARE_FIABLE à true suffit. Banc : test-moniteur-fitcare.js § 1. */
+  window.FL_SPO2_FITCARE_FIABLE=false;
+  window.flSpo2NonFiable=function(w){try{return !window.FL_SPO2_FITCARE_FIABLE&&!!(w&&typeof window.flInstrumentVfc==='function'&&window.flInstrumentVfc(w.marque));}catch(e){return false;}};
   window._flSpo2NuitMemo={__sceau:null};
   window.flSpo2NuitDe=function(K){
    var _calcul=function(K){try{
    var w=DB.get('watch_'+K,null);
+   var _nonFiable=(typeof window.flSpo2NonFiable==='function')&&window.flSpo2NonFiable(w);   /* 5 nov. 2026 — voir ci-dessus */
    if(w&&typeof flMatiereNuit==='function')w=flMatiereNuit(K,w);   /* 1er oct. 2026 — nuit finie avant minuit : l'oxygène de la veille */
    if(!w||!w.spo2||!w.spo2.length)return null;
+   if(_nonFiable||((typeof window.flSpo2NonFiable==='function')&&window.flSpo2NonFiable(w)))return null;
    var n=w.night;
    if(!n||n.bedMin==null||n.wakeMin==null)return null;
    var b=n.bedMin, r=n.wakeMin;
@@ -144,8 +156,10 @@
   window.flSpo2BasNuitDe=function(K){
    var _calcul=function(K){try{
    var w=DB.get('watch_'+K,null);
+   var _nonFiable=(typeof window.flSpo2NonFiable==='function')&&window.flSpo2NonFiable(w);   /* 5 nov. 2026 — voir ci-dessus */
    if(w&&typeof flMatiereNuit==='function')w=flMatiereNuit(K,w);   /* 1er oct. 2026 — nuit finie avant minuit : l'oxygène de la veille */
    if(!w||!w.spo2||!w.spo2.length)return null;
+   if(_nonFiable||((typeof window.flSpo2NonFiable==='function')&&window.flSpo2NonFiable(w)))return null;
    var n=w.night;
    if(!n||n.bedMin==null||n.wakeMin==null)return null;
    var b=n.bedMin, r=n.wakeMin;

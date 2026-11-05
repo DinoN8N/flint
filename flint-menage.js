@@ -191,6 +191,59 @@ window.flMenageClesMortes=function(){try{
 }catch(e){return 0;}};
 try{setTimeout(function(){try{window.flMenageClesMortes();}catch(e){}},20000);}catch(e){}
 
+/* ─── UNE MESURE NE VIENT PAS DU FUTUR (5 nov. 2026) ───────────────────────
+   Le 5 nov., pendant que l'app du fabricant tenait le bracelet, son horloge a
+   sauté au 3 avril 2027 : 13 minutes de pouls, oxygène, VFC, VO2max rangés dans un
+   jour `watch_2027-4-3`. Et une calorie au pas de 86 400 s a créé la veille un
+   `watch_2026-11-6` : 158 kcal pour le lendemain, à 06:00.
+   ON JUGE L'INSTANT DE LA MESURE, JAMAIS LE NOM DU FICHIER : depuis le 5 nov. 06:00 le
+   bracelet appelle ses fichiers `20270404.*` alors que ce qu'ils portent est bien
+   daté. La marge couvre un écart d'horloge, pas une journée.
+   `flSansFutur` taille ce qui entre (faux = rien à ranger). `flMenageJoursFuturs`
+   retire les jours déjà créés, seulement s'ils ne pèsent rien : un téléphone dont on
+   a reculé la date a de vrais jours « dans le futur », on n'y touche pas.
+   Banc : tests/test-sans-futur.js. */
+var FL_FUTUR_MARGE_S=15*60, FL_FUTUR_POULS_MAX=60;
+window.flSansFutur=function(type,data,nowMs){try{
+ if(!data||(type!=='hrhistory'&&type!=='sommeil'))return true;
+ var lim=Math.floor(nowMs/1000)+FL_FUTUR_MARGE_S,retires=0;
+ function dire(){try{console.log('[flint] '+type+' '+(data.canal||data.source||'')+' : '+retires+' mesure(s) datee(s) dans le futur, ignoree(s)');}catch(e){}}
+ if(type==='sommeil'){
+  if(data.source==='fitcare'&&+data.leve>lim){retires=1;dire();return false;}
+  return true;
+ }
+ function tailler(cle,iTs){
+  var a=data[cle];if(!Array.isArray(a))return;
+  var b=a.filter(function(p){return !(p&&+p[iTs]>lim);});
+  retires+=a.length-b.length;data[cle]=b;
+ }
+ tailler('points',0);tailler('samples',1);
+ var vide=(Array.isArray(data.points)&&!data.points.length)||(Array.isArray(data.samples)&&!data.samples.length);
+ if(Array.isArray(data.valeurs)&&+data.debut>1000000000&&+data.intervalle>0){
+  var g=Math.floor((lim-(+data.debut))/(+data.intervalle))+1;
+  if(g<data.valeurs.length){retires+=data.valeurs.length-Math.max(0,g);data.valeurs=data.valeurs.slice(0,Math.max(0,g));}
+  vide=!data.valeurs.length;
+ }
+ if(retires)dire();
+ return !(retires&&vide);
+}catch(e){return true;}};
+window.flMenageJoursFuturs=function(nowMs){try{
+ var d0=new Date(nowMs||Date.now()),j0=new Date(d0.getFullYear(),d0.getMonth(),d0.getDate()).getTime();
+ var re=/^watch_(\d{4})-(\d{1,2})-(\d{1,2})$/,partis=[];
+ var km=flClesChaudes();
+ for(var i=0;i<km.length;i++){
+  var m=re.exec(km[i]||'');if(!m)continue;
+  if(!(new Date(+m[1],+m[2]-1,+m[3]).getTime()>j0))continue;
+  var w=null;try{w=JSON.parse(localStorage.getItem(km[i]));}catch(e){continue;}
+  if(!w||w.night||(Array.isArray(w.hr)&&w.hr.length>FL_FUTUR_POULS_MAX))continue;
+  partis.push(km[i]);
+ }
+ partis.forEach(function(k){try{localStorage.removeItem(k);DB.marque(k);}catch(e){}});
+ try{if(partis.length)console.log('[flint] menage : jour(s) du futur retire(s) : '+partis.join(', '));}catch(e){}
+ return partis;
+}catch(e){return [];}};
+try{setTimeout(function(){try{window.flMenageJoursFuturs();}catch(e){}},20000);}catch(e){}
+
 /* ─── UN SEUL EMOJI FAIT PAYER DOUBLE TOUTE LA VALEUR (3 oct. 2026) ────────
    WebKit compte le quota (5 242 880 octets) EN OCTETS DE SA CHAÎNE INTERNE :
    un octet par caractère tant que tous tiennent en Latin-1, DEUX par
