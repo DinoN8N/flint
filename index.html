@@ -5268,7 +5268,7 @@ function strainTarget(){const rv=(typeof flRecovLu==='function')?flRecovLu(0):re
  if(!rv)return ech(10,14);
  const r=rv.s;
  return r>=67?ech(14,18):r>=34?ech(10,14):ech(6,10)}
-function calibNights(){let n=0,src=null;for(let i=0;i<31;i++){const s=sensorOf(tk(-i));if(s&&s.hrv!=null){if(i===0)src=s.hrvSrc||null;if(i===0||(!(s.sleepMin!=null&&s.sleepMin<240)&&!(src&&s.hrvSrc&&s.hrvSrc!==src)))n++}}return n}   /* 28 sept. 2026 — les MÊMES nuits que `baseStat` et `flNuitsBase` : plus de 4 h, même source de VFC (S6) ; et la même FENÊTRE, aujourd'hui + 30 (elle s'arrêtait à 29 : relecture adversariale) */
+function calibNights(){let n=0,src=null;const _s0=sensorOf(tk(0)),_sv=window.flRecupSansVfc===1&&_s0&&_s0.hrv==null;for(let i=0;i<31;i++){const s=sensorOf(tk(-i));if(s&&(s.hrv!=null||(_sv&&s.sleepMin>=240&&s.rhr!=null))){if(i===0)src=s.hrvSrc||null;if(i===0||(!(s.sleepMin!=null&&s.sleepMin<240)&&!(src&&s.hrvSrc&&s.hrvSrc!==src)))n++}}return n}   /* 28 sept. 2026 — les MÊMES nuits que `baseStat` et `flNuitsBase` : plus de 4 h, même source de VFC (S6) ; et la même FENÊTRE, aujourd'hui + 30 (elle s'arrêtait à 29 : relecture adversariale) */
 
 /* ---------- RINGS / CHARTS ---------- */
 function ringHTML(val,size,label,sub,color,dispVal){color=color||'var(--accent)';const r=size/2-9,c=2*Math.PI*r,off=c*(1-Math.max(0,Math.min(100,val))/100);const gid='rg'+Math.round(size*1000+(+val||0));const fs=Math.round(size*0.225);return '<div style="position:relative;display:inline-block;width:'+size+'px;height:'+size+'px;vertical-align:top"><svg width="'+size+'" height="'+size+'" viewBox="0 0 '+size+' '+size+'" style="display:block"><defs><linearGradient id="'+gid+'" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="'+color+'" stop-opacity=".7"/><stop offset="1" stop-color="'+color+'"/></linearGradient></defs><circle cx="'+size/2+'" cy="'+size/2+'" r="'+r+'" fill="none" stroke="var(--track)" stroke-width="9"/><circle cx="'+size/2+'" cy="'+size/2+'" r="'+r+'" fill="none" stroke="url(#'+gid+')" stroke-width="9" stroke-linecap="round" stroke-dasharray="'+c.toFixed(1)+'" stroke-dashoffset="'+off.toFixed(1)+'" style="--rc:'+c.toFixed(1)+';--ro:'+off.toFixed(1)+';animation:ringfill .55s cubic-bezier(.2,.8,.2,1) both" transform="rotate(-90 '+size/2+' '+size/2+')"/></svg><div class="rc">'+(label?'<div class="rlab">'+label+'</div>':'')+'<div class="rval" style="font-size:'+fs+'px;color:'+color+'">'+(dispVal!=null?dispVal:val)+'</div>'+(sub?'<div class="rsub">'+sub+'</div>':'')+'</div></div>'}
@@ -12403,9 +12403,9 @@ window.flAccueilData=function(_argJour){try{
    e.sort(function(a,b){return a.tri-b.tri;});
    var cumul=eff;
    var mot=cumul==null?null:(cumul>=14?'Journée bien remplie':cumul>=8?'Journée active':'Journée calme');
-   return {entrees:e, resume:e.length+' entrée'+(e.length>1?'s':'')
-            +(cumul!=null?' · effort '+String(cumul).replace('.',flSeparateurDecimal())+'/'+STRAIN_MAX:'') /* 11 sept. 2026 — « cumul 11 » ne nommait rien et n'avait pas d'échelle : c'est l'effort du jour, le nombre même de la tuile EFFORT de l'accueil. */,
-           badge:mot,
+   return {entrees:e, resume:((typeof flT==='function')?flT:String)(e.length+' entrée'+(e.length>1?'s':'')
+            +(cumul!=null?' · effort '+String(cumul).replace('.',flSeparateurDecimal())+'/'+STRAIN_MAX:'')) /* 11 sept. 2026 — « cumul 11 » ne nommait rien et n'avait pas d'échelle : c'est l'effort du jour, le nombre même de la tuile EFFORT de l'accueil. */,
+           badge:(mot&&typeof flT==='function')?flT(mot):mot,
            /* 12 sept. 2026 — la carte native du journal du soir redisait « Réponds à tes questions » après
               « Enregistrer » : elle n'avait aucun témoin. Rempli = au moins une réponse (clé sans « _ »). */
            journalSoirRempli:(function(){try{var _j=DB.get('journal_'+tk(_off),{})||{};return _j._saved===true||Object.keys(_j).some(function(q){return q.charAt(0)!=='_'&&_j[q]!=null;});}catch(x){return false;}})(), journalVeilleRempli:(function(){try{var _j=DB.get('journal_'+tk(_off-1),{})||{};return _j._saved===true||Object.keys(_j).some(function(q){return q.charAt(0)!=='_'&&_j[q]!=null;});}catch(x){return false;}})()};   /* 30 sept. 2026 — la carte « Hier soir » d avant 18 h dit l état de la veille */
@@ -23409,7 +23409,7 @@ function wipeData(){if(!confirm('Vider TOUTES les données (démo incluse) et re
 function exportData(){const dump={};Object.keys(localStorage).forEach(k=>dump[k]=localStorage.getItem(k));const t=JSON.stringify(dump,null,2);try{const blob=new Blob([t],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='flint-data.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},1500);toast('⬇️ Données exportées (flint-data.json)')}catch(e){try{navigator.clipboard.writeText(t);toast('📋 Données copiées')}catch(e2){toast('Export impossible')}}}
 
 /* ===== Coach IA (réponses fondées sur les données du jour) ===== */
-const APP_VERSION='v3055';
+const APP_VERSION='v3056';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
@@ -27787,7 +27787,7 @@ window.flMetriquesCourse=function(id,debutSec,finSec,estCourse){
       sommeil, pas une déduction au pouls — et ce chemin-ci ne le concerne pas.
       `flsClasser` ferme déjà sa plage nocturne à 10 h ; c'est
       `dureeNuitEvidente`, son dernier recours, qui laissait passer celle-ci. */
-   if(n._est!==false&&n.bedMin!=null&&n.bedMin>=8*60&&n.bedMin<=20*60){
+   if(n._est!==false&&n.bedMin!=null&&n.bedMin>=8*60&&n.bedMin<=20*60&&!(window.flNuitDeJourMesuree&&flNuitDeJourMesuree(n,r))){   /* 6 nov. 2026 — un long sommeil de jour lu par le bracelet n'est pas déduit */
     try{console.log('[flint] nuit '+K+' : fenêtre DÉDUITE qui commence à '
       +Math.floor(n.bedMin/60)+'h'+('0'+(n.bedMin%60)).slice(-2)
       +' — une nuit déduite ne commence pas en plein jour, on refuse');}catch(e){}
@@ -27814,7 +27814,7 @@ window.flMetriquesCourse=function(id,debutSec,finSec,estCourse){
    var _deb=null,_fin=null;
    try{var _mn=flMinuitMsDe(n.K);_fin=_mn+n.wakeMin*60000;_deb=_fin-(n.timeInBed||0)*60000;}catch(e){}
    var _type=(_deb!=null&&window.flSommeilClasser)?window.flSommeilClasser(_deb,_fin):'mainSleep';
-   if(_type!=='mainSleep'){
+   if(_type!=='mainSleep'&&!(window.flNuitDeJourMesuree&&flNuitDeJourMesuree(n,r))){
     try{console.log('[flint] nuit '+K+' : periode classee « '+_type+' » — ignoree');}catch(e){}
     return null;
    }
@@ -30897,7 +30897,18 @@ window.flDansFenetre=function(m,d,f){ return m>=d && m<f; };
    var _v=_flFcMaxObserveeCalc();
    if(_sig)_flObsCache={sig:_sig,v:_v,jour:(window._flFcMaxJour||null)};
    return _v;};
+  var _flFcPics=[];
+  /* 6 nov. 2026 — UN SEUL PIC NE FIXE PAS LA FC MAX. Une séance à 170 sur un pouls doublé la relevait pour
+     six mois, sans signal : toutes les zones suivaient. Au-delà de l'estimation + 15, il faut qu'une
+     AUTRE journée atteigne ce niveau à 5 bpm près. Sous ce seuil, rien ne change. */
+  window.flFcMaxRetenue=function(est){try{
+   var obs=flFcMaxObservee(),l=_flFcPics.slice().sort(function(a,b){return b-a;});
+   if(!(obs>est+15))return obs;
+   for(var i=0;i<l.length;i++){if(l[i]<=est+15)return Math.round(l[i]);if(i+1<l.length&&l[i+1]>=l[i]-5)return Math.round(l[i]);}
+   return 0;
+  }catch(e){return 0;}};
   function _flFcMaxObserveeCalc(){try{
+   _flFcPics=[];
    var best=0, quand=null;
    for(var i=0;i<180;i++){
     var K=tk(-i);
@@ -30938,6 +30949,7 @@ window.flDansFenetre=function(m,d,f){ return m>=d && m<f; };
        effort reconnu. C est exactement cela, une frequence maximale. */
     var pic=Math.max.apply(null,dedans.map(function(x){return x[1];}));
     if(pic>best){best=pic;quand=K;}
+    _flFcPics.push(pic);
    }
    window._flFcMaxJour=quand;
    return best>=100?Math.round(best):0;
@@ -31025,11 +31037,11 @@ window.flDansFenetre=function(m,d,f){ return m>=d && m<f; };
       n atteint jamais sa maximale, et ce n est pas une raison pour la lui
       baisser. On ne releve donc l estimation que lorsque l observation la
       depasse, jamais l inverse. */
-   var obs=flFcMaxObservee();
    var est=(function(){
     var sx0=((p.gender||p.sexe||'')+'').toLowerCase().charAt(0);
     return (sx0==='f')?Math.round(206-0.88*a):((sx0==='h'||sx0==='m')?Math.round(208-0.7*a):Math.round(207-0.79*a));
    })();
+   var obs=window.flFcMaxRetenue?flFcMaxRetenue(est):flFcMaxObservee();
    if(obs>est)return {v:obs,src:'mesurée pendant tes séances'};
 
    /* TANAKA N EST PAS UNISEXE, ET C EST UN VRAI ECART.
@@ -31870,7 +31882,7 @@ window.flDansFenetre=function(m,d,f){ return m>=d && m<f; };
    var effMed=effs.length?_vaMediane(effs):null;
    var evMed=evs.length?_vaMediane(evs):null;
    if((effMed!=null&&effMed<VA.EFF_MIN)||(evMed!=null&&evMed>=VA.EVEILS_MAX))
-    return _vaVide('Tes nuits sans réveil sont très morcelées : on ne sait pas y distinguer ton besoin de ton temps passé au lit. Ce que tu décris mérite d\'en parler à un médecin du sommeil.',
+    return _vaVide('Tes nuits sans réveil sont très morcelées : on ne sait pas y distinguer ton besoin de ton temps passé au lit.',
                    {nuits:RET.length,blocs:B,orientation:true,rejets:rej});
 
    /* CONTRE-EPREUVE DE PLATEAU. Deux selecteurs du meme plateau qui divergent,
@@ -32692,7 +32704,7 @@ window.flFenetreValide=function(k,s){
    }
   }catch(e){}
   if(!pm&&!repos)return {ok:true,raison:'rien pour juger — on ne condamne pas sans preuve'};
-  var seuilFC=(repos!=null)?(repos+10):null;   /* +10 : le pas de zone le plus fin du moteur */
+  var _fmS=null;if(repos>=60){try{_fmS=flFcMax();}catch(e){}}var seuilFC=(repos!=null)?(repos+((_fmS&&_fmS.v>repos+40)?Math.max(5,Math.round(0.07*(_fmS.v-repos))):10)):null;   /* +10 : le pas de zone le plus fin du moteur. 6 nov. 2026 — 7 % de SA réserve dès 60 de repos : le yoga d'un cœur à 72 ne passait pas 82 */
   var soutenue=0, silence=0, pire=0, jugeables=0;
   for(var m=Math.round(d);m<=Math.round(f);m++){
    var mm=((m%1440)+1440)%1440;

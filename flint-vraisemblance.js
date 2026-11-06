@@ -108,7 +108,11 @@ window.flFcVraisemblance=function(K,debutMin,finMin,pts){
    if(ppm.vu&&ppm.vu[mm]&&(ppm.m[mm]||0)>=130)minutesCourse++;
   if(minutesCourse<20)return {incoherent:false,minutesCourse:minutesCourse,partSousZ2:null,raison:null};
   var B=null;try{B=(typeof flZonesBpm==='function')?flZonesBpm(K):null;}catch(e){}
-  var z2lo=(B&&B[1])||134,sous=0;
+  /* 6 nov. 2026 — LE MILIEU DE Z1 ET Z2, ENVIRON 50 % DE LA RÉSERVE. Le bas de Z2 (60 %) déclarait « capteur perdu »
+     sur chaque footing facile d'un marathonien ou d'un ado : un vrai footing se court sous Z2. Mais un capteur décroché
+     rend des valeurs qui ne suivent pas le corps (90-114 le 30 août) : le seuil ne descend jamais sous 115, sinon cette
+     panne passerait sur les athlètes. Jamais plus strict qu'avant. */
+  var z2B=(B&&B[1])||134,z2lo=(B&&B[0]&&B[1])?Math.min(z2B,Math.max(115,Math.round((B[0]+B[1])/2))):z2B,sous=0;
   pts.forEach(function(x){if(x[1]<z2lo)sous++;});
   var part=Math.round(100*sous/pts.length);
   if(sous/pts.length<=0.7)return {incoherent:false,minutesCourse:minutesCourse,partSousZ2:part,raison:null};

@@ -978,6 +978,7 @@
       if (n.source === 'manuel' || n.source === 'ble') return;
       if (!(n._est || n.lecteur === 'coeur')) return;
       if (!(n.bedMin >= 8 * 60 && n.bedMin <= 20 * 60)) return;
+      if (window.flNuitDeJourMesuree && window.flNuitDeJourMesuree(n, w)) return;   /* 6 nov. 2026 — mesurée par le bracelet : elle n'est pas déduite */
       delete w.night;
       flsEcrire('watch_' + K, w);
       /* La copie VIVANTE aussi (v1824 : une purge qui n'écrit que le disque est défaite au
@@ -3085,6 +3086,12 @@ function restageSleep(dayKey) {
         return { ok: false, raison: 'duree' };
       }
       var type = flsClasser(deb, fin);
+      /* 6 nov. 2026 — le stylo a le dernier mot : un long sommeil de jour, sans autre nuit, est corrigé comme
+         une nuit. Sinon « Corriger ma nuit » ne réparait rien pour qui dort de 9 h à 16 h. */
+      if (type === TYPE_SECOND && duree >= CLASSIF.dureeNuitEvidente && !(reveilMin >= 20 * 60 && coucherMin < 20 * 60)) {
+        var nM = (flsLire('watch_' + K, null) || {}).night, dM = nM && +nM.sleepStart, fM = nM && +nM.sleepEnd;
+        if (!(dM > 0 && fM > dM) || Math.min(fin, fM) - Math.max(deb, dM) > 0) type = TYPE_NUIT;
+      }
       flsPoserSommeil(K, { debut: deb, fin: fin, sleepMin: duree,
                            type: type, source: 'manuel', mainSleep: type === TYPE_NUIT });
       /* La nuit du jour, celle que lisent les écrans, suit la correction. Les
@@ -3764,7 +3771,7 @@ function restageSleep(dayKey) {
       }
       pl.sort(function (a, b) { return a - b; });
       var normale = pl.length >= 5 ? pl[pl.length >> 1] : null;
-      var planOk = normale == null || !(+n.plancher > 0) || +n.plancher <= normale + 4;
+      var planOk = normale == null || !(+n.plancher > 0) || +n.plancher <= Math.max(normale + 4, normale * 1.08);   /* 6 nov. 2026 — à 74 de plancher, +4 refusait une vraie nuit */
       if (+n.sleepMin >= 240 && bloc >= 90 && planOk) return { ok: true, par: 'evidente' };
       return { ok: false, raison: 'lue au cœur seul, le bracelet ne la confirme pas (' + (+n.sleepMin || 0)
                + ' min de sommeil, plus long bloc ' + bloc + ' min'
@@ -3845,8 +3852,18 @@ function restageSleep(dayKey) {
          éveils 14,9 → 13,4 — rien de net, et des réveils de banc décalés (06:45 → 06:57) ;
        · un palier doublé court (2 min) accepté s'il part à l'heure pile : +1 nuit sur 66, mais il
          divise aussi un vrai effort de 2 min (10 oct. 14:00, 104 → 122 → 86). */
+  window.flPoulsLimiteRepos = function (v) {
+    var a = (v || []).filter(function (x) { return x > 0; }).sort(function (x, y) { return x - y; });
+    /* 18 h de pouls au moins, donc une nuit dedans : sur moins, le centile lit un échauffement ou une journée sans nuit,
+       et un vrai tempo à 175 serait divisé, sans retour possible. */
+    return a.length >= 1080 ? Math.max(75, 1.25 * a[Math.floor(a.length * 0.1)]) : 75;
+  };
   window.flPoulsDedouble = function (pts) {
     var out = (pts || []).map(function (x) { return [x[0], x[1]]; }), n = 0, bords = [], bordsBase = [];
+    /* 6 nov. 2026 — LE REPOS DE CHACUN. « Repos ≤ 75 » venait d'un seul poignet : à 85 bpm de repos, un
+       palier doublé à 170 restait entier (fausse séance, nuit décalée, FC max faussée). La limite suit
+       le bas de sa journée. Elle ne descend jamais sous 75 : rien ne change pour un cœur plus lent. */
+    var limRepos = window.flPoulsLimiteRepos ? window.flPoulsLimiteRepos(out.map(function (x) { return x[1]; })) : 75;
     function med(v) { var a = v.slice().sort(function (x, y) { return x - y; }), k = a.length; return k ? (k % 2 ? a[k >> 1] : (a[k / 2 - 1] + a[k / 2]) / 2) : null; }
     for (var s = 1; s < out.length; s++) {
       var av = [];
@@ -3858,7 +3875,7 @@ function restageSleep(dayKey) {
          commençait à 02:16 (WHOOP 01:55). On écarte de cette médiane ce qui dépasse 1,3 fois elle. */
       var b0 = med(av), avR = av.filter(function (y) { return y <= 1.3 * b0; });
       var b = avR.length >= 5 ? med(avR) : b0;
-      if (!(b <= 75) || !(out[s][1] >= 1.85 * b && out[s][1] <= 2.15 * b)) continue;
+      if (!(b <= limRepos) || !(out[s][1] >= 1.85 * b && out[s][1] <= 2.15 * b)) continue;
       var avant = null;
       for (var q2 = s - 1; q2 >= 0 && out[s][0] - out[q2][0] <= 3; q2--) if (out[q2][1] <= 1.3 * b) { avant = q2; break; }
       if (avant == null || out[s][1] - out[avant][1] < 30) continue;
@@ -3929,13 +3946,27 @@ function restageSleep(dayKey) {
     return n;
   };
 
+  /* Une nuit de jour n'est mesurée que si le bracelet porte un long sommeil dans sa case : `onsetSrc` dit seulement
+     qu'un fichier chevauche, fût-ce un somme de 30 min, et le canapé jusqu'à 14:30 serait devenu une nuit. */
+  window.flNuitDeJourMesuree = function (n, w) {
+    var nf = w && w.nuitFitcare;
+    if (!(n && n.onsetSrc === 'bracelet' && +n.timeInBed >= 240 && nf && +nf.fin - +nf.debut >= 4 * 3600)) return false;
+    return Math.min(+nf.fin * 1000, +n.sleepEnd) - Math.max(+nf.debut * 1000, +n.sleepStart) >= 2 * 3600000;
+  };
+  window.flNuitFitcareSeule = function (nf, debMs, finMs) {
+    var a = +nf.debut * 1000, b = +nf.fin * 1000;
+    if (!(b - a >= 4 * 3600000)) return false;
+    if (!(debMs > 0 && finMs > debMs)) return true;
+    if (b < finMs) return false;   /* finit avant la nuit lue : le premier morceau d'une nuit coupée en deux */
+    return Math.min(b, finMs) - Math.max(a, debMs) >= (finMs - debMs) * 0.5;
+  };
   window.flNuitFitcareRanger = function (K, w, nf) {
     try {
       if (!w || !nf) return false;
-      var n = w.night, deb = n && +n.sleepStart, fin = n && +n.sleepEnd;
+      var n = w.night, deb = n && +n.sleepStart, fin = n && +n.sleepEnd, autreJour = false;
       if (!(deb > 0 && fin > deb)) {
         var c = null; try { c = window.flNuitDuCoeur(K, Date.now()); } catch (e) {}
-        if (c) { deb = c.sleepStart; fin = c.sleepEnd; }
+        if (c) { deb = c.sleepStart; fin = c.sleepEnd; if (c.K !== K) autreJour = true; }
       }
       var colle = (deb > 0 && fin > deb) ? window.flNuitFitcareCollee(nf, deb, fin) : null;
       var avant = w.nuitFitcare, avantColle = (avant && deb > 0 && fin > deb) ? window.flNuitFitcareCollee(avant, deb, fin) : false;
@@ -3951,6 +3982,14 @@ function restageSleep(dayKey) {
          la fin de celui déjà rangé est un autre sommeil, quoi qu'il colle. */
       var apres = avant && !memeNuit && +nf.debut >= +avant.fin - 60;
       if (!apres && (colle === true || (colle === null && !avant))) { w.nuitFitcare = nf; return true; }
+      /* 6 nov. 2026 — QUI DORT LE JOUR (9 h → 16 h, travail de nuit, nuit blanche). Le fichier ne « collait »
+         pas à la lecture au cœur, arrêtée à 14:00, et trop long pour une sieste : ni nuit, ni sieste, ni récup.
+         Un long sommeil mesuré par le bracelet, sans autre nuit ce jour-là, EST la nuit. Une vraie nuit déjà
+         lue ailleurs dans la journée reste la nuit : l'autre sommeil garde sa case à part. */
+      /* La lecture au cœur d'un autre jour ne dit rien de ce fichier — mais seulement s'il est de jour : le premier
+         morceau d'une vraie nuit, reçu téléphone loin, avant ses minutes de pouls, ne prend pas la case. */
+      var deJour = autreJour && flsPartNocturne(+nf.debut * 1000, +nf.fin * 1000) < CLASSIF.partNuitMini;
+      if (!avant && window.flNuitFitcareSeule(nf, deJour ? 0 : deb, deJour ? 0 : fin)) { w.nuitFitcare = nf; return true; }
       var l = Array.isArray(w.siestesFitcare) ? w.siestesFitcare : [];
       if (!l.some(function (x) { return Math.abs(+x.debut - +nf.debut) <= 60; })) l.push({ debut: nf.debut, fin: nf.fin, recu: nf.recu, valide: nf.valide });
       w.siestesFitcare = l.slice(-8);
@@ -4018,6 +4057,12 @@ function restageSleep(dayKey) {
       var minuit = new Date(+q[0], +q[1] - 1, +q[2]).getTime();
       if (isNaN(minuit)) return null;
       var t0 = minuit - 12 * 3600000, N = 26 * 60;
+      /* 6 nov. 2026 — QUI DORT LE JOUR. La fenêtre s'arrêtait à 14:00 : un sommeil de 9 h à 16 h finissait
+         à 13:55, deux heures de moins. Le fichier du bracelet dit quand il finit : la fenêtre le suit, jusqu'à
+         20:00 au plus. Rien ne change pour une nuit finie avant 14:00, ni pour une sieste (moins de 3 h). */
+      var wKN = flsLire('watch_' + K, null) || {}, nfN = wKN.nuitFitcare, finNfN = nfN ? +nfN.fin * 1000 : 0;
+      if (finNfN > minuit + 14 * 3600000 && finNfN - (+nfN.debut * 1000) > 3 * 3600000)
+        N = Math.min(32 * 60, Math.ceil((finNfN - t0) / 60000) + 90);
       var lim = (borne != null) ? +borne : Date.now();
       var H = new Array(N), P = new Array(N), i, j;
       for (i = 0; i < N; i++) { H[i] = null; P[i] = 0; }
@@ -4025,7 +4070,7 @@ function restageSleep(dayKey) {
       var Kv = dv.getFullYear() + '-' + (dv.getMonth() + 1) + '-' + dv.getDate();
       var mv = new Date(dv.getFullYear(), dv.getMonth(), dv.getDate()).getTime();
       [[Kv, mv, 720], [K, minuit, 0]].forEach(function (jr) {
-        var w = flsLire('watch_' + jr[0], null) || {};
+        var w = jr[0] === K ? wKN : (flsLire('watch_' + jr[0], null) || {});   /* 6 nov. 2026 — déjà lue, pour la fenêtre */
         var hr = Array.isArray(w.hr) ? w.hr : [];
         for (var a = 0; a < hr.length; a++) {
           var x = hr[a];
@@ -4252,7 +4297,7 @@ function restageSleep(dayKey) {
          Une minute des trois premières de l'heure, au-dessus du repos des dix d'avant de 8 au moins,
          revenue au repos (+5) dans les trois minutes, sans pas ni téléphone : son pouls ne fait pas un
          éveil. Seule la CLASSE de la minute change ; l'endormissement et le réveil ne lisent pas ceci. */
-      var picHeure = {};
+      var picHeure = {}, limHP = window.flPoulsLimiteRepos(H);
       for (var iHP = 1; iHP < N; iHP++) {
         if (((iHP % 60) + 60) % 60 > 2 || H[iHP] == null) continue;
         var avHP = [];
@@ -4260,7 +4305,7 @@ function restageSleep(dayKey) {
         if (avHP.length < 5) continue;
         avHP.sort(function (x, y) { return x - y; });
         var bHP = avHP[avHP.length >> 1];
-        if (!(bHP <= 75) || !(H[iHP] >= bHP + 8)) continue;
+        if (!(bHP <= limHP) || !(H[iHP] >= bHP + 8)) continue;
         var eHP = iHP;
         while (eHP + 1 < N && eHP - iHP < 1 && H[eHP + 1] != null && H[eHP + 1] >= bHP + 8) eHP++;
         var revHP = false;
