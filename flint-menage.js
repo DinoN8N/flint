@@ -350,6 +350,8 @@ window.flTaillerHrfineAuxSeances=function(cle,quandMs,storage){try{
   if(!isFinite(a))return;
   fen.push([Math.max(0,a-2),Math.min(1440,a+(+s.dur)+2)]);
  });
+ /* 6 nov. 2026 — la suite d'une séance partie un jour précédent garde sa série fine. */
+ try{var q=K.split('-');for(var d=1;d<=3;d++){var x=new Date(+q[0],+q[1]-1,+q[2]-d),kj=x.getFullYear()+'-'+(x.getMonth()+1)+'-'+x.getDate(),sj=JSON.parse(storage.getItem('sessions_'+kj)||'null');(sj||[]).forEach(function(s){if(s&&s.endMin>d*1440)fen.push([0,Math.min(1440,s.endMin-d*1440+2)]);});}}catch(e){}
  if(!fen.length)return false;
  var hf=null; try{hf=JSON.parse(storage.getItem(cle)||'null');}catch(e){hf=null;}
  if(!hf||typeof hf!=='object')return false;

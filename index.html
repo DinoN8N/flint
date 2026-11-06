@@ -3925,6 +3925,7 @@ window.flFaireDeLaPlace=function(){
        400 jours : un jour plus vieux devenait intouchable pour toujours,
        le mur garanti de la deuxieme annee d une app vendue « memoire a vie ». */
  if(libere<VISE){try{libere+=(window.flFenetreCourbes&&window.flFenetreCourbes(VISE-libere))||0;}catch(e){}}
+ if(libere<VISE){try{[1,2].forEach(function(n){var c='hrSec_'+tk(-n),v=localStorage.getItem(c);if(v){libere+=v.length*2;localStorage.removeItem(c);}});}catch(e){}}   /* 6 nov. 2026 — dernier recours : les secondes d hier */
 
  try{if(libere)console.log('[flint] place liberee : '+Math.round(libere/1024)+' Ko');}catch(e){}
  return libere>0;
@@ -10888,7 +10889,7 @@ window.flCreerActivite=function(nom,debut,duree,intensite,icone,gps,mesure,jour,
     la randonnée d'hier atterrissait alors dans la frise d'aujourd'hui.
     L'appelant qui SAIT de quel jour il parle le dit ; les autres ne changent
     pas d'un octet. */
- var K=(jour!=null&&String(jour))?String(jour):tk(window.flDayOff||0);
+ var K=(jour!=null&&String(jour))?String(jour):((mesure&&window.flJourDeDepart)?window.flJourDeDepart(debut,duree,pauses):tk(window.flDayOff||0));   /* 6 nov. 2026 — Stop après minuit : le jour du DÉPART */
  var a=DB.get('sessions_'+K,[])||[];
  /* v1859 — L'ÉTAT D'AVANT, GARDÉ MOT POUR MOT. Il sert à deux choses et à rien
     d'autre : dire à la fin si une activité qui existait a disparu, et remettre
@@ -10938,7 +10939,7 @@ window.flCreerActivite=function(nom,debut,duree,intensite,icone,gps,mesure,jour,
     titre qu'un battement inventé — et elle se propageait dans les zones, les
     calories et le cumul du jour. Une séance courte reste courte ; c'est à
     l'état de dire ce qu'on en fait, pas à un plancher de la maquiller. */
- var _durDem=Math.round(+duree||45), _dur=Math.max(1,Math.min(24*60,_durDem)); if(_durDem>_dur){try{console.log('[flint] activite '+K+' : duree de '+_durDem+' min ramenee a '+_dur+' — au-dela d une journee');}catch(e){}}   /* 14 sept. 2026 — CE PLAFOND RACCOURCISSAIT UNE MESURE, EN SILENCE. Dix heures : une randonnee ou une longue sortie velo de 11 h suivie au tracker (660 min) entrait a 600 — fiche native 11 h 00, frise et fenetre web 08:00 → 18:00, et les zones, l effort et les calories avec elles. Une fenetre MESUREE ne se raccourcit pas plus qu elle ne s allonge : c est le plancher de 5 min de la v1706, dans l autre sens. Le plafond devient la JOURNEE (24 h) — le contenant d une seance, pas un reglage : on ne choisit pas un seuil sur un seul corps. Et ce qui le depasse encore est ramene, mais le journal LE DIT. */
+ var _durDem=Math.round(+duree||45), _dur=Math.max(1,Math.min((mesure?72:24)*60,_durDem)); if(_durDem>_dur){try{console.log('[flint] activite '+K+' : duree de '+_durDem+' min ramenee a '+_dur+' — au-dela d une journee');}catch(e){}}   /* 14 sept. 2026 — CE PLAFOND RACCOURCISSAIT UNE MESURE, EN SILENCE. Dix heures : une randonnee ou une longue sortie velo de 11 h suivie au tracker (660 min) entrait a 600 — fiche native 11 h 00, frise et fenetre web 08:00 → 18:00, et les zones, l effort et les calories avec elles. Une fenetre MESUREE ne se raccourcit pas plus qu elle ne s allonge : c est le plancher de 5 min de la v1706, dans l autre sens. Le plafond devient la JOURNEE (24 h) — le contenant d une seance, pas un reglage : on ne choisit pas un seuil sur un seul corps. Et ce qui le depasse encore est ramene, mais le journal LE DIT. */
  var _hm=_st.split(':'), _dm=(+_hm[0]||0)*60+(+_hm[1]||0);
  var _s={name:String(nom||'Séance'),
          start:_st,
@@ -11087,6 +11088,7 @@ window.flCreerActivite=function(nom,debut,duree,intensite,icone,gps,mesure,jour,
          +_perdues.join(', ')+' · journée restaurée, ajout conservé sans fusion'
          +(_s.id?(' · id '+_s.id):'');
  }
+ if(window.flRecalculerJoursSuivants)window.flRecalculerJoursSuivants(K,_s);
  return (_ok?'ok':'ECHEC-ECRITURE')+' · '+K+' · '+((_ctrl&&_ctrl.length)||0)+' entrées'
         +' · '+_st+' '+_dur+' min'+(_s.gps?(' · gps '+String(_s.gps).slice(0,8)):'')
         +(_s.id?(' · id '+_s.id):'');
@@ -11207,7 +11209,7 @@ window.flSemerSortiesGPS=function(liste){try{
    var K=String(s.jour);
    var a=DB.get('sessions_'+K,[])||[];
    if(a.some(function(x){return x&&x.gps===s.gps;})){deja++;return;}
-   var _dur=Math.max(1,Math.min(24*60,Math.round(+s.dur||1)));   /* 14 sept. 2026 — meme plafond qu a la creation : le semis reposait depuis le disque une sortie de 11 h raccourcie a 10 h, a chaque relance */
+   var _dur=Math.max(1,Math.min(72*60,Math.round(+s.dur||1)));   /* 14 sept. 2026 — meme plafond qu a la creation : le semis reposait depuis le disque une sortie de 11 h raccourcie a 10 h, a chaque relance */
    var _hm=String(s.start||'12:00').split(':');
    var _dm=(+_hm[0]||0)*60+(+_hm[1]||0);   /* 14 sept. 2026 — LE FILET RESÈME AUSSI LES ARRÊTS. Ce chemin ne sert que lorsque l écriture web a raté — mais il reposait alors la fenêtre d AVANT, [début, début+durée d effort), pendant que le Stop en pose une juste. Une fenêtre juste par un chemin et fausse par l autre, c est le 7,9 contre le 17,9 du 19 août à l envers. */ var _pz=[];try{(s.pauses||[]).forEach(function(q){var d0=_dm+Math.round(+q[0]),f0=_dm+Math.round(+q[1]);if(f0>d0)_pz.push([d0,f0]);});}catch(e){}if(typeof flPausesDe==='function')_pz=flPausesDe({pauses:_pz});
    a.push({name:sansMoment(s.nom)||'Séance', start:String(s.start||'12:00'),
@@ -11269,7 +11271,7 @@ window.flModifierSeance=function(rang,nom,start,dur,intens,jour){try{
  var s=a[rang]; if(!s)return false;
  if(typeof nom==='string'&&nom)s.name=nom;
  if(typeof start==='string'&&/^\d{1,2}:\d{2}$/.test(start))s.start=start;
- if(+dur>0)s.dur=Math.max(5,Math.min(24*60,Math.round(+dur)));   /* 14 sept. 2026 — et la porte d edition aussi, sinon corriger une randonnee de 11 h la ramenait a 10 h */
+ if(+dur>0)s.dur=Math.max(5,Math.min((s.gps?72:24)*60,Math.round(+dur)));   /* 14 sept. 2026 — et la porte d edition aussi, sinon corriger une randonnee de 11 h la ramenait a 10 h */
  if(+intens>=1)s.int=Math.max(1,Math.min(4,Math.round(+intens)));
  a.sort(function(x,y){
   function m2(t){var p=String(t||'0:0').split(':');return (+p[0])*60+(+p[1]||0);}
@@ -11443,7 +11445,7 @@ window.flActiviteData=function(rang,jour,seanceDirecte,id){
  else if(m.strain<6){verdict='Effort léger';sous='Une séance tranquille.';} if((typeof flSansBracelet==='function'&&flSansBracelet())){verdict=null;sous=null;}   /* 4 oct. 2026 — sans bracelet, la charge vaut 0 faute de pouls : « Effort léger » serait un verdict inventé */
  return {aDesDonnees:true,
   nom:m.name, verdict:verdict, sous:sous,
-  debut:m.t0, fin:m.t1, minutes:m.dur, duree:hmsFull(m.totSec),
+  debut:m.t0, fin:m.t1, finJours:(m.finJours||null), minutes:m.dur, duree:hmsFull(m.totSec),
   /* `real` dit si la courbe vient de la MONTRE ou d'un modèle : le natif doit
      pouvoir le dire, on n'affiche pas une simulation comme une mesure. */
   mesure:!!m.real,
@@ -11504,7 +11506,7 @@ window.flActiviteData=function(rang,jour,seanceDirecte,id){
   /* v1397 — la serie FINE, horodatee, quand les intervalles entre battements
      couvrent la seance. Null le reste du temps : l ecran retombe sur `hr`,
      qui est la serie de la minute. Voir flEffData. */
-  hrT:(m.hrT&&m.hrT.length?m.hrT:null), hrSource:(m.srcHR||null), hrCouv:(m.couvHR==null?null:Math.round(m.couvHR*100)/100), /* 7 sept. — la SOURCE de la courbe (seconde/hrfine/rr/minute) : c est elle qui dit si l instantane natif peut se figer */
+  hrT:(m.hrT&&m.hrT.length?m.hrT:null), hrPas:(m.hrPas||null), hrFenetreS:(m.hrFenetreS||null), hrSource:(m.srcHR||null), hrCouv:(m.couvHR==null?null:Math.round(m.couvHR*100)/100), /* 7 sept. — la SOURCE de la courbe (seconde/hrfine/rr/minute) : c est elle qui dit si l instantane natif peut se figer */
   zones:(m.zones||[]).map(function(z){return {
    id:z.z, nom:z.lab, plage:z.range, pct:z.pct, duree:z.dur,
    couleur:z.col, part:z.frac, bas:z.lo, haut:z.hi};}),
@@ -21532,6 +21534,7 @@ window.flHrFine=function(jour,debutMin,dureeMin){
            maxCoherent:null,minutesSuspectes:0,raison:'absent'};
  if(jour==null||debutMin==null||!(dureeMin>0))return vide;
  var hf=null; try{hf=DB.get('hrfine_'+jour,null);}catch(e){}
+ if(window.flHrFineAuDela)hf=window.flHrFineAuDela(jour,hf,debutMin+dureeMin);   /* 6 nov. 2026 — une séance qui passe minuit */
  if(!hf)return vide;
 
  /* ═══ v1764 — LA MINUTE VOLÉE PAR LA HRV EST DANS L'AUTRE CANAL ════════════
@@ -21963,7 +21966,7 @@ function flEffData(doc){
     On demande donc une COUVERTURE — la moitié des minutes, avec un plancher de
     cinq points — et on ne fabrique plus rien : sans mesure, on ne dit rien. */
  var couverture=null,winT=null,nPts=0;
- if(w&&w.hr&&startMin!=null){var _hp=(typeof flHrPropre==='function')?flHrPropre(w.hr):w.hr;var _pz=(typeof flPausesDe==='function')?flPausesDe(sess):[],_fw=startMin+dur+((typeof flMinutesDePause==='function')?flMinutesDePause(_pz):0);   /* 14 sept. 2026 — LES MINUTES D APRÈS LA PAUSE RENTRENT, CELLES DE L ARRÊT SORTENT. La fenêtre s arrêtait à `startMin+dur`, or `dur` est la durée d EFFORT : une séance de 10:00 à 11:00 coupée de 20 min ne montrait que 10:00→10:40, dont 20 min de repos. Mesuré : 109 bpm de moyenne pour 155 bpm d effort réel. Sans arrêt connu, `_fw` vaut exactement l ancienne borne. `dur` ne change pas, donc `couverture` compte toujours sur les minutes d EFFORT — et vaut 1 quand la montre les a toutes vues. */
+ if(w&&w.hr&&startMin!=null){var _hp=(typeof flHrPropre==='function')?flHrPropre(w.hr):w.hr;var _pz=(typeof flPausesDe==='function')?flPausesDe(sess):[],_fw=startMin+dur+((typeof flMinutesDePause==='function')?flMinutesDePause(_pz):0);if(_fw>1440&&window.flHrAuDelaDeMinuit){var _hx=window.flHrAuDelaDeMinuit(K,w.hr,_fw);_hp=(typeof flHrPropre==='function')?flHrPropre(_hx):_hx;}   /* 14 sept. 2026 — LES MINUTES D APRÈS LA PAUSE RENTRENT, CELLES DE L ARRÊT SORTENT. La fenêtre s arrêtait à `startMin+dur`, or `dur` est la durée d EFFORT : une séance de 10:00 à 11:00 coupée de 20 min ne montrait que 10:00→10:40, dont 20 min de repos. Mesuré : 109 bpm de moyenne pour 155 bpm d effort réel. Sans arrêt connu, `_fw` vaut exactement l ancienne borne. `dur` ne change pas, donc `couverture` compte toujours sur les minutes d EFFORT — et vaut 1 quand la montre les a toutes vues. */
   var _wt=_hp.filter(function(x){return x[0]>=startMin&&x[0]<=_fw&&!(typeof flEnPause==='function'&&flEnPause(x[0],_pz));});
   var win=_wt.map(function(x){return x[1];});
   nPts=win.length;
@@ -22064,11 +22067,11 @@ function flEffData(doc){
     seconde, qui suit le lien BLE et tombe avec lui (foot du 13 septembre :
     29 coupures en une heure, 37 % des secondes, mais 97 % de la mémoire 5 s).
     Une seule lecture pour les deux usages — elle coûte cher. */
- var _finePre=null;
- try{ if(typeof flHrFine==='function')_finePre=flHrFine(K,sm0,dur); }catch(e){}
+ var _finePre=null,_pzF=(typeof flPausesDe==='function')?flPausesDe(sess):[],_murF=dur+((typeof flMinutesDePause==='function')?flMinutesDePause(_pzF):0);   /* 6 nov. 2026 — la fenêtre réelle : arrêts compris, ils ne comptent pas */
+ try{ if(typeof flHrFine==='function')_finePre=flHrFine(K,sm0,_murF); }catch(e){}
  if(typeof flFicheSeconde==='function'&&typeof flSecondesDuJour==='function'){try{
   var _fs2=flFicheSeconde(K,sm0,dur,real,flSecondesDuJour,flIdxDense,
-                          _finePre&&_finePre.pointsDessin,flMinuteCoherente);
+                          _finePre&&_finePre.pointsDessin,flMinuteCoherente,{mur:_murF,pauses:_pzF});
   if(_fs2){hrT=_fs2.hrT; serieCanon=_fs2.serieCanon; srcHR='seconde'; couvHR=_fs2.couvHR; if(winT&&typeof flCourbeTrouee==='function')_hrDessin=flCourbeTrouee(_fs2.hrT,winT.map(function(x){return [(x[0]-sm0)*60,x[1]];}),flIdxDense);   /* 31 oct. 2026 — les minutes que la seconde n a pas touchées prennent le point de la minute, au DESSIN seulement */
    if(_fs2.bouches){srcHR='seconde+memoire';
     console.log('[flint] courbe de seance : '+_fs2.bouches
@@ -22208,7 +22211,7 @@ function flEffData(doc){
     dans le temps, et un trou reste un trou. C'est la règle « une date, un
     instantané », appliquée à l'axe des abscisses. */
  if(!hrT&&winT&&winT.length>1){
-  hrT=winT.map(function(x){return [(x[0]-sm0)*60,x[1]];}); if(typeof flCourbeSecondeMinute==='function'&&typeof flSecondesDuJour==='function')_hrDessin=flCourbeSecondeMinute(K,sm0,dur,flSecondesDuJour,flIdxDense,hrT);   /* 31 oct. 2026 — LA SECONDE N EST PLUS JETÉE AU DESSIN : sous les 75 %, elle ne calcule pas (la minute garde les chiffres), mais elle se dessine, et la minute dans ses trous. Foot du 31 : 1 590 secondes mesurées, 34 points minute — seuls les 34 se dessinaient. */
+  hrT=winT.map(function(x){return [(x[0]-sm0)*60,x[1]];}); if(typeof flCourbeSecondeMinute==='function'&&typeof flSecondesDuJour==='function')_hrDessin=flCourbeSecondeMinute(K,sm0,dur,flSecondesDuJour,flIdxDense,hrT,{mur:_murF,pauses:_pzF});   /* 31 oct. 2026 — LA SECONDE N EST PLUS JETÉE AU DESSIN : sous les 75 %, elle ne calcule pas (la minute garde les chiffres), mais elle se dessine, et la minute dans ses trous. Foot du 31 : 1 590 secondes mesurées, 34 points minute — seuls les 34 se dessinaient. */
   srcHR='minute'; couvHR=couverture;
  }
  /* ═══ v1657 — LES CHIFFRES VIENNENT DE LA COURBE, ET LA SOURCE SE DIT ══════
@@ -22372,10 +22375,12 @@ function flEffData(doc){
    var pm=(typeof flPasParMinute==='function')?flPasParMinute(K):null;
    if(!pm||!pm.m)return null;
    var tot=0,vus=0;
-   for(var mn=Math.max(0,Math.round(sm0));mn<Math.min(1440,Math.round(sm0+dur));mn++){
+   for(var mn=Math.max(0,Math.round(sm0));mn<Math.min(1440,Math.round(sm0+_murF));mn++){
+     if(_pzF.length&&flEnPause(mn,_pzF))continue;   /* 6 nov. 2026 — la fenêtre réelle, arrêts exclus */
      if(pm.vu[mn]){tot+=(pm.m[mn]||0);vus++;}
    }
-   return vus?((typeof flPasCompteEntier==='function'&&typeof flPasConfirmes==='function'&&!flPasCompteEntier(sess))?flPasConfirmes(pm,sm0,sm0+dur,null):tot):null;   /* 28 sept. 2026 — une activité qui n'est pas un déplacement ne compte que les pas de ses enchaînements de marche (flint-classement.js) */
+   var _paF=window.flPasAuDelaDeMinuit?window.flPasAuDelaDeMinuit(K,sm0+_murF,_pzF):{tot:0,vus:0};tot+=_paF.tot;vus+=_paF.vus;
+   return vus?((typeof flPasCompteEntier==='function'&&typeof flPasConfirmes==='function'&&!flPasCompteEntier(sess))?flPasConfirmes(pm,sm0,sm0+_murF,_pzF)+_paF.tot:tot):null;   /* 28 sept. 2026 — une activité qui n'est pas un déplacement ne compte que les pas de ses enchaînements de marche (flint-classement.js) */
  }catch(e){return null;}})();
  /* pastilles moyennes perso (45 j, même activité) */
  var cH=[],aH=[],xH=[],cT=[];   /* 28 oct. 2026 — cT : la moyenne des TOTAUX (métabolisme compris), pour la fiche */
@@ -22436,7 +22441,7 @@ function flEffData(doc){
   }catch(e){return 'indisponible ('+((e&&e.message)||e)+')';}})();
  /* v2064 — couvHRsec/trousHR SORTENT : la fiche native doit pouvoir dire
     « sans donnee : 4:10 » au lieu d evaporer les secondes sans mesure. */
- return {name:name,dur:dur,t0:clk(sm0),t1:clk(sm0+dur),totSec:totSec,base:base,baseFin:baseFin,hrT:(_hrDessin||hrT),real:real,srcHR:srcHR,couvHR:couvHR,chaineHR:_chaine,sansMesure:raisonSansMesure,zones:zones,avg:avg,mx:mx,couvHRsec:couvHRsec,trousHR:trousHR,fcSuspect:fcSuspectes,kcal:kcal,strain:strain,steps:steps,calAvg:av(cH),calAvgTotal:av(cT),kcalTotal:((typeof window.flKcalTotalSeance==='function')?window.flKcalTotalSeance(kcal,dur):null),fcAvgAvg:av(aH),fcMaxAvg:av(xH)};
+ return {name:name,dur:dur,t0:clk(sm0),t1:clk(sm0+_murF),finJours:(_murF>=1440?Math.floor((sm0+_murF)/1440):0),totSec:totSec,base:base,baseFin:baseFin,hrT:(window.flDessinCourbe?window.flDessinCourbe(_hrDessin||hrT,_murF*60,flIdxDense):(_hrDessin||hrT)),hrPas:(window.FL_NATIF_COURBE&&window.flPasCourbe?window.flPasCourbe(_murF*60):null),hrFenetreS:(window.FL_NATIF_COURBE?_murF*60:null),real:real,srcHR:srcHR,couvHR:couvHR,chaineHR:_chaine,sansMesure:raisonSansMesure,zones:zones,avg:avg,mx:mx,couvHRsec:couvHRsec,trousHR:trousHR,fcSuspect:fcSuspectes,kcal:kcal,strain:strain,steps:steps,calAvg:av(cH),calAvgTotal:av(cT),kcalTotal:((typeof window.flKcalTotalSeance==='function')?window.flKcalTotalSeance(kcal,dur):null),fcAvgAvg:av(aH),fcMaxAvg:av(xH)};
 }
 /* ===== v716 — Détail d'activité de la COQUILLE : zones vides grisées + lecture
    BPM en tête ================================================================
@@ -23404,7 +23409,7 @@ function wipeData(){if(!confirm('Vider TOUTES les données (démo incluse) et re
 function exportData(){const dump={};Object.keys(localStorage).forEach(k=>dump[k]=localStorage.getItem(k));const t=JSON.stringify(dump,null,2);try{const blob=new Blob([t],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='flint-data.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},1500);toast('⬇️ Données exportées (flint-data.json)')}catch(e){try{navigator.clipboard.writeText(t);toast('📋 Données copiées')}catch(e2){toast('Export impossible')}}}
 
 /* ===== Coach IA (réponses fondées sur les données du jour) ===== */
-const APP_VERSION='v3054';
+const APP_VERSION='v3055';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
@@ -26350,6 +26355,7 @@ window.flEcgTrace=function(cle){try{
  function _secCle(j){return 'hrSec_'+j;}
  function _secCharger(j){
   if(_secJour===j&&_secPts)return _secPts;
+  if(_secJour&&_secPts&&_secJour!==j){_secEcrire();if(window.flSecPasser)window.flSecPasser(_secJour);}   /* 6 nov. 2026 — minuit : le jour qui finit est écrit et resserré, pas perdu */
   _secJour=j;_secPts=[];
   try{var v=DB.get(_secCle(j),null);if(v&&v.length)_secPts=v;}catch(e){}
   return _secPts;
@@ -26376,7 +26382,7 @@ window.flEcgTrace=function(cle){try{
    var i=a.length-1;while(i>0&&a[i-1][0]>s)i--;
    if(i>0&&a[i-1][0]===s)a[i-1][1]=bpm; else a.splice(i,0,[s,bpm]);
   }
-  if(a.length>5400)a.splice(0,a.length-5400);
+  if(a.length>(window.FL_SEC_PLAFOND||5400)){if(window.flSecCompacter)_secPts=window.flSecCompacter(a);else a.splice(0,a.length-5400);}   /* 6 nov. 2026 — regrouper, plus jeter : flint-fiche-seconde.js */
   if(!_secT)_secT=setTimeout(function(){_secT=null;_secEcrire();},15000);
  }
  /* Lecture pour le moteur. Rendue sur `window` parce que `flEffData` vit dans
@@ -26384,7 +26390,7 @@ window.flEcgTrace=function(cle){try{
     puissent la rejouer sans elle. */
  window.flSecondesDuJour=function(j){
   try{
-   if(j&&j!==tk(0))return null;          /* seul le jour courant est conservé */
+   if(j&&j!==tk(0))return window.flSecondesPassees?window.flSecondesPassees(j,function(n){return tk(-n);},_secCharger(tk(0))):null;   /* 6 nov. 2026 — une séance qui a passé minuit */
    var a=_secCharger(tk(0));
    return (a&&a.length)?a:null;
   }catch(e){return null;}
@@ -26417,22 +26423,24 @@ window.flEcgTrace=function(cle){try{
  window.flSecondesRattraper=function(points){
   try{
    if(!points||!points.length)return 0;
-   var j=tk(0),a=_secCharger(j),vus={},n=0,i,p;
-   for(i=0;i<a.length;i++)vus[a[i][0]]=1;
+   var j=tk(0),a=_secCharger(j),vus={},n=0,i,p,passes={},q;
+   for(i=0;i<a.length;i++)for(q=0;q<(a[i][2]||1);q++)vus[a[i][0]+q]=1;   /* 6 nov. 2026 — une entrée regroupée couvre son pas : le rejeu ne la double pas */
    for(i=0;i<points.length;i++){
     p=points[i];if(!p||p.length<2)continue;
     if(!(p[1]>25&&p[1]<240))continue;
     var d=new Date(p[0]*1000);
-    if(dayKeyOf(d)!==j)continue;         /* seul le jour courant a une seconde */
+    if(dayKeyOf(d)!==j){(passes[dayKeyOf(d)]=passes[dayKeyOf(d)]||[]).push(p);continue;}
     var s=d.getHours()*3600+d.getMinutes()*60+d.getSeconds();
     if(vus[s])continue;
     vus[s]=1;a.push([s,p[1]]);n++;
    }
-   if(!n)return 0;
+   var np=window.flSecRattraperPasses?window.flSecRattraperPasses(passes,function(m){return tk(-m);}):0;
+   if(!n){if(np&&window.flRecalculerVeilles)window.flRecalculerVeilles();return np;}
    a.sort(function(x,y){return x[0]-y[0];});
-   if(a.length>5400)a.splice(0,a.length-5400);
+   if(a.length>(window.FL_SEC_PLAFOND||5400)){if(window.flSecCompacter)_secPts=window.flSecCompacter(a);else a.splice(0,a.length-5400);}
    _secEcrire();
-   return n;
+   if(window.flRecalculerVeilles)window.flRecalculerVeilles();   /* 6 nov. 2026 — une séance partie hier : ses chiffres stockés suivent le rejeu */
+   return n+np;
   }catch(e){return 0;}
  };
  /* Les jours passés n ont plus de raison d exister : la séance d hier a déjà
@@ -26445,11 +26453,12 @@ window.flEcgTrace=function(cle){try{
  window.flSecondesMenage=function(){
   var retires=0;
   try{
-   var aujourdhui='hrSec_'+tk(0),morts=[];
+   var aujourdhui='hrSec_'+tk(0),hier='hrSec_'+tk(-1),avantHier='hrSec_'+tk(-2),morts=[];   /* 6 nov. 2026 — deux jours de grâce, resserrés : une séance peut passer minuit */
    for(var i=0;i<localStorage.length;i++){
     var k=localStorage.key(i);
-    if(k&&k.indexOf('hrSec_')===0&&k!==aujourdhui)morts.push(k);
+    if(k&&k.indexOf('hrSec_')===0&&k!==aujourdhui&&k!==hier&&k!==avantHier)morts.push(k);
    }
+   if(window.flSecPasser){window.flSecPasser(tk(-1));window.flSecPasser(tk(-2));}
    morts.forEach(function(k){try{localStorage.removeItem(k);retires++;}catch(e){}});
   }catch(e){}
   return retires;
@@ -29076,7 +29085,7 @@ window.flDansFenetre=function(m,d,f){ return m>=d && m<f; };
      cardiaque ». Ils restent appeles ici par typeof, comme avant. */
   window.flFcFiable=function(K,debutMin,finMin){
    try{
-    var w=watchOf(K), hr=(w&&w.hr)||[];
+    var w=watchOf(K), hr=(w&&w.hr)||[]; if(window.flHrAuDelaDeMinuit)hr=window.flHrAuDelaDeMinuit(K,hr,finMin);   /* 6 nov. 2026 */
     var brut=hr.filter(function(x){return flDansFenetre(x[0],debutMin,finMin);})
              .sort(function(a,b){return a[0]-b[0];});
     /* v1790 — ON JUGE SUR LE BRUT, MOINS CE QU ON A ABIME SOI-MEME.
@@ -30168,7 +30177,7 @@ window.flDansFenetre=function(m,d,f){ return m>=d && m<f; };
       `try`, parce qu'une observation n'a pas le droit de casser une détection. */
    try{window.flOmbreC&&window.flOmbreC(K,det);}catch(e){}
    var w=watchOf(K);var names=(w&&w.sessNames)||{};var dis=(w&&w.disSess)||[];
-   var cur=DB.get('sessions_'+K,[])||[];
+   var cur=DB.get('sessions_'+K,[])||[];if(window.flSansAutoDeLaVeille)cur=window.flSansAutoDeLaVeille(K,cur);   /* 6 nov. 2026 */
    /* LA MONTRE PRIME SUR LA DEVINETTE. Quand le bracelet a lui-meme reconnu des
       seances (seance), on ne les remplace pas par ce que la courbe laisse
       supposer : il sait ce qu il a mesure, nous ne faisons qu inferer. Sans
@@ -30210,7 +30219,8 @@ window.flDansFenetre=function(m,d,f){ return m>=d && m<f; };
       sur une enveloppe déjà élargie par la fusion précédente : la soudure se
       reconduisait elle-même. On descend donc aux contributions — ce que
       l'utilisateur a DÉCLARÉ. Détail : CHANTIER-FOOT-13-SEPT.md */
-   var frontieres=[];
+   var frontieres=window.flFrontieresVeille?window.flFrontieresVeille(K):[];   /* 6 nov. 2026 — une séance de la veille qui court encore ce matin borne la détection */
+   var _lv=window.flFinVeille?window.flFinVeille(K):0,_horsVeille=function(x){return !(_lv>0&&x.startMin<_lv&&((x.endMin!=null)?x.endMin:x.startMin+(+x.dur||0))<=_lv+2);};   /* et ce qu elle couvre n est pas une autre activité : la frontière coupe, ceci écarte */
    (cur||[]).forEach(function(x){
     if(!x||x.type==='nap')return;
     var _ds=(x.srcs&&typeof x.srcs==='object'&&Object.keys(x.srcs).length)
@@ -30249,14 +30259,14 @@ window.flDansFenetre=function(m,d,f){ return m>=d && m<f; };
       capteurs, pas deux sorties » — est tenue, mieux, par la découpe. */
    var marches=[];
    try{
-    marches=flPartitionnerMarches(K,detectMarches(K),frontieres)
+    marches=flPartitionnerMarches(K,detectMarches(K),frontieres).filter(_horsVeille)
      .filter(function(m){
       return !dis.some(function(sm){return Math.abs(sm-m.startMin)<=10;});
      });
    }catch(e){}
    var rows=flPartitionnerSeances(K,
      flPartitionnerSeances(K,det,frontieres),
-     marches.map(function(m){return {deb:m.startMin,fin:m.endMin};}), false)
+     marches.map(function(m){return {deb:m.startMin,fin:m.endMin};}), false).filter(_horsVeille)
     .filter(function(d3){return !dis.some(function(sm){return Math.abs(sm-d3.startMin)<=10;});})
     .map(function(d3){return faconnerSeance(d3,names,K);});
    /* LES MARCHES ARRIVENT APRES, ET S EFFACENT DEVANT LE RESTE.
@@ -30377,13 +30387,15 @@ window.flDansFenetre=function(m,d,f){ return m>=d && m<f; };
      déclarée, jamais ce qui est déjà en base. Au Stop, tout est rejugé sur les
      vraies bornes : ce qui a été retenu ici reparaît s'il le mérite. */
   window.flSeanceEnDirect=function(deb,ttl){try{   /* 3 oct. 2026 — `ttl` (ms) : la séance ANNONCÉE n'a pas d'horloge de survie et survit à la mort de l'app ; son jalon vit jusqu'à sa borne, et tombe au désarmement. Absent : les trois minutes du Tracker */
-   DB.set('flEnDirect',{deb:Math.max(0,Math.round(+deb||0)),ts:Date.now(),ttl:(+ttl>0?Math.round(+ttl):null)});}catch(e){}};
+   var _dd=Math.max(0,Math.round(+deb||0));DB.set('flEnDirect',{deb:_dd,ts:Date.now(),ttl:(+ttl>0?Math.round(+ttl):null),jour:window.flJourEnDirect?window.flJourEnDirect(_dd,DB.get('flEnDirect',null)):null});}catch(e){}};
   window.flSeanceFinie=function(){try{DB.set('flEnDirect',null);}catch(e){}};
   window.flEnDirectDepuis=function(k){try{
    var e=DB.get('flEnDirect',null);
    if(!e||e.deb==null)return null;
    if(Date.now()-(+e.ts||0)>((+e.ttl>0)?+e.ttl:180000))return null;
+   if(e.jour&&e.jour===k)return +e.deb;   /* 6 nov. 2026 — son jour de départ, même après minuit */
    if(typeof tk==='function'&&k!==tk(0))return null;
+   if(e.jour)return 0;   /* partie hier, elle court encore : tout aujourd hui est à elle */
    return +e.deb;}catch(e){return null;}};
   window.flDetecterBientot=function(jk){try{
    (window._flDetJours=window._flDetJours||{})[jk]=1;
@@ -32733,7 +32745,7 @@ window.flSerieCanonique=function(k,d,f,ps){
   if(!pts){
    var w=(typeof watchOf==='function')?watchOf(k):null;
    if(w&&w.hr&&w.hr.length){
-    var hp=(typeof flHrPropre==='function')?flHrPropre(w.hr):w.hr;
+    var _hrF=window.flHrAuDelaDeMinuit?window.flHrAuDelaDeMinuit(k,w.hr,f):w.hr;var hp=(typeof flHrPropre==='function')?flHrPropre(_hrF):_hrF;   /* 6 nov. 2026 — une séance qui passe minuit */
     var dans=hp.filter(function(x){return flDansFenetre(x[0],d,f)&&!(_ps.length&&flEnPause(x[0],_ps));});
     if(dans.length>=3){
      pts=dans.map(function(x){return [(x[0]-d)*60,x[1]];});
@@ -32809,7 +32821,7 @@ window.flMetriquesCanoniques=function(k,d,f,ps){
   try{
    var fm2=(typeof flFcMax==='function')?flFcMax():null;
    var bmr2=(typeof flMetaBase==='function')?flMetaBase():null;
-   var pts2=(typeof flPtsEveil==='function')?(flPtsEveil(k)||[]):[];
+   var pts2=(typeof flPtsEveil==='function')?(flPtsEveil(k)||[]):[]; if(window.flPtsAuDelaDeMinuit)pts2=window.flPtsAuDelaDeMinuit(k,pts2,f);   /* 6 nov. 2026 — une séance qui passe minuit */
    var d0=Math.round(d), f0=Math.round(f);
    var kcMin={}, srcMin={}, vuFC={};     /* kcal, source, et couverture cardiaque */
 
@@ -32931,6 +32943,7 @@ window.flMetriquesCanoniques=function(k,d,f,ps){
     for(var mn=Math.max(0,Math.round(d));mn<Math.min(1440,Math.round(f));mn++){
      if(_ps.length&&flEnPause(mn,_ps))continue;  if(pm.vu[mn]){tot+=(pm.m[mn]||0);vus++;}
     }
+    if(window.flPasAuDelaDeMinuit){var _pa=window.flPasAuDelaDeMinuit(k,f,_ps);tot+=_pa.tot;vus+=_pa.vus;}   /* 6 nov. 2026 */
     if(vus){out.pas=tot; try{if(typeof flPasConfirmes==='function')out.pasConfirmes=flPasConfirmes(pm,d,f,_ps);}catch(_e){}}
    }
   }catch(e){}
@@ -34413,7 +34426,8 @@ window.flDeriverMetriques=function(k,liste){
     var R=fm.v-repos; if(R<=40)return null;
     /* v1743 — SEMI-OUVERTE : la minute `finMin` commence quand l'activité
        finit. Voir `flDansFenetre`. */
-    var pts=(typeof flHrPropre==='function'?flHrPropre(w.hr):w.hr)
+    var _hrFen=window.flHrAuDelaDeMinuit?window.flHrAuDelaDeMinuit(k,w.hr,finMin):w.hr;   /* 6 nov. 2026 — une séance qui passe minuit */
+    var pts=(typeof flHrPropre==='function'?flHrPropre(_hrFen):_hrFen)
              .filter(function(x){return flDansFenetre(x[0],debutMin,finMin)&&!(typeof flEnPause==='function'&&flEnPause(x[0],pauses));});   /* 14 sept. 2026 — les minutes d ARRÊT du tracker sortent : `dansUneSeance` fait compter la zone 0 pendant l effort, et vingt minutes assis la recevraient comme du sport. La note passait de 12,5 à 10 sur le cas mesuré. */
     if(pts.length<3)return null;
     /* v1666 — LA PONDERATION VIENT DE `flPoids`. Ce bloc plafonnait son ecart a
