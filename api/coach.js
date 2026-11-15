@@ -6,6 +6,9 @@
 //              capacites?, instantane?, natif?, faits?, memos? }      ← app v2 (25 sept.)
 //   réponse  { mode:'outils', appels:[{name,args}], tourModele:{...}, libelles, v, appelsGemini }
 //         ou { mode:'reponse', texte, suites, tourModele:{...}, memo, retenir (v2), v, appelsGemini }
+//   Coach v3 (COACH_FOURNISSEUR=anthropic, _coach-tour-claude.js) : les mêmes
+//   champs, plus `etapes` et `redaction` (tour d'outils), `blocs` (réponse),
+//   `fournisseur` ; voir COACH-V3-PLAN.md pour le contrat côté app.
 //
 // ═══ 25 SEPT. 2026 — COACH V2 : UNE QUESTION, UNE REQUÊTE GEMINI ═══════════
 //
@@ -53,12 +56,17 @@ const { cors, rateLimited, identiteRequete, ipRequete, deviceIllisible, deviceRe
         verifierSecret, verifierSignature, corpsJSON, corpsBrut, appelerGemini,
         ouvrirGeminiFlux, partsDuFlux, plafondJournalier, sansCle } = require('./_lib');
 const { LIBELLES, outilsPour } = require('./_coach-tools');
-const { promptSysteme, LANGUES, TONS } = require('./_coach-prompt');
+const { promptSysteme, prefixeStatique, LANGUES, TONS } = require('./_coach-prompt');
 const { adapterReponse, nettoyerReponse, rendreDonneesV1 } = require('./_coach-adaptateurs');
 const { MARQUEUR, estNouvelleQuestion, derniereQuestion, prechargement, preparerPourGemini,
         extraireMeta, partieSureMeta, memoDe, estTourQuestion } = require('./_coach-histoire');
 const { validerInstantane, validerNatif, rendreInstantane, rendreJson, rendreFaits,
         rendreMemos, estAnodin } = require('./_coach-instantane');
+// 15 nov. 2026 — Coach v3, le second fournisseur. Lus seulement quand
+// COACH_FOURNISSEUR=anthropic ; sans cette variable, rien de ce qui suit
+// n'est appelé (banc : tests/test-coach-or-gemini.js).
+const { configClaude } = require('./_coach-claude');
+const { repondreClaude } = require('./_coach-tour-claude');
 
 // La version de CE fichier, rendue en `v` dans chaque réponse 200 et chaque
 // `fin` : `rejeu-coach.js --sonde` vérifie que la production sert bien celle-ci.
@@ -387,11 +395,15 @@ module.exports = async function handler(req, res) {
     if (!v.ok) return res.status(401).json({ error: 'signature refusée' , detail: v.raison });
   }
 
-  const key = process.env.GEMINI_API_KEY;
+  // ═══ 15 NOV. 2026 — QUEL FOURNISSEUR ═════════════════════════════════════
+  // `null` = Gemini, la production, à l'identique. COACH_FOURNISSEUR=anthropic
+  // (+ ANTHROPIC_API_KEY) = Claude, et le Coach v3 (_coach-claude.js).
+  const claude = configClaude();
+  const key = claude ? claude.cle : process.env.GEMINI_API_KEY;
   if (!key) {
     // 24 sept. 2026 — le NOM de la variable reste au journal serveur ; la
     // réponse ne dit plus quelle pièce manque. Même statut qu'avant (500).
-    console.log('[coach] GEMINI_API_KEY absente — configuration serveur incomplète');
+    console.log('[coach] ' + (claude ? 'ANTHROPIC_API_KEY' : 'GEMINI_API_KEY') + ' absente — configuration serveur incomplète');
     return res.status(500).json({ error: 'configuration serveur incomplète' });
   }
 
@@ -461,7 +473,7 @@ module.exports = async function handler(req, res) {
                                   v: COACH_VERSION });
   };
 
-  let gReq, champs, jourInst;
+  let gReq, champs, jourInst, v3 = null;
   try {
     // ═══ LE PRÉCHARGEMENT : UNE NOUVELLE QUESTION NE COÛTE PAS DE GEMINI ════
     //
@@ -472,7 +484,12 @@ module.exports = async function handler(req, res) {
     // getDay(0)). Du JSON même quand `flux` est demandé : l'app lit le JSON dès
     // que la réponse n'est pas un flux. Un message anodin (« merci ») n'en a
     // pas besoin ; COACH_PRECHARGE=0 coupe tout, sans redéployer.
-    if (estNouvelleQuestion(contents) && process.env.COACH_PRECHARGE !== '0' && !anodin
+    // 15 nov. 2026 — PAS DE PRÉCHARGEMENT EN V3 (Claude). C'est lui qui
+    // faisait afficher « Analyse de ta récupération… » à CHAQUE question : le
+    // tour fabriqué commence toujours par getRecoveryContext, que la question
+    // parle de récup ou de repas (COACH-V3-PLAN.md, § 2). En v3, le modèle
+    // demande ce dont il a besoin, et chaque libellé dit ce qu'il lit.
+    if (!claude && estNouvelleQuestion(contents) && process.env.COACH_PRECHARGE !== '0' && !anodin
         && (version === 'v1' || !instOk)) {
       const p = prechargement({ version });
       const ligne = { version, appels: p.appels.length, precharge: 1, cap, inst: '-' };
@@ -521,7 +538,9 @@ module.exports = async function handler(req, res) {
       const pv1 = profilPourV1(body.instantane);
       if (pv1) { profil = rendreJson('PROFIL', pv1, { langue, echelleStress }); profilInst = 1; }
     }
-    const systeme = promptSysteme({ ton, langue, mode: version,
+    // `v3` (Claude) ajoute un bloc fixe au préfixe et un rappel à la queue ;
+    // `v3: false` rend le prompt d'avant à l'octet (banc or-gemini).
+    const systeme = promptSysteme({ ton, langue, mode: version, v3: !!claude,
                                     blocs: { donnees, profilTexte: profil, faits, memos, anodin } });
     const toursPris = toursOutilsConsommes(contents);
 
@@ -551,12 +570,34 @@ module.exports = async function handler(req, res) {
     if (version === 'v2' && !instOk) champs.instRefus = (inst.raison || '-').replace(/\s+/g, '_');
     if (profilInst) champs.profilInst = 1;
     if (gReq.toolConfig) champs.sansOutils = 1;
+    if (claude) {
+      // Le préfixe statique, puis la queue : Claude met le premier en cache.
+      const prefixe = prefixeStatique(version, { v3: true });
+      if (!systeme.startsWith(prefixe + '\n\n')) throw new Error('prompt v3 : préfixe introuvable');
+      // Ce que l'app sait afficher en plus (capacites.etapes) — lu à part :
+      // `lireCapacites` reste la table fermée des quatre d'avant.
+      const ce = body.capacites && typeof body.capacites === 'object' ? body.capacites.etapes : 0;
+      v3 = { claude, prefixe, queue: systeme.slice(prefixe.length + 2), outils, prepContents: prep.contents,
+             toursPris, flux: body.flux === true, contents,
+             capEtapes: Number.isInteger(ce) && ce >= 1 && ce <= 1000 };
+    }
   } catch (e) {
     return panne(e);
   }
   // « Retenir : » n'est une étiquette qu'en v2 (voir `avecRetenir`, _coach-histoire.js).
   const meta = { retenir: version === 'v2' };
   const ctx = { req, res, t0, key, gReq, langue, version, anodin, question, jourInst, champs, meta };
+
+  if (v3) {
+    try {
+      return await repondreClaude(Object.assign({}, ctx, v3), { journal, corpsReponse, memoFinal, COACH_VERSION });
+    } catch (e) {
+      // Avant le premier octet, une panne se dit en JSON ; après, le flux a
+      // déjà rendu son `erreur` et il n'y a plus rien à écrire.
+      if (res.headersSent) { try { res.end(); } catch (x) { /* déjà fermé */ } return; }
+      return panne(e);
+    }
+  }
 
   // ═══ 24 SEPT. 2026 — LA DIFFUSION, SUR DEMANDE DU CLIENT ════════════════
   //

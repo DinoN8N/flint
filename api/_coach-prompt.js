@@ -30,6 +30,7 @@ const {
   OUTILS_V1_POLITIQUE, OUTILS_V2_POLITIQUE,
   MEMOIRE_V1, MEMOIRE_V2
 } = require('./_coach-manuel');
+const { PROMPT_V3, RAPPEL_V3 } = require('./_coach-v3');
 
 // ═══ 22 sept. 2026 — LA LANGUE DE LA RÉPONSE ═══════════════════════════════
 //
@@ -169,10 +170,15 @@ function batirPrefixe(mode) {
 }
 const PREFIXES = Object.freeze({ v1: batirPrefixe('v1'), v2: batirPrefixe('v2') });
 
+// 15 nov. 2026 — LE COACH V3 (chemin Claude seulement) : le même préfixe,
+// suivi d'un bloc fixe (outils au plus juste, blocs visuels). Les préfixes
+// d'au-dessus ne changent pas d'un octet : Gemini continue de les recevoir.
+const PREFIXES_V3 = Object.freeze({ v1: PREFIXES.v1 + '\n\n' + PROMPT_V3, v2: PREFIXES.v2 + '\n\n' + PROMPT_V3 });
+
 // Table fermée, comme LANGUES : tout ce qui n'est pas « v2 » est v1, le mode
 // de l'app installée.
 function modeDe(m) { return m === 'v2' ? 'v2' : 'v1'; }
-function prefixeStatique(mode) { return PREFIXES[modeDe(mode)]; }
+function prefixeStatique(mode, opts) { return (opts && opts.v3 === true ? PREFIXES_V3 : PREFIXES)[modeDe(mode)]; }
 
 // ─── LA QUEUE ────────────────────────────────────────────────────────────────
 
@@ -226,11 +232,13 @@ MÉMOIRE — fin des faits confiés, listés du plus RÉCENT (en haut) au plus a
   // ce que le modèle lit juste avant d'écrire.
   if (b.anodin !== true) {
     parts.push(`RAPPEL AVANT D'ÉCRIRE : ligne 1 = le VERDICT, une phrase en **gras** avec le chiffre qui compte ; puis UN titre « ## ${T.pourquoi} » ou « ## ${T.detail} » et ses puces ; puis « ## ${T.aFaire} » (sauf question simple) ; une seule phrase _soulignée_ ; « Suites : » en dernière ligne. Une activité que la personne a nommée garde SON nom (« ton foot d'hier »), même si le bracelet l'a nommée autrement.`);
+    // Coach v3 seulement (`blocs.v3`, posé par promptSysteme({ v3: true })).
+    if (b.v3 === true) parts.push(RAPPEL_V3);
   }
   return parts.join('\n\n');
 }
 
-// promptSysteme({ton, langue, mode:'v1'|'v2', blocs:{donnees, profilTexte, faits, memos, anodin}})
+// promptSysteme({ton, langue, mode:'v1'|'v2', v3?, blocs:{donnees, profilTexte, faits, memos, anodin}})
 // ou, comme avant le 25 sept., promptSysteme({ton, profilTexte, memoireTexte, langue}) → v1.
 function promptSysteme(args) {
   const a = args || {};
@@ -238,7 +246,9 @@ function promptSysteme(args) {
   const blocs = Object.assign({}, a.blocs);
   if (blocs.profilTexte == null && a.profilTexte != null) blocs.profilTexte = a.profilTexte;
   if (blocs.faits == null && a.memoireTexte != null) blocs.faits = a.memoireTexte;
-  return PREFIXES[mode] + '\n\n' + queueVariable({ ton: a.ton, langue: a.langue, blocs });
+  // `v3` ne vient que de l'argument, jamais des blocs d'un appelant.
+  blocs.v3 = a.v3 === true;
+  return (a.v3 === true ? PREFIXES_V3 : PREFIXES)[mode] + '\n\n' + queueVariable({ ton: a.ton, langue: a.langue, blocs });
 }
 
 module.exports = { promptSysteme, prefixeStatique, TONS, LANGUES, TITRES };
