@@ -22,7 +22,7 @@ function v(titre, ok, detail) {
 process.env.FLINT_APP_SECRET = 'secret-de-banc';
 for (const k of ['COACH_EXIGE_SIGNATURE', 'UPSTASH_REDIS_REST_URL', 'COACH_V2', 'COACH_V2_APPAREILS', 'COACH_FACTURATION',
                  'COACH_PRECHARGE', 'COACH_COMPACTION', 'COACH_MODELE', 'COACH_EFFORT', 'COACH_CLAUDE_SECOURS',
-                 'GEMINI_API_KEY']) delete process.env[k];
+                 'GEMINI_API_KEY', 'ANTHROPIC_API_KEY_2']) delete process.env[k];
 const CLE = 'sk-ant-cle-de-banc-0000';
 function claudeAllume() { process.env.COACH_FOURNISSEUR = 'anthropic'; process.env.ANTHROPIC_API_KEY = CLE; }
 claudeAllume();
@@ -437,6 +437,66 @@ console.log('\n═══ ⑩ ET SANS LA VARIABLE, C\'EST GEMINI : LE PRÉCHARGEM
     res.corps.appels[0].name === 'getRecoveryContext' && res.corps.libelles[res.corps.appels[0].name] === 'Analyse de ta récupération…');
   delete process.env.GEMINI_API_KEY;
   claudeAllume();
+}
+
+console.log('\n═══ ⑪ DEUX CLÉS : LA SECONDE PREND LE RELAIS QUAND LA PREMIÈRE N\'A PLUS DE CRÉDIT ═══');
+{
+  const CLE2 = 'sk-ant-cle-de-banc-2222';
+  const VIDE = 'Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits.';
+  const cleDe = (r) => r.entetes['x-api-key'];
+  const sansLesDeux = (recus) => recus.every((r) => ![CLE, CLE2].some((k) => r.brut.includes(k) || r.url.includes(k)));
+
+  const c = CL.configClaude({ COACH_FOURNISSEUR: 'anthropic', ANTHROPIC_API_KEY: 'a', ANTHROPIC_API_KEY_2: 'b' });
+  v('config : deux clés dans l\'ordre, `cle` reste la première', c.cles.join() === 'a,b' && c.cle === 'a');
+  v('config : une seule clé, une seule entrée ; une seconde vide est ignorée',
+    CL.configClaude({ COACH_FOURNISSEUR: 'anthropic', ANTHROPIC_API_KEY: 'a', ANTHROPIC_API_KEY_2: '' }).cles.join() === 'a');
+  v('le texte « crédit épuisé » de l\'API est reconnu (400), une autre 400 non, une 429 non',
+    CL.creditEpuise(400, JSON.stringify({ error: { type: 'invalid_request_error', message: VIDE } }))
+    && !CL.creditEpuise(400, 'invalid_request_error: max_tokens: too large') && !CL.creditEpuise(429, VIDE));
+
+  process.env.ANTHROPIC_API_KEY_2 = CLE2;
+  CL._oublierClesEpuisees();
+  let recus = fauxClaude([{ statut: 400, type: 'invalid_request_error', erreur: VIDE }, { msg: message([texte('Servi par la seconde.')]) }]);
+  let r = await jouer(base({ contents: Q('Ma VFC ?') }));
+  v('JSON : crédit épuisé sur la 1re → même question sur la 2de, réponse servie', recus.length === 2 && cleDe(recus[0]) === CLE
+    && cleDe(recus[1]) === CLE2 && r.res.code === 200 && r.res.corps.texte === 'Servi par la seconde.', JSON.stringify(r.res.corps).slice(0, 200));
+  v('  … le même corps part aux deux (rien de perdu en route)', recus[0].brut === recus[1].brut);
+  v('  … le journal dit cle=2, jamais la clé', r.lignes.some((l) => /mode=reponse /.test(l) && / cle=2( |$)/.test(l))
+    && !r.lignes.some((l) => l.includes(CLE) || l.includes(CLE2)), r.lignes.join(' | ').slice(0, 300));
+  v('  … aucune des deux clés dans les corps ni les adresses', sansLesDeux(recus));
+
+  recus = fauxClaude([{ msg: message([texte('Encore la seconde.')]) }]);
+  r = await jouer(base({ contents: Q('Et ma récup ?') }));
+  v('la question suivante va DIRECTEMENT à la 2de (la 1re est mise de côté une heure)', recus.length === 1 && cleDe(recus[0]) === CLE2 && r.res.code === 200);
+
+  CL._oublierClesEpuisees();
+  recus = fauxClaude([{ statut: 400, type: 'invalid_request_error', erreur: 'mauvaise requête' }]);
+  r = await jouer(base({ contents: Q('Ma VFC ?') }));
+  v('une 400 qui n\'est PAS un crédit épuisé ne change pas de clé : un seul appel, 502', recus.length === 1 && r.res.code === 502);
+
+  recus = fauxClaude([{ statut: 400, type: 'invalid_request_error', erreur: VIDE }, { statut: 400, type: 'invalid_request_error', erreur: VIDE }]);
+  r = await jouer(base({ contents: Q('Ma VFC ?') }));
+  v('les deux épuisées : 502 avec la phrase de l\'app, deux appels, parcours lisible', recus.length === 2 && r.res.code === 502
+    && r.res.corps.error === 'Le Coach est indisponible à l\'instant. Réessaie dans un moment.'
+    && r.res.corps.parcours.filter((p) => /crédit-épuisé/.test(p)).length === 2, JSON.stringify(r.res.corps.parcours));
+  recus = fauxClaude([{ msg: message([texte('La 1re est revenue.')]) }]);
+  r = await jouer(base({ contents: Q('Ma VFC ?') }));
+  v('les deux mises de côté : on réessaie quand même la 1re d\'abord (une recharge se voit)', recus.length === 1 && cleDe(recus[0]) === CLE && r.res.code === 200);
+
+  CL._oublierClesEpuisees();
+  recus = fauxClaude([{ statut: 400, type: 'invalid_request_error', erreur: VIDE }, { msg: message([reflexion(), texte('En flux, par la seconde.')]) }]);
+  r = await jouer(base({ flux: true, contents: Q('Ma VFC ?') }));
+  const f = finDe(r.evs) || {};
+  v('FLUX : le relais se fait AVANT le premier octet, le texte arrive en entier', recus.length === 2 && cleDe(recus[1]) === CLE2
+    && r.res.sse === true && deltas(r.evs).join('').trimEnd() === 'En flux, par la seconde.' && f.texte === 'En flux, par la seconde.');
+
+  CL._oublierClesEpuisees();
+  delete process.env.ANTHROPIC_API_KEY_2;
+  recus = fauxClaude([{ statut: 400, type: 'invalid_request_error', erreur: VIDE }]);
+  r = await jouer(base({ contents: Q('Ma VFC ?') }));
+  v('une seule clé, épuisée : comme avant — un appel, 502, pas de `cle=` au journal', recus.length === 1 && r.res.code === 502
+    && !r.lignes.some((l) => / cle=/.test(l)));
+  CL._oublierClesEpuisees();
 }
 
 global.fetch = vraiFetch;

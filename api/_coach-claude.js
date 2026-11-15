@@ -65,8 +65,12 @@ function configClaude(env) {
   const e = env || process.env;
   if (e.COACH_FOURNISSEUR !== 'anthropic') return null;
   const modele = /^[a-z0-9][a-z0-9.-]{2,63}$/.test(e.COACH_MODELE || '') ? e.COACH_MODELE : MODELE_DEFAUT;
+  // Deux clés au plus, dans l'ordre : la seconde prend le relais quand la
+  // première n'a plus de crédit (voir « DEUX CLÉS, UN RELAIS » plus bas).
+  const cles = [e.ANTHROPIC_API_KEY, e.ANTHROPIC_API_KEY_2].filter((c) => typeof c === 'string' && c.length > 0);
   return {
     cle: e.ANTHROPIC_API_KEY || '',
+    cles,
     modele,
     effort: EFFORTS.has(e.COACH_EFFORT) ? e.COACH_EFFORT : 'medium',
     secours: e.COACH_CLAUDE_SECOURS !== '0' && MODELES_AVEC_SECOURS.has(modele)
@@ -309,14 +313,69 @@ function detailErreur(texte, cle) {
   return sansCle(String(d || '').slice(0, 400), cle);
 }
 
+// ─── 15 NOV. 2026 (soir) — DEUX CLÉS, UN RELAIS ─────────────────────────────
+// Dino et Félix ont chacun un abonnement qui crédite chaque mois SA propre
+// organisation de la Console. `ANTHROPIC_API_KEY` sert d'abord ;
+// `ANTHROPIC_API_KEY_2`, facultative, prend le relais quand la première répond
+// « crédit épuisé » ou « plafond de dépense atteint ». Rien ne passe d'une
+// organisation à l'autre : chaque appel est payé par l'organisation de la clé
+// qui l'a fait. Toute autre erreur (400 d'une requête fausse, 401, 429, 5xx)
+// garde la politique d'avant : on ne change PAS de clé pour elle.
+// Une clé épuisée est mise de côté une heure dans cette instance : le crédit
+// revient au mois suivant, et une recharge se voit au plus une heure après.
+const PAUSE_CLE_EPUISEE_MS = 60 * 60 * 1000;
+const clesEpuisees = new Map(); // rang de la clé (0, 1) → fin de la pause (ms)
+
+/** « Plus de crédit » ou « plafond de dépense atteint » — le texte de l'API. */
+function creditEpuise(status, texte) {
+  if (status !== 400 && status !== 402 && status !== 403) return false;
+  return /credit balance is too low|reached your specified api usage limits|spend limit/i.test(String(texte || ''));
+}
+
+/** L'ordre des essais : les clés disponibles d'abord, les épuisées ensuite. */
+function ordreDesCles(config, maintenant) {
+  const t = maintenant == null ? Date.now() : maintenant;
+  const cles = Array.isArray(config.cles) && config.cles.length ? config.cles : [config.cle || ''];
+  const rangs = cles.map((cle, i) => ({ i, cle }));
+  const libre = (r) => !(clesEpuisees.get(r.i) > t);
+  return rangs.filter(libre).concat(rangs.filter((r) => !libre(r)));
+}
+
+/** `essai(cfg)` avec chaque clé tour à tour, tant que la clé est épuisée. */
+async function parCle(config, essai) {
+  const ordre = ordreDesCles(config);
+  const parcours = [];
+  let total = 0, dernier = null;
+  for (const { i, cle } of ordre) {
+    const r = await essai(Object.assign({}, config, { cle }));
+    total += r.tentatives || 0;
+    parcours.push(...(r.parcours || []));
+    r.tentatives = total;
+    r.parcours = parcours;
+    // Avec deux clés, le journal dit laquelle a payé (jamais la clé elle-même).
+    if (ordre.length > 1) r.cleN = i + 1;
+    if (r.ok) { clesEpuisees.delete(i); return r; }
+    if (!r.creditEpuise) return r;
+    clesEpuisees.set(i, Date.now() + PAUSE_CLE_EPUISEE_MS);
+    parcours.push('clé' + (i + 1) + ':crédit-épuisé');
+    dernier = r;
+  }
+  return dernier;
+}
+
 // ─── LES APPELS ─────────────────────────────────────────────────────────────
 
 /**
  * Un appel complet (JSON). Même politique que `appelerGemini` : on réessaie un
  * statut passager (429, 5xx, 529 « overloaded ») une fois, jamais un 4xx.
- * Rendu : { ok, status, json, detail, tentatives, parcours }.
+ * Avec deux clés, un crédit épuisé passe à la suivante (`parCle`).
+ * Rendu : { ok, status, json, detail, tentatives, parcours, cleN? }.
  */
-async function appelerClaude({ config, corps, delaiMs, tentatives, attenteMs }) {
+async function appelerClaude(o) {
+  return parCle(o.config, (config) => appelerUneCle(Object.assign({}, o, { config })));
+}
+
+async function appelerUneCle({ config, corps, delaiMs, tentatives, attenteMs }) {
   const essais = Math.max(1, tentatives || 2);
   const delai = Math.max(1000, delaiMs || 40000);
   const parcours = [];
@@ -335,7 +394,8 @@ async function appelerClaude({ config, corps, delaiMs, tentatives, attenteMs }) 
                  detail: json ? '' : 'réponse illisible' };
       }
       parcours.push(config.modele + ':' + r.status);
-      dernier = { ok: false, status: r.status, detail: detailErreur(texte, config.cle), tentatives: n, parcours };
+      dernier = { ok: false, status: r.status, detail: detailErreur(texte, config.cle), tentatives: n, parcours,
+                  creditEpuise: creditEpuise(r.status, texte) };
       if (!REESSAYABLES.has(r.status)) return dernier;
     } catch (e) {
       const delaiDepasse = e && e.name === 'AbortError';
@@ -353,8 +413,13 @@ async function appelerClaude({ config, corps, delaiMs, tentatives, attenteMs }) 
 }
 
 /** L'OUVERTURE d'un flux (même règle que `ouvrirGeminiFlux` : on ne réessaie
- *  qu'avant le premier octet). Rendu : { ok, reponse, status, detail, tentatives, parcours }. */
-async function ouvrirClaudeFlux({ config, corps, delaiMs, tentatives, attenteMs }) {
+ *  qu'avant le premier octet, et c'est là aussi qu'une clé épuisée passe la
+ *  main). Rendu : { ok, reponse, status, detail, tentatives, parcours, cleN? }. */
+async function ouvrirClaudeFlux(o) {
+  return parCle(o.config, (config) => ouvrirUneCle(Object.assign({}, o, { config })));
+}
+
+async function ouvrirUneCle({ config, corps, delaiMs, tentatives, attenteMs }) {
   const essais = Math.max(1, tentatives || 2);
   const delai = Math.max(1000, delaiMs || 28000);
   const parcours = [];
@@ -368,7 +433,8 @@ async function ouvrirClaudeFlux({ config, corps, delaiMs, tentatives, attenteMs 
       if (r.ok && r.body) { clearTimeout(minuteur); return { ok: true, status: r.status, reponse: r, tentatives: n, parcours }; }
       const texte = await r.text().catch(() => '');
       parcours.push(config.modele + ':' + r.status);
-      dernier = { ok: false, status: r.status, detail: detailErreur(texte, config.cle), tentatives: n, parcours };
+      dernier = { ok: false, status: r.status, detail: detailErreur(texte, config.cle), tentatives: n, parcours,
+                  creditEpuise: creditEpuise(r.status, texte) };
       if (!REESSAYABLES.has(r.status)) return dernier;
     } catch (e) {
       const delaiDepasse = e && e.name === 'AbortError';
@@ -520,7 +586,8 @@ function usageJournal(msg) {
 
 module.exports = {
   configClaude, versOutilClaude, versMessagesClaude, corpsClaude, entetes,
-  appelerClaude, ouvrirClaudeFlux, evenementsClaude, assembleur, lireMessage,
+  appelerClaude, ouvrirClaudeFlux, evenementsClaude, assembleur, lireMessage, creditEpuise, ordreDesCles,
+  _oublierClesEpuisees: () => clesEpuisees.clear(),
   tourModeleOutils, appelsDe, contenuAEcho, encoderContenu, decoderContenu, usageJournal,
   URL_MESSAGES, VERSION_API, MODELE_DEFAUT, BETA_SECOURS, BETA_LIAISON, PREFIXE_SIG
 };

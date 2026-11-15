@@ -126,6 +126,7 @@ async function repondreClaude(ctx, aides) {
       journal(req, 'claude-indisponible', t0, Object.assign({ statut: r.status, parcours: (r.parcours || []).join(' ') }, champs, { gemini: n }));
       return res.status(502).json(erreur502(r, n));
     }
+    if (r.cleN) champs.cle = r.cleN;   // deux clés : laquelle a payé (le rang, jamais la clé)
     const lu = lireMessage(r.json);
     const u = usageJournal(r.json);
     if (lu.refus) {
@@ -158,6 +159,7 @@ async function repondreClaude(ctx, aides) {
     journal(req, 'flux-indisponible', t0, Object.assign({ statut: o.status, parcours: (o.parcours || []).join(' ') }, champs, { gemini: n }));
     return res.status(502).json(erreur502(o, n));
   }
+  if (o.cleN) champs.cle = o.cleN;
   res.writeHead(200, {
     'Content-Type': 'text/event-stream; charset=utf-8',
     'Cache-Control': 'no-store, no-transform',
