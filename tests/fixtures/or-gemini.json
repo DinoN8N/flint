@@ -1,0 +1,1112 @@
+{
+ "v1, question nouvelle : préchargement (JSON)": {
+  "google": [],
+  "app": {
+   "code": 200,
+   "corps": {
+    "mode": "outils",
+    "appels": [
+     {
+      "name": "getRecoveryContext",
+      "args": {}
+     },
+     {
+      "name": "getSleepHistory",
+      "args": {
+       "joursN": 7
+      }
+     },
+     {
+      "name": "getTrainingLoad",
+      "args": {}
+     },
+     {
+      "name": "getNutritionToday",
+      "args": {}
+     },
+     {
+      "name": "getActivityHistory",
+      "args": {
+       "joursN": 2
+      }
+     }
+    ],
+    "tourModele": {
+     "role": "model",
+     "parts": [
+      {
+       "text": "⟦flint-pre:v1⟧"
+      },
+      {
+       "functionCall": {
+        "name": "getRecoveryContext",
+        "args": {}
+       },
+       "thoughtSignature": "skip_thought_signature_validator"
+      },
+      {
+       "functionCall": {
+        "name": "getSleepHistory",
+        "args": {
+         "joursN": 7
+        }
+       },
+       "thoughtSignature": "skip_thought_signature_validator"
+      },
+      {
+       "functionCall": {
+        "name": "getTrainingLoad",
+        "args": {}
+       },
+       "thoughtSignature": "skip_thought_signature_validator"
+      },
+      {
+       "functionCall": {
+        "name": "getNutritionToday",
+        "args": {}
+       },
+       "thoughtSignature": "skip_thought_signature_validator"
+      },
+      {
+       "functionCall": {
+        "name": "getActivityHistory",
+        "args": {
+         "joursN": 2
+        }
+       },
+       "thoughtSignature": "skip_thought_signature_validator"
+      }
+     ]
+    },
+    "libelles": {
+     "getRecoveryContext": "Analyse de ta récupération…",
+     "getSleepHistory": "Lecture de tes nuits…",
+     "getTrainingLoad": "Calcul de ta charge d'entraînement…",
+     "getActivityHistory": "Relecture de tes séances…",
+     "getNutritionToday": "Lecture de tes repas du jour…",
+     "getUserProfile": "Lecture de ton profil…",
+     "getCoachPreferences": "Lecture de ton profil…",
+     "saveMemoryFact": "Je note ça…",
+     "setCoachPreferences": "J'ajuste mon style…",
+     "getDay": "Lecture de cette journée…",
+     "getHistory": "Relecture de tes derniers jours…",
+     "getTrend": "Lecture de ta tendance…",
+     "getSessions": "Relecture de tes séances…",
+     "getSession": "Analyse de ta séance…",
+     "getDevice": "Vérification de ton bracelet…",
+     "getPastThread": "Relecture de vos échanges…"
+    },
+    "v": "2026-09-25.1",
+    "appelsGemini": 0
+   },
+   "sse": false,
+   "evenements": null,
+   "entetes": {
+    "Cache-Control": "no-store",
+    "X-Content-Type-Options": "nosniff",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, x-flint-key, x-flint-device, x-flint-ts, x-flint-sig"
+   }
+  }
+ },
+ "v1, question nouvelle, flux demandé": {
+  "google": [],
+  "app": {
+   "code": 200,
+   "corps": {
+    "mode": "outils",
+    "appels": [
+     {
+      "name": "getRecoveryContext",
+      "args": {}
+     },
+     {
+      "name": "getSleepHistory",
+      "args": {
+       "joursN": 7
+      }
+     },
+     {
+      "name": "getTrainingLoad",
+      "args": {}
+     },
+     {
+      "name": "getNutritionToday",
+      "args": {}
+     },
+     {
+      "name": "getActivityHistory",
+      "args": {
+       "joursN": 2
+      }
+     }
+    ],
+    "tourModele": {
+     "role": "model",
+     "parts": [
+      {
+       "text": "⟦flint-pre:v1⟧"
+      },
+      {
+       "functionCall": {
+        "name": "getRecoveryContext",
+        "args": {}
+       },
+       "thoughtSignature": "skip_thought_signature_validator"
+      },
+      {
+       "functionCall": {
+        "name": "getSleepHistory",
+        "args": {
+         "joursN": 7
+        }
+       },
+       "thoughtSignature": "skip_thought_signature_validator"
+      },
+      {
+       "functionCall": {
+        "name": "getTrainingLoad",
+        "args": {}
+       },
+       "thoughtSignature": "skip_thought_signature_validator"
+      },
+      {
+       "functionCall": {
+        "name": "getNutritionToday",
+        "args": {}
+       },
+       "thoughtSignature": "skip_thought_signature_validator"
+      },
+      {
+       "functionCall": {
+        "name": "getActivityHistory",
+        "args": {
+         "joursN": 2
+        }
+       },
+       "thoughtSignature": "skip_thought_signature_validator"
+      }
+     ]
+    },
+    "libelles": {
+     "getRecoveryContext": "Analyse de ta récupération…",
+     "getSleepHistory": "Lecture de tes nuits…",
+     "getTrainingLoad": "Calcul de ta charge d'entraînement…",
+     "getActivityHistory": "Relecture de tes séances…",
+     "getNutritionToday": "Lecture de tes repas du jour…",
+     "getUserProfile": "Lecture de ton profil…",
+     "getCoachPreferences": "Lecture de ton profil…",
+     "saveMemoryFact": "Je note ça…",
+     "setCoachPreferences": "J'ajuste mon style…",
+     "getDay": "Lecture de cette journée…",
+     "getHistory": "Relecture de tes derniers jours…",
+     "getTrend": "Lecture de ta tendance…",
+     "getSessions": "Relecture de tes séances…",
+     "getSession": "Analyse de ta séance…",
+     "getDevice": "Vérification de ton bracelet…",
+     "getPastThread": "Relecture de vos échanges…"
+    },
+    "v": "2026-09-25.1",
+    "appelsGemini": 0
+   },
+   "sse": false,
+   "evenements": null,
+   "entetes": {
+    "Cache-Control": "no-store",
+    "X-Content-Type-Options": "nosniff",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, x-flint-key, x-flint-device, x-flint-ts, x-flint-sig"
+   }
+  }
+ },
+ "v1, question nouvelle en anglais": {
+  "google": [],
+  "app": {
+   "code": 200,
+   "corps": {
+    "mode": "outils",
+    "appels": [
+     {
+      "name": "getRecoveryContext",
+      "args": {}
+     },
+     {
+      "name": "getSleepHistory",
+      "args": {
+       "joursN": 7
+      }
+     },
+     {
+      "name": "getTrainingLoad",
+      "args": {}
+     },
+     {
+      "name": "getNutritionToday",
+      "args": {}
+     },
+     {
+      "name": "getActivityHistory",
+      "args": {
+       "joursN": 2
+      }
+     }
+    ],
+    "tourModele": {
+     "role": "model",
+     "parts": [
+      {
+       "text": "⟦flint-pre:v1⟧"
+      },
+      {
+       "functionCall": {
+        "name": "getRecoveryContext",
+        "args": {}
+       },
+       "thoughtSignature": "skip_thought_signature_validator"
+      },
+      {
+       "functionCall": {
+        "name": "getSleepHistory",
+        "args": {
+         "joursN": 7
+        }
+       },
+       "thoughtSignature": "skip_thought_signature_validator"
+      },
+      {
+       "functionCall": {
+        "name": "getTrainingLoad",
+        "args": {}
+       },
+       "thoughtSignature": "skip_thought_signature_validator"
+      },
+      {
+       "functionCall": {
+        "name": "getNutritionToday",
+        "args": {}
+       },
+       "thoughtSignature": "skip_thought_signature_validator"
+      },
+      {
+       "functionCall": {
+        "name": "getActivityHistory",
+        "args": {
+         "joursN": 2
+        }
+       },
+       "thoughtSignature": "skip_thought_signature_validator"
+      }
+     ]
+    },
+    "libelles": {
+     "getRecoveryContext": "Analyzing your recovery…",
+     "getSleepHistory": "Reading your nights…",
+     "getTrainingLoad": "Computing your training load…",
+     "getActivityHistory": "Going over your sessions…",
+     "getNutritionToday": "Reading today's meals…",
+     "getUserProfile": "Reading your profile…",
+     "getCoachPreferences": "Reading your profile…",
+     "saveMemoryFact": "Noting that down…",
+     "setCoachPreferences": "Adjusting my style…",
+     "getDay": "Reading that day…",
+     "getHistory": "Going over your last days…",
+     "getTrend": "Reading your trend…",
+     "getSessions": "Going over your sessions…",
+     "getSession": "Analyzing your session…",
+     "getDevice": "Checking your band…",
+     "getPastThread": "Going over our past conversations…"
+    },
+    "v": "2026-09-25.1",
+    "appelsGemini": 0
+   },
+   "sse": false,
+   "evenements": null,
+   "entetes": {
+    "Cache-Control": "no-store",
+    "X-Content-Type-Options": "nosniff",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, x-flint-key, x-flint-device, x-flint-ts, x-flint-sig"
+   }
+  }
+ },
+ "v1, message anodin": {
+  "google": [
+   {
+    "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=…",
+    "octets": 25463,
+    "sha256": "08b46f243b3665af8b6b15786bf2d0ac1fc5c13af336c5e4e5187f226c5f8f63"
+   }
+  ],
+  "app": {
+   "code": 200,
+   "corps": {
+    "mode": "reponse",
+    "texte": "Avec plaisir !",
+    "suites": [
+     "Ma récup ?",
+     "Mon sommeil ?"
+    ],
+    "tourModele": {
+     "role": "model",
+     "parts": [
+      {
+       "text": "Avec plaisir !\nSuites : Ma récup ? | Mon sommeil ?"
+      }
+     ]
+    },
+    "memo": null,
+    "v": "2026-09-25.1",
+    "appelsGemini": 1
+   },
+   "sse": false,
+   "evenements": null,
+   "entetes": {
+    "Cache-Control": "no-store",
+    "X-Content-Type-Options": "nosniff",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, x-flint-key, x-flint-device, x-flint-ts, x-flint-sig"
+   }
+  }
+ },
+ "v1, deuxième aller, JSON": {
+  "google": [
+   {
+    "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=…",
+    "octets": 29341,
+    "sha256": "3ec3b5d2f0a84493af654e176e5186f8e34cda72ec09a7607fa2774a86b56d1e"
+   }
+  ],
+  "app": {
+   "code": 200,
+   "corps": {
+    "mode": "reponse",
+    "texte": "**Récup à 74/100 : tu peux charger.**\n\n## Pourquoi\n- **VFC haute** : 71 ms, au-dessus de ta normale.\n\n## À faire\n- Séance soutenue ce soir.\n\nRetenir : objectif — prépare un semi-marathon en mars",
+    "suites": [
+     "Et demain ?",
+     "Mon sommeil ?"
+    ],
+    "tourModele": {
+     "role": "model",
+     "parts": [
+      {
+       "text": "**Récup à 74/100 : tu peux charger.**\n\n## Pourquoi\n- **VFC haute** : 71 ms, au-dessus de ta normale.\n\n## À faire\n- Séance soutenue ce soir.\n\nRetenir : objectif — prépare un semi-marathon en mars\nSuites : Et demain ? | Mon sommeil ?"
+      }
+     ]
+    },
+    "memo": {
+     "d": "AUJOURD-HUI",
+     "q": "Je peux charger ?",
+     "v": "Récup à 74/100 : tu peux charger.",
+     "a": "Séance soutenue ce soir."
+    },
+    "v": "2026-09-25.1",
+    "appelsGemini": 1
+   },
+   "sse": false,
+   "evenements": null,
+   "entetes": {
+    "Cache-Control": "no-store",
+    "X-Content-Type-Options": "nosniff",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, x-flint-key, x-flint-device, x-flint-ts, x-flint-sig"
+   }
+  }
+ },
+ "v1, deuxième aller, flux": {
+  "google": [
+   {
+    "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:streamGenerateContent?alt=sse&key=…",
+    "octets": 29335,
+    "sha256": "c0791e3268acf0457350199f8f1ab664bc482a4a9c5a39a4acef4a4d4e20862b"
+   }
+  ],
+  "app": {
+   "code": 200,
+   "corps": null,
+   "sse": true,
+   "evenements": [
+    {
+     "d": "**Ta VFC est à 71 ms.**\n\n## À faire\n- Garde ton rythme.\n\n"
+    },
+    {
+     "fin": {
+      "mode": "reponse",
+      "texte": "**Ta VFC est à 71 ms.**\n\n## À faire\n- Garde ton rythme.",
+      "suites": [
+       "Et demain ?",
+       "Mon sommeil ?"
+      ],
+      "tourModele": {
+       "role": "model",
+       "parts": [
+        {
+         "text": "**Ta VFC est à 71 ms.**\n\n## À faire\n- Garde ton rythme.\n\nSuites : Et demain ? | Mon sommeil ?"
+        }
+       ]
+      },
+      "memo": {
+       "d": "AUJOURD-HUI",
+       "q": "Et ma VFC ?",
+       "v": "Ta VFC est à 71 ms.",
+       "a": "Garde ton rythme."
+      },
+      "v": "2026-09-25.1",
+      "appelsGemini": 1
+     }
+    }
+   ],
+   "entetes": {
+    "Cache-Control": "no-store, no-transform",
+    "X-Content-Type-Options": "nosniff",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, x-flint-key, x-flint-device, x-flint-ts, x-flint-sig",
+    "Content-Type": "text/event-stream; charset=utf-8",
+    "Connection": "keep-alive",
+    "X-Accel-Buffering": "no"
+   }
+  }
+ },
+ "v1, deuxième aller, Gemini demande un outil (JSON)": {
+  "google": [
+   {
+    "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=…",
+    "octets": 29339,
+    "sha256": "16c60d0c4cec062d846098037d1faafc9e148639e0089cfd279c0f34d723c4bc"
+   }
+  ],
+  "app": {
+   "code": 200,
+   "corps": {
+    "mode": "outils",
+    "appels": [
+     {
+      "name": "getSleepHistory",
+      "args": {
+       "joursN": 14
+      }
+     }
+    ],
+    "tourModele": {
+     "role": "model",
+     "parts": [
+      {
+       "functionCall": {
+        "name": "getSleepHistory",
+        "args": {
+         "joursN": 14
+        }
+       },
+       "thoughtSignature": "sig-g"
+      }
+     ]
+    },
+    "libelles": {
+     "getRecoveryContext": "Analyse de ta récupération…",
+     "getSleepHistory": "Lecture de tes nuits…",
+     "getTrainingLoad": "Calcul de ta charge d'entraînement…",
+     "getActivityHistory": "Relecture de tes séances…",
+     "getNutritionToday": "Lecture de tes repas du jour…",
+     "getUserProfile": "Lecture de ton profil…",
+     "getCoachPreferences": "Lecture de ton profil…",
+     "saveMemoryFact": "Je note ça…",
+     "setCoachPreferences": "J'ajuste mon style…",
+     "getDay": "Lecture de cette journée…",
+     "getHistory": "Relecture de tes derniers jours…",
+     "getTrend": "Lecture de ta tendance…",
+     "getSessions": "Relecture de tes séances…",
+     "getSession": "Analyse de ta séance…",
+     "getDevice": "Vérification de ton bracelet…",
+     "getPastThread": "Relecture de vos échanges…"
+    },
+    "v": "2026-09-25.1",
+    "appelsGemini": 1
+   },
+   "sse": false,
+   "evenements": null,
+   "entetes": {
+    "Cache-Control": "no-store",
+    "X-Content-Type-Options": "nosniff",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, x-flint-key, x-flint-device, x-flint-ts, x-flint-sig"
+   }
+  }
+ },
+ "v1, deuxième aller, Gemini demande un outil (flux, es)": {
+  "google": [
+   {
+    "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:streamGenerateContent?alt=sse&key=…",
+    "octets": 29344,
+    "sha256": "b24aaffa03579a6ae85b83e5e10bb499a00539f54bcae7bbe4bf5b9e22b77292"
+   }
+  ],
+  "app": {
+   "code": 200,
+   "corps": null,
+   "sse": true,
+   "evenements": [
+    {
+     "fin": {
+      "mode": "outils",
+      "appels": [
+       {
+        "name": "getActivityHistory",
+        "args": {
+         "joursN": 30
+        }
+       }
+      ],
+      "tourModele": {
+       "role": "model",
+       "parts": [
+        {
+         "functionCall": {
+          "name": "getActivityHistory",
+          "args": {
+           "joursN": 30
+          }
+         },
+         "thoughtSignature": "sig-f"
+        }
+       ]
+      },
+      "libelles": {
+       "getRecoveryContext": "Analizando tu recuperación…",
+       "getSleepHistory": "Leyendo tus noches…",
+       "getTrainingLoad": "Calculando tu carga de entrenamiento…",
+       "getActivityHistory": "Repasando tus sesiones…",
+       "getNutritionToday": "Leyendo tus comidas de hoy…",
+       "getUserProfile": "Leyendo tu perfil…",
+       "getCoachPreferences": "Leyendo tu perfil…",
+       "saveMemoryFact": "Lo apunto…",
+       "setCoachPreferences": "Ajustando mi estilo…",
+       "getDay": "Leyendo ese día…",
+       "getHistory": "Repasando tus últimos días…",
+       "getTrend": "Leyendo tu tendencia…",
+       "getSessions": "Repasando tus sesiones…",
+       "getSession": "Analizando tu sesión…",
+       "getDevice": "Revisando tu pulsera…",
+       "getPastThread": "Repasando nuestras conversaciones…"
+      },
+      "v": "2026-09-25.1",
+      "appelsGemini": 1
+     }
+    }
+   ],
+   "entetes": {
+    "Cache-Control": "no-store, no-transform",
+    "X-Content-Type-Options": "nosniff",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, x-flint-key, x-flint-device, x-flint-ts, x-flint-sig",
+    "Content-Type": "text/event-stream; charset=utf-8",
+    "Connection": "keep-alive",
+    "X-Accel-Buffering": "no"
+   }
+  }
+ },
+ "v1, flux muet : repli en bloc": {
+  "google": [
+   {
+    "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:streamGenerateContent?alt=sse&key=…",
+    "octets": 29335,
+    "sha256": "c0791e3268acf0457350199f8f1ab664bc482a4a9c5a39a4acef4a4d4e20862b"
+   },
+   {
+    "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=…",
+    "octets": 29335,
+    "sha256": "c0791e3268acf0457350199f8f1ab664bc482a4a9c5a39a4acef4a4d4e20862b"
+   }
+  ],
+  "app": {
+   "code": 200,
+   "corps": null,
+   "sse": true,
+   "evenements": [
+    {
+     "d": "Repli préparé."
+    },
+    {
+     "fin": {
+      "mode": "reponse",
+      "texte": "Repli préparé.",
+      "suites": [
+       "A ?",
+       "B ?"
+      ],
+      "tourModele": {
+       "role": "model",
+       "parts": [
+        {
+         "text": "Repli préparé.\n\nSuites : A ? | B ?"
+        }
+       ]
+      },
+      "memo": {
+       "d": "AUJOURD-HUI",
+       "q": "Et ma VFC ?",
+       "v": "Repli préparé.",
+       "a": ""
+      },
+      "v": "2026-09-25.1",
+      "appelsGemini": 2
+     }
+    }
+   ],
+   "entetes": {
+    "Cache-Control": "no-store, no-transform",
+    "X-Content-Type-Options": "nosniff",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, x-flint-key, x-flint-device, x-flint-ts, x-flint-sig",
+    "Content-Type": "text/event-stream; charset=utf-8",
+    "Connection": "keep-alive",
+    "X-Accel-Buffering": "no"
+   }
+  }
+ },
+ "v1, Gemini 503 partout (JSON)": {
+  "google": [
+   {
+    "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=…",
+    "octets": 29335,
+    "sha256": "c0791e3268acf0457350199f8f1ab664bc482a4a9c5a39a4acef4a4d4e20862b"
+   },
+   {
+    "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=…",
+    "octets": 29335,
+    "sha256": "c0791e3268acf0457350199f8f1ab664bc482a4a9c5a39a4acef4a4d4e20862b"
+   },
+   {
+    "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=…",
+    "octets": 29335,
+    "sha256": "c0791e3268acf0457350199f8f1ab664bc482a4a9c5a39a4acef4a4d4e20862b"
+   }
+  ],
+  "app": {
+   "code": 502,
+   "corps": {
+    "error": "Le Coach est indisponible à l'instant. Réessaie dans un moment.",
+    "gemini": 503,
+    "detail": "refus simulé 503",
+    "parcours": [
+     "gemini-3.6-flash:503",
+     "gemini-3.5-flash-lite:503",
+     "gemini-3.1-flash-lite:503"
+    ],
+    "v": "2026-09-25.1",
+    "appelsGemini": 3
+   },
+   "sse": false,
+   "evenements": null,
+   "entetes": {
+    "Cache-Control": "no-store",
+    "X-Content-Type-Options": "nosniff",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, x-flint-key, x-flint-device, x-flint-ts, x-flint-sig"
+   }
+  }
+ },
+ "v1, Gemini 400 (flux)": {
+  "google": [
+   {
+    "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:streamGenerateContent?alt=sse&key=…",
+    "octets": 29335,
+    "sha256": "c0791e3268acf0457350199f8f1ab664bc482a4a9c5a39a4acef4a4d4e20862b"
+   }
+  ],
+  "app": {
+   "code": 502,
+   "corps": {
+    "error": "Le Coach est indisponible à l'instant. Réessaie dans un moment.",
+    "gemini": 400,
+    "detail": "refus simulé 400",
+    "parcours": [
+     "gemini-3.6-flash:400"
+    ],
+    "v": "2026-09-25.1",
+    "appelsGemini": 1
+   },
+   "sse": false,
+   "evenements": null,
+   "entetes": {
+    "Cache-Control": "no-store",
+    "X-Content-Type-Options": "nosniff",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, x-flint-key, x-flint-device, x-flint-ts, x-flint-sig"
+   }
+  }
+ },
+ "v1, préchargement + 3 vrais tours : sans outils": {
+  "google": [
+   {
+    "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=…",
+    "octets": 38205,
+    "sha256": "e2463527e4786a228dd9686eeb71683bd96fe1d9aab53ec91c98d0afe73bd128"
+   }
+  ],
+  "app": {
+   "code": 200,
+   "corps": {
+    "mode": "reponse",
+    "texte": "Réponse.",
+    "suites": [],
+    "tourModele": {
+     "role": "model",
+     "parts": [
+      {
+       "text": "Réponse."
+      }
+     ]
+    },
+    "memo": {
+     "d": "AUJOURD-HUI",
+     "q": "Et ce mois-ci ?",
+     "v": "Réponse.",
+     "a": ""
+    },
+    "v": "2026-09-25.1",
+    "appelsGemini": 1
+   },
+   "sse": false,
+   "evenements": null,
+   "entetes": {
+    "Cache-Control": "no-store",
+    "X-Content-Type-Options": "nosniff",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, x-flint-key, x-flint-device, x-flint-ts, x-flint-sig"
+   }
+  }
+ },
+ "v1, briefing et mémoire": {
+  "google": [
+   {
+    "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=…",
+    "octets": 29456,
+    "sha256": "0c94d9a5ebc43200725f0a52fd4baad0cc6c5134823908aeb833b6f0c69f285d"
+   }
+  ],
+  "app": {
+   "code": 200,
+   "corps": {
+    "mode": "reponse",
+    "texte": "**Récup à 74/100 : tu peux charger.**\n\n## Pourquoi\n- **VFC haute** : 71 ms, au-dessus de ta normale.\n\n## À faire\n- Séance soutenue ce soir.\n\nRetenir : objectif — prépare un semi-marathon en mars",
+    "suites": [
+     "Et demain ?",
+     "Mon sommeil ?"
+    ],
+    "tourModele": {
+     "role": "model",
+     "parts": [
+      {
+       "text": "**Récup à 74/100 : tu peux charger.**\n\n## Pourquoi\n- **VFC haute** : 71 ms, au-dessus de ta normale.\n\n## À faire\n- Séance soutenue ce soir.\n\nRetenir : objectif — prépare un semi-marathon en mars\nSuites : Et demain ? | Mon sommeil ?"
+      }
+     ]
+    },
+    "memo": {
+     "d": "AUJOURD-HUI",
+     "q": "Que manger ce soir ?",
+     "v": "Récup à 74/100 : tu peux charger.",
+     "a": "Séance soutenue ce soir."
+    },
+    "v": "2026-09-25.1",
+    "appelsGemini": 1
+   },
+   "sse": false,
+   "evenements": null,
+   "entetes": {
+    "Cache-Control": "no-store",
+    "X-Content-Type-Options": "nosniff",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, x-flint-key, x-flint-device, x-flint-ts, x-flint-sig"
+   }
+  }
+ },
+ "v2, porte ouverte, instantané, JSON": {
+  "google": [
+   {
+    "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=…",
+    "octets": 38134,
+    "sha256": "e09655f9800b1d600ce64cdb8a9ad75eb3acbcf1dc528e8c86d3f1d58fe09c47"
+   }
+  ],
+  "app": {
+   "code": 200,
+   "corps": {
+    "mode": "reponse",
+    "texte": "**Récup à 74/100 : tu peux charger.**\n\n## Pourquoi\n- **VFC haute** : 71 ms, au-dessus de ta normale.\n\n## À faire\n- Séance soutenue ce soir.",
+    "suites": [
+     "Et demain ?",
+     "Mon sommeil ?"
+    ],
+    "tourModele": {
+     "role": "model",
+     "parts": [
+      {
+       "text": "**Récup à 74/100 : tu peux charger.**\n\n## Pourquoi\n- **VFC haute** : 71 ms, au-dessus de ta normale.\n\n## À faire\n- Séance soutenue ce soir.\n\nRetenir : objectif — prépare un semi-marathon en mars\nSuites : Et demain ? | Mon sommeil ?"
+      }
+     ]
+    },
+    "memo": {
+     "d": "2026-9-16",
+     "q": "Je peux charger aujourd'hui ?",
+     "v": "Récup à 74/100 : tu peux charger.",
+     "a": "Séance soutenue ce soir."
+    },
+    "retenir": [
+     {
+      "categorie": "objectif",
+      "fait": "prépare un semi-marathon en mars"
+     }
+    ],
+    "v": "2026-09-25.1",
+    "appelsGemini": 1
+   },
+   "sse": false,
+   "evenements": null,
+   "entetes": {
+    "Cache-Control": "no-store",
+    "X-Content-Type-Options": "nosniff",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, x-flint-key, x-flint-device, x-flint-ts, x-flint-sig"
+   }
+  }
+ },
+ "v2, porte ouverte, instantané, flux": {
+  "google": [
+   {
+    "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:streamGenerateContent?alt=sse&key=…",
+    "octets": 38134,
+    "sha256": "e09655f9800b1d600ce64cdb8a9ad75eb3acbcf1dc528e8c86d3f1d58fe09c47"
+   }
+  ],
+  "app": {
+   "code": 200,
+   "corps": null,
+   "sse": true,
+   "evenements": [
+    {
+     "d": "**Récup à 74/100 : tu peux charger.**\n\n#"
+    },
+    {
+     "d": "# Pourquoi\n- **VFC haute** : 71 ms, au-dessus de ta normale.\n\n## À faire\n- Séance soutenue ce soir.\n"
+    },
+    {
+     "fin": {
+      "mode": "reponse",
+      "texte": "**Récup à 74/100 : tu peux charger.**\n\n## Pourquoi\n- **VFC haute** : 71 ms, au-dessus de ta normale.\n\n## À faire\n- Séance soutenue ce soir.",
+      "suites": [
+       "Et demain ?",
+       "Mon sommeil ?"
+      ],
+      "tourModele": {
+       "role": "model",
+       "parts": [
+        {
+         "text": "**Récup à 74/100 : tu peux charger.**\n\n## Pourquoi\n- **VFC haute** : 71 ms, au-dessus de ta normale.\n\n## À faire\n- Séance soutenue ce soir.\n\nRetenir : objectif — prépare un semi-marathon en mars\nSuites : Et demain ? | Mon sommeil ?"
+        }
+       ]
+      },
+      "memo": {
+       "d": "2026-9-16",
+       "q": "Je peux charger aujourd'hui ?",
+       "v": "Récup à 74/100 : tu peux charger.",
+       "a": "Séance soutenue ce soir."
+      },
+      "retenir": [
+       {
+        "categorie": "objectif",
+        "fait": "prépare un semi-marathon en mars"
+       }
+      ],
+      "v": "2026-09-25.1",
+      "appelsGemini": 1
+     }
+    }
+   ],
+   "entetes": {
+    "Cache-Control": "no-store, no-transform",
+    "X-Content-Type-Options": "nosniff",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, x-flint-key, x-flint-device, x-flint-ts, x-flint-sig",
+    "Content-Type": "text/event-stream; charset=utf-8",
+    "Connection": "keep-alive",
+    "X-Accel-Buffering": "no"
+   }
+  }
+ },
+ "v2, outil getDay demandé (JSON)": {
+  "google": [
+   {
+    "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=…",
+    "octets": 38114,
+    "sha256": "68dc62316b8f19b0af0651b138fe4f0506f1f07aa4246327a61d86339f5fa149"
+   }
+  ],
+  "app": {
+   "code": 200,
+   "corps": {
+    "mode": "outils",
+    "appels": [
+     {
+      "name": "getDay",
+      "args": {
+       "jour": -1
+      }
+     }
+    ],
+    "tourModele": {
+     "role": "model",
+     "parts": [
+      {
+       "functionCall": {
+        "name": "getDay",
+        "args": {
+         "jour": -1
+        }
+       },
+       "thoughtSignature": "sig-d"
+      }
+     ]
+    },
+    "libelles": {
+     "getRecoveryContext": "Analyse de ta récupération…",
+     "getSleepHistory": "Lecture de tes nuits…",
+     "getTrainingLoad": "Calcul de ta charge d'entraînement…",
+     "getActivityHistory": "Relecture de tes séances…",
+     "getNutritionToday": "Lecture de tes repas du jour…",
+     "getUserProfile": "Lecture de ton profil…",
+     "getCoachPreferences": "Lecture de ton profil…",
+     "saveMemoryFact": "Je note ça…",
+     "setCoachPreferences": "J'ajuste mon style…",
+     "getDay": "Lecture de cette journée…",
+     "getHistory": "Relecture de tes derniers jours…",
+     "getTrend": "Lecture de ta tendance…",
+     "getSessions": "Relecture de tes séances…",
+     "getSession": "Analyse de ta séance…",
+     "getDevice": "Vérification de ton bracelet…",
+     "getPastThread": "Relecture de vos échanges…"
+    },
+    "v": "2026-09-25.1",
+    "appelsGemini": 1
+   },
+   "sse": false,
+   "evenements": null,
+   "entetes": {
+    "Cache-Control": "no-store",
+    "X-Content-Type-Options": "nosniff",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, x-flint-key, x-flint-device, x-flint-ts, x-flint-sig"
+   }
+  }
+ },
+ "v2, sans instantané : préchargement getDay": {
+  "google": [],
+  "app": {
+   "code": 200,
+   "corps": {
+    "mode": "outils",
+    "appels": [
+     {
+      "name": "getDay",
+      "args": {
+       "jour": 0
+      }
+     }
+    ],
+    "tourModele": {
+     "role": "model",
+     "parts": [
+      {
+       "text": "⟦flint-pre:v1⟧"
+      },
+      {
+       "functionCall": {
+        "name": "getDay",
+        "args": {
+         "jour": 0
+        }
+       },
+       "thoughtSignature": "skip_thought_signature_validator"
+      }
+     ]
+    },
+    "libelles": {
+     "getRecoveryContext": "Analyse de ta récupération…",
+     "getSleepHistory": "Lecture de tes nuits…",
+     "getTrainingLoad": "Calcul de ta charge d'entraînement…",
+     "getActivityHistory": "Relecture de tes séances…",
+     "getNutritionToday": "Lecture de tes repas du jour…",
+     "getUserProfile": "Lecture de ton profil…",
+     "getCoachPreferences": "Lecture de ton profil…",
+     "saveMemoryFact": "Je note ça…",
+     "setCoachPreferences": "J'ajuste mon style…",
+     "getDay": "Lecture de cette journée…",
+     "getHistory": "Relecture de tes derniers jours…",
+     "getTrend": "Lecture de ta tendance…",
+     "getSessions": "Relecture de tes séances…",
+     "getSession": "Analyse de ta séance…",
+     "getDevice": "Vérification de ton bracelet…",
+     "getPastThread": "Relecture de vos échanges…"
+    },
+    "v": "2026-09-25.1",
+    "appelsGemini": 0
+   },
+   "sse": false,
+   "evenements": null,
+   "entetes": {
+    "Cache-Control": "no-store",
+    "X-Content-Type-Options": "nosniff",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, x-flint-key, x-flint-device, x-flint-ts, x-flint-sig"
+   }
+  }
+ },
+ "v2, deuxième aller après getDay": {
+  "google": [
+   {
+    "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=…",
+    "octets": 38364,
+    "sha256": "d45da15ece95a870637330563604fc4f61cbb5297d3d2a64bb37b6f895f3eb43"
+   }
+  ],
+  "app": {
+   "code": 200,
+   "corps": {
+    "mode": "reponse",
+    "texte": "**Récup à 74/100 : tu peux charger.**\n\n## Pourquoi\n- **VFC haute** : 71 ms, au-dessus de ta normale.\n\n## À faire\n- Séance soutenue ce soir.",
+    "suites": [
+     "Et demain ?",
+     "Mon sommeil ?"
+    ],
+    "tourModele": {
+     "role": "model",
+     "parts": [
+      {
+       "text": "**Récup à 74/100 : tu peux charger.**\n\n## Pourquoi\n- **VFC haute** : 71 ms, au-dessus de ta normale.\n\n## À faire\n- Séance soutenue ce soir.\n\nRetenir : objectif — prépare un semi-marathon en mars\nSuites : Et demain ? | Mon sommeil ?"
+      }
+     ]
+    },
+    "memo": {
+     "d": "2026-9-16",
+     "q": "Et le 10 ?",
+     "v": "Récup à 74/100 : tu peux charger.",
+     "a": "Séance soutenue ce soir."
+    },
+    "retenir": [
+     {
+      "categorie": "objectif",
+      "fait": "prépare un semi-marathon en mars"
+     }
+    ],
+    "v": "2026-09-25.1",
+    "appelsGemini": 1
+   },
+   "sse": false,
+   "evenements": null,
+   "entetes": {
+    "Cache-Control": "no-store",
+    "X-Content-Type-Options": "nosniff",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, x-flint-key, x-flint-device, x-flint-ts, x-flint-sig"
+   }
+  }
+ }
+}
