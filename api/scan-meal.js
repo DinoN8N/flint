@@ -5,6 +5,16 @@
 // Front : POST { image: "<dataURL ou base64>", mime?: "image/jpeg" }
 //      ou POST { text: "2 œufs au plat, une tranche de pain complet, un café au lait" }
 // Retour: { mealName, items:[{name,grams,kcal,prot,carb,fat,confidence}], total:{kcal,prot,carb,fat} }
+//         (+ `kind: "repas"` quand l'app a posé la question de la carte)
+//
+// 16 nov. 2026 — LA CARTE DU RESTAURANT (voir `_scan-carte.js`) :
+//      POST { image, carte: "auto" }   l'app sait montrer une carte : le modèle décide
+//      POST { image, mode: "carte" }   l'app dit que c'est une carte
+// Retour d'une carte : { kind:"carte", menu:{ name?, currency?, positions,
+//      dishes:[{ id, name, description?, section, price?, kcal, kcalMin, kcalMax,
+//                prot, carb, fat, confidence, box?:{x,y,w,h} }] }, mealName, items:[] }
+// Sans `carte` ni `mode`, RIEN ne change : une app déjà posée reçoit le repas
+// d'avant, au mot près (le banc le vérifie).
 
 // 23 sept. 2026 — le premier est celui qu'on veut ; les suivants sont ceux
 // qu'on accepte quand Google le déclare saturé (503 « high demand », mesuré
@@ -12,7 +22,9 @@
 // contraint par `responseSchema`, donc le reste de ce fichier ne change pas.
 // Ce fichier n'importait rien de `_lib.js` (il a son propre rate-limit, plus
 // ancien) : l'aide de réessai est la première chose qu'il partage avec le Coach.
-const { appelerGemini, plafondJournalier, identiteRequete, entetesSurete, egalConstant, sansCle } = require('./_lib');
+const { appelerGemini, plafondJournalier, identiteRequete, ipRequete, deviceIllisible, cors: corsLib,
+        egalConstant, sansCle } = require('./_lib');
+const carte = require('./_scan-carte');
 
 // 24 sept. 2026 — LES BORNES DU SCAN. La photo l'était (3 Mo, ci-dessous),
 // le texte l'était (800 caractères) ; le CORPS, lui, ne l'était pas : un
@@ -136,23 +148,40 @@ Donne un mealName court. Réponds UNIQUEMENT en JSON conforme au schéma.
 
 Description du repas : `;
 
-function cors(res) {
-  // no-store + nosniff sur toute réponse (voir `entetesSurete`, _lib.js).
-  entetesSurete(res);
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-flint-key');
-}
+// ═══ 16 NOV. 2026 — LA PORTE DU SCAN SE FERME COMME CELLE DU COACH ═════════
+//
+// Audit du back-end du 15 nov. (G2 c) : la clé d'app du scan est publique (elle
+// est dans `index.html`, servi à tous), et le scan répondait
+// `Access-Control-Allow-Origin: *`. N'importe quelle page web du monde pouvait
+// donc appeler notre analyse depuis le navigateur de ses visiteurs, au frais du
+// budget Gemini — et la limite par minute ne comptait que l'IP.
+//
+// · PLUS DE `*`. L'app n'en a pas besoin, vérifié dans son code le 16 nov. :
+//   la photo part d'`AnalyseRepasNatif` (URLSession), l'étiquette de
+//   `LectureEtiquette` (URLSession), le texte et la photo du moteur web passent
+//   par le pont natif `flreseau` (`flFetch`, URLSession lui aussi) — aucune de
+//   ces requêtes n'est soumise au CORS. Le moteur servi sur le web appelle
+//   `/api/scan-meal` en chemin RELATIF : même origine, pas de CORS non plus.
+//   Ce que le `*` ouvrait, c'était les navigateurs des autres.
+// · `cors` de `_lib.js` sans origine : no-store, nosniff, et les méthodes.
+const cors = (res) => corsLib(res);
 
-// Rate-limit best-effort en mémoire (par IP, fenêtre glissante). Se réinitialise au cold start.
-// Pour du costaud en prod : passer sur Vercel KV / Upstash Redis.
-// 24 sept. 2026 — c'est maintenant le compteur de `_lib.js` (même fenêtre de
-// 60 s, même plafond de 20 par IP, même verdict) : lui seul est borné en
-// mémoire et en O(max) par appel quand une IP inonde ; la copie locale ne
-// l'était pas. Clé préfixée pour ne pas partager un compteur avec le Coach.
+// Rate-limit best-effort en mémoire (fenêtre glissante de 60 s, `_lib.js`).
+// Se réinitialise au démarrage à froid : un garde-fou de rafale, pas de facture.
+// 16 nov. 2026 — COMPTÉ PAR APPAREIL ET PAR IP, COMME LE COACH. L'appareil
+// (`x-flint-device`, que l'app envoie depuis le 24 sept.) garde la limite fine :
+// vingt photos par minute, et un voisin derrière la même box ne gêne plus
+// personne. L'IP pose le plafond qu'aucun en-tête ne contourne : soixante par
+// minute, quel que soit le device inventé à chaque requête. Sans en-tête,
+// l'identité EST l'IP : vingt par minute, comme avant.
+// Les deux clés sont préfixées `scan` : le Coach a ses propres compteurs (il
+// compte aussi `ip!<adresse>`, à 120), et un scan ne doit pas manger le sien.
 const RL_MAX = 20;
+const RL_MAX_IP = 60;
 const { rateLimited: rateLimitedLib } = require('./_lib');
-function rateLimited(ip) { return rateLimitedLib('scan!' + ip, RL_MAX); }
+function rateLimited(id, ip) {
+  return rateLimitedLib('scan!' + id, RL_MAX, { ip: 'scan:' + ip, maxIP: RL_MAX_IP });
+}
 
 function round(n) { return Math.max(0, Math.round(Number(n) || 0)); }
 
@@ -161,25 +190,42 @@ module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(204).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
 
-  // 1) Rate-limit par IP (cap les abus / le coût)
-  const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || 'unknown';
-  if (rateLimited(ip)) return res.status(429).json({ error: 'Trop de requêtes, réessaie dans une minute.' });
+  // 16 nov. 2026 — un `x-flint-device` PRÉSENT mais hors forme (espace, saut
+  // de ligne, 129 caractères…) est refusé avant tout, comme au Coach : il sert
+  // de clé de compteur, de plafond et de journal. Absent, on continue (l'IP
+  // fait l'identité). L'app envoie un UUID (DeviceIdentite.swift).
+  if (deviceIllisible(req)) return res.status(400).json({ error: 'en-tête x-flint-device illisible' });
 
-  // 23 sept. 2026 — le plafond par personne et par jour (voir `_lib.js`).
-  // Dormant sans magasin partagé. Quand il est allumé : 60 analyses par
-  // appareil et par jour — le natif ne se nomme pas encore (`x-flint-device`
-  // absent d'AnalyseRepasNatif), donc le compte tombe sur l'IP en attendant,
-  // ce qui est plus large, jamais plus étroit, pour une vraie personne.
-  const plafond = await plafondJournalier({ id: identiteRequete(req), portee: 'scan', max: process.env.SCAN_PLAFOND_JOUR || 60 });
-  if (plafond.atteint) {
-    return res.status(429).json({ error: 'Beaucoup d\'analyses aujourd\'hui — on reprend demain.' });
-  }
+  // 1) Rate-limit par appareil ET par IP (voir `rateLimited` plus haut).
+  const ip = ipRequete(req);
+  const id = identiteRequete(req);
+  if (rateLimited(id, ip)) return res.status(429).json({ error: 'Trop de requêtes, réessaie dans une minute.' });
 
   // 2) Secret d'app (si FLINT_APP_SECRET est défini en env, on l'exige). Soft-secret : dissuade l'abus passant.
   // 24 sept. — comparaison à temps constant, comme le Coach (`egalConstant`) ;
   // le comportement « soft-secret » (rien exigé sans variable) ne change pas.
+  // 16 nov. — AVANT le plafond du jour, comme au Coach : une requête sans la clé
+  // ne consomme ni le compteur de quelqu'un ni un aller-retour au magasin.
   const secret = process.env.FLINT_APP_SECRET;
   if (secret && !egalConstant((req.headers['x-flint-key'] || '').toString(), secret)) return res.status(401).json({ error: 'unauthorized' });
+
+  // 3) Le plafond par jour (voir `_lib.js`) — DORMANT sans magasin partagé
+  // (Upstash, deux variables d'env : audit du 15 nov., G2 a).
+  // 16 nov. 2026 — PAR APPAREIL ET PAR IP. Par appareil : 60 analyses par jour,
+  // l'usage d'une personne (le natif se nomme depuis le 24 sept.). Mais
+  // l'appareil est un en-tête que le client choisit : en inventer un par
+  // requête remettait le compteur à zéro. L'IP tient donc un second plafond,
+  // large — 600 par jour, de quoi servir une salle de sport ou une soirée
+  // d'accueil derrière une seule box (G3), pas un script. `SCAN_PLAFOND_JOUR_IP`
+  // le règle ; 0 l'éteint (un opérateur mobile qui partagerait trop ses IP).
+  const plafond = await plafondJournalier({ id, portee: 'scan', max: process.env.SCAN_PLAFOND_JOUR || 60 });
+  const maxIP = process.env.SCAN_PLAFOND_JOUR_IP === undefined ? 600 : Number(process.env.SCAN_PLAFOND_JOUR_IP);
+  // Sans appareil, l'identité EST l'IP : un seul compteur suffit.
+  const plafondIP = id === 'ip:' + ip ? { atteint: false }
+    : await plafondJournalier({ id: 'ip:' + ip, portee: 'scan-ip', max: maxIP });
+  if (plafond.atteint || plafondIP.atteint) {
+    return res.status(429).json({ error: 'Beaucoup d\'analyses aujourd\'hui — on reprend demain.' });
+  }
 
   const key = process.env.GEMINI_API_KEY;
   if (!key) {
@@ -213,7 +259,19 @@ module.exports = async function handler(req, res) {
       return res.status(413).json({ error: 'Photo trop lourde pour être analysée. Réessaie avec une photo plus petite.' });
     }
 
-    let parts;
+    // 16 nov. 2026 — QUELLE QUESTION ON POSE. Trois formes, et la première est
+    // celle de toutes les apps déjà posées, qui ne change pas d'un caractère :
+    //   repas  : le prompt et le schéma d'avant (rien de demandé) ;
+    //   auto   : `carte: "auto"` (ou true) — l'app sait montrer une carte, le
+    //            modèle décide dans le MÊME appel (`promptAuto`) ;
+    //   carte  : `mode: "carte"` — l'app dit que c'est une carte.
+    // Le texte ne connaît que le repas : une carte, ça se photographie.
+    const question = !image ? 'repas'
+      : (body && body.mode === 'carte') ? 'carte'
+      : (body && (body.carte === 'auto' || body.carte === true)) ? 'auto'
+      : 'repas';
+
+    let gReq;
     if (image) {
       // accepte une data URL (data:image/jpeg;base64,xxxx) ou du base64 brut
       let mime = (body && body.mime) || 'image/jpeg';
@@ -221,15 +279,18 @@ module.exports = async function handler(req, res) {
       if (m) { mime = m[1]; image = m[2]; }
       // Une forme fermée, sinon le défaut : `mime` part tel quel à Gemini.
       if (!MIME_FORME.test(String(mime))) mime = 'image/jpeg';
-      parts = [{ text: PROMPT }, { inline_data: { mime_type: mime, data: image } }];
+      const prompt = question === 'carte' ? carte.PROMPT_CARTE : question === 'auto' ? carte.promptAuto(PROMPT) : PROMPT;
+      const schema = question === 'carte' ? carte.SCHEMA_CARTE : question === 'auto' ? carte.schemaAuto(SCHEMA) : SCHEMA;
+      gReq = question === 'repas'
+        ? { contents: [{ parts: [{ text: PROMPT }, { inline_data: { mime_type: mime, data: image } }] }],
+            generationConfig: { responseMimeType: 'application/json', responseSchema: SCHEMA, temperature: 0.1 } }
+        : carte.corpsGemini({ prompt, schema, image, mime });
     } else {
-      parts = [{ text: PROMPT_TEXT + text }];
+      gReq = {
+        contents: [{ parts: [{ text: PROMPT_TEXT + text }] }],
+        generationConfig: { responseMimeType: 'application/json', responseSchema: SCHEMA, temperature: 0.1 }
+      };
     }
-
-    const gReq = {
-      contents: [{ parts }],
-      generationConfig: { responseMimeType: 'application/json', responseSchema: SCHEMA, temperature: 0.1 }
-    };
 
     // 23 sept. 2026 — réessai puis modèle de secours (voir `appelerGemini`
     // dans _lib.js). Trois modèles × deux tentatives × 25 s = 150 s, sous les
@@ -238,7 +299,15 @@ module.exports = async function handler(req, res) {
     // quand TOUT a échoué : « L'analyse est en panne à l'instant », qu'elle
     // sait déjà afficher — plus le statut brut de Gemini, qui n'est pas une
     // phrase pour l'utilisateur.
-    const g = await appelerGemini({ key, modeles: MODELES, corps: gReq, delaiMs: 25000 });
+    // 16 nov. 2026 — UNE CARTE S'ÉCRIT PLUS LONGTEMPS QU'UNE ASSIETTE. Quarante
+    // plats, c'est dix fois le JSON d'un repas : 25 s par essai couperaient une
+    // carte que le modèle était en train d'écrire. Quand la carte est possible
+    // (auto, carte), chaque modèle a donc UN essai de 45 s : trois × 45 = 135 s,
+    // toujours sous les 160 s de la fonction. Sans question de carte, rien ne
+    // change. NON MESURÉ contre le vrai Gemini : à relire au premier vrai essai.
+    const longue = question !== 'repas';
+    const g = await appelerGemini({ key, modeles: MODELES, corps: gReq,
+                                    delaiMs: longue ? 45000 : 25000, tentativesParModele: longue ? 1 : 2 });
     if (!g.ok) {
       console.log(`[scan] échec après ${g.tentatives} tentative(s), dernier statut ${g.status} (${g.modele || '-'})`);
       return res.status(502).json({ error: "L'analyse est en panne à l'instant. Réessaie dans un moment.",
@@ -246,11 +315,33 @@ module.exports = async function handler(req, res) {
     }
     if (g.modele !== MODELES[0]) console.log(`[scan] servi par le modèle de secours ${g.modele} (${g.tentatives} tentatives)`);
     const j = g.json;
-    const txt = j && j.candidates && j.candidates[0] && j.candidates[0].content && j.candidates[0].content.parts && j.candidates[0].content.parts[0] && j.candidates[0].content.parts[0].text;
+    const txt = carte.texteGemini(j);
     if (!txt) return res.status(502).json({ error: 'réponse Gemini vide' });
 
     let data;
     try { data = JSON.parse(txt); } catch (e) { return res.status(502).json({ error: 'JSON Gemini invalide' }); }
+    if (!data || typeof data !== 'object') data = {};
+
+    // 16 nov. 2026 — UNE CARTE ? On croit le `kind` du modèle, sauf quand sa
+    // réponse le contredit : une « carte » sans aucun plat mais avec des
+    // aliments est un repas, un « repas » sans aliment mais avec des plats est
+    // une carte. En mode `carte` (l'app l'a dit), c'est une carte, point.
+    if (question !== 'repas') {
+      const plats = data.menu && Array.isArray(data.menu.dishes) ? data.menu.dishes.length : 0;
+      const aliments = Array.isArray(data.items) ? data.items.length : 0;
+      const estCarte = question === 'carte'
+        || (data.kind === 'carte' && (plats > 0 || aliments === 0))
+        || (data.kind !== 'carte' && aliments === 0 && plats > 0);
+      if (estCarte) {
+        const menu = carte.normaliserCarte(data.menu);
+        console.log(`[scan] carte · ${menu.dishes.length} plat(s) · positions ${menu.positions ? 'gardées' : 'non'}`);
+        // `mealName` et `items: []` : une app qui ne connaîtrait pas `kind`
+        // (aucune ne demande la carte sans le connaître, mais on ne parie pas)
+        // lit « aucun aliment » — une réponse honnête, jamais un faux repas.
+        return res.status(200).json({ kind: 'carte', menu, mealName: menu.name || 'Carte', items: [],
+                                      total: { kcal: 0, prot: 0, carb: 0, fat: 0 }, healthScore: null, healthNote: '' });
+      }
+    }
 
     const items = (data.items || []).map(it => {
       const prot = round(it.prot), carb = round(it.carb), fat = round(it.fat);
@@ -278,7 +369,10 @@ module.exports = async function handler(req, res) {
       : null;
     const healthNote = data.healthNote ? String(data.healthNote).slice(0, 160) : '';
 
-    return res.status(200).json({ mealName: String(data.mealName || 'Mon repas'), items, total, healthScore, healthNote });
+    // `kind` n'est écrit que quand l'app a posé la question de la carte : une
+    // app déjà posée reçoit l'objet d'avant, clé pour clé.
+    const repas = { mealName: String(data.mealName || 'Mon repas'), items, total, healthScore, healthNote };
+    return res.status(200).json(question === 'repas' ? repas : Object.assign({ kind: 'repas' }, repas));
   } catch (e) {
     // 24 sept. — une phrase pour l'écran, le message (tronqué, clé masquée)
     // en `detail` pour lire la panne, jamais la pile ni le message brut.

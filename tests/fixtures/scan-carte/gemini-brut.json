@@ -1,0 +1,255 @@
+{
+ "kind": "carte",
+ "items": [],
+ "menu": {
+  "name": "Le Comptoir du Marché",
+  "currency": "EUR",
+  "dishes": [
+   {
+    "name": "Velouté de potimarron",
+    "section": "entree",
+    "price": 8.5,
+    "kcal": 260,
+    "kcalMin": 200,
+    "kcalMax": 340,
+    "prot": 5,
+    "carb": 26,
+    "fat": 15,
+    "confidence": 0.75,
+    "box": [
+     263,
+     213,
+     297,
+     438
+    ],
+    "description": "crème de noisette"
+   },
+   {
+    "name": "Œuf parfait",
+    "section": "entree",
+    "price": 11,
+    "kcal": 290,
+    "kcalMin": 220,
+    "kcalMax": 380,
+    "prot": 14,
+    "carb": 8,
+    "fat": 22,
+    "confidence": 0.7,
+    "box": [
+     301,
+     211,
+     336,
+     404
+    ],
+    "description": "champignons des bois, mouillettes"
+   },
+   {
+    "name": "Burrata",
+    "section": "entree",
+    "price": 13,
+    "kcal": 420,
+    "kcalMin": 330,
+    "kcalMax": 540,
+    "prot": 20,
+    "carb": 8,
+    "fat": 34,
+    "confidence": 0.75,
+    "box": [
+     340,
+     209,
+     374,
+     360
+    ],
+    "description": "tomates anciennes, basilic"
+   },
+   {
+    "name": "Pavé de saumon",
+    "section": "plat",
+    "price": 21,
+    "kcal": 680,
+    "kcalMin": 560,
+    "kcalMax": 820,
+    "prot": 42,
+    "carb": 58,
+    "fat": 30,
+    "confidence": 0.8,
+    "box": [
+     420,
+     203,
+     456,
+     369
+    ],
+    "description": "riz noir, brocolis rôtis"
+   },
+   {
+    "name": "Suprême de volaille",
+    "section": "plat",
+    "price": 19,
+    "kcal": 700,
+    "kcalMin": 580,
+    "kcalMax": 860,
+    "prot": 48,
+    "carb": 45,
+    "fat": 36,
+    "confidence": 0.8,
+    "box": [
+     459,
+     201,
+     496,
+     404
+    ],
+    "description": "purée maison, jus corsé"
+   },
+   {
+    "name": "Entrecôte 300 g",
+    "section": "plat",
+    "price": 27,
+    "kcal": 1350,
+    "kcalMin": 1100,
+    "kcalMax": 1600,
+    "prot": 70,
+    "carb": 70,
+    "fat": 88,
+    "confidence": 0.75,
+    "box": [
+     501,
+     198,
+     537,
+     376
+    ],
+    "description": "frites maison, sauce béarnaise"
+   },
+   {
+    "name": "Risotto aux cèpes",
+    "section": "plat",
+    "price": 18,
+    "kcal": 820,
+    "kcalMin": 650,
+    "kcalMax": 1000,
+    "prot": 22,
+    "carb": 92,
+    "fat": 38,
+    "confidence": 0.75,
+    "box": [
+     542,
+     196,
+     579,
+     378
+    ],
+    "description": "parmesan affiné"
+   },
+   {
+    "name": "Burger du Comptoir",
+    "section": "plat",
+    "price": 17,
+    "kcal": 1250,
+    "kcalMin": 1050,
+    "kcalMax": 1500,
+    "prot": 52,
+    "carb": 105,
+    "fat": 66,
+    "confidence": 0.75,
+    "box": [
+     583,
+     193,
+     622,
+     405
+    ],
+    "description": "cheddar affiné, frites"
+   },
+   {
+    "name": "Salade César",
+    "section": "plat",
+    "price": 16,
+    "kcal": 640,
+    "kcalMin": 480,
+    "kcalMax": 800,
+    "prot": 38,
+    "carb": 30,
+    "fat": 40,
+    "confidence": 0.7,
+    "box": [
+     627,
+     190,
+     665,
+     369
+    ],
+    "description": "poulet croustillant, parmesan"
+   },
+   {
+    "name": "Dos de cabillaud",
+    "section": "plat",
+    "price": 22,
+    "kcal": 560,
+    "kcalMin": 450,
+    "kcalMax": 700,
+    "prot": 46,
+    "carb": 48,
+    "fat": 18,
+    "confidence": 0.8,
+    "box": [
+     670,
+     187,
+     709,
+     364
+    ],
+    "description": "lentilles vertes du Puy"
+   },
+   {
+    "name": "Tarte Tatin",
+    "section": "dessert",
+    "price": 9,
+    "kcal": 480,
+    "kcalMin": 380,
+    "kcalMax": 600,
+    "prot": 5,
+    "carb": 60,
+    "fat": 24,
+    "confidence": 0.8,
+    "box": [
+     762,
+     182,
+     801,
+     310
+    ],
+    "description": "crème crue"
+   },
+   {
+    "name": "Mousse au chocolat noir",
+    "section": "dessert",
+    "price": 8,
+    "kcal": 380,
+    "kcalMin": 300,
+    "kcalMax": 480,
+    "prot": 7,
+    "carb": 32,
+    "fat": 25,
+    "confidence": 0.8,
+    "box": [
+     805,
+     180,
+     830,
+     441
+    ]
+   },
+   {
+    "name": "Salade de fruits frais",
+    "section": "dessert",
+    "price": 7,
+    "kcal": 140,
+    "kcalMin": 100,
+    "kcalMax": 190,
+    "prot": 2,
+    "carb": 32,
+    "fat": 1,
+    "confidence": 0.8,
+    "box": [
+     834,
+     178,
+     858,
+     400
+    ]
+   }
+  ]
+ }
+}
