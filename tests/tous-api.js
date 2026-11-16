@@ -39,6 +39,7 @@ const BANCS = [
   ['test-coach-v3.js',        'le Coach v3 : étapes annoncées, blocs visuels, phrase de rédaction'],
   ['test-coach-or-gemini.js', 'le Coach sans COACH_FOURNISSEUR : Gemini à l\'octet contre le code d\'avant Claude'],
   ['test-coach-chiffre.js',   '« touche un chiffre » : trois phrases, table fermée, préfixe du cache intact'],
+  ['test-coach-battement.js', 'le flux du Coach sur Claude bat toutes les 15 s pendant que le modèle réfléchit (l\'app abandonne à 45 s de silence)'],
   ['test-essai-serveur.js',   'l\'essai du jour de la bascule (outils/essai-serveur.js), joué à blanc'],
 ];
 
