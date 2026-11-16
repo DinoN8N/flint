@@ -26,7 +26,9 @@ Le principe est simple :
       `https://flint-demo-eta.vercel.app`.
 - [ ] **La branche à déployer est prête.** Elle doit contenir trois choses :
       - le serveur Claude (`scan-claude-16nov`, commit dd8554d) ;
-      - l'essai (`essai-deploiement-17nov`) ;
+      - la branche `essai-deploiement-17nov` : l'essai, plus deux ajouts au
+        serveur, le battement du Coach (056f1a9) et le repli du scan
+        (d6c5d1f) ;
       - la correction du manuel du Coach (réécrit sur une autre branche la
         nuit du 17 nov.).
 
@@ -206,7 +208,8 @@ La dernière ligne résume en une phrase :
 | « HTTP 502 … authentication_error » | Clé fausse ou révoquée | Recoller la clé, refaire § 3 |
 | « HTTP 500 configuration serveur incomplète » | `ANTHROPIC_API_KEY` absente de la Preview | Cocher « Preview » sur la variable, refaire § 3 |
 | « signature refusée » | `COACH_SIG_SECRET` du Terminal ≠ celle du serveur | Recopier la bonne valeur |
-| « un silence de NN s » | Claude a réfléchi plus de 45 s sans rien envoyer : l'app aurait dit « Flint met trop de temps » | Ne pas basculer le Coach. Voir le rapport de la nuit du 17 nov. (battement du flux) |
+| « un silence de NN s » | Plus de 45 s sans un octet : l'app aurait dit « Flint met trop de temps ». Depuis le 17 nov. (056f1a9), le serveur envoie un battement toutes les 15 s pendant que Claude réfléchit : ce ❌ ne devrait plus arriver | Vérifier que la branche déployée contient 056f1a9. Sinon, ne pas basculer le Coach |
+| « servi par Gemini en REPLI » (scan) | Les crédits Claude sont vides : le scan marche quand même, mais sur Gemini | Vérifier le crédit des deux comptes avant de basculer |
 | « déployer CHANGERAIT l'app de tout le monde » | Le web OTA de la Preview n'est pas celui de la production | Ne pas déployer : la branche n'est pas partie du bon point |
 
 ### Regarder aussi le journal (une minute)
@@ -215,6 +218,7 @@ Tableau de bord → la Preview → **Logs**. On doit voir des lignes comme :
 
 - `[coach] mode=reponse … fournisseur=anthropic modele=claude-sonnet-5-5 … cle=1`
 - `[scan] claude · repas · …`
+- jamais, le jour de la bascule : `[scan] crédit Claude épuisé, servi par Gemini`
 
 `cle=1` veut dire que c'est la clé de Dino qui a payé, `cle=2` celle de Félix.
 Aucune ligne ne doit contenir une clé.
@@ -282,11 +286,16 @@ variable, c'est Gemini, à l'octet près comme avant : les bancs
 variable sans « Redeploy » ne change rien. Il faut aussi que `GEMINI_API_KEY`
 soit restée en place.
 
-**Quand les DEUX crédits Claude sont vides**, le serveur ne repasse PAS seul
-sur Gemini. Le Coach et le scan répondent « indisponible » (502), et le
-journal écrit `clé1:crédit-épuisé clé2:crédit-épuisé`. Le geste est alors le
-B ci-dessus. (Un repli automatique est proposé dans le rapport de la nuit du
-17 nov. ; il n'est pas codé.)
+**Quand les DEUX crédits Claude sont vides** :
+
+- **le scan** repasse SEUL sur Gemini, requête par requête, si
+  `GEMINI_API_KEY` est posée (depuis d6c5d1f). L'app reçoit la même réponse
+  qu'avec Gemini. Le journal écrit `[scan] crédit Claude épuisé, servi par
+  Gemini`. Seul un crédit vide sur TOUTES les clés déclenche ce repli : une
+  panne ou une erreur de Claude reste une panne.
+- **le Coach**, lui, ne se replie pas. Il répond « indisponible » (502), et le
+  journal écrit `clé1:crédit-épuisé clé2:crédit-épuisé`. Le geste est alors
+  le B ci-dessus, pour `COACH_FOURNISSEUR` seulement.
 
 ## 8. Ce que la bascule coûte
 
@@ -303,6 +312,8 @@ et environ 1 500 écrits (note `flint-coach-claude-credits-ultra`).
 | Claude Haiku 5.5 | ≈ 0,2 centime | ≈ 0,1 centime |
 | Gemini (aujourd'hui) | ≈ 1 centime, mais offre gratuite limitée (≈ 20 demandes par jour pour tout le monde) | idem |
 
+- Quand les deux crédits sont vides, les photos passent sur Gemini (offre
+  gratuite limitée) jusqu'au mois suivant. Le Coach, lui, s'arrête (§ 7).
 - Les 200 $ de crédit Ultra d'un compte font environ 8 000 questions Sonnet
   par mois.
 - La clé de Félix prend le relais quand celle de Dino est vide : environ
