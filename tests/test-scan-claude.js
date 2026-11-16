@@ -399,8 +399,12 @@ console.log('\n═══ ⑥ DEUX CLÉS, UN RELAIS — ET AUCUNE CLÉ QUI SORT �
   v('la clé épuisée est mise de côté : l\'analyse suivante part directement avec la seconde', recus.length === 1 && recus[0].entetes['x-api-key'] === CLE2);
   CL._oublierClesEpuisees();
   fauxClaude([{ statut: 400, type: 'invalid_request_error', erreur: VIDE }]);
+  // 17 nov. — avec GEMINI_API_KEY, les deux crédits épuisés retombent sur
+  // Gemini (test-scan-repli.js) ; SANS elle, c'est toujours le 502 d'avant.
+  delete process.env.GEMINI_API_KEY;
   r = await jouer({ image: JPEG_900 });
-  v('les DEUX crédits épuisés → 502, la phrase d\'avant, et aucune clé dans la réponse',
+  process.env.GEMINI_API_KEY = CLE_G;
+  v('les DEUX crédits épuisés, sans GEMINI_API_KEY → 502, la phrase d\'avant, et aucune clé dans la réponse',
     recus.length === 2 && r.res.code === 502 && r.res.corps.error.startsWith("L'analyse est en panne") && !secret(r.res.corps) && !secret(r.journal));
   CL._oublierClesEpuisees();
   fauxClaude([{ statut: 400, type: 'invalid_request_error', erreur: 'max_tokens: too large' }]);

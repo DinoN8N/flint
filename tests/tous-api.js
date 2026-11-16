@@ -35,6 +35,7 @@ const BANCS = [
   // 17 nov. 2026 — quatre bancs du Coach écrits les 15-16 nov. qu'aucun lanceur
   // ne nommait : deployer.sh joue CE fichier, donc le Coach sur Claude partait
   // en production sans que son banc soit joué.
+  ['test-scan-repli.js',      'le scan : deux crédits Claude vides → Gemini sert, à l\'octet ; rien d\'autre ne déclenche le repli'],
   ['test-coach-claude.js',    'le Coach sur Claude : requête, messages, outils, flux, relais de clé, pannes'],
   ['test-coach-v3.js',        'le Coach v3 : étapes annoncées, blocs visuels, phrase de rédaction'],
   ['test-coach-or-gemini.js', 'le Coach sans COACH_FOURNISSEUR : Gemini à l\'octet contre le code d\'avant Claude'],

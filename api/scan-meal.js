@@ -327,9 +327,12 @@ module.exports = async function handler(req, res) {
   // l'identique. `SCAN_FOURNISSEUR=anthropic` (+ ANTHROPIC_API_KEY, et
   // facultativement ANTHROPIC_API_KEY_2 en relais) = Claude.
   const claude = scanClaude.configScan();
-  const key = claude ? claude.cle : process.env.GEMINI_API_KEY;
-  // Les clés à masquer dans tout ce qui sort (journal, `detail`).
-  const masquer = (t) => (claude ? claude.cles : [key]).reduce((s, k) => sansCle(s, k), String(t));
+  // `let` : le repli sur Gemini (crédit Claude épuisé, plus bas) la remplace.
+  let key = claude ? claude.cle : process.env.GEMINI_API_KEY;
+  // Les clés à masquer dans tout ce qui sort (journal, `detail`) — Gemini
+  // compris quand Claude sert, puisqu'il peut prendre le relais.
+  const masquer = (t) => (claude ? claude.cles.concat(process.env.GEMINI_API_KEY || []) : [key])
+    .reduce((s, k) => sansCle(s, k), String(t));
   if (!key) {
     // Le NOM de la variable reste au journal ; la réponse ne dit plus quelle
     // pièce manque (24 sept.). Même statut qu'avant.
@@ -399,7 +402,19 @@ module.exports = async function handler(req, res) {
       const a = await scanClaude.analyser({ config: claude, quoi,
         prompts: { repas: PROMPT, texte: PROMPT_TEXT, label: PROMPT_LABEL },
         schemas: { repas: SCHEMA, label: SCHEMA_LABEL }, image: img, texte: text });
-      if (!a.ok) {
+      // ═══ 17 nov. 2026 — LE REPLI : CRÉDIT CLAUDE ÉPUISÉ → GEMINI ═════════
+      // Seulement quand TOUTES les clés Claude ont dit « plus de crédit »
+      // (`creditEpuise`), et seulement si GEMINI_API_KEY est posée. Le scan est
+      // sans état : la même requête repart par le chemin Gemini juste en
+      // dessous, inchangé, et l'app reçoit la même forme de réponse. Une panne,
+      // un 400, un délai, une réponse illisible restent ce qu'ils sont (502).
+      // L'en-tête X-Flint-Fournisseur (que l'app ne lit pas) le dit à l'essai
+      // du serveur ; le corps ne change pas.
+      if (!a.ok && a.creditEpuise && process.env.GEMINI_API_KEY) {
+        console.log(`[scan] crédit Claude épuisé, servi par Gemini (${(a.parcours || []).join(' ') || '-'})`);
+        res.setHeader('X-Flint-Fournisseur', 'gemini-repli');
+        key = process.env.GEMINI_API_KEY;
+      } else if (!a.ok) {
         // La phrase d'avant, que l'app sait afficher ; le statut et la raison
         // pour qui lit la panne (jamais la clé : `masquer`).
         const detail = masquer(a.detail || '');
@@ -408,8 +423,10 @@ module.exports = async function handler(req, res) {
           : `[scan] claude · échec après ${a.tentatives || 0} tentative(s), dernier statut ${a.status} (${(a.parcours || []).join(' ') || '-'})`);
         return res.status(502).json({ error: "L'analyse est en panne à l'instant. Réessaie dans un moment.",
                                       fournisseur: 'anthropic', statut: a.status, detail });
+      } else {
+        res.setHeader('X-Flint-Fournisseur', 'anthropic');
+        return rendreAnalyse(res, a.data, { etiquette, question });
       }
-      return rendreAnalyse(res, a.data, { etiquette, question });
     }
 
     let gReq;

@@ -440,7 +440,11 @@ function ligneJournal(quoi, r) {
 async function analyser({ config, quoi, prompts, schemas, image, texte }) {
   const corps = corpsScan({ config, quoi, prompts, schemas, image, texte });
   const r = await CL.appelerClaude({ config, corps, delaiMs: DELAIS[quoi] || DELAIS.repas, tentatives: 2 });
-  if (!r.ok) return { ok: false, status: r.status, detail: r.detail, parcours: r.parcours || [], tentatives: r.tentatives, cleN: r.cleN };
+  // `creditEpuise` : vrai seulement quand TOUTES les clés ont dit « plus de
+  // crédit » (le relais `parCle` ne s'arrête sur une clé épuisée que s'il n'en
+  // reste aucune) ; scan-meal.js s'en sert pour le repli sur Gemini.
+  if (!r.ok) return { ok: false, status: r.status, detail: r.detail, parcours: r.parcours || [], tentatives: r.tentatives, cleN: r.cleN,
+                      creditEpuise: r.creditEpuise === true };
   console.log(ligneJournal(quoi, r));
   const lu = lireReponse(r.json);
   if (lu.panne) return { ok: false, illisible: true, status: 200, detail: lu.panne, tentatives: r.tentatives, cleN: r.cleN };
