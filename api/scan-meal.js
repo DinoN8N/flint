@@ -25,6 +25,11 @@
 const { appelerGemini, plafondJournalier, identiteRequete, ipRequete, deviceIllisible, cors: corsLib,
         egalConstant, sansCle } = require('./_lib');
 const carte = require('./_scan-carte');
+// 16 nov. 2026 — le second fournisseur, derrière `SCAN_FOURNISSEUR=anthropic`
+// et SEULEMENT derrière elle (voir `_scan-claude.js`). Sans la variable, ce
+// fichier rend à Gemini et à l'app exactement ce qu'il rendait (le banc
+// tests/test-scan-or-gemini.js le compare à l'octet au code d'avant).
+const scanClaude = require('./_scan-claude');
 
 // 24 sept. 2026 — LES BORNES DU SCAN. La photo l'était (3 Mo, ci-dessous),
 // le texte l'était (800 caractères) ; le CORPS, lui, ne l'était pas : un
@@ -312,11 +317,17 @@ module.exports = async function handler(req, res) {
     return res.status(429).json({ error: 'Beaucoup d\'analyses aujourd\'hui — on reprend demain.' });
   }
 
-  const key = process.env.GEMINI_API_KEY;
+  // 16 nov. 2026 — QUEL FOURNISSEUR. `null` = Gemini, la production, à
+  // l'identique. `SCAN_FOURNISSEUR=anthropic` (+ ANTHROPIC_API_KEY, et
+  // facultativement ANTHROPIC_API_KEY_2 en relais) = Claude.
+  const claude = scanClaude.configScan();
+  const key = claude ? claude.cle : process.env.GEMINI_API_KEY;
+  // Les clés à masquer dans tout ce qui sort (journal, `detail`).
+  const masquer = (t) => (claude ? claude.cles : [key]).reduce((s, k) => sansCle(s, k), String(t));
   if (!key) {
     // Le NOM de la variable reste au journal ; la réponse ne dit plus quelle
     // pièce manque (24 sept.). Même statut qu'avant.
-    console.log('[scan] GEMINI_API_KEY absente — configuration serveur incomplète');
+    console.log('[scan] ' + (claude ? 'ANTHROPIC_API_KEY' : 'GEMINI_API_KEY') + ' absente — configuration serveur incomplète');
     return res.status(500).json({ error: 'configuration serveur incomplète' });
   }
 
@@ -358,6 +369,42 @@ module.exports = async function handler(req, res) {
       : (body && body.mode === 'carte') ? 'carte'
       : (body && (body.carte === 'auto' || body.carte === true)) ? 'auto'
       : 'repas';
+
+    // ═══ 16 NOV. 2026 — CLAUDE ════════════════════════════════════════════
+    // Les mêmes questions, les mêmes prompts, et la même suite (`rendreAnalyse`)
+    // que Gemini. Ce qui change est dans `_scan-claude.js`.
+    if (claude) {
+      let img = null;
+      if (image) {
+        let brut = typeof image === 'string' ? image : '';
+        const m = /^data:([^;]+);base64,(.*)$/s.exec(brut);
+        if (m) brut = m[2];
+        brut = brut.replace(/\s+/g, '');
+        // Le format se LIT dans le fichier : `mime` est ce que l'appelant
+        // annonce, l'API refuserait un JPEG annoncé PNG.
+        const lu = scanClaude.lireImage(brut);
+        if (!lu) {
+          return res.status(415).json({ error: 'Cette photo n\'est pas dans un format lisible. Réessaie avec une photo JPEG ou PNG.' });
+        }
+        img = { media: lu.media, data: brut,
+                vue: lu.largeur ? scanClaude.tailleVue(lu.largeur, lu.hauteur, claude.modele) : null };
+      }
+      const quoi = !image ? 'texte' : etiquette ? 'etiquette' : question;
+      const a = await scanClaude.analyser({ config: claude, quoi,
+        prompts: { repas: PROMPT, texte: PROMPT_TEXT, label: PROMPT_LABEL },
+        schemas: { repas: SCHEMA, label: SCHEMA_LABEL }, image: img, texte: text });
+      if (!a.ok) {
+        // La phrase d'avant, que l'app sait afficher ; le statut et la raison
+        // pour qui lit la panne (jamais la clé : `masquer`).
+        const detail = masquer(a.detail || '');
+        console.log(a.illisible
+          ? `[scan] claude · réponse illisible : ${detail}`
+          : `[scan] claude · échec après ${a.tentatives || 0} tentative(s), dernier statut ${a.status} (${(a.parcours || []).join(' ') || '-'})`);
+        return res.status(502).json({ error: "L'analyse est en panne à l'instant. Réessaie dans un moment.",
+                                      fournisseur: 'anthropic', statut: a.status, detail });
+      }
+      return rendreAnalyse(res, a.data, { etiquette, question });
+    }
 
     let gReq;
     if (image) {
@@ -415,6 +462,25 @@ module.exports = async function handler(req, res) {
     let data;
     try { data = JSON.parse(txt); } catch (e) { return res.status(502).json({ error: 'JSON Gemini invalide' }); }
     if (!data || typeof data !== 'object') data = {};
+    return rendreAnalyse(res, data, { etiquette, question });
+  } catch (e) {
+    // 24 sept. — une phrase pour l'écran, le message (tronqué, clé masquée)
+    // en `detail` pour lire la panne, jamais la pile ni le message brut.
+    // 16 nov. — `masquer` : la clé Gemini, ou les DEUX clés Anthropic.
+    const message = masquer(String((e && e.message) || e).slice(0, 120));
+    console.log('[scan] panne ' + message);
+    return res.status(500).json({ error: "L'analyse a rencontré une erreur. Réessaie dans un moment.", detail: message });
+  }
+}
+
+/**
+ * ═══ 16 NOV. 2026 — CE QUI SORT VERS L'APP, QUEL QUE SOIT LE MODÈLE ═════════
+ * L'objet lu (Gemini ou Claude) devient la réponse que l'app lit déjà :
+ * l'étiquette bornée, la carte normalisée, ou le repas recalé sur ses macros.
+ * Ces lignes étaient dans le handler, au mot près ; elles en sortent pour
+ * servir aux deux fournisseurs.
+ */
+function rendreAnalyse(res, data, { etiquette, question }) {
     if (etiquette) return res.status(200).json(normaliserEtiquette(data));
 
     // 16 nov. 2026 — UNE CARTE ? On croit le `kind` du modèle, sauf quand sa
@@ -468,12 +534,5 @@ module.exports = async function handler(req, res) {
     // app déjà posée reçoit l'objet d'avant, clé pour clé.
     const repas = { mealName: String(data.mealName || 'Mon repas'), items, total, healthScore, healthNote };
     return res.status(200).json(question === 'repas' ? repas : Object.assign({ kind: 'repas' }, repas));
-  } catch (e) {
-    // 24 sept. — une phrase pour l'écran, le message (tronqué, clé masquée)
-    // en `detail` pour lire la panne, jamais la pile ni le message brut.
-    const message = sansCle(String((e && e.message) || e).slice(0, 120), key);
-    console.log('[scan] panne ' + message);
-    return res.status(500).json({ error: "L'analyse a rencontré une erreur. Réessaie dans un moment.", detail: message });
-  }
 }
 module.exports.normaliserEtiquette = normaliserEtiquette;

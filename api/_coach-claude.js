@@ -300,10 +300,15 @@ function corpsClaude({ config, prefixe, queue, outils, messages, sansOutils, flu
   return corps;
 }
 
+// 16 nov. 2026 — l'analyse de repas (`_scan-claude.js`) passe par ici aussi.
+// Elle n'envoie pas `thinking.block_binding` (une question, aucun historique) :
+// sa configuration porte `liaison: false`, et l'en-tête bêta de la liaison
+// n'est alors pas envoyé. Le Coach ne pose pas ce champ : rien ne change pour lui.
 function entetes(config) {
-  const betas = [BETA_LIAISON].concat(config.secours ? [BETA_SECOURS] : []);
-  return { 'content-type': 'application/json', 'x-api-key': config.cle, 'anthropic-version': VERSION_API,
-           'anthropic-beta': betas.join(',') };
+  const betas = (config.liaison === false ? [] : [BETA_LIAISON]).concat(config.secours ? [BETA_SECOURS] : []);
+  const e = { 'content-type': 'application/json', 'x-api-key': config.cle, 'anthropic-version': VERSION_API };
+  if (betas.length) e['anthropic-beta'] = betas.join(',');
+  return e;
 }
 
 /** Le message d'erreur de l'API, court, sans la clé. */
@@ -589,5 +594,6 @@ module.exports = {
   appelerClaude, ouvrirClaudeFlux, evenementsClaude, assembleur, lireMessage, creditEpuise, ordreDesCles,
   _oublierClesEpuisees: () => clesEpuisees.clear(),
   tourModeleOutils, appelsDe, contenuAEcho, encoderContenu, decoderContenu, usageJournal,
-  URL_MESSAGES, VERSION_API, MODELE_DEFAUT, BETA_SECOURS, BETA_LIAISON, PREFIXE_SIG
+  URL_MESSAGES, VERSION_API, MODELE_DEFAUT, BETA_SECOURS, BETA_LIAISON, PREFIXE_SIG,
+  EFFORTS, MODELES_AVEC_SECOURS
 };
