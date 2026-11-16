@@ -5,6 +5,9 @@
     },
     "api/coach.js": {
       "maxDuration": 90
+    },
+    "api/apple-revocation.js": {
+      "maxDuration": 20
     }
   }
 }
