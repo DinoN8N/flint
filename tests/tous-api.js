@@ -26,6 +26,7 @@ const BANCS = [
   ['test-coach-scenarios.js', 'des conversations entières, de la question au rangement'],
   ['test-coach-flux.js',      'la diffusion par jeton : SSE recollé, « Suites » retenue, repli en JSON'],
   ['test-coach-securite.js',  'les 5 000 : rejeu, taille, device, erreurs muettes, en-têtes, bornes, clé'],
+  ['test-apple-revocation.js', 'la suppression d\'un compte Apple : JWT ES256, échange, révocation, pannes muettes, rien de secret au journal'],
 ];
 
 let rouges = 0;
