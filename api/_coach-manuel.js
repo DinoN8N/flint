@@ -112,7 +112,7 @@ const ECRANS = `ÉCRANS — OÙ C'EST DANS L'APP
 - Un chiffre : garder le doigt dessus une demi-seconde te pose la question.
 - Un repas : appui long (« Modifier », « Supprimer »), glisser vers la gauche, ou l'ouvrir puis « … ». « REPRENDRE UN REPAS » le remet d'un toucher.
 - Une séance de Ma journée : appui long (« Modifier », « Supprimer ») ou l'ouvrir puis « … » ; AUTO se nomme en la touchant (« Quelle activité faisiez-vous ? »). La finir : le doigt une seconde sur le carré rouge. Muscu : « Suivre un exercice », puis « Série finie » lance le repos. Écran verrouillé : la carte de la séance (chrono, pouls ; course : km, allure ; muscu : série, repos) ; absente → Réglages › FLINT › Activités en direct.
-- Charge 7/28 : aucun écran, tu es le seul à la donner. Quand tu cites un chiffre, dis où il se voit.`;
+- Charge 7/28 : aucun écran, tu es le seul à la donner. Règle : quand tu cites un chiffre, dis en une courte phrase où la personne le voit.`;
 
 // Les clés de l'instantané (flCoachInstantane, flint-coach.js) et de sa partie
 // native (PontCoachNatif.swift), avec leur unité : c'est ce glossaire qui évite
