@@ -1,0 +1,1788 @@
+{
+ "ecritPar": "code d'avant Claude (6977962)",
+ "scenarios": {
+  "repas photo (data URL jpeg)": {
+   "google": [
+    {
+     "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=…",
+     "octets": 3504,
+     "sha256": "0e49a9c64e6ce502464ca0b1c6598f676561479625900b55f50e61d70f1448b8"
+    }
+   ],
+   "app": {
+    "statut": 200,
+    "entetes": {
+     "Cache-Control": "no-store",
+     "X-Content-Type-Options": "nosniff",
+     "Access-Control-Allow-Methods": "POST, OPTIONS",
+     "Access-Control-Allow-Headers": "Content-Type, x-flint-key, x-flint-device, x-flint-ts, x-flint-sig"
+    },
+    "corps": {
+     "mealName": "Bowl",
+     "items": [
+      {
+       "name": "Riz",
+       "grams": 200,
+       "kcal": 260,
+       "prot": 5,
+       "carb": 57,
+       "fat": 1,
+       "confidence": 0.8
+      },
+      {
+       "name": "Poulet",
+       "grams": 150,
+       "kcal": 225,
+       "prot": 45,
+       "carb": 0,
+       "fat": 5,
+       "confidence": 0.7
+      }
+     ],
+     "total": {
+      "kcal": 485,
+      "prot": 50,
+      "carb": 57,
+      "fat": 6
+     },
+     "healthScore": 8,
+     "healthNote": "Bien."
+    }
+   },
+   "journal": []
+  },
+  "repas photo (base64 brut + mime png)": {
+   "google": [
+    {
+     "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=…",
+     "octets": 3499,
+     "sha256": "a1cca91c0598fc291cff2da2e3841bb007677377cf52df7d6f44caa4b367ad75"
+    }
+   ],
+   "app": {
+    "statut": 200,
+    "entetes": {
+     "Cache-Control": "no-store",
+     "X-Content-Type-Options": "nosniff",
+     "Access-Control-Allow-Methods": "POST, OPTIONS",
+     "Access-Control-Allow-Headers": "Content-Type, x-flint-key, x-flint-device, x-flint-ts, x-flint-sig"
+    },
+    "corps": {
+     "mealName": "Bowl",
+     "items": [
+      {
+       "name": "Riz",
+       "grams": 200,
+       "kcal": 260,
+       "prot": 5,
+       "carb": 57,
+       "fat": 1,
+       "confidence": 0.8
+      },
+      {
+       "name": "Poulet",
+       "grams": 150,
+       "kcal": 225,
+       "prot": 45,
+       "carb": 0,
+       "fat": 5,
+       "confidence": 0.7
+      }
+     ],
+     "total": {
+      "kcal": 485,
+      "prot": 50,
+      "carb": 57,
+      "fat": 6
+     },
+     "healthScore": 8,
+     "healthNote": "Bien."
+    }
+   },
+   "journal": []
+  },
+  "repas photo, mime hors forme → jpeg": {
+   "google": [
+    {
+     "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=…",
+     "octets": 3500,
+     "sha256": "f73ad65653db62eba42eb4a544a28bfaf80d6f25afebbb89f7159d4d34354067"
+    }
+   ],
+   "app": {
+    "statut": 200,
+    "entetes": {
+     "Cache-Control": "no-store",
+     "X-Content-Type-Options": "nosniff",
+     "Access-Control-Allow-Methods": "POST, OPTIONS",
+     "Access-Control-Allow-Headers": "Content-Type, x-flint-key, x-flint-device, x-flint-ts, x-flint-sig"
+    },
+    "corps": {
+     "mealName": "Bowl",
+     "items": [
+      {
+       "name": "Riz",
+       "grams": 200,
+       "kcal": 260,
+       "prot": 5,
+       "carb": 57,
+       "fat": 1,
+       "confidence": 0.8
+      },
+      {
+       "name": "Poulet",
+       "grams": 150,
+       "kcal": 225,
+       "prot": 45,
+       "carb": 0,
+       "fat": 5,
+       "confidence": 0.7
+      }
+     ],
+     "total": {
+      "kcal": 485,
+      "prot": 50,
+      "carb": 57,
+      "fat": 6
+     },
+     "healthScore": 8,
+     "healthNote": "Bien."
+    }
+   },
+   "journal": []
+  },
+  "repas photo, note absente": {
+   "google": [
+    {
+     "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=…",
+     "octets": 3504,
+     "sha256": "0e49a9c64e6ce502464ca0b1c6598f676561479625900b55f50e61d70f1448b8"
+    }
+   ],
+   "app": {
+    "statut": 200,
+    "entetes": {
+     "Cache-Control": "no-store",
+     "X-Content-Type-Options": "nosniff",
+     "Access-Control-Allow-Methods": "POST, OPTIONS",
+     "Access-Control-Allow-Headers": "Content-Type, x-flint-key, x-flint-device, x-flint-ts, x-flint-sig"
+    },
+    "corps": {
+     "mealName": "X",
+     "items": [],
+     "total": {
+      "kcal": 0,
+      "prot": 0,
+      "carb": 0,
+      "fat": 0
+     },
+     "healthScore": null,
+     "healthNote": ""
+    }
+   },
+   "journal": []
+  },
+  "repas texte": {
+   "google": [
+    {
+     "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=…",
+     "octets": 3057,
+     "sha256": "3e94f807ea0135fa2bcc1119779120f922a2c1d98b0a5d019981496fc895ca81"
+    }
+   ],
+   "app": {
+    "statut": 200,
+    "entetes": {
+     "Cache-Control": "no-store",
+     "X-Content-Type-Options": "nosniff",
+     "Access-Control-Allow-Methods": "POST, OPTIONS",
+     "Access-Control-Allow-Headers": "Content-Type, x-flint-key, x-flint-device, x-flint-ts, x-flint-sig"
+    },
+    "corps": {
+     "mealName": "Bowl",
+     "items": [
+      {
+       "name": "Riz",
+       "grams": 200,
+       "kcal": 260,
+       "prot": 5,
+       "carb": 57,
+       "fat": 1,
+       "confidence": 0.8
+      },
+      {
+       "name": "Poulet",
+       "grams": 150,
+       "kcal": 225,
+       "prot": 45,
+       "carb": 0,
+       "fat": 5,
+       "confidence": 0.7
+      }
+     ],
+     "total": {
+      "kcal": 485,
+      "prot": 50,
+      "carb": 57,
+      "fat": 6
+     },
+     "healthScore": 8,
+     "healthNote": "Bien."
+    }
+   },
+   "journal": []
+  },
+  "repas texte + carte auto (reste un repas)": {
+   "google": [
+    {
+     "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=…",
+     "octets": 3024,
+     "sha256": "f35072db9e8208e465a323242b54cf9d2ad0178c6d5a2febdcbdd2595ae95ba3"
+    }
+   ],
+   "app": {
+    "statut": 200,
+    "entetes": {
+     "Cache-Control": "no-store",
+     "X-Content-Type-Options": "nosniff",
+     "Access-Control-Allow-Methods": "POST, OPTIONS",
+     "Access-Control-Allow-Headers": "Content-Type, x-flint-key, x-flint-device, x-flint-ts, x-flint-sig"
+    },
+    "corps": {
+     "mealName": "Bowl",
+     "items": [
+      {
+       "name": "Riz",
+       "grams": 200,
+       "kcal": 260,
+       "prot": 5,
+       "carb": 57,
+       "fat": 1,
+       "confidence": 0.8
+      },
+      {
+       "name": "Poulet",
+       "grams": 150,
+       "kcal": 225,
+       "prot": 45,
+       "carb": 0,
+       "fat": 5,
+       "confidence": 0.7
+      }
+     ],
+     "total": {
+      "kcal": 485,
+      "prot": 50,
+      "carb": 57,
+      "fat": 6
+     },
+     "healthScore": 8,
+     "healthNote": "Bien."
+    }
+   },
+   "journal": []
+  },
+  "étiquette": {
+   "google": [
+    {
+     "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=…",
+     "octets": 2010,
+     "sha256": "537228a68734584592fd80b6642ebf0d696a68debecf1071633cf3997af86a16"
+    }
+   ],
+   "app": {
+    "statut": 200,
+    "entetes": {
+     "Cache-Control": "no-store",
+     "X-Content-Type-Options": "nosniff",
+     "Access-Control-Allow-Methods": "POST, OPTIONS",
+     "Access-Control-Allow-Headers": "Content-Type, x-flint-key, x-flint-device, x-flint-ts, x-flint-sig"
+    },
+    "corps": {
+     "lisible": true,
+     "name": "Céréales",
+     "brand": "Marque",
+     "servingG": 30,
+     "per100": {
+      "kcal": 389,
+      "prot": 8.2,
+      "carb": 72.5,
+      "sugars": 21,
+      "fat": 5.6,
+      "satfat": 1.1,
+      "fiber": 6,
+      "salt": 0.7,
+      "caffeine": null
+     }
+    }
+   },
+   "journal": []
+  },
+  "étiquette illisible": {
+   "google": [
+    {
+     "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=…",
+     "octets": 2010,
+     "sha256": "537228a68734584592fd80b6642ebf0d696a68debecf1071633cf3997af86a16"
+    }
+   ],
+   "app": {
+    "statut": 200,
+    "entetes": {
+     "Cache-Control": "no-store",
+     "X-Content-Type-Options": "nosniff",
+     "Access-Control-Allow-Methods": "POST, OPTIONS",
+     "Access-Control-Allow-Headers": "Content-Type, x-flint-key, x-flint-device, x-flint-ts, x-flint-sig"
+    },
+    "corps": {
+     "lisible": false
+    }
+   },
+   "journal": []
+  },
+  "carte auto → repas": {
+   "google": [
+    {
+     "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=…",
+     "octets": 8396,
+     "sha256": "25a3943eb615a72d700509913dd0b71ff16986cc30bda0cfef02678b75a16fc2"
+    }
+   ],
+   "app": {
+    "statut": 200,
+    "entetes": {
+     "Cache-Control": "no-store",
+     "X-Content-Type-Options": "nosniff",
+     "Access-Control-Allow-Methods": "POST, OPTIONS",
+     "Access-Control-Allow-Headers": "Content-Type, x-flint-key, x-flint-device, x-flint-ts, x-flint-sig"
+    },
+    "corps": {
+     "kind": "repas",
+     "mealName": "Bowl",
+     "items": [
+      {
+       "name": "Riz",
+       "grams": 200,
+       "kcal": 260,
+       "prot": 5,
+       "carb": 57,
+       "fat": 1,
+       "confidence": 0.8
+      },
+      {
+       "name": "Poulet",
+       "grams": 150,
+       "kcal": 225,
+       "prot": 45,
+       "carb": 0,
+       "fat": 5,
+       "confidence": 0.7
+      }
+     ],
+     "total": {
+      "kcal": 485,
+      "prot": 50,
+      "carb": 57,
+      "fat": 6
+     },
+     "healthScore": 8,
+     "healthNote": "Bien."
+    }
+   },
+   "journal": []
+  },
+  "carte auto → carte": {
+   "google": [
+    {
+     "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=…",
+     "octets": 8396,
+     "sha256": "25a3943eb615a72d700509913dd0b71ff16986cc30bda0cfef02678b75a16fc2"
+    }
+   ],
+   "app": {
+    "statut": 200,
+    "entetes": {
+     "Cache-Control": "no-store",
+     "X-Content-Type-Options": "nosniff",
+     "Access-Control-Allow-Methods": "POST, OPTIONS",
+     "Access-Control-Allow-Headers": "Content-Type, x-flint-key, x-flint-device, x-flint-ts, x-flint-sig"
+    },
+    "corps": {
+     "kind": "carte",
+     "menu": {
+      "dishes": [
+       {
+        "id": 1,
+        "name": "Velouté de potimarron",
+        "section": "entree",
+        "kcal": 260,
+        "kcalMin": 200,
+        "kcalMax": 340,
+        "prot": 5,
+        "carb": 26,
+        "fat": 15,
+        "confidence": 0.75,
+        "description": "crème de noisette",
+        "price": 8.5,
+        "box": {
+         "x": 0.213,
+         "y": 0.263,
+         "w": 0.225,
+         "h": 0.034
+        }
+       },
+       {
+        "id": 2,
+        "name": "Œuf parfait",
+        "section": "entree",
+        "kcal": 290,
+        "kcalMin": 220,
+        "kcalMax": 380,
+        "prot": 14,
+        "carb": 8,
+        "fat": 22,
+        "confidence": 0.7,
+        "description": "champignons des bois, mouillettes",
+        "price": 11,
+        "box": {
+         "x": 0.211,
+         "y": 0.301,
+         "w": 0.193,
+         "h": 0.035
+        }
+       },
+       {
+        "id": 3,
+        "name": "Burrata",
+        "section": "entree",
+        "kcal": 420,
+        "kcalMin": 330,
+        "kcalMax": 540,
+        "prot": 20,
+        "carb": 8,
+        "fat": 34,
+        "confidence": 0.75,
+        "description": "tomates anciennes, basilic",
+        "price": 13,
+        "box": {
+         "x": 0.209,
+         "y": 0.34,
+         "w": 0.151,
+         "h": 0.034
+        }
+       },
+       {
+        "id": 4,
+        "name": "Pavé de saumon",
+        "section": "plat",
+        "kcal": 680,
+        "kcalMin": 560,
+        "kcalMax": 820,
+        "prot": 42,
+        "carb": 58,
+        "fat": 30,
+        "confidence": 0.8,
+        "description": "riz noir, brocolis rôtis",
+        "price": 21,
+        "box": {
+         "x": 0.203,
+         "y": 0.42,
+         "w": 0.166,
+         "h": 0.036
+        }
+       },
+       {
+        "id": 5,
+        "name": "Suprême de volaille",
+        "section": "plat",
+        "kcal": 700,
+        "kcalMin": 580,
+        "kcalMax": 860,
+        "prot": 48,
+        "carb": 45,
+        "fat": 36,
+        "confidence": 0.8,
+        "description": "purée maison, jus corsé",
+        "price": 19,
+        "box": {
+         "x": 0.201,
+         "y": 0.459,
+         "w": 0.203,
+         "h": 0.037
+        }
+       },
+       {
+        "id": 6,
+        "name": "Entrecôte 300 g",
+        "section": "plat",
+        "kcal": 1350,
+        "kcalMin": 1100,
+        "kcalMax": 1600,
+        "prot": 70,
+        "carb": 70,
+        "fat": 88,
+        "confidence": 0.75,
+        "description": "frites maison, sauce béarnaise",
+        "price": 27,
+        "box": {
+         "x": 0.198,
+         "y": 0.501,
+         "w": 0.178,
+         "h": 0.036
+        }
+       },
+       {
+        "id": 7,
+        "name": "Risotto aux cèpes",
+        "section": "plat",
+        "kcal": 820,
+        "kcalMin": 650,
+        "kcalMax": 1000,
+        "prot": 22,
+        "carb": 92,
+        "fat": 38,
+        "confidence": 0.75,
+        "description": "parmesan affiné",
+        "price": 18,
+        "box": {
+         "x": 0.196,
+         "y": 0.542,
+         "w": 0.182,
+         "h": 0.037
+        }
+       },
+       {
+        "id": 8,
+        "name": "Burger du Comptoir",
+        "section": "plat",
+        "kcal": 1250,
+        "kcalMin": 1050,
+        "kcalMax": 1500,
+        "prot": 52,
+        "carb": 105,
+        "fat": 66,
+        "confidence": 0.75,
+        "description": "cheddar affiné, frites",
+        "price": 17,
+        "box": {
+         "x": 0.193,
+         "y": 0.583,
+         "w": 0.212,
+         "h": 0.039
+        }
+       },
+       {
+        "id": 9,
+        "name": "Salade César",
+        "section": "plat",
+        "kcal": 640,
+        "kcalMin": 480,
+        "kcalMax": 800,
+        "prot": 38,
+        "carb": 30,
+        "fat": 40,
+        "confidence": 0.7,
+        "description": "poulet croustillant, parmesan",
+        "price": 16,
+        "box": {
+         "x": 0.19,
+         "y": 0.627,
+         "w": 0.179,
+         "h": 0.038
+        }
+       },
+       {
+        "id": 10,
+        "name": "Dos de cabillaud",
+        "section": "plat",
+        "kcal": 560,
+        "kcalMin": 450,
+        "kcalMax": 700,
+        "prot": 46,
+        "carb": 48,
+        "fat": 18,
+        "confidence": 0.8,
+        "description": "lentilles vertes du Puy",
+        "price": 22,
+        "box": {
+         "x": 0.187,
+         "y": 0.67,
+         "w": 0.177,
+         "h": 0.039
+        }
+       },
+       {
+        "id": 11,
+        "name": "Tarte Tatin",
+        "section": "dessert",
+        "kcal": 480,
+        "kcalMin": 380,
+        "kcalMax": 600,
+        "prot": 5,
+        "carb": 60,
+        "fat": 24,
+        "confidence": 0.8,
+        "description": "crème crue",
+        "price": 9,
+        "box": {
+         "x": 0.182,
+         "y": 0.762,
+         "w": 0.128,
+         "h": 0.039
+        }
+       },
+       {
+        "id": 12,
+        "name": "Mousse au chocolat noir",
+        "section": "dessert",
+        "kcal": 380,
+        "kcalMin": 300,
+        "kcalMax": 480,
+        "prot": 7,
+        "carb": 32,
+        "fat": 25,
+        "confidence": 0.8,
+        "price": 8,
+        "box": {
+         "x": 0.18,
+         "y": 0.805,
+         "w": 0.261,
+         "h": 0.025
+        }
+       },
+       {
+        "id": 13,
+        "name": "Salade de fruits frais",
+        "section": "dessert",
+        "kcal": 140,
+        "kcalMin": 100,
+        "kcalMax": 190,
+        "prot": 2,
+        "carb": 32,
+        "fat": 1,
+        "confidence": 0.8,
+        "price": 7,
+        "box": {
+         "x": 0.178,
+         "y": 0.834,
+         "w": 0.222,
+         "h": 0.024
+        }
+       }
+      ],
+      "positions": true,
+      "name": "Le Comptoir du Marché",
+      "currency": "EUR"
+     },
+     "mealName": "Le Comptoir du Marché",
+     "items": [],
+     "total": {
+      "kcal": 0,
+      "prot": 0,
+      "carb": 0,
+      "fat": 0
+     },
+     "healthScore": null,
+     "healthNote": ""
+    }
+   },
+   "journal": [
+    "[scan] carte · 13 plat(s) · positions gardées"
+   ]
+  },
+  "carte: true → carte": {
+   "google": [
+    {
+     "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=…",
+     "octets": 8396,
+     "sha256": "25a3943eb615a72d700509913dd0b71ff16986cc30bda0cfef02678b75a16fc2"
+    }
+   ],
+   "app": {
+    "statut": 200,
+    "entetes": {
+     "Cache-Control": "no-store",
+     "X-Content-Type-Options": "nosniff",
+     "Access-Control-Allow-Methods": "POST, OPTIONS",
+     "Access-Control-Allow-Headers": "Content-Type, x-flint-key, x-flint-device, x-flint-ts, x-flint-sig"
+    },
+    "corps": {
+     "kind": "carte",
+     "menu": {
+      "dishes": [
+       {
+        "id": 1,
+        "name": "Velouté de potimarron",
+        "section": "entree",
+        "kcal": 260,
+        "kcalMin": 200,
+        "kcalMax": 340,
+        "prot": 5,
+        "carb": 26,
+        "fat": 15,
+        "confidence": 0.75,
+        "description": "crème de noisette",
+        "price": 8.5,
+        "box": {
+         "x": 0.213,
+         "y": 0.263,
+         "w": 0.225,
+         "h": 0.034
+        }
+       },
+       {
+        "id": 2,
+        "name": "Œuf parfait",
+        "section": "entree",
+        "kcal": 290,
+        "kcalMin": 220,
+        "kcalMax": 380,
+        "prot": 14,
+        "carb": 8,
+        "fat": 22,
+        "confidence": 0.7,
+        "description": "champignons des bois, mouillettes",
+        "price": 11,
+        "box": {
+         "x": 0.211,
+         "y": 0.301,
+         "w": 0.193,
+         "h": 0.035
+        }
+       },
+       {
+        "id": 3,
+        "name": "Burrata",
+        "section": "entree",
+        "kcal": 420,
+        "kcalMin": 330,
+        "kcalMax": 540,
+        "prot": 20,
+        "carb": 8,
+        "fat": 34,
+        "confidence": 0.75,
+        "description": "tomates anciennes, basilic",
+        "price": 13,
+        "box": {
+         "x": 0.209,
+         "y": 0.34,
+         "w": 0.151,
+         "h": 0.034
+        }
+       },
+       {
+        "id": 4,
+        "name": "Pavé de saumon",
+        "section": "plat",
+        "kcal": 680,
+        "kcalMin": 560,
+        "kcalMax": 820,
+        "prot": 42,
+        "carb": 58,
+        "fat": 30,
+        "confidence": 0.8,
+        "description": "riz noir, brocolis rôtis",
+        "price": 21,
+        "box": {
+         "x": 0.203,
+         "y": 0.42,
+         "w": 0.166,
+         "h": 0.036
+        }
+       },
+       {
+        "id": 5,
+        "name": "Suprême de volaille",
+        "section": "plat",
+        "kcal": 700,
+        "kcalMin": 580,
+        "kcalMax": 860,
+        "prot": 48,
+        "carb": 45,
+        "fat": 36,
+        "confidence": 0.8,
+        "description": "purée maison, jus corsé",
+        "price": 19,
+        "box": {
+         "x": 0.201,
+         "y": 0.459,
+         "w": 0.203,
+         "h": 0.037
+        }
+       },
+       {
+        "id": 6,
+        "name": "Entrecôte 300 g",
+        "section": "plat",
+        "kcal": 1350,
+        "kcalMin": 1100,
+        "kcalMax": 1600,
+        "prot": 70,
+        "carb": 70,
+        "fat": 88,
+        "confidence": 0.75,
+        "description": "frites maison, sauce béarnaise",
+        "price": 27,
+        "box": {
+         "x": 0.198,
+         "y": 0.501,
+         "w": 0.178,
+         "h": 0.036
+        }
+       },
+       {
+        "id": 7,
+        "name": "Risotto aux cèpes",
+        "section": "plat",
+        "kcal": 820,
+        "kcalMin": 650,
+        "kcalMax": 1000,
+        "prot": 22,
+        "carb": 92,
+        "fat": 38,
+        "confidence": 0.75,
+        "description": "parmesan affiné",
+        "price": 18,
+        "box": {
+         "x": 0.196,
+         "y": 0.542,
+         "w": 0.182,
+         "h": 0.037
+        }
+       },
+       {
+        "id": 8,
+        "name": "Burger du Comptoir",
+        "section": "plat",
+        "kcal": 1250,
+        "kcalMin": 1050,
+        "kcalMax": 1500,
+        "prot": 52,
+        "carb": 105,
+        "fat": 66,
+        "confidence": 0.75,
+        "description": "cheddar affiné, frites",
+        "price": 17,
+        "box": {
+         "x": 0.193,
+         "y": 0.583,
+         "w": 0.212,
+         "h": 0.039
+        }
+       },
+       {
+        "id": 9,
+        "name": "Salade César",
+        "section": "plat",
+        "kcal": 640,
+        "kcalMin": 480,
+        "kcalMax": 800,
+        "prot": 38,
+        "carb": 30,
+        "fat": 40,
+        "confidence": 0.7,
+        "description": "poulet croustillant, parmesan",
+        "price": 16,
+        "box": {
+         "x": 0.19,
+         "y": 0.627,
+         "w": 0.179,
+         "h": 0.038
+        }
+       },
+       {
+        "id": 10,
+        "name": "Dos de cabillaud",
+        "section": "plat",
+        "kcal": 560,
+        "kcalMin": 450,
+        "kcalMax": 700,
+        "prot": 46,
+        "carb": 48,
+        "fat": 18,
+        "confidence": 0.8,
+        "description": "lentilles vertes du Puy",
+        "price": 22,
+        "box": {
+         "x": 0.187,
+         "y": 0.67,
+         "w": 0.177,
+         "h": 0.039
+        }
+       },
+       {
+        "id": 11,
+        "name": "Tarte Tatin",
+        "section": "dessert",
+        "kcal": 480,
+        "kcalMin": 380,
+        "kcalMax": 600,
+        "prot": 5,
+        "carb": 60,
+        "fat": 24,
+        "confidence": 0.8,
+        "description": "crème crue",
+        "price": 9,
+        "box": {
+         "x": 0.182,
+         "y": 0.762,
+         "w": 0.128,
+         "h": 0.039
+        }
+       },
+       {
+        "id": 12,
+        "name": "Mousse au chocolat noir",
+        "section": "dessert",
+        "kcal": 380,
+        "kcalMin": 300,
+        "kcalMax": 480,
+        "prot": 7,
+        "carb": 32,
+        "fat": 25,
+        "confidence": 0.8,
+        "price": 8,
+        "box": {
+         "x": 0.18,
+         "y": 0.805,
+         "w": 0.261,
+         "h": 0.025
+        }
+       },
+       {
+        "id": 13,
+        "name": "Salade de fruits frais",
+        "section": "dessert",
+        "kcal": 140,
+        "kcalMin": 100,
+        "kcalMax": 190,
+        "prot": 2,
+        "carb": 32,
+        "fat": 1,
+        "confidence": 0.8,
+        "price": 7,
+        "box": {
+         "x": 0.178,
+         "y": 0.834,
+         "w": 0.222,
+         "h": 0.024
+        }
+       }
+      ],
+      "positions": true,
+      "name": "Le Comptoir du Marché",
+      "currency": "EUR"
+     },
+     "mealName": "Le Comptoir du Marché",
+     "items": [],
+     "total": {
+      "kcal": 0,
+      "prot": 0,
+      "carb": 0,
+      "fat": 0
+     },
+     "healthScore": null,
+     "healthNote": ""
+    }
+   },
+   "journal": [
+    "[scan] carte · 13 plat(s) · positions gardées"
+   ]
+  },
+  "mode carte": {
+   "google": [
+    {
+     "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=…",
+     "octets": 4450,
+     "sha256": "735a17f58b982b1d307bc43968ea584600c1a88613361f66dfc330a7f31a498b"
+    }
+   ],
+   "app": {
+    "statut": 200,
+    "entetes": {
+     "Cache-Control": "no-store",
+     "X-Content-Type-Options": "nosniff",
+     "Access-Control-Allow-Methods": "POST, OPTIONS",
+     "Access-Control-Allow-Headers": "Content-Type, x-flint-key, x-flint-device, x-flint-ts, x-flint-sig"
+    },
+    "corps": {
+     "kind": "carte",
+     "menu": {
+      "dishes": [
+       {
+        "id": 1,
+        "name": "Velouté de potimarron",
+        "section": "entree",
+        "kcal": 260,
+        "kcalMin": 200,
+        "kcalMax": 340,
+        "prot": 5,
+        "carb": 26,
+        "fat": 15,
+        "confidence": 0.75,
+        "description": "crème de noisette",
+        "price": 8.5,
+        "box": {
+         "x": 0.213,
+         "y": 0.263,
+         "w": 0.225,
+         "h": 0.034
+        }
+       },
+       {
+        "id": 2,
+        "name": "Œuf parfait",
+        "section": "entree",
+        "kcal": 290,
+        "kcalMin": 220,
+        "kcalMax": 380,
+        "prot": 14,
+        "carb": 8,
+        "fat": 22,
+        "confidence": 0.7,
+        "description": "champignons des bois, mouillettes",
+        "price": 11,
+        "box": {
+         "x": 0.211,
+         "y": 0.301,
+         "w": 0.193,
+         "h": 0.035
+        }
+       },
+       {
+        "id": 3,
+        "name": "Burrata",
+        "section": "entree",
+        "kcal": 420,
+        "kcalMin": 330,
+        "kcalMax": 540,
+        "prot": 20,
+        "carb": 8,
+        "fat": 34,
+        "confidence": 0.75,
+        "description": "tomates anciennes, basilic",
+        "price": 13,
+        "box": {
+         "x": 0.209,
+         "y": 0.34,
+         "w": 0.151,
+         "h": 0.034
+        }
+       },
+       {
+        "id": 4,
+        "name": "Pavé de saumon",
+        "section": "plat",
+        "kcal": 680,
+        "kcalMin": 560,
+        "kcalMax": 820,
+        "prot": 42,
+        "carb": 58,
+        "fat": 30,
+        "confidence": 0.8,
+        "description": "riz noir, brocolis rôtis",
+        "price": 21,
+        "box": {
+         "x": 0.203,
+         "y": 0.42,
+         "w": 0.166,
+         "h": 0.036
+        }
+       },
+       {
+        "id": 5,
+        "name": "Suprême de volaille",
+        "section": "plat",
+        "kcal": 700,
+        "kcalMin": 580,
+        "kcalMax": 860,
+        "prot": 48,
+        "carb": 45,
+        "fat": 36,
+        "confidence": 0.8,
+        "description": "purée maison, jus corsé",
+        "price": 19,
+        "box": {
+         "x": 0.201,
+         "y": 0.459,
+         "w": 0.203,
+         "h": 0.037
+        }
+       },
+       {
+        "id": 6,
+        "name": "Entrecôte 300 g",
+        "section": "plat",
+        "kcal": 1350,
+        "kcalMin": 1100,
+        "kcalMax": 1600,
+        "prot": 70,
+        "carb": 70,
+        "fat": 88,
+        "confidence": 0.75,
+        "description": "frites maison, sauce béarnaise",
+        "price": 27,
+        "box": {
+         "x": 0.198,
+         "y": 0.501,
+         "w": 0.178,
+         "h": 0.036
+        }
+       },
+       {
+        "id": 7,
+        "name": "Risotto aux cèpes",
+        "section": "plat",
+        "kcal": 820,
+        "kcalMin": 650,
+        "kcalMax": 1000,
+        "prot": 22,
+        "carb": 92,
+        "fat": 38,
+        "confidence": 0.75,
+        "description": "parmesan affiné",
+        "price": 18,
+        "box": {
+         "x": 0.196,
+         "y": 0.542,
+         "w": 0.182,
+         "h": 0.037
+        }
+       },
+       {
+        "id": 8,
+        "name": "Burger du Comptoir",
+        "section": "plat",
+        "kcal": 1250,
+        "kcalMin": 1050,
+        "kcalMax": 1500,
+        "prot": 52,
+        "carb": 105,
+        "fat": 66,
+        "confidence": 0.75,
+        "description": "cheddar affiné, frites",
+        "price": 17,
+        "box": {
+         "x": 0.193,
+         "y": 0.583,
+         "w": 0.212,
+         "h": 0.039
+        }
+       },
+       {
+        "id": 9,
+        "name": "Salade César",
+        "section": "plat",
+        "kcal": 640,
+        "kcalMin": 480,
+        "kcalMax": 800,
+        "prot": 38,
+        "carb": 30,
+        "fat": 40,
+        "confidence": 0.7,
+        "description": "poulet croustillant, parmesan",
+        "price": 16,
+        "box": {
+         "x": 0.19,
+         "y": 0.627,
+         "w": 0.179,
+         "h": 0.038
+        }
+       },
+       {
+        "id": 10,
+        "name": "Dos de cabillaud",
+        "section": "plat",
+        "kcal": 560,
+        "kcalMin": 450,
+        "kcalMax": 700,
+        "prot": 46,
+        "carb": 48,
+        "fat": 18,
+        "confidence": 0.8,
+        "description": "lentilles vertes du Puy",
+        "price": 22,
+        "box": {
+         "x": 0.187,
+         "y": 0.67,
+         "w": 0.177,
+         "h": 0.039
+        }
+       },
+       {
+        "id": 11,
+        "name": "Tarte Tatin",
+        "section": "dessert",
+        "kcal": 480,
+        "kcalMin": 380,
+        "kcalMax": 600,
+        "prot": 5,
+        "carb": 60,
+        "fat": 24,
+        "confidence": 0.8,
+        "description": "crème crue",
+        "price": 9,
+        "box": {
+         "x": 0.182,
+         "y": 0.762,
+         "w": 0.128,
+         "h": 0.039
+        }
+       },
+       {
+        "id": 12,
+        "name": "Mousse au chocolat noir",
+        "section": "dessert",
+        "kcal": 380,
+        "kcalMin": 300,
+        "kcalMax": 480,
+        "prot": 7,
+        "carb": 32,
+        "fat": 25,
+        "confidence": 0.8,
+        "price": 8,
+        "box": {
+         "x": 0.18,
+         "y": 0.805,
+         "w": 0.261,
+         "h": 0.025
+        }
+       },
+       {
+        "id": 13,
+        "name": "Salade de fruits frais",
+        "section": "dessert",
+        "kcal": 140,
+        "kcalMin": 100,
+        "kcalMax": 190,
+        "prot": 2,
+        "carb": 32,
+        "fat": 1,
+        "confidence": 0.8,
+        "price": 7,
+        "box": {
+         "x": 0.178,
+         "y": 0.834,
+         "w": 0.222,
+         "h": 0.024
+        }
+       }
+      ],
+      "positions": true,
+      "name": "Le Comptoir du Marché",
+      "currency": "EUR"
+     },
+     "mealName": "Le Comptoir du Marché",
+     "items": [],
+     "total": {
+      "kcal": 0,
+      "prot": 0,
+      "carb": 0,
+      "fat": 0
+     },
+     "healthScore": null,
+     "healthNote": ""
+    }
+   },
+   "journal": [
+    "[scan] carte · 13 plat(s) · positions gardées"
+   ]
+  },
+  "Gemini 400": {
+   "google": [
+    {
+     "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=…",
+     "octets": 3504,
+     "sha256": "0e49a9c64e6ce502464ca0b1c6598f676561479625900b55f50e61d70f1448b8"
+    }
+   ],
+   "app": {
+    "statut": 502,
+    "entetes": {
+     "Cache-Control": "no-store",
+     "X-Content-Type-Options": "nosniff",
+     "Access-Control-Allow-Methods": "POST, OPTIONS",
+     "Access-Control-Allow-Headers": "Content-Type, x-flint-key, x-flint-device, x-flint-ts, x-flint-sig"
+    },
+    "corps": {
+     "error": "L'analyse est en panne à l'instant. Réessaie dans un moment.",
+     "gemini": 400,
+     "detail": "requête refusée [clé]"
+    }
+   },
+   "journal": [
+    "[scan] échec après 1 tentative(s), dernier statut 400 (gemini-3.6-flash)"
+   ]
+  },
+  "Gemini 503 partout (repas)": {
+   "google": [
+    {
+     "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=…",
+     "octets": 3504,
+     "sha256": "0e49a9c64e6ce502464ca0b1c6598f676561479625900b55f50e61d70f1448b8"
+    },
+    {
+     "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=…",
+     "octets": 3504,
+     "sha256": "0e49a9c64e6ce502464ca0b1c6598f676561479625900b55f50e61d70f1448b8"
+    },
+    {
+     "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=…",
+     "octets": 3504,
+     "sha256": "0e49a9c64e6ce502464ca0b1c6598f676561479625900b55f50e61d70f1448b8"
+    },
+    {
+     "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=…",
+     "octets": 3504,
+     "sha256": "0e49a9c64e6ce502464ca0b1c6598f676561479625900b55f50e61d70f1448b8"
+    },
+    {
+     "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=…",
+     "octets": 3504,
+     "sha256": "0e49a9c64e6ce502464ca0b1c6598f676561479625900b55f50e61d70f1448b8"
+    },
+    {
+     "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=…",
+     "octets": 3504,
+     "sha256": "0e49a9c64e6ce502464ca0b1c6598f676561479625900b55f50e61d70f1448b8"
+    }
+   ],
+   "app": {
+    "statut": 502,
+    "entetes": {
+     "Cache-Control": "no-store",
+     "X-Content-Type-Options": "nosniff",
+     "Access-Control-Allow-Methods": "POST, OPTIONS",
+     "Access-Control-Allow-Headers": "Content-Type, x-flint-key, x-flint-device, x-flint-ts, x-flint-sig"
+    },
+    "corps": {
+     "error": "L'analyse est en panne à l'instant. Réessaie dans un moment.",
+     "gemini": 503,
+     "detail": "high demand"
+    }
+   },
+   "journal": [
+    "[gemini] gemini-3.6-flash indisponible après 2 tentative(s) — statut 503, on passe au suivant",
+    "[gemini] gemini-3.5-flash-lite indisponible après 2 tentative(s) — statut 503, on passe au suivant",
+    "[gemini] gemini-3.1-flash-lite indisponible après 2 tentative(s) — statut 503, on passe au suivant",
+    "[scan] échec après 6 tentative(s), dernier statut 503 (gemini-3.1-flash-lite)"
+   ]
+  },
+  "Gemini 503 partout (carte auto)": {
+   "google": [
+    {
+     "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=…",
+     "octets": 8396,
+     "sha256": "25a3943eb615a72d700509913dd0b71ff16986cc30bda0cfef02678b75a16fc2"
+    },
+    {
+     "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=…",
+     "octets": 8396,
+     "sha256": "25a3943eb615a72d700509913dd0b71ff16986cc30bda0cfef02678b75a16fc2"
+    },
+    {
+     "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=…",
+     "octets": 8396,
+     "sha256": "25a3943eb615a72d700509913dd0b71ff16986cc30bda0cfef02678b75a16fc2"
+    }
+   ],
+   "app": {
+    "statut": 502,
+    "entetes": {
+     "Cache-Control": "no-store",
+     "X-Content-Type-Options": "nosniff",
+     "Access-Control-Allow-Methods": "POST, OPTIONS",
+     "Access-Control-Allow-Headers": "Content-Type, x-flint-key, x-flint-device, x-flint-ts, x-flint-sig"
+    },
+    "corps": {
+     "error": "L'analyse est en panne à l'instant. Réessaie dans un moment.",
+     "gemini": 503,
+     "detail": "high demand"
+    }
+   },
+   "journal": [
+    "[gemini] gemini-3.6-flash indisponible après 1 tentative(s) — statut 503, on passe au suivant",
+    "[gemini] gemini-3.5-flash-lite indisponible après 1 tentative(s) — statut 503, on passe au suivant",
+    "[gemini] gemini-3.1-flash-lite indisponible après 1 tentative(s) — statut 503, on passe au suivant",
+    "[scan] échec après 3 tentative(s), dernier statut 503 (gemini-3.1-flash-lite)"
+   ]
+  },
+  "Gemini 429 puis 200": {
+   "google": [
+    {
+     "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=…",
+     "octets": 3504,
+     "sha256": "0e49a9c64e6ce502464ca0b1c6598f676561479625900b55f50e61d70f1448b8"
+    },
+    {
+     "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=…",
+     "octets": 3504,
+     "sha256": "0e49a9c64e6ce502464ca0b1c6598f676561479625900b55f50e61d70f1448b8"
+    }
+   ],
+   "app": {
+    "statut": 200,
+    "entetes": {
+     "Cache-Control": "no-store",
+     "X-Content-Type-Options": "nosniff",
+     "Access-Control-Allow-Methods": "POST, OPTIONS",
+     "Access-Control-Allow-Headers": "Content-Type, x-flint-key, x-flint-device, x-flint-ts, x-flint-sig"
+    },
+    "corps": {
+     "mealName": "Bowl",
+     "items": [
+      {
+       "name": "Riz",
+       "grams": 200,
+       "kcal": 260,
+       "prot": 5,
+       "carb": 57,
+       "fat": 1,
+       "confidence": 0.8
+      },
+      {
+       "name": "Poulet",
+       "grams": 150,
+       "kcal": 225,
+       "prot": 45,
+       "carb": 0,
+       "fat": 5,
+       "confidence": 0.7
+      }
+     ],
+     "total": {
+      "kcal": 485,
+      "prot": 50,
+      "carb": 57,
+      "fat": 6
+     },
+     "healthScore": 8,
+     "healthNote": "Bien."
+    }
+   },
+   "journal": []
+  },
+  "Gemini réponse vide": {
+   "google": [
+    {
+     "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=…",
+     "octets": 3504,
+     "sha256": "0e49a9c64e6ce502464ca0b1c6598f676561479625900b55f50e61d70f1448b8"
+    }
+   ],
+   "app": {
+    "statut": 502,
+    "entetes": {
+     "Cache-Control": "no-store",
+     "X-Content-Type-Options": "nosniff",
+     "Access-Control-Allow-Methods": "POST, OPTIONS",
+     "Access-Control-Allow-Headers": "Content-Type, x-flint-key, x-flint-device, x-flint-ts, x-flint-sig"
+    },
+    "corps": {
+     "error": "réponse Gemini vide"
+    }
+   },
+   "journal": []
+  },
+  "Gemini JSON invalide": {
+   "google": [
+    {
+     "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=…",
+     "octets": 3504,
+     "sha256": "0e49a9c64e6ce502464ca0b1c6598f676561479625900b55f50e61d70f1448b8"
+    }
+   ],
+   "app": {
+    "statut": 502,
+    "entetes": {
+     "Cache-Control": "no-store",
+     "X-Content-Type-Options": "nosniff",
+     "Access-Control-Allow-Methods": "POST, OPTIONS",
+     "Access-Control-Allow-Headers": "Content-Type, x-flint-key, x-flint-device, x-flint-ts, x-flint-sig"
+    },
+    "corps": {
+     "error": "JSON Gemini invalide"
+    }
+   },
+   "journal": []
+  },
+  "aucun champ": {
+   "google": [],
+   "app": {
+    "statut": 400,
+    "entetes": {
+     "Cache-Control": "no-store",
+     "X-Content-Type-Options": "nosniff",
+     "Access-Control-Allow-Methods": "POST, OPTIONS",
+     "Access-Control-Allow-Headers": "Content-Type, x-flint-key, x-flint-device, x-flint-ts, x-flint-sig"
+    },
+    "corps": {
+     "error": "champ \"image\" ou \"text\" manquant"
+    }
+   },
+   "journal": []
+  },
+  "étiquette sans photo": {
+   "google": [],
+   "app": {
+    "statut": 400,
+    "entetes": {
+     "Cache-Control": "no-store",
+     "X-Content-Type-Options": "nosniff",
+     "Access-Control-Allow-Methods": "POST, OPTIONS",
+     "Access-Control-Allow-Headers": "Content-Type, x-flint-key, x-flint-device, x-flint-ts, x-flint-sig"
+    },
+    "corps": {
+     "error": "champ \"image\" manquant"
+    }
+   },
+   "journal": []
+  },
+  "photo trop lourde": {
+   "google": [],
+   "app": {
+    "statut": 413,
+    "entetes": {
+     "Cache-Control": "no-store",
+     "X-Content-Type-Options": "nosniff",
+     "Access-Control-Allow-Methods": "POST, OPTIONS",
+     "Access-Control-Allow-Headers": "Content-Type, x-flint-key, x-flint-device, x-flint-ts, x-flint-sig"
+    },
+    "corps": {
+     "error": "Photo trop lourde pour être analysée. Réessaie avec une photo plus petite."
+    }
+   },
+   "journal": []
+  },
+  "mauvaise clé d'app": {
+   "google": [],
+   "app": {
+    "statut": 401,
+    "entetes": {
+     "Cache-Control": "no-store",
+     "X-Content-Type-Options": "nosniff",
+     "Access-Control-Allow-Methods": "POST, OPTIONS",
+     "Access-Control-Allow-Headers": "Content-Type, x-flint-key, x-flint-device, x-flint-ts, x-flint-sig"
+    },
+    "corps": {
+     "error": "unauthorized"
+    }
+   },
+   "journal": []
+  },
+  "device illisible": {
+   "google": [],
+   "app": {
+    "statut": 400,
+    "entetes": {
+     "Cache-Control": "no-store",
+     "X-Content-Type-Options": "nosniff",
+     "Access-Control-Allow-Methods": "POST, OPTIONS",
+     "Access-Control-Allow-Headers": "Content-Type, x-flint-key, x-flint-device, x-flint-ts, x-flint-sig"
+    },
+    "corps": {
+     "error": "en-tête x-flint-device illisible"
+    }
+   },
+   "journal": []
+  },
+  "OPTIONS": {
+   "google": [],
+   "app": {
+    "statut": 204,
+    "entetes": {
+     "Cache-Control": "no-store",
+     "X-Content-Type-Options": "nosniff",
+     "Access-Control-Allow-Methods": "POST, OPTIONS",
+     "Access-Control-Allow-Headers": "Content-Type, x-flint-key, x-flint-device, x-flint-ts, x-flint-sig"
+    },
+    "corps": null
+   },
+   "journal": []
+  },
+  "GET": {
+   "google": [],
+   "app": {
+    "statut": 405,
+    "entetes": {
+     "Cache-Control": "no-store",
+     "X-Content-Type-Options": "nosniff",
+     "Access-Control-Allow-Methods": "POST, OPTIONS",
+     "Access-Control-Allow-Headers": "Content-Type, x-flint-key, x-flint-device, x-flint-ts, x-flint-sig"
+    },
+    "corps": {
+     "error": "POST only"
+    }
+   },
+   "journal": []
+  },
+  "SCAN_FOURNISSEUR=gemini (≠ anthropic)": {
+   "google": [
+    {
+     "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=…",
+     "octets": 3504,
+     "sha256": "0e49a9c64e6ce502464ca0b1c6598f676561479625900b55f50e61d70f1448b8"
+    }
+   ],
+   "app": {
+    "statut": 200,
+    "entetes": {
+     "Cache-Control": "no-store",
+     "X-Content-Type-Options": "nosniff",
+     "Access-Control-Allow-Methods": "POST, OPTIONS",
+     "Access-Control-Allow-Headers": "Content-Type, x-flint-key, x-flint-device, x-flint-ts, x-flint-sig"
+    },
+    "corps": {
+     "mealName": "Bowl",
+     "items": [
+      {
+       "name": "Riz",
+       "grams": 200,
+       "kcal": 260,
+       "prot": 5,
+       "carb": 57,
+       "fat": 1,
+       "confidence": 0.8
+      },
+      {
+       "name": "Poulet",
+       "grams": 150,
+       "kcal": 225,
+       "prot": 45,
+       "carb": 0,
+       "fat": 5,
+       "confidence": 0.7
+      }
+     ],
+     "total": {
+      "kcal": 485,
+      "prot": 50,
+      "carb": 57,
+      "fat": 6
+     },
+     "healthScore": 8,
+     "healthNote": "Bien."
+    }
+   },
+   "journal": []
+  },
+  "SCAN_FOURNISSEUR=Anthropic (casse ≠)": {
+   "google": [
+    {
+     "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=…",
+     "octets": 3504,
+     "sha256": "0e49a9c64e6ce502464ca0b1c6598f676561479625900b55f50e61d70f1448b8"
+    }
+   ],
+   "app": {
+    "statut": 200,
+    "entetes": {
+     "Cache-Control": "no-store",
+     "X-Content-Type-Options": "nosniff",
+     "Access-Control-Allow-Methods": "POST, OPTIONS",
+     "Access-Control-Allow-Headers": "Content-Type, x-flint-key, x-flint-device, x-flint-ts, x-flint-sig"
+    },
+    "corps": {
+     "mealName": "Bowl",
+     "items": [
+      {
+       "name": "Riz",
+       "grams": 200,
+       "kcal": 260,
+       "prot": 5,
+       "carb": 57,
+       "fat": 1,
+       "confidence": 0.8
+      },
+      {
+       "name": "Poulet",
+       "grams": 150,
+       "kcal": 225,
+       "prot": 45,
+       "carb": 0,
+       "fat": 5,
+       "confidence": 0.7
+      }
+     ],
+     "total": {
+      "kcal": 485,
+      "prot": 50,
+      "carb": 57,
+      "fat": 6
+     },
+     "healthScore": 8,
+     "healthNote": "Bien."
+    }
+   },
+   "journal": []
+  },
+  "COACH_FOURNISSEUR=anthropic ne touche pas le scan": {
+   "google": [
+    {
+     "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=…",
+     "octets": 3504,
+     "sha256": "0e49a9c64e6ce502464ca0b1c6598f676561479625900b55f50e61d70f1448b8"
+    }
+   ],
+   "app": {
+    "statut": 200,
+    "entetes": {
+     "Cache-Control": "no-store",
+     "X-Content-Type-Options": "nosniff",
+     "Access-Control-Allow-Methods": "POST, OPTIONS",
+     "Access-Control-Allow-Headers": "Content-Type, x-flint-key, x-flint-device, x-flint-ts, x-flint-sig"
+    },
+    "corps": {
+     "mealName": "Bowl",
+     "items": [
+      {
+       "name": "Riz",
+       "grams": 200,
+       "kcal": 260,
+       "prot": 5,
+       "carb": 57,
+       "fat": 1,
+       "confidence": 0.8
+      },
+      {
+       "name": "Poulet",
+       "grams": 150,
+       "kcal": 225,
+       "prot": 45,
+       "carb": 0,
+       "fat": 5,
+       "confidence": 0.7
+      }
+     ],
+     "total": {
+      "kcal": 485,
+      "prot": 50,
+      "carb": 57,
+      "fat": 6
+     },
+     "healthScore": 8,
+     "healthNote": "Bien."
+    }
+   },
+   "journal": []
+  },
+  "clé Gemini absente": {
+   "google": [],
+   "app": {
+    "statut": 500,
+    "entetes": {
+     "Cache-Control": "no-store",
+     "X-Content-Type-Options": "nosniff",
+     "Access-Control-Allow-Methods": "POST, OPTIONS",
+     "Access-Control-Allow-Headers": "Content-Type, x-flint-key, x-flint-device, x-flint-ts, x-flint-sig"
+    },
+    "corps": {
+     "error": "configuration serveur incomplète"
+    }
+   },
+   "journal": [
+    "[scan] GEMINI_API_KEY absente — configuration serveur incomplète"
+   ]
+  }
+ }
+}
