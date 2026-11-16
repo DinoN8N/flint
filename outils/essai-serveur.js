@@ -41,6 +41,13 @@
    Codes de sortie : 0 tout marche · 1 quelque chose casse · 2 mauvais usage ·
                      3 incomplet (pas de clé d'app : seule la porte est testée).
 
+   Depuis le 17 nov., l'essai lit aussi deux choses que le serveur ajoute :
+     · le battement du flux du Coach (« : attente », toutes les 15 s pendant
+       que Claude réfléchit) : compté dans la ligne du silence ;
+     · l'en-tête X-Flint-Fournisseur du scan (anthropic | gemini-repli) :
+       « gemini-repli » = tous les crédits Claude vides, le scan a été servi
+       par Gemini — l'app marche, mais ce n'est pas la bascule : ❌.
+
    Coût d'un passage réel sur Claude : environ 10 appels au modèle (Coach ≈ 6,
    scan ≈ 4), de l'ordre de 0,20 à 0,40 $ selon le modèle. Rien n'est écrit
    côté serveur : le Coach est sans état, le scan ne garde rien.
@@ -275,11 +282,12 @@ async function jouerSuite({ base, secrets, attendu, reference, sec }) {
 async function conversation(c, { question, flux, chiffre }) {
   const contents = [{ role: 'user', parts: [{ text: question }] }];
   const appels = [];
-  let tours = 0, total = 0, silenceMax = 0, premierTexte = null, etapes = 0, sse = 0;
+  let tours = 0, total = 0, silenceMax = 0, premierTexte = null, etapes = 0, sse = 0, battements = 0;
   for (;;) {
     const r = await c.appelerCoach(c.corpsCoach({ contents, flux, chiffre }));
     total += r.ms;
     silenceMax = Math.max(silenceMax, r.silenceMaxMs);
+    battements += (String(r.texte).match(/^: attente$/gm) || []).length;
     appels.push(r);
     if (r.erreur || r.statut !== 200) return { r, raison: 'réponse ' + (r.erreur || 'HTTP ' + r.statut), appels, total, silenceMax };
     let rep = r.json;
@@ -320,7 +328,7 @@ async function conversation(c, { question, flux, chiffre }) {
     if (rep.mode !== 'reponse') return { r, raison: 'mode inattendu « ' + rep.mode + ' »', appels, total, silenceMax };
     if (typeof rep.texte !== 'string' || !rep.texte.trim()) return { r, raison: 'réponse sans texte', appels, total, silenceMax };
     if (!Array.isArray(rep.suites)) return { r, raison: '« suites » absent', appels, total, silenceMax };
-    return { r, rep, appels, tours, total, silenceMax, premierTexte, morceaux, etapes, sse, finEnFlux: flux && estFlux };
+    return { r, rep, appels, tours, total, silenceMax, premierTexte, morceaux, etapes, sse, battements, finEnFlux: flux && estFlux };
   }
 }
 
@@ -387,7 +395,8 @@ async function essaisCoach(c, { ok, ko, alerte }, secrets, attendu) {
   if (flux.rep || chiffre.rep) {
     if (silence > DELAI_APP_COACH_S * 1000) ko(G, `flux : jamais plus de ${DELAI_APP_COACH_S} s sans un octet`, 'un silence de ' + secondes(silence) + ' : l\'app aurait affiché « Flint met trop de temps à répondre »');
     else if (silence > DELAI_APP_COACH_S * 1000 * 0.6) alerte(G, `flux : jamais plus de ${DELAI_APP_COACH_S} s sans un octet`, 'un silence de ' + secondes(silence) + ' : proche de la limite de l\'app');
-    else ok(G, `flux : jamais plus de ${DELAI_APP_COACH_S} s sans un octet`, 'silence le plus long ' + secondes(silence));
+    else ok(G, `flux : jamais plus de ${DELAI_APP_COACH_S} s sans un octet`, 'silence le plus long ' + secondes(silence)
+      + ((flux.battements || 0) + (chiffre.battements || 0) ? ` · ${(flux.battements || 0) + (chiffre.battements || 0)} battement(s) « : attente » pendant que le modèle réfléchissait` : ''));
   }
 }
 
@@ -411,6 +420,8 @@ function jugerRepas(rep) {
 
 async function essaisScan(c, { ok, ko, alerte, saute, extrait }, attendu) {
   const G = 'scan';
+  const servis = [];   // [nom, valeur de X-Flint-Fournisseur] des analyses réussies
+  const noterServi = (nom, r) => { if (r.statut === 200) servis.push([nom, r.entetes['x-flint-fournisseur'] || '']); };
   const temps = (nom, r, limiteS) => {
     if (r.ms > limiteS * 1000) ko(G, nom + ' : sous le délai de l\'app (' + limiteS + ' s)', secondes(r.ms));
     else if (r.ms > 60000) alerte(G, nom + ' : temps de réponse', secondes(r.ms) + ' (long : plus d\'une minute)');
@@ -421,6 +432,7 @@ async function essaisScan(c, { ok, ko, alerte, saute, extrait }, attendu) {
     (async () => {   // D1. Photo de repas, exactement comme AnalyseRepasNatif
       const r = await c.appelerScan({ image: photo('repas.jpg'), carte: 'auto' });
       const nom = 'photo de repas';
+      noterServi(nom, r);
       if (r.statut !== 200 || !r.json) return ko(G, nom + ' : une réponse que l\'app sait lire', extrait(r), r.ms);
       if (r.json.kind === 'carte') return alerte(G, nom + ' : lue comme un repas', 'lue comme une CARTE de resto', r.ms);
       const pb = jugerRepas(r.json);
@@ -432,6 +444,7 @@ async function essaisScan(c, { ok, ko, alerte, saute, extrait }, attendu) {
     (async () => {   // D2. Étiquette, comme LectureEtiquette
       const r = await c.appelerScan({ mode: 'label', image: photo('etiquette.jpg') });
       const nom = 'étiquette';
+      noterServi(nom, r);
       if (r.statut !== 200 || !r.json) return ko(G, nom + ' : une réponse que l\'app sait lire', extrait(r), r.ms);
       if (r.json.lisible !== true) return ko(G, nom + ' : lue', '« lisible: false » sur une étiquette nette', r.ms);
       const p = r.json.per100 || {};
@@ -445,6 +458,7 @@ async function essaisScan(c, { ok, ko, alerte, saute, extrait }, attendu) {
     (async () => {   // D3. Carte de resto, par le même chemin que la photo
       const r = await c.appelerScan({ image: photo('carte.jpg'), carte: 'auto' });
       const nom = 'carte de resto';
+      noterServi(nom, r);
       if (r.statut !== 200 || !r.json) return ko(G, nom + ' : une réponse que l\'app sait lire', extrait(r), r.ms);
       if (r.json.kind !== 'carte') return ko(G, nom + ' : reconnue comme une carte', 'kind = ' + r.json.kind, r.ms);
       const plats = r.json.menu && Array.isArray(r.json.menu.dishes) ? r.json.menu.dishes : [];
@@ -459,6 +473,7 @@ async function essaisScan(c, { ok, ko, alerte, saute, extrait }, attendu) {
     (async () => {   // D4. Description texte, comme le moteur web
       const r = await c.appelerScan({ text: 'deux œufs au plat, une tranche de pain complet et un café au lait' }, { 'x-flint-device': null });
       const nom = 'description texte';
+      noterServi(nom, r);
       if (r.statut !== 200 || !r.json) return ko(G, nom + ' : une réponse que l\'app sait lire', extrait(r), r.ms);
       const pb = jugerRepas(r.json);
       if (pb.length) ko(G, nom + ' : schéma et garde-fous (kcal ≈ 4P+4G+9L)', pb.slice(0, 3).join(' · '), r.ms);
@@ -481,6 +496,19 @@ async function essaisScan(c, { ok, ko, alerte, saute, extrait }, attendu) {
     })()
   ];
   await Promise.all(essais);
+  // Qui a servi : l'en-tête X-Flint-Fournisseur (posé par le serveur Claude,
+  // jamais lu par l'app). « gemini-repli » = tous les crédits Claude vides.
+  if (servis.length) {
+    const repli = servis.filter(([, f]) => f === 'gemini-repli').map(([n]) => n);
+    const claude = servis.filter(([, f]) => f === 'anthropic').length;
+    const nom = 'scan : servi par ' + attendu;
+    if (attendu === 'anthropic') {
+      if (repli.length) ko(G, nom, `servi par Gemini en REPLI (${repli.join(', ')}) : les crédits Claude sont vides — l'app marche, mais pas sur Claude`);
+      else if (claude === servis.length) ok(G, nom, `${claude}/${servis.length} analyses (en-tête X-Flint-Fournisseur)`);
+      else ko(G, nom, 'aucun en-tête X-Flint-Fournisseur : ce déploiement n\'a pas le scan sur Claude (ou pas le commit d6c5d1f)');
+    } else if (servis.every(([, f]) => !f)) ok(G, nom, servis.length + ' analyses sans en-tête : le chemin Gemini');
+    else ko(G, nom, servis.map(([n, f]) => n + ' → ' + (f || 'gemini')).join(', '));
+  }
 }
 
 const jsonErreur = (r) => r.json && typeof r.json.error === 'string';
@@ -588,7 +616,7 @@ function installerFauxModeles({ pannes }) {
   const externes = [];
   const message = (content, stop) => ({ id: 'msg_essai', type: 'message', role: 'assistant', model: 'claude-faux', content,
     stop_reason: stop || 'end_turn', stop_details: null, usage: { input_tokens: 1000, cache_read_input_tokens: 8000, cache_creation_input_tokens: 0, output_tokens: 90 } });
-  const pauseMs = pannes.has('lent') ? 1500 : 0;
+  const pauseMs = pannes.has('lent') || pannes.has('lent-battu') ? 1500 : 0;
   const texteCoach = (systeme) => /QUESTION SUR UN SEUL CHIFFRE/.test(systeme)
     ? '**Ta récup de 66 % est dans ta normale.** Je n\'ai pas tes données de la nuit pour en dire la raison. Rien à changer aujourd\'hui.\nSuites : Et mon sommeil ? | Je m\'entraîne ?'
     : '**Dors et mange bien ce soir.**\n\n## Pourquoi\n- **Récupération** : je n\'ai pas tes données.\n\nSuites : Et demain ? | Combien d\'heures ?';
@@ -598,6 +626,8 @@ function installerFauxModeles({ pannes }) {
     const corps = init && typeof init.body === 'string' ? JSON.parse(init.body) : {};
     if (u.hostname === 'api.anthropic.com') {
       const cle = init.headers['x-api-key'];
+      if (pannes.has('credit-vide')) return new Response(JSON.stringify({ type: 'error', error: { type: 'invalid_request_error',
+        message: 'Your credit balance is too low to access the Anthropic API.' } }), { status: 400 });
       let msg;
       if (corps.output_config && corps.output_config.format) {          // le scan
         const contenu = corps.messages[0].content;
@@ -706,6 +736,9 @@ async function serveurLocal({ gemini = false, pannes = new Set() } = {}) {
   if (pannes.has('porte-ouverte')) delete process.env.FLINT_APP_SECRET;
   if (pannes.has('externe')) Object.assign(process.env, { UPSTASH_REDIS_REST_URL: 'https://magasin.invalid', UPSTASH_REDIS_REST_TOKEN: 'x' });
   const { externes } = installerFauxModeles({ pannes });
+  // « lent-battu » : le même silence de 1,5 s, avec un battement toutes les
+  // 300 ms (15 s en production) — l'essai doit le voir et rester vert.
+  if (pannes.has('lent-battu')) require(path.join(RACINE, 'api', '_coach-tour-claude.js')).BATTEMENT.periodeMs = 300;
   const routes = {
     '/api/coach': adapterVercel(require(path.join(RACINE, 'api', 'coach.js')), pannes),
     '/api/scan-meal': adapterVercel(require(path.join(RACINE, 'api', 'scan-meal.js')), pannes),

@@ -52,7 +52,7 @@ const SECRETS_FACTICES = ['essai-sec-cle-app', 'essai-sec-signature', 'sk-ant-es
                    'question simple : répondu par anthropic', 'question « chiffre » : trois phrases', 'flux (SSE) : des morceaux puis une « fin »',
                    'flux : jamais plus de 45 s sans un octet', 'photo de repas : schéma et garde-fous', 'étiquette : chaque valeur lue juste',
                    'carte de resto : les plats écrits sont relevés', 'description texte', 'passe par Claude (un fichier qui n\'est pas une image → 415)',
-                   'photo trop lourde', 'sans code Apple → 400', 'aucune clé dans les réponses', 'aucune clé dans le journal du serveur',
+                   'photo trop lourde', 'scan : servi par anthropic', 'sans code Apple → 400', 'aucune clé dans les réponses', 'aucune clé dans le journal du serveur',
                    'jamais « Access-Control-Allow-Origin: * »', 'no-store', 'aucune requête vers l\'extérieur']) {
     v('  … vérifie : ' + n, claude.sortie.split('\n').some((l) => l.startsWith('✅') && l.includes(n)));
   }
@@ -70,7 +70,8 @@ const SECRETS_FACTICES = ['essai-sec-cle-app', 'essai-sec-signature', 'sk-ant-es
     ['cors-etoile', {}, ['jamais « Access-Control-Allow-Origin: * »', 'CORS fermé']],
     ['externe', {}, ['aucune requête vers l\'extérieur']],
     ['protection', {}, ['la Preview est joignable']],
-    ['lent', { ESSAI_DELAI_COACH_S: '1' }, ['flux : jamais plus de 1 s sans un octet']]
+    ['lent', { ESSAI_DELAI_COACH_S: '1' }, ['flux : jamais plus de 1 s sans un octet']],
+    ['credit-vide', {}, ['scan : servi par anthropic', 'question simple (JSON)']]
   ];
   for (const [p, env, attendus] of pannes) {
     const r = lancer(['--sec'], Object.assign({ ESSAI_SEC_PANNE: p }, env));
@@ -81,6 +82,14 @@ const SECRETS_FACTICES = ['essai-sec-cle-app', 'essai-sec-signature', 'sk-ant-es
     v(`  … et aucun secret factice dans ce qu'elle affiche`, !SECRETS_FACTICES.some((s) => r.sortie.includes(s)),
       SECRETS_FACTICES.filter((s) => r.sortie.includes(s)).join(', '));
   }
+
+  // Le même silence, mais le serveur bat (période 300 ms ici) : vert, et
+  // l'essai compte les battements.
+  const battu = lancer(['--sec'], { ESSAI_SEC_PANNE: 'lent-battu', ESSAI_DELAI_COACH_S: '1' });
+  v('le même silence avec battement : code 0, et les battements sont comptés',
+    battu.code === 0 && /battement\(s\) « : attente »/.test(battu.sortie), 'code ' + battu.code + ' ' + rouges(battu.sortie).join(' | '));
+  const vide = lancer(['--sec'], { ESSAI_SEC_PANNE: 'credit-vide' });
+  v('crédits Claude vides : le repli du scan est NOMMÉ (servi par Gemini en REPLI)', /servi par Gemini en REPLI/.test(vide.sortie));
 
   console.log('\n═══ ③ SANS CLÉ D\'APP SUR LE MAC : LA PORTE SEULE, CODE 3 ═══');
   // Le mode « réel » joué contre le serveur local : c'est ce que voit
