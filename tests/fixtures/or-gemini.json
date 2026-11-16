@@ -333,8 +333,8 @@
   "google": [
    {
     "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=…",
-    "octets": 25463,
-    "sha256": "08b46f243b3665af8b6b15786bf2d0ac1fc5c13af336c5e4e5187f226c5f8f63"
+    "octets": 25239,
+    "sha256": "a65ed43ca172c492553b5dc0756dea7be401ba72a68c9f7e25a81a46bb16f71b"
    }
   ],
   "app": {
@@ -372,8 +372,8 @@
   "google": [
    {
     "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=…",
-    "octets": 29341,
-    "sha256": "3ec3b5d2f0a84493af654e176e5186f8e34cda72ec09a7607fa2774a86b56d1e"
+    "octets": 29117,
+    "sha256": "a94ebd0b405c63deeb13ed2afa5b7ce31d5cd05013c0436bb50c6994b71d8a42"
    }
   ],
   "app": {
@@ -416,8 +416,8 @@
   "google": [
    {
     "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:streamGenerateContent?alt=sse&key=…",
-    "octets": 29335,
-    "sha256": "c0791e3268acf0457350199f8f1ab664bc482a4a9c5a39a4acef4a4d4e20862b"
+    "octets": 29111,
+    "sha256": "48efef564b7210be0864de656f8ff3bc8a8ea741b899bfce680eff75ee16c323"
    }
   ],
   "app": {
@@ -470,8 +470,8 @@
   "google": [
    {
     "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=…",
-    "octets": 29339,
-    "sha256": "16c60d0c4cec062d846098037d1faafc9e148639e0089cfd279c0f34d723c4bc"
+    "octets": 29115,
+    "sha256": "8cfc605995bc465091af5b1a09aed78f1a9d408047047b72b0eeaf458e571c77"
    }
   ],
   "app": {
@@ -535,8 +535,8 @@
   "google": [
    {
     "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:streamGenerateContent?alt=sse&key=…",
-    "octets": 29344,
-    "sha256": "b24aaffa03579a6ae85b83e5e10bb499a00539f54bcae7bbe4bf5b9e22b77292"
+    "octets": 29120,
+    "sha256": "09326f4e006a37caecd8e2ba05b6f3d60177818adf617dcefadf464f5a864132"
    }
   ],
   "app": {
@@ -607,13 +607,13 @@
   "google": [
    {
     "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:streamGenerateContent?alt=sse&key=…",
-    "octets": 29335,
-    "sha256": "c0791e3268acf0457350199f8f1ab664bc482a4a9c5a39a4acef4a4d4e20862b"
+    "octets": 29111,
+    "sha256": "48efef564b7210be0864de656f8ff3bc8a8ea741b899bfce680eff75ee16c323"
    },
    {
     "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=…",
-    "octets": 29335,
-    "sha256": "c0791e3268acf0457350199f8f1ab664bc482a4a9c5a39a4acef4a4d4e20862b"
+    "octets": 29111,
+    "sha256": "48efef564b7210be0864de656f8ff3bc8a8ea741b899bfce680eff75ee16c323"
    }
   ],
   "app": {
@@ -666,18 +666,18 @@
   "google": [
    {
     "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=…",
-    "octets": 29335,
-    "sha256": "c0791e3268acf0457350199f8f1ab664bc482a4a9c5a39a4acef4a4d4e20862b"
+    "octets": 29111,
+    "sha256": "48efef564b7210be0864de656f8ff3bc8a8ea741b899bfce680eff75ee16c323"
    },
    {
     "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=…",
-    "octets": 29335,
-    "sha256": "c0791e3268acf0457350199f8f1ab664bc482a4a9c5a39a4acef4a4d4e20862b"
+    "octets": 29111,
+    "sha256": "48efef564b7210be0864de656f8ff3bc8a8ea741b899bfce680eff75ee16c323"
    },
    {
     "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=…",
-    "octets": 29335,
-    "sha256": "c0791e3268acf0457350199f8f1ab664bc482a4a9c5a39a4acef4a4d4e20862b"
+    "octets": 29111,
+    "sha256": "48efef564b7210be0864de656f8ff3bc8a8ea741b899bfce680eff75ee16c323"
    }
   ],
   "app": {
@@ -708,8 +708,8 @@
   "google": [
    {
     "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:streamGenerateContent?alt=sse&key=…",
-    "octets": 29335,
-    "sha256": "c0791e3268acf0457350199f8f1ab664bc482a4a9c5a39a4acef4a4d4e20862b"
+    "octets": 29111,
+    "sha256": "48efef564b7210be0864de656f8ff3bc8a8ea741b899bfce680eff75ee16c323"
    }
   ],
   "app": {
@@ -738,8 +738,8 @@
   "google": [
    {
     "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=…",
-    "octets": 38205,
-    "sha256": "e2463527e4786a228dd9686eeb71683bd96fe1d9aab53ec91c98d0afe73bd128"
+    "octets": 37981,
+    "sha256": "33bb0c295303670b77b47e2514a0609616670b9c674efb2551ce89bcc9f3b904"
    }
   ],
   "app": {
@@ -779,8 +779,8 @@
   "google": [
    {
     "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=…",
-    "octets": 29456,
-    "sha256": "0c94d9a5ebc43200725f0a52fd4baad0cc6c5134823908aeb833b6f0c69f285d"
+    "octets": 29232,
+    "sha256": "21bd074105f1059230964051d8447b7c30b9058076fc246aed374fff26bb32d9"
    }
   ],
   "app": {
@@ -823,8 +823,8 @@
   "google": [
    {
     "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=…",
-    "octets": 38134,
-    "sha256": "e09655f9800b1d600ce64cdb8a9ad75eb3acbcf1dc528e8c86d3f1d58fe09c47"
+    "octets": 37865,
+    "sha256": "89f599764381bc91891b2f8c3d13d6faf48e3db17b9b032ae313f5d428f313e8"
    }
   ],
   "app": {
@@ -873,8 +873,8 @@
   "google": [
    {
     "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:streamGenerateContent?alt=sse&key=…",
-    "octets": 38134,
-    "sha256": "e09655f9800b1d600ce64cdb8a9ad75eb3acbcf1dc528e8c86d3f1d58fe09c47"
+    "octets": 37865,
+    "sha256": "89f599764381bc91891b2f8c3d13d6faf48e3db17b9b032ae313f5d428f313e8"
    }
   ],
   "app": {
@@ -936,8 +936,8 @@
   "google": [
    {
     "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=…",
-    "octets": 38114,
-    "sha256": "68dc62316b8f19b0af0651b138fe4f0506f1f07aa4246327a61d86339f5fa149"
+    "octets": 37845,
+    "sha256": "32cd41b63815791ce972e9787e4dc8c77cafa3b9eb7832abfd5eef283fee36fe"
    }
   ],
   "app": {
@@ -1063,8 +1063,8 @@
   "google": [
    {
     "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=…",
-    "octets": 38364,
-    "sha256": "d45da15ece95a870637330563604fc4f61cbb5297d3d2a64bb37b6f895f3eb43"
+    "octets": 38095,
+    "sha256": "8ee4243d00cdee095173ffdb463ddee704848bc349db91cc1de82368a382c968"
    }
   ],
   "app": {
