@@ -27,6 +27,11 @@ const BANCS = [
   ['test-coach-flux.js',      'la diffusion par jeton : SSE recollé, « Suites » retenue, repli en JSON'],
   ['test-coach-securite.js',  'les 5 000 : rejeu, taille, device, erreurs muettes, en-têtes, bornes, clé'],
   ['test-apple-revocation.js', 'la suppression d\'un compte Apple : JWT ES256, échange, révocation, pannes muettes, rien de secret au journal'],
+  // 16 nov. 2026 — le scan avait trois bancs qu'aucun lanceur ne nommait.
+  ['test-scan-etiquette.js',  'le scan : la lecture d\'étiquette (mode label), bornes physiques'],
+  ['test-scan-carte.js',      'le scan : la carte du resto, la porte (CORS, device, compteurs, plafond du jour)'],
+  ['test-scan-or-gemini.js',  'le scan sans SCAN_FOURNISSEUR : Gemini à l\'octet contre le code d\'avant Claude'],
+  ['test-scan-claude.js',     'le scan sur Claude : requête, schémas, contrat = Gemini, photo, relais de clé, pannes'],
 ];
 
 let rouges = 0;
