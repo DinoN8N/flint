@@ -21,6 +21,7 @@ const BANCS = [
   ['test-coach-adaptateurs.js', 'les réponses V1 récrites en unités d\'écran, et le bloc DONNÉES DU JOUR'],
   ['test-coach-contexte.js',  'ce que le prompt système reçoit, et ce qu\'il ne reçoit jamais'],
   ['test-coach-manuel.js',    'le manuel : préfixe fixe ≤ 22 Ko, constantes du moteur, aucune fiche « i » recopiée'],
+  ['test-coach-manuel-questions.js', 'le manuel : 20 questions sur l\'app v3107, chacune a son passage ; ce que l\'app a retiré n\'y est plus'],
   ['test-coach-histoire.js',  'l\'historique vu par Gemini : marqueurs retirés, signatures intactes, talons, budget ; Suites/Retenir ; mémo'],
   ['test-coach-instantane-rendu.js', 'l\'instantané : bornes, clés interdites, unités, injection contenue, faits récents, mémos'],
   ['test-coach-scenarios.js', 'des conversations entières, de la question au rangement'],

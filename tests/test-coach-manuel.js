@@ -139,7 +139,22 @@ console.log('\n4 · Les constantes du MANUEL sont celles du moteur publié');
       /VETO_DUREE_MIN\s*=\s*240\b[\s\S]{0,4000}?Math\.min\(sBrut0,25\)/, ['index.html']],
     ['étirement ×1.3 au-dessus de 67', /Étiré ×1\.3 au-dessus de 67/, /_z0\+1\.3\*\(Z-_z0\)/, ['index.html']],
     ['demi-vie 7 j des normales', /demi-vie 7 j/, /_demiVie\s*=\s*7\b/, ['index.html']],
-    ['RECOV_ALGO_GEN 21', /RECOV_ALGO_GEN 21\b/, /RECOV_ALGO_GEN\s*=\s*21\b/, ['index.html']],
+    // 17 nov. 2026 — génération 22 (v2861, 18 oct.) : la VFC de la puce n'est
+    // plus retenue sur une nuit mesurée à moins de 50 % au pouls. Le manuel
+    // disait 21 depuis un mois : la ligne ET la règle, ensemble.
+    ['RECOV_ALGO_GEN 22', /RECOV_ALGO_GEN 22\b/, /RECOV_ALGO_GEN\s*=\s*22\b/, ['index.html']],
+    ['gén. 22 : pas de VFC de la puce sous 50 % de pouls', /la VFC de la puce est refusée sur une nuit mesurée à moins de 50 % au pouls/,
+      /hrCoverage!=null&&\+_wn\.hrCoverage<50&&!\(_wn\.vfcNuit&&_wn\.vfcNuit\.src==='rmssd'\)/, ['index.html']],
+    // « Pourquoi pas de VFC cette nuit ? » — la phrase de l'app, en minutes.
+    ['VFC : 6 minutes exploitables', /il en faut 6 minutes, réparties sur la nuit/, /il en faut 6 pour la calculer/, ['flint-recup-cycle.js']],
+    ['score « sans VFC » : ses entrées, et pas de score sous 50 % de pouls',
+      /« sans VFC » \(FC de repos, sommeil, respiration, température\) ; sans pouls sur la moitié de la nuit, pas de score/,
+      /RECUP_SANS_VFC = \{ c: [0-9.]+, fcRepos: -[0-9.]+, sommeil: [0-9.]+, respiration: -[0-9.]+, temperature: -[0-9.]+ \}[\s\S]{0,2500}?if \(cov != null && cov < 50\) return null/,
+      ['flint-recup-cycle.js']],
+    // Les « nuits de base » (16 nov., accueil des 200) : 4 nuits, plus de 4 h,
+    // sur aujourd'hui + 30 jours — un compteur d'affichage, le même aux deux écrans.
+    ['nuits de base : 4, de 4 h ou plus, sur 30 jours', /Premier score après 4 nuits de base \(« NUITS DE BASE » : 4 h ou plus, même source de VFC, sur 30 jours/,
+      /flNuitsBase=function\(\)\{try\{[\s\S]{0,1500}?for\(var i=0;i<=30;i\+\+\)[\s\S]{0,800}?sleepMin<240[\s\S]{0,400}?requises:4/, ['index.html']],
     // 28 sept. 2026 (v2699) — les protéines se comptent sur le poids de
     // RÉFÉRENCE : le poids, plafonné à celui d'un IMC 25 (flPrudenceApport).
     ['protéines 2.2 / 2.0 g/kg du poids de référence', /2\.2 g\/kg en sèche, 2\.0 sinon, par kg de ton poids plafonné/,
@@ -228,6 +243,32 @@ console.log('\n7 · « Comment est calculée la récup ? » — ce que le texte 
   verifie('la règle du facteur principal (0.15, ×1.35, 0.35, logit)', /principal[^\n]*0\.15[^\n]*×1\.35[^\n]*0\.35[^\n]*logit/.test(C));
   verifie('les cinq dettes, dont « ta dette » = « Dette accumulée »', /CINQ « dettes »[^\n]*« Dette accumulée »[^\n]*ta dette/.test(M.MANUEL));
   console.log('\n' + C.trim().split('\n').map(l => '     │ ' + l).join('\n') + '\n');
+}
+
+console.log('\n8 · Les noms d\'écrans et de boutons sont ceux de l\'app, au mot près');
+{
+  // 17 nov. 2026 — le manuel cite l'app entre « » (« Mes records », « Série
+  // finie »…). L'app vit dans un AUTRE dépôt (flint-ios) : ce contrôle ne joue
+  // que si FLINT_IOS nomme sa racine, sinon il le dit et passe. Chaque citation
+  // doit être une clé du catalogue (Localizable.xcstrings, clé = le français),
+  // ou figurer dans la courte liste des mots du MANUEL qui ne sont pas des
+  // libellés (noms de données, guillemets de sens).
+  const racine = process.env.FLINT_IOS;
+  if (!racine) console.log('  ⏭  FLINT_IOS absent : contrôle sauté (FLINT_IOS=<racine de flint-ios> node tests/test-coach-manuel.js)');
+  else {
+    const cat = JSON.parse(fs.readFileSync(path.join(racine, 'FLINT', 'Localizable.xcstrings'), 'utf8')).strings;
+    const camera = fs.readFileSync(path.join(racine, 'FLINT', 'CameraFlint.swift'), 'utf8');
+    const PAS_DES_LIBELLES = new Set(['rmssd', 'puce', 'provisoire', 'finale', 'normale', 'principal', 'X points',
+      'repos', 'dettes', 'minutes actives', 'Restantes', 'peu sûr', 'aucun bracelet FLINT connecté', '+', '…']);
+    const AILLEURS = {
+      'Habituellement X–Y': () => !!cat['Habituellement %@'],
+      'Code-barres': () => /\["Repas", "Code-barres"\]/.test(camera)
+    };
+    const texte = M.MANUEL + '\n' + M.ECRANS;
+    const cites = [...new Set([...texte.matchAll(/« ([^»]+) »/g)].map(m => m[1]))];
+    const absents = cites.filter(x => !PAS_DES_LIBELLES.has(x) && !(AILLEURS[x] ? AILLEURS[x]() : (cat[x] || cat[x + '.'])));
+    verifie(`${cites.length} citations, toutes des libellés de l'app (ou des mots du manuel)`, absents.length === 0, absents.join(' | '));
+  }
 }
 
 console.log(`\n${ko === 0 ? '✅' : '❌'} test-coach-manuel.js : ${ok} réussis, ${ko} échoués\n`);
