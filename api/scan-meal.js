@@ -15,6 +15,12 @@
 //                prot, carb, fat, confidence, box?:{x,y,w,h} }] }, mealName, items:[] }
 // Sans `carte` ni `mode`, RIEN ne change : une app déjà posée reçoit le repas
 // d'avant, au mot près (le banc le vérifie).
+//
+// 16 nov. 2026 — LE FOURNISSEUR. Gemini par défaut (la production). Avec
+// `SCAN_FOURNISSEUR=anthropic` et ANTHROPIC_API_KEY (ANTHROPIC_API_KEY_2 en
+// relais), Claude sert les mêmes questions avec les mêmes prompts, et sa réponse
+// passe par la même suite (`rendreAnalyse`) : l'app ne voit pas la différence.
+// Voir `_scan-claude.js` ; bancs : test-scan-or-gemini.js, test-scan-claude.js.
 
 // 23 sept. 2026 — le premier est celui qu'on veut ; les suivants sont ceux
 // qu'on accepte quand Google le déclare saturé (503 « high demand », mesuré
