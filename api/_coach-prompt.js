@@ -184,6 +184,40 @@ function prefixeStatique(mode, opts) { return (opts && opts.v3 === true ? PREFIX
 
 const texte = (s) => (typeof s === 'string' ? s.trim() : '');
 
+// ═══ 16 NOV. 2026 — « TOUCHE UN CHIFFRE » : TROIS PHRASES ═══════════════════
+// L'app (ToucheUnChiffre.swift) envoie, à côté de la question écrite, le
+// chiffre qu'un appui long a touché : `{metrique, valeur, jour, version}`.
+// La courbe, c'est l'app qui la dessine avec ses propres données ; ici, on ne
+// change que la FORME : trois phrases, sans titre ni puce, au lieu du verdict +
+// POURQUOI + À FAIRE d'une question ouverte. Table FERMÉE : une métrique
+// inconnue, une valeur trop longue ou un jour hors forme = pas de chiffre (la
+// question part comme une question ordinaire, rien n'est perdu).
+const CHIFFRES = {
+  recup: 'le score de récupération', scoreSommeil: 'le score de sommeil', dormi: 'la durée de sommeil',
+  dette: 'la dette de sommeil', efficacite: "l'efficacité du sommeil", effort: "l'Effort du jour",
+  kcalBrulees: 'les calories brûlées', kcalMangees: 'les calories mangées', balance: 'la balance calorique',
+  stress: 'le stress moyen'
+};
+
+/** `body.chiffre` → `{ metrique, valeur, jour }` sûr, ou `null`. */
+function lireChiffre(c) {
+  if (!c || typeof c !== 'object' || Array.isArray(c)) return null;
+  if (!Object.prototype.hasOwnProperty.call(CHIFFRES, c.metrique)) return null;
+  const v = typeof c.valeur === 'string' ? c.valeur.replace(/\s+/g, ' ').trim()
+    : (typeof c.valeur === 'number' && Number.isFinite(c.valeur) ? String(c.valeur) : '');
+  // La valeur est ce que l'écran imprime (« 6h43 », « 66 % », « +1 389 kcal ») :
+  // courte, des chiffres, aucun caractère qui ferait une consigne.
+  if (!v || v.length > 24 || !/\d/.test(v) || /[<>{}`"\\]/.test(v)) return null;
+  const jour = Number.isInteger(c.jour) && c.jour <= 0 && c.jour >= -400 ? c.jour : 0;
+  return { metrique: c.metrique, valeur: v, jour };
+}
+
+function rappelChiffre(ch) {
+  const quand = ch.jour === 0 ? "aujourd'hui (le jour de la pastille)" : ch.jour === -1 ? 'hier' : `il y a ${-ch.jour} jours`;
+  return `QUESTION SUR UN SEUL CHIFFRE — la personne a gardé le doigt sur ${CHIFFRES[ch.metrique]}, affiché « ${ch.valeur} », pour ${quand}. L'écran dessine lui-même la courbe de ce chiffre sous ta réponse.
+FORME DE CETTE RÉPONSE, à la place du verdict / titres / puces : TROIS phrases au plus, sans titre ni puce. 1) Ce que vaut ce chiffre pour ELLE, en **gras**, face à sa normale ou à sa cible. 2) La raison principale, avec ses chiffres des DONNÉES. 3) Quoi faire, ou « rien à changer ». Les règles des chiffres restent les mêmes ; « Suites : » en dernière ligne.`;
+}
+
 // Le titre que `rendreMemos` (_coach-instantane.js) pose déjà ; on ne le
 // double pas, mais un appelant qui passe des lignes nues l'obtient quand même.
 const TITRE_ECHANGES = "ÉCHANGES RÉCENTS (ce que TU as dit ; chiffres d'époque, l'INSTANTANÉ fait foi pour aujourd'hui)";
@@ -230,7 +264,11 @@ MÉMOIRE — fin des faits confiés, listés du plus RÉCENT (en haut) au plus a
   // appelait « séance de sport » le foot que la personne venait de nommer.
   // La consigne complète reste dans FORME (préfixe fixe) ; ce rappel court est
   // ce que le modèle lit juste avant d'écrire.
-  if (b.anodin !== true) {
+  const chiffre = b.anodin === true ? null : lireChiffre(b.chiffre);
+  if (chiffre) {
+    parts.push(rappelChiffre(chiffre));
+    if (b.v3 === true) parts.push(RAPPEL_V3);
+  } else if (b.anodin !== true) {
     parts.push(`RAPPEL AVANT D'ÉCRIRE : ligne 1 = le VERDICT, une phrase en **gras** avec le chiffre qui compte ; puis UN titre « ## ${T.pourquoi} » ou « ## ${T.detail} » et ses puces ; puis « ## ${T.aFaire} » (sauf question simple) ; une seule phrase _soulignée_ ; « Suites : » en dernière ligne. Une activité que la personne a nommée garde SON nom (« ton foot d'hier »), même si le bracelet l'a nommée autrement.`);
     // Coach v3 seulement (`blocs.v3`, posé par promptSysteme({ v3: true })).
     if (b.v3 === true) parts.push(RAPPEL_V3);
@@ -251,4 +289,4 @@ function promptSysteme(args) {
   return (a.v3 === true ? PREFIXES_V3 : PREFIXES)[mode] + '\n\n' + queueVariable({ ton: a.ton, langue: a.langue, blocs });
 }
 
-module.exports = { promptSysteme, prefixeStatique, TONS, LANGUES, TITRES };
+module.exports = { promptSysteme, prefixeStatique, TONS, LANGUES, TITRES, lireChiffre };

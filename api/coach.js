@@ -541,7 +541,7 @@ module.exports = async function handler(req, res) {
     // `v3` (Claude) ajoute un bloc fixe au préfixe et un rappel à la queue ;
     // `v3: false` rend le prompt d'avant à l'octet (banc or-gemini).
     const systeme = promptSysteme({ ton, langue, mode: version, v3: !!claude,
-                                    blocs: { donnees, profilTexte: profil, faits, memos, anodin } });
+                                    blocs: { donnees, profilTexte: profil, faits, memos, anodin, chiffre: body.chiffre } });
     const toursPris = toursOutilsConsommes(contents);
 
     gReq = {
