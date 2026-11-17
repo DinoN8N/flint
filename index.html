@@ -64,7 +64,7 @@
   <div class="hdtitle" id="hdTitle"></div>
   <!-- avatar : photo démo ; Félix branche la vraie photo/initiale du user -->
   <div class="hdright">
-    <div class="wbatt" id="wbatt" onclick="go('profile')" title="Batterie de la montre"><svg class="wbolt" width="15" height="15" viewBox="0 0 24 24"><path d="M13 2L4.5 13.5H10l-1 8.5L19.5 10H13z" fill="#fff"></path></svg><span id="wbattV">—</span><svg width="16.9" height="21" viewBox="0 0 100 124" fill="none" stroke="currentColor" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22,1 C30,-1 74,-1 82,1 C90,3 96,20 97,40 C97.5,48 97.5,54 97,58 C99,62 99.5,66 98,70 C97,77 94,85 87,92 C80,98 72,100 60,100.5 C48,101 32,100.5 22,98 C11,95.5 2,88 1,78 C0,68 0,55 0.3,50 C0.6,42 2,30 5,20 C8,12 13,6 22,1 Z"></path><path d="M70,4 C66,8 60,14 57,24 C55,32 55,42 56,52 C56.3,55 56.3,57 56,58.5 C57,61 58.5,64 58,68 C57.5,71 55,73 54.5,76 C54,79 56.5,80 57,82.5 C57.3,84.5 55,86 55,87.5"></path><path d="M56,58.5 L97,58.8"></path><path d="M15,69 L47,69"></path></svg></div>
+    <div class="wbatt" id="wbatt" onclick="go('profile')" title="Batterie du bracelet"><svg class="wbolt" width="15" height="15" viewBox="0 0 24 24"><path d="M13 2L4.5 13.5H10l-1 8.5L19.5 10H13z" fill="#fff"></path></svg><span id="wbattV">—</span><svg width="16.9" height="21" viewBox="0 0 100 124" fill="none" stroke="currentColor" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22,1 C30,-1 74,-1 82,1 C90,3 96,20 97,40 C97.5,48 97.5,54 97,58 C99,62 99.5,66 98,70 C97,77 94,85 87,92 C80,98 72,100 60,100.5 C48,101 32,100.5 22,98 C11,95.5 2,88 1,78 C0,68 0,55 0.3,50 C0.6,42 2,30 5,20 C8,12 13,6 22,1 Z"></path><path d="M70,4 C66,8 60,14 57,24 C55,32 55,42 56,52 C56.3,55 56.3,57 56,58.5 C57,61 58.5,64 58,68 C57.5,71 55,73 54.5,76 C54,79 56.5,80 57,82.5 C57.3,84.5 55,86 55,87.5"></path><path d="M56,58.5 L97,58.8"></path><path d="M15,69 L47,69"></path></svg></div>
     <div class="av" id="avatar" onclick="go('profile')">A</div>
     <button class="hbell" aria-label="Notifications" onclick="toast('Aucune nouvelle notification')"><i class="ti ti-bell"></i><span class="hdot"></span></button>
   </div>
@@ -2887,7 +2887,7 @@ body.stepsview header{display:none}
 <script src="flint-tendances.js"></script>
 <script src="flint-jambes.js"></script>
 <script src="flint-export.js"></script>
-<script src="flint-energie.js"></script>
+<script src="flint-energie.js"></script><script src="flint-seances.js"></script>
 <script>
 /* ══════════ LA MEMOIRE, ET CE QUI LA REMPLIT ══════════════════════════════
 
@@ -3060,13 +3060,13 @@ function flJours(prefixe){
      n'est pas un risque : la purge n'écrit `null` que sur les six familles
      légères, jamais sur les courbes. Une clé `watch_` qui existe porte une
      journée. */
-  var creuse=(prefixe!=='watch_');
+  var creuse=(prefixe!=='watch_'), _R=null; try{_R=(window.__flCave&&window.__flCave.reel)||null;}catch(eR){}   /* 17 nov. 2026 — LA CAVE NE SE RELIT PAS POUR UN INDEX : un an de `sessions_` descendues = 335 allers-retours synchrones vers le natif au lancement (test-cave-une-annee.js). Une clé que le haut ne porte plus est en cave, donc présente : l'index devient un sur-ensemble, que ses appelants tolèrent. */
   var ens={}, n=localStorage.length;
   for(var i=0;i<n;i++){
    var k=localStorage.key(i);
    if(!k || k.lastIndexOf(prefixe,0)!==0) continue;
    if(creuse){
-    var v=localStorage.getItem(k);
+    var v=_R?_R.getItem(k):localStorage.getItem(k); if(_R&&v===null){ens[k.slice(prefixe.length)]=1;continue;}
     if(v===null||v===''||v==='null'||v==='[]'||v==='{}') continue;
    }
    ens[k.slice(prefixe.length)]=1;
@@ -4465,7 +4465,7 @@ function baseStat(field,fen,jour){
     rho 0,876 -> 0,919, valide C1 ; sous 5 j les faux REPOS doublent. Seules VFC et FC repos penchent.
     Plancher 4 h, provenance (gen.17) et plancher CV inchanges. */
  const _demiVie=7,_pese=(field==='hrv'||field==='rhr');
- const a=[],w=[];for(let i=0;i<(fen||30);i++){const k=tk(_j-1-i);const s=(typeof sensorOf==='function')?sensorOf(k):DB.get('sensor_'+k,null);if(s&&s[field]!=null){if(field==='hrv'&&s.sleepMin!=null&&s.sleepMin<_minNuit)continue;if(!((field==='hrv')?(_srcH&&(s.hrvSrc!==_srcH||((s.instr||'')+'|m'+(s.hrvMeth||1))!==_insH)):(_parI&&(((s.instr||'')+(field==='tempNuit'?'|'+(s.tempSrc||''):''))!==_insH||(field==='resp'&&_srcH&&s.respSrc!==_srcH))))){a.push(s[field]);w.push(_pese?Math.pow(0.5,i/_demiVie):1);}}}
+ const a=[],w=[];for(let i=0;i<(fen||30);i++){const k=tk(_j-1-i);const s=(typeof sensorOf==='function')?sensorOf(k):DB.get('sensor_'+k,null);if(s&&s[field]!=null){if(field==='hrv'&&s.sleepMin!=null&&s.sleepMin<_minNuit)continue;if(field==='hrv'&&typeof flVfcHorsNorme==='function'&&flVfcHorsNorme(k,tk(_j)))continue;if(!((field==='hrv')?(_srcH&&(s.hrvSrc!==_srcH||((s.instr||'')+'|m'+(s.hrvMeth||1))!==_insH)):(_parI&&(((s.instr||'')+(field==='tempNuit'?'|'+(s.tempSrc||''):''))!==_insH||(field==='resp'&&_srcH&&s.respSrc!==_srcH))))){a.push(s[field]);w.push(_pese?Math.pow(0.5,i/_demiVie):1);}}}
  if(a.length<3){_bsMemo[k2]=null;return null;}
  const W=w.reduce((x,y)=>x+y,0);const m=a.reduce((x,y,i)=>x+y*w[i],0)/W;const sd=Math.sqrt(a.reduce((x,y,i)=>x+w[i]*(y-m)*(y-m),0)/W)||1;
  const r={m,sd,n:a.length}; _bsMemo[k2]=r; return r;}
@@ -4645,7 +4645,7 @@ window.flRecovRejuger=function(){
    nourrit l'AFFICHAGE de la VFC d'un jour sans découpe de nuit, pas un score.
    `persistRecov` cesse du même coup de figer un score d'avant-sommeil au
    registre. Verrou : test-recup-sans-nuit.js. */
-function recovery(off){const _o=Math.min(0,(off||0));const t=sensorOf(tk(_o));if(!t)return null;const _sv=(t.hrv==null&&typeof flRecupSansVfcPermis==='function')?flRecupSansVfcPermis(t,_o):null;/* 31 oct. 2026 — sans VFC, le score se calcule sans elle et le DIT (flint-recup-cycle.js, « UNE RÉCUP TOUJOURS DONNÉE ») */if(t.hrv==null&&!_sv)return null;if(t._watch&&t.sleepMin==null)return null;const bH=baseStat('hrv',60,_o),bR=baseStat('rhr',60,_o),bP=baseStat('resp',60,_o);if(_sv?!bR:!bH)return null;const z=(v,b,cv)=>{if(!(b&&v!=null))return 0;
+function recovery(off){const _o=Math.min(0,(off||0));const t=sensorOf(tk(_o));if(!t)return null;let _sv=(t.hrv==null&&typeof flRecupSansVfcPermis==='function')?flRecupSansVfcPermis(t,_o):null;/* 31 oct. 2026 — sans VFC, le score se calcule sans elle et le DIT (flint-recup-cycle.js, « UNE RÉCUP TOUJOURS DONNÉE ») */if(t.hrv==null&&!_sv)return null;if(t._watch&&t.sleepMin==null)return null;const bH=baseStat('hrv',60,_o),bR=baseStat('rhr',60,_o),bP=baseStat('resp',60,_o);if(!_sv&&!bH&&typeof flRecupSansNormeVfc==='function')_sv=flRecupSansNormeVfc(t,_o);/* 15 nov. 2026 — VFC mesurée mais pas encore de normale : même score « sans VFC » (flint-recup-cycle.js) */if(_sv?!bR:!bH)return null;const z=(v,b,cv)=>{if(!(b&&v!=null))return 0;
  /* v1774 — UN PLANCHER DE DISPERSION, ET SEULEMENT SUR LA VARIABILITE.
     Mesure sur trois corps d epreuve : la methode d avant CONFONDAIT une derive
     lente et un effondrement soudain — -1,99 contre -2,50, un demi ecart-type
@@ -4949,7 +4949,7 @@ function actStrain(s,k){
    if(r&&r.effort!=null)return r.effort;
   }
  }catch(e){}
- const L=(s.dur||0)*(s.int||2)*1.7;return +(STRAIN_MAX*(1-Math.exp(-L/520))).toFixed(1)}
+ const L=Math.min(s.dur||0,180)*(s.int||2)*1.7;return +(STRAIN_MAX*(1-Math.exp(-L/520))).toFixed(1)}
 
 /* ═══ v1606 — LA NOTE D UNE SÉANCE, EN UN SEUL ENDROIT ═══════════════════════
 
@@ -5189,14 +5189,14 @@ window.flEtatActivite=function(s,k,maintenantMin){
          cas où le délai sert encore, et il ne sert qu'à ça. */
   var derniere=(typeof flDerniereFCMin==='function')?flDerniereFCMin(k||s.jour):null;
   if(depuis>=0&&derniere!=null&&derniere<fin&&depuis<=FL_RETARD_MAX_MIN)
-   return rendre('waitingForData','la montre n a livré que jusqu a '+derniere
+   return rendre('waitingForData','le bracelet n a livré que jusqu a '+derniere
                 +' — la fenêtre finit à '+fin);
   /* 12 sept. 2026 — ON N'ATTEND PAS UNE MONTRE QUI N'EXISTE PAS. Le natif pose
      `window.flMontreConnue` au chargement (nom mémorisé ou lien ouvert) et au
      premier lien. Sans aucun bracelet, une séance au téléphone se finalise tout
      de suite, sans note cardiaque — pas après quinze minutes d'attente. */
   if(depuis>=0&&derniere==null&&depuis<=FL_ATTENTE_MIN)
-   return rendre('waitingForData','la montre n a rien livré de ce jour depuis '
+   return rendre('waitingForData','le bracelet n a rien livré de ce jour depuis '
                 +depuis+' min sur '+FL_ATTENTE_MIN);
  }
  /* ON N'ATTEND PAS CE QUI NE PEUT PAS VENIR. Une fenêtre trop courte est
@@ -5268,7 +5268,7 @@ function strainTarget(){const rv=(typeof flRecovLu==='function')?flRecovLu(0):re
  if(!rv)return ech(10,14);
  const r=rv.s;
  return r>=67?ech(14,18):r>=34?ech(10,14):ech(6,10)}
-function calibNights(){let n=0,src=null;const _s0=sensorOf(tk(0)),_sv=window.flRecupSansVfc===1&&_s0&&_s0.hrv==null;for(let i=0;i<31;i++){const s=sensorOf(tk(-i));if(s&&(s.hrv!=null||(_sv&&s.sleepMin>=240&&s.rhr!=null))){if(i===0)src=s.hrvSrc||null;if(i===0||(!(s.sleepMin!=null&&s.sleepMin<240)&&!(src&&s.hrvSrc&&s.hrvSrc!==src)))n++}}return n}   /* 28 sept. 2026 — les MÊMES nuits que `baseStat` et `flNuitsBase` : plus de 4 h, même source de VFC (S6) ; et la même FENÊTRE, aujourd'hui + 30 (elle s'arrêtait à 29 : relecture adversariale) */
+function calibNights(){if(typeof window.flNuitsBase==='function'){const _b=window.flNuitsBase();if(_b)return _b.presentes}let n=0,src=null;const _s0=sensorOf(tk(0)),_sv=window.flRecupSansVfc===1&&_s0&&_s0.hrv==null;for(let i=0;i<31;i++){const s=sensorOf(tk(-i));if(s&&(s.hrv!=null||(_sv&&s.sleepMin>=240&&s.rhr!=null))){if(i===0)src=s.hrvSrc||null;if(i===0||(!(s.sleepMin!=null&&s.sleepMin<240)&&!(src&&s.hrvSrc&&s.hrvSrc!==src)))n++}}return n}   /* 28 sept. 2026 — les MÊMES nuits que `baseStat` et `flNuitsBase` : plus de 4 h, même source de VFC (S6) ; et la même FENÊTRE, aujourd'hui + 30 (elle s'arrêtait à 29 : relecture adversariale). 16 nov. 2026 — UN SEUL COMPTE POUR LES DEUX ÉCRANS : l'accueil (« n/4 nuits ») lit `flNuitsBase`, celui de la page Récup ; ce corps ne sert plus que de repli. Ils divergeaient (VFC hors norme, changement d'instrument d'un côté, nuits sans VFC de l'autre) : « 3/4 » ici, « 2 / 4 » là, le même matin. Affichage seul : `recovery` ne lit aucun des deux. */
 
 /* ---------- RINGS / CHARTS ---------- */
 function ringHTML(val,size,label,sub,color,dispVal){color=color||'var(--accent)';const r=size/2-9,c=2*Math.PI*r,off=c*(1-Math.max(0,Math.min(100,val))/100);const gid='rg'+Math.round(size*1000+(+val||0));const fs=Math.round(size*0.225);return '<div style="position:relative;display:inline-block;width:'+size+'px;height:'+size+'px;vertical-align:top"><svg width="'+size+'" height="'+size+'" viewBox="0 0 '+size+' '+size+'" style="display:block"><defs><linearGradient id="'+gid+'" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="'+color+'" stop-opacity=".7"/><stop offset="1" stop-color="'+color+'"/></linearGradient></defs><circle cx="'+size/2+'" cy="'+size/2+'" r="'+r+'" fill="none" stroke="var(--track)" stroke-width="9"/><circle cx="'+size/2+'" cy="'+size/2+'" r="'+r+'" fill="none" stroke="url(#'+gid+')" stroke-width="9" stroke-linecap="round" stroke-dasharray="'+c.toFixed(1)+'" stroke-dashoffset="'+off.toFixed(1)+'" style="--rc:'+c.toFixed(1)+';--ro:'+off.toFixed(1)+';animation:ringfill .55s cubic-bezier(.2,.8,.2,1) both" transform="rotate(-90 '+size/2+' '+size/2+')"/></svg><div class="rc">'+(label?'<div class="rlab">'+label+'</div>':'')+'<div class="rval" style="font-size:'+fs+'px;color:'+color+'">'+(dispVal!=null?dispVal:val)+'</div>'+(sub?'<div class="rsub">'+sub+'</div>':'')+'</div></div>'}
@@ -5511,7 +5511,7 @@ const DASH={
    (DB.get('sessions_'+K,[])||[]).forEach(function(s){if(s.type==='strength')m+=(s.dur||0);});
    var wm=DB.get('watch_'+K,null); if(wm&&wm.strength>0)m=Math.max(m,+wm.strength);
    if(!(m>0))return '—';
-   return Math.floor(m/60)+'h'+String(Math.round(m%60)).padStart(2,'0');
+   m=Math.round(m);return Math.floor(m/60)+'h'+String(m%60).padStart(2,'0');
   }catch(e){return '—';}}},
  hrzall:{l:'Toutes les zones de FC (hebdo)',i:'ti-heart',p:'fczones',v:function(){try{var z=flZonesOf(tk());if(!z||!z.z)return '—';var t=z.z.reduce(function(a,b){return a+(+b||0);},0);return t>0?Math.round(t)+' min':'—';}catch(e){return '—';}}},
  vo2:{l:'VO₂ max',i:'ti-lungs',p:null,v:function(){try{var v=(typeof flVo2Max==='function')?flVo2Max(0):null;return v!=null?''+v:'—';}catch(e){return '—';}}},
@@ -5728,7 +5728,7 @@ function renderStress(){var k=tk(_stDay),pts=stressSeries(k);window._stPts=pts;
  acts.forEach(function(a){var s=a.sleep?0:a.startMin,e=a.sleep?(a.wakeMin!=null?a.wakeMin:420):a.endMin;if(s==null)return;s=Math.max(0,Math.min(1440,s));e=Math.max(s+10,Math.min(1440,e));strip+='<span class="stab" style="left:'+(s/1440*100).toFixed(1)+'%;width:'+((e-s)/1440*100).toFixed(1)+'%;background:'+(a.sleep?'rgba(108,123,214,.5)':'rgba(63,160,224,.55)')+'"></span>'});
  var as=document.getElementById('stActStrip');if(as)as.innerHTML=strip;
  var z=stZones(pts),tot=(z.f+z.m+z.e)||1,hf=z.f*0.83,hm=z.m*1.27,he=z.e*1.47,htot=(hf+hm+he)||1;
- function fm(m){return Math.floor(m/60)+'h'+String(Math.round(m%60)).padStart(2,'0')}
+ function fm(m){m=Math.round(m);return Math.floor(m/60)+'h'+String(m%60).padStart(2,'0')}
  set('stTotDate','Stress '+ST_WDA[t.getDay()]+' '+T_MON[t.getMonth()].replace('.','')+' '+t.getDate());set('stTotWd',ST_WDF[t.getDay()]);
  set('stTotBars','<div class="sttbar"><i style="width:'+(z.f/tot*100).toFixed(1)+'%;background:#3FA0E0"></i><i style="width:'+(z.m/tot*100).toFixed(1)+'%;background:#2FAE67"></i><i style="width:'+(z.e/tot*100).toFixed(1)+'%;background:#F0492E"></i></div><div class="sttbar hab"><i style="width:'+(hf/htot*100).toFixed(1)+'%;background:#3FA0E0"></i><i style="width:'+(hm/htot*100).toFixed(1)+'%;background:#2FAE67"></i><i style="width:'+(he/htot*100).toFixed(1)+'%;background:#F0492E"></i></div>');
  function dch(td,hb){var d=hb>0?Math.round((td-hb)/hb*100):0,up=d>=0;return '<span class="ctd '+(up?'up':'down')+'"><i class="ti ti-caret-'+(up?'up':'down')+'-filled"></i>'+Math.abs(d)+'%</span>'}
@@ -6201,7 +6201,7 @@ function _flPasseReparation(quand){
     prochain regard ; jusque-la, chaque reveil de l app aurait le droit de
     republier. `flRecupSceller` ne fait rien si la nuit n est pas finale, et
     rien non plus si elle est deja scellee. */
- try{if(typeof window.flRecupSceller==='function')window.flRecupSceller('reparation');}catch(e){}
+ try{if(typeof window.flRecupSceller==='function')window.flRecupSceller('reparation');}catch(e){} try{if(typeof window.flRecupRattraper==='function')window.flRecupRattraper('reparation');}catch(e){}   /* 15 nov. 2026 — une nuit scellée des 7 derniers jours sans récup la retrouve (flint-recup-cycle.js) */
 }
 /* v1917 — 20 s, et non 6,4 : les six premieres secondes appartiennent aux
    ecrans que l utilisateur ouvre. Une reparation d historique n a aucune raison
@@ -7398,7 +7398,7 @@ window.flSommeilData=function(_argJour){try{
   var q=String(cle).split('-'); if(q.length<3)return null;
   var J=flJoursLongs();
   var d=new Date(+q[0],+q[1]-1,+q[2]); if(isNaN(d))return null;
-  var v=new Date(d.getTime()-86400000);
+  var v=new Date(+q[0],+q[1]-1,+q[2]-1);   /* 17 nov. 2026 — la VEILLE du calendrier, pas 24 h avant : le lendemain du passage à l'heure d'été (29 mars 2027), minuit moins 24 h tombe le samedi à 23 h — « nuit de samedi à lundi » (test-jours-heure-ete.js) */
   var _l=(typeof flLangue==='function')?flLangue():'fr'; return _l==='en'?('night from '+J[v.getDay()]+' to '+J[d.getDay()]):_l==='es'?('noche del '+J[v.getDay()]+' al '+J[d.getDay()]):('nuit de '+J[v.getDay()]+' à '+J[d.getDay()]);   /* 30 sept. 2026 — « nuit de Tuesday à Wednesday » en anglais */
  }catch(e){return null;}}
  var prof=(typeof getProfile==='function')?getProfile():{};
@@ -7831,7 +7831,7 @@ window.flSommeilData=function(_argJour){try{
   /* Duree au lit et heure de coucher en minutes : le natif en a besoin pour
      convertir la position du doigt sur la courbe en heure affichable. */
   litMin: (n&&n.inBed!=null)?n.inBed:null,
-  coucheMin: (n&&n.bedMin!=null)?n.bedMin:null
+  coucheMin: (n&&n.bedVive!=null)?n.bedVive:((n&&n.bedMin!=null)?n.bedMin:null)   /* 17 nov. 2026 — l'axe du graphique suit la nuit qu'il dessine (`bedVive`, flNuitServir) */
  };
 }catch(e){return {aDesDonnees:false};}};
 /* ═══ v904 — PONT DE LA PAGE PRINCIPALE (accueil) ═══════════════════════════
@@ -9037,7 +9037,7 @@ window.flRecupData=function(_argJour){try{
     que sur la page Effort, même absence d'effet sur les chiffres : ce sont les
     mêmes champs, des mêmes nuits. */
  var _n31=[]; for(var _q=30;_q>=0;_q--){var _x=null;   /* 4 nov. 2026 — TRENTE nuits : la plage du Moniteur se prend comme celle de WHOOP (Q1–Q3 des 30 derniers jours, retrouvé sur son export : 13,6–13,9 · 49–52) ; les courbes gardent leurs 22 (`_n22`) */
-  try{_x=sensorOf(tk(_off+_dec-_q));}catch(e){}   /* v1459 — idem ; 6 oct. 2026 — le Moniteur juge SA plage sur le dernier point (`homogene`, MoniteurSante.swift) : il doit être la nuit montrée, pas le 6 vide */
+  try{_x=sensorOf(tk(_off+_dec-_q));if(_x&&typeof flVfcMarquerAvant==='function')_x=flVfcMarquerAvant(_x,tk(_off+_dec-_q),tk(_off+_dec));}catch(e){}   /* v1459 — idem ; 6 oct. 2026 — le Moniteur juge SA plage sur le dernier point (`homogene`, MoniteurSante.swift) : il doit être la nuit montrée, pas le 6 vide */
   _n31.push(_x||null);} var _n22=_n31.slice(9); function col31(f){return _n31.map(function(x){var v=null;try{v=f(x);}catch(e){}return (v==null||isNaN(v))?null:+v;});}
  function colNuit(f){return _n22.map(function(x){var v=null;
   try{v=f(x);}catch(e){}
@@ -9625,10 +9625,10 @@ window.flTendancesData=function(mi,pi){try{
  function a7(f,dec){var s=0,n=0;for(var i=0;i<7;i++){var v=null;
   try{v=f(tk(_o-i));}catch(e){}
   if(v!=null&&!isNaN(v)){s+=+v;n++;}}
-  if(!n)return null;var r=s/n;return dec?(Math.round(r*10)/10).toFixed(1).replace('.',flSeparateurDecimal()):String(Math.round(r));}
- var m7=[{nom:'Récup moy', valeur:a7(METR[0][3]), unite:'%'},
-  {nom:'Sommeil moy', valeur:a7(METR[3][3],1), unite:'h'},
-  {nom:'HRV moy', valeur:a7(METR[1][3]), unite:'ms'},
+  if(!n)return null;var r=s/n;if(dec==='hm'){var mm=Math.round(r*60);return Math.floor(mm/60)+'h'+('0'+(mm%60)).slice(-2);}   /* 14 nov. 2026 — le sommeil moyen s'écrit « 6h43 », comme dans le bilan juste en dessous (la tuile disait « 6,7 h ») */
+  return dec?(Math.round(r*10)/10).toFixed(1).replace('.',flSeparateurDecimal()):String(Math.round(r));}
+ var m7=[{nom:'Récup moy', valeur:a7(METR[0][3]), unite:'%'}, {nom:'Sommeil moy', valeur:a7(METR[3][3],'hm'), unite:''},
+  {nom:'VFC moy', valeur:a7(METR[1][3]), unite:'ms'},
   /* v2492 — LA TUILE CHARGE PASSE PAR `a7`, COMME SES TROIS VOISINES. Elle appelait `loadAvg(7)`, qui repart de `new Date()` : le 15 septembre, flDayOff 0 / -20 / -30 donnaient héros « 21 », « 519 », « 1152 » et tuile « 21 » les trois fois, pendant que Sommeil (7,0→5,7→6,1) et HRV (75→60→58) suivaient. Sur « 1 sem », tuile et héros désignent la MÊME grandeur : ils doivent dire le même nombre. `a7` lit `tk(_o-i)` et ne moyenne que les jours connus — c'est le défaut que le pavé v1461 en tête de cette fonction dit avoir corrigé, et qui avait survécu ici. */
   {nom:'Charge', valeur:a7(METR[4][3]), unite:''}];
  /* bilan de la semaine — reprend assess(7) */
@@ -9650,36 +9650,10 @@ window.flTendancesData=function(mi,pi){try{
    sommeil:slh==null?null:(function(m){return Math.floor(m/60)+'h'+String(m%60).padStart(2,'0');})(Math.round(slh*60)),
    effort:st?String(Math.round(str)):null, seances:(vu&&!(typeof flSansBracelet==='function'&&flSansBracelet()))?String(ses):null};   /* 28 sept. 2026 — sans bracelet, ni charge ni compte de séances : flint-porte.js */
  }catch(e){}
- /* corrélations du journal — reprend behaviorCorr */
- var corr=[];
- try{
-  var BEH=[['cafeine','☕ Caféine tardive'],['alcool','🍺 Alcool'],['ecrans','📱 Écrans au lit'],
-   ['sportintense','🏃 Sport intense'],['magnesium','💊 Magnésium'],['meditation','🧘 Méditation'],
-   ['repastard','🍽️ Repas tard'],['hydrate','💧 Bien hydraté']];
-  /* v1412 — LES TRENTE JOURS SE LISENT UNE FOIS, LES HUIT HABITUDES SE LISENT
-     DEDANS. La boucle était à l'envers : chaque habitude refaisait le tour du
-     mois, soit huit fois trente jours et jusqu'à quatre cent quatre-vingts
-     lectures de base pour un encadré de trois lignes. Le résultat ne change
-     pas d'un point — ce sont les mêmes journées, dans le même ordre. */
-  var MOIS30=[];
-  for(var _d=1;_d<=30;_d++){var _k=tk(-_d);
-   var _r=DB.get('recov_'+_k,null); if(_r==null)continue;
-   MOIS30.push({r:_r,j:DB.get('journal_'+_k,{})||{}});}
-  BEH.forEach(function(b){
-   var oui=[],non=[];
-   for(var i=0;i<MOIS30.length;i++){
-    (MOIS30[i].j[b[0]]?oui:non).push(MOIS30[i].r);}
-   if(oui.length>=2&&non.length>=2){
-    var mo=oui.reduce(function(a,c){return a+c;},0)/oui.length;
-    var mn2=non.reduce(function(a,c){return a+c;},0)/non.length;
-    if(mn2>0){var imp=Math.round((mo-mn2)/mn2*100);
-     if(Math.abs(imp)>=1)corr.push({nom:b[1],impact:imp});}}});
-  corr.sort(function(a,b){return Math.abs(b.impact)-Math.abs(a.impact);});
-  corr=corr.slice(0,7);
- }catch(e){}
+ /* 15 nov. 2026 — les corrélations du journal du soir (behaviorCorr, 30 jours) sont parties avec lui. */
  return {aDesDonnees:true,metrique:mi,periode:pi,
   titre:m[1]+' · '+PER[pi][1],couleur:m[2],
-  metriques:['Récupération','HRV','FC','Sommeil','Charge'],
+  metriques:['Récupération','VFC','FC','Sommeil','Charge'],
   periodes:['1 sem','1 mois','6 mois'],
   points:vals,labels:vals.map(function(_,i2){
    var d=new Date();d.setDate(d.getDate()-(nd-1-i2));
@@ -9689,7 +9663,7 @@ window.flTendancesData=function(mi,pi){try{
    return (i2%step===0||i2===nd-1)?String(d.getDate())+(nd===180?'/'+(d.getMonth()+1):''):'';}),
   mn:mn,mx:mx,ticks:ticks,
   moyenneTxt:(moy==null?null:'Moyenne '+fmt(moy)),
-  moyennes7:m7,bilan:bilan,correlations:corr};
+  moyennes7:m7,bilan:bilan};
 }catch(e){return {aDesDonnees:false};}};
 /* ═══ v1832 — L'ÂGE FLINT SORT DE L'ANONYMAT, ET CHAQUE SIGNAL EST BORNÉ ═════
    Il vivait dans une IIFE anonyme du payload profil : introuvable pour un banc,
@@ -10859,7 +10833,7 @@ window.flAnalyserTexte=function(txt,jeton){ /* 30 sept. 2026 — le jeton revien
    faut et se taire quand tout a ete scanne, apprendre les portions de
    l utilisateur (flPortionApprise), et recalculer un repas quand ses grammes
    changent. Sans eux, on ne peut ni apprendre, ni recalculer, ni etre honnete. */
-window.FL_SOURCES_REPAS=['code-barres','photo','texte','manuel'];
+window.FL_SOURCES_REPAS=['code-barres','photo','texte','manuel','carte'];
 
 
 /* ═══ v1859 — UNE SAISIE À LA MAIN NAÎT AVEC SON IDENTITÉ ═══════════════════
@@ -11237,7 +11211,7 @@ window.flRetirerActiviteGPS=function(gps){try{
  var n=a.length;
  a=a.filter(function(x){return !(x&&x.gps===String(gps));});
  try{flEcarterSortie(gps);}catch(e){}   /* et elle ne renaîtra pas au semis */
- if(a.length===n)return 'introuvable · '+K;
+ if(a.length===n){for(var _j=0;_j<=3;_j++){var _K=tk(-_j),_a=_K===K?[]:(DB.get('sessions_'+_K,[])||[]),_b=_a.filter(function(x){return !(x&&x.gps===String(gps));});if(_b.length!==_a.length){DB.set('sessions_'+_K,_b);return 'retirée · '+_K+' · '+_b.length+' entrées';}}return 'introuvable · '+K;}   /* 6 nov. 2026 — la sortie est rangée au jour de son DÉPART (`flJourDeDepart`) : Stop après minuit, ou un autre jour affiché, et la ligne restait, comptée dans la journée, son tracé disparu */
  DB.set('sessions_'+K,a);
  return 'retirée · '+K+' · '+a.length+' entrées';
 }catch(e){return 'ECHEC · '+(e&&e.message?e.message:'?');}};
@@ -11368,7 +11342,7 @@ window.flActiviteData=function(rang,jour,seanceDirecte,id){
     Depuis la v1703 chaque activité canonique porte un `id` stable — et c'est
     lui que la carte affiche déjà. On le suit. Le rang reste le repli, pour les
     entrées d'avant la v1703 et pour les repas. */
- var s=seanceDirecte||null;
+ var s=seanceDirecte||((id&&String(id).indexOf('grp:')===0&&typeof flSeanceDeGroupe==='function')?flSeanceDeGroupe(ss,id):null)||null;   /* 14 nov. 2026 — une ligne regroupée de « Ma journée » ouvre sa sortie ENTIÈRE (flint-classement.js) ; introuvable → le message ci-dessous */
  /* Le repli inline reproduit EXACTEMENT la règle : un banc qui ne monte
     qu'une partie du moteur ne doit pas mesurer un comportement différent. */
  if(!s)s=(typeof flTrouverSeance==='function')
@@ -11415,7 +11389,7 @@ window.flActiviteData=function(rang,jour,seanceDirecte,id){
       et affichée sous l'en-tête : la cause voyage par elle. */
    if(_e0&&_e0.artefact)return {aDesDonnees:false,artefact:true,
      raisonArtefact:_e0.fenetreRaison||null,
-     raison:'La montre a ouvert cette séance sans la mesurer : il n\'y a '
+     raison:'Le bracelet a ouvert cette séance sans la mesurer : il n\'y a '
           +'rien à en dire'+(_e0.fenetreRaison?' — '+_e0.fenetreRaison:'')+'.'};
   }
  }catch(e){}
@@ -12089,7 +12063,7 @@ window.flAccueilData=function(_argJour){try{
   var q=String(cle).split('-'); if(q.length<3)return null;
   var J=flJoursLongs();
   var d=new Date(+q[0],+q[1]-1,+q[2]); if(isNaN(d))return null;
-  var v=new Date(d.getTime()-86400000);
+  var v=new Date(+q[0],+q[1]-1,+q[2]-1);   /* 17 nov. 2026 — la VEILLE du calendrier, pas 24 h avant : le lendemain du passage à l'heure d'été (29 mars 2027), minuit moins 24 h tombe le samedi à 23 h — « nuit de samedi à lundi » (test-jours-heure-ete.js) */
   var _l=(typeof flLangue==='function')?flLangue():'fr'; return _l==='en'?('night from '+J[v.getDay()]+' to '+J[d.getDay()]):_l==='es'?('noche del '+J[v.getDay()]+' al '+J[d.getDay()]):('nuit de '+J[v.getDay()]+' à '+J[d.getDay()]);   /* 30 sept. 2026 — « nuit de Tuesday à Wednesday » en anglais */
  }catch(e){return null;}}
 
@@ -12210,7 +12184,7 @@ window.flAccueilData=function(_argJour){try{
        un troisieme fait, et c est lui qui retient les chiffres d hier pendant
        les quelques minutes ou la montre livre. Voir `flNuitAttendue`. */
     attendue:(_nuit.attendue===true),
-    matin:(_nuit.matin===true), glisser:(_nuit.glisser===true), reveil:(_nuit.reveil||null),  /* 18 oct. 2026 — l ecran « Ta nuit est la » (natif) : flNuitEtat */
+    sure:(typeof _nuit.sure==='boolean'?_nuit.sure:null), sceau:(_nuit.sceau||null), attendFile:(_nuit.attendFile===true), matin:(_nuit.matin===true), glisser:(_nuit.glisser===true), reveil:(_nuit.reveil||null), traiterDeNuit:(_nuit.traiterDeNuit===true), provisoire:(_nuit.provisoire===true),  /* 18 oct. 2026 — l ecran « Ta nuit est la » (natif) : flNuitEtat */
     rendormi:(_nuit.rendormi||null),  /* 29 sept. 2026 — « Tu t es rendormi ? » : du sommeil apres la porte du matin, a confirmer. Metier : flNuitRendormiQuestion (flint-nuit-matin.js) */
     /* ═══ v2210 — POURQUOI L ANNEAU EST VIDE ALORS QUE LA NUIT EST FINIE ═════
        Le 4 septembre, Dino a vu sa nuit publiee — 7h20, score de sommeil 78 —
@@ -12398,17 +12372,14 @@ window.flAccueilData=function(_argJour){try{
       sa cle de jour : apres minuit, la frise melange deux dates civiles et le
       natif doit savoir laquelle ouvrir. */
    var _ent=[];
-   try{if(typeof flEntreesJour==='function')_ent=flEntreesJour(_off)||[];}catch(x){_ent=[];}
+   try{if(typeof flEntreesJour==='function')_ent=flEntreesJour(_off)||[];}catch(x){_ent=[];}   try{if(typeof flMarchesAnnoter==='function')flMarchesAnnoter(_ent);}catch(x){}   /* 14 nov. 2026 — des CHAMPS posés, aucune entrée retirée : Cardio lit cette liste entière ; les listes natives n'affichent que les vraies sorties (flint-classement.js) */
    _ent.forEach(function(o){e.push(o);});
    e.sort(function(a,b){return a.tri-b.tri;});
    var cumul=eff;
    var mot=cumul==null?null:(cumul>=14?'Journée bien remplie':cumul>=8?'Journée active':'Journée calme');
-   return {entrees:e, resume:((typeof flT==='function')?flT:String)(e.length+' entrée'+(e.length>1?'s':'')
+   return {entrees:e, resume:((typeof flT==='function')?flT:String)((typeof flMarchesCompte==='function'?flMarchesCompte(e):e.length)+' entrée'+((typeof flMarchesCompte==='function'?flMarchesCompte(e):e.length)>1?'s':'')
             +(cumul!=null?' · effort '+String(cumul).replace('.',flSeparateurDecimal())+'/'+STRAIN_MAX:'')) /* 11 sept. 2026 — « cumul 11 » ne nommait rien et n'avait pas d'échelle : c'est l'effort du jour, le nombre même de la tuile EFFORT de l'accueil. */,
-           badge:(mot&&typeof flT==='function')?flT(mot):mot,
-           /* 12 sept. 2026 — la carte native du journal du soir redisait « Réponds à tes questions » après
-              « Enregistrer » : elle n'avait aucun témoin. Rempli = au moins une réponse (clé sans « _ »). */
-           journalSoirRempli:(function(){try{var _j=DB.get('journal_'+tk(_off),{})||{};return _j._saved===true||Object.keys(_j).some(function(q){return q.charAt(0)!=='_'&&_j[q]!=null;});}catch(x){return false;}})(), journalVeilleRempli:(function(){try{var _j=DB.get('journal_'+tk(_off-1),{})||{};return _j._saved===true||Object.keys(_j).some(function(q){return q.charAt(0)!=='_'&&_j[q]!=null;});}catch(x){return false;}})()};   /* 30 sept. 2026 — la carte « Hier soir » d avant 18 h dit l état de la veille */
+           badge:(mot&&typeof flT==='function')?flT(mot):mot};   /* 15 nov. 2026 — journalSoirRempli / journalVeilleRempli sont partis avec le journal du soir */
   }catch(e){return null;}})(),
 
   /* — TABLEAU DE BORD (screen-tableau) —
@@ -13280,12 +13251,6 @@ var el=ev.target;var a=el;for(var d1=0;d1<7&&a;d1++,a=a.parentElement){if(!a.que
     [].slice.call(_g.querySelectorAll('circle,path')).forEach(function(e){var fl=e.getAttribute('fill');if(fl&&/#fb6015|#ff7a4d/i.test(fl))e.setAttribute('fill',rcol);});
    }
   }catch(e){}}
-  /* helpers : mélange de couleurs + recolorisation du gradient d'un mini-anneau de tuile */
-  function _mix(a,b,t){var pa=[parseInt(a.slice(1,3),16),parseInt(a.slice(3,5),16),parseInt(a.slice(5,7),16)],pb=[parseInt(b.slice(1,3),16),parseInt(b.slice(3,5),16),parseInt(b.slice(5,7),16)];return '#'+[0,1,2].map(function(i){var v=Math.round(pa[i]+(pb[i]-pa[i])*t);return ('0'+v.toString(16)).slice(-2);}).join('');}
-  function _ringTint(lab,stops,dotCol){try{var _acc2=doc.getElementById('screen-accueil');if(!_acc2)return;var lf=[].slice.call(_acc2.querySelectorAll('span,div,p')).filter(function(e){return e.children.length===0&&(e.textContent||'').trim()===lab&&e.offsetParent;})[0];if(!lf)return;var tile=lf,svg=null;for(var i=0;i<7&&tile;i++,tile=tile.parentElement){var s=tile.querySelector&&tile.querySelector('svg');if(s){var w=s.getBoundingClientRect().width;if(w>40&&w<200){svg=s;break;}}}if(!svg)return;
-   /* pastille (•) du sous-label à la couleur pleine du tier — recoloré à chaque cycle car peu coûteux */
-   if(dotCol&&tile){[].slice.call(tile.querySelectorAll('*')).forEach(function(c){if(c.children.length)return;var cs=getComputedStyle(c);if(cs.borderRadius!=='50%')return;var r=c.getBoundingClientRect();if(r.width<5||r.width>16||r.height<5||r.height>16)return;var bg=cs.backgroundColor;if(bg&&bg!=='rgba(0, 0, 0, 0)'&&bg!=='transparent')c.style.setProperty('background-color',dotCol,'important');});}
-   var arc=[].slice.call(svg.querySelectorAll('path,circle')).filter(function(e){return /^url\(/.test(e.getAttribute('stroke')||'');})[0];if(!arc)return;var id=(arc.getAttribute('stroke').match(/#([\w-]+)/)||[])[1];var g=id&&(svg.querySelector('#'+id)||_acc2.querySelector('#'+id));if(!g)return;var sig=stops.join(',');if(g.getAttribute('data-flc')===sig)return;g.setAttribute('data-flc',sig);g.innerHTML=stops.map(function(c,i){return '<stop offset="'+(i/(stops.length-1)).toFixed(2)+'" stop-color="'+c+'"></stop>';}).join('');}catch(e){}}
   function setTile(lab,val,col){try{
    var acc=doc.getElementById('screen-accueil')||doc,L=acc.querySelectorAll('span,div,p'),lf=null;
    for(var i=0;i<L.length;i++){var x=L[i];if(x.children.length===0&&(x.textContent||'').trim()===lab){lf=x;break;}}
@@ -13593,7 +13558,6 @@ function mdMarchePrecise(doc){try{var sm=doc.getElementById('screen-marche');if(
  if(axp.length<2)return;
  var aT=axp[0],aB=axp[axp.length-1];
  function yOf(bpm){return aT.y+(bpm-aT.v)/(aB.v-aT.v)*(aB.y-aT.y);}
- function bpmOfVB(y){return aT.v+(y-aT.y)/(aB.y-aT.y)*(aB.v-aT.v);}
  /* courbe d'origine = path tracé le plus haut à l'écran (étendue verticale) */
  var paths=[].slice.call(svg.querySelectorAll('path')).filter(function(p){return !p.classList.contains('fl-prec');});
  var cands=paths.filter(function(p){var st2=p.getAttribute('stroke');return st2&&st2!=='none'&&(!p.getAttribute('fill')||p.getAttribute('fill')==='none');}).map(function(p){var L=0;try{L=p.getTotalLength();}catch(e){}var r=p.getBoundingClientRect();return {p:p,L:L,h:r.height,w:r.width,r:r};}).filter(function(c){return c.L>200&&c.h>sr.height*0.22&&c.w>sr.width*0.5;}).sort(function(a,b){return b.L-a.L;});
@@ -20338,7 +20302,7 @@ function shLastSVG(){var H=160,padB=30,top=26,slot=52,bw=22,padX=18,arr=[],cap=1
  arr.reverse();
  var n=arr.length,W=padX*2+n*slot;
  var max=Math.max.apply(null,arr.map(function(a){return a.v}))||1;
- function hm(m){return Math.floor(m/60)+'h'+String(Math.round(m%60)).padStart(2,'0')}
+ function hm(m){m=Math.round(m);return Math.floor(m/60)+'h'+String(m%60).padStart(2,'0')}
  var DD=['D','L','M','M','J','V','S'];
  var s='<svg viewBox="0 0 '+W+' '+H+'" width="'+W+'" height="'+H+'">';
  arr.forEach(function(a,i){var hh=Math.max(a.v>0?6:0,(a.v/max)*(H-top-padB)),x=padX+i*slot+slot/2,y=H-padB-hh,last=(a.off===gDay),col=last?'#7E63E9':'#C9BEF0';
@@ -20680,7 +20644,7 @@ function sleepDebt(){try{var r=window.flDetteSommeil&&flDetteSommeil();
  return d;}
 /* ---- Coach sommeil (planificateur façon Whoop) ---- */
 const _coachFmtT=m=>flClock(m);
-const _coachFmtH=m=>Math.floor(m/60)+'h'+String(Math.round(m%60)).padStart(2,'0');
+const _coachFmtH=m=>{m=Math.round(m);return Math.floor(m/60)+'h'+String(m%60).padStart(2,'0');};
 function renderSleepCoach(){const host=document.getElementById('coachCard');if(!host)return;
  const nd=sleepNeedCalc().need,t=sensorOf(tk());
  const eff=(t&&t.awake!=null&&t.sleepMin)?Math.max(0.82,Math.min(0.97,t.sleepMin/(t.sleepMin+t.awake))):0.9;
@@ -22072,10 +22036,10 @@ function flEffData(doc){
  if(typeof flFicheSeconde==='function'&&typeof flSecondesDuJour==='function'){try{
   var _fs2=flFicheSeconde(K,sm0,dur,real,flSecondesDuJour,flIdxDense,
                           _finePre&&_finePre.pointsDessin,flMinuteCoherente,{mur:_murF,pauses:_pzF});
-  if(_fs2){hrT=_fs2.hrT; serieCanon=_fs2.serieCanon; srcHR='seconde'; couvHR=_fs2.couvHR; if(winT&&typeof flCourbeTrouee==='function')_hrDessin=flCourbeTrouee(_fs2.hrT,winT.map(function(x){return [(x[0]-sm0)*60,x[1]];}),flIdxDense);   /* 31 oct. 2026 — les minutes que la seconde n a pas touchées prennent le point de la minute, au DESSIN seulement */
+  if(_fs2){hrT=_fs2.hrT; serieCanon=_fs2.serieCanon; srcHR='seconde'; couvHR=_fs2.couvHR; _hrDessin=_fs2.hrDessin||null; if(winT&&typeof flCourbeTrouee==='function')_hrDessin=flCourbeTrouee(_fs2.hrDessin||_fs2.hrT,winT.map(function(x){return [(x[0]-sm0)*60,x[1]];}),flIdxDense)||_hrDessin;   /* 31 oct. 2026 — les minutes que la seconde n a pas touchées prennent le point de la minute, au DESSIN seulement */
    if(_fs2.bouches){srcHR='seconde+memoire';
     console.log('[flint] courbe de seance : '+_fs2.bouches
-      +' tranche(s) de 5 s bouchee(s) par la memoire de la montre');}}
+      +' tranche(s) de 5 s bouchee(s) par la memoire du bracelet');}}
  }catch(e){}}
  /* ═══ v1559 — LA DENSITE DORMAIT DANS `hrfine_` ══════════════════════════
     La fiche cherchait la seconde vraie (hrSec, videe des la fermeture) puis
@@ -22193,7 +22157,7 @@ function flEffData(doc){
  raisonSansMesure=real?null
    :(couverture==null?'Aucune donnée cardiaque pour ce jour.'
     :(couverture>=0.5
-      ?'Séance trop courte pour une courbe : la montre mesure une fois par '
+      ?'Séance trop courte pour une courbe : le bracelet mesure une fois par '
        +'minute, et il en faut cinq — il y en a '+nPts+'.'
       :'Le bracelet n\'a mesuré que '+Math.round(couverture*100)+' % de cette séance.'));
  /* ═══ v1403 — À DÉFAUT DE DENSITÉ, AU MOINS LA BONNE HEURE ══════════════════
@@ -22318,7 +22282,7 @@ function flEffData(doc){
    avg=Math.round(_sm.reduce(function(a,b){return a+b;},0)/_sm.length);
   }
   mx=Math.round(Math.max.apply(null,base));
-  if(_kpi&&hrT&&hrT.length)hrT.forEach(function(x){if(Math.round(x[1])>mx)mx=Math.round(x[1]);}); /* 25 sept. 2026 : la moyenne se lit sur hrT (v1663), le max aussi — jamais max < moy */
+  if(_kpi&&hrT&&hrT.length)hrT.forEach(function(x){if(Math.round(x[1])>mx)mx=Math.round(x[1]);}); /* 25 sept. 2026 : la moyenne se lit sur hrT (v1663), le max aussi — jamais max < moy */ if(_hrDessin&&typeof flMaxDuDessin==='function'){var _mD=flMaxDuDessin(_hrDessin);if(_mD>mx)mx=_mD;}
   /* v1657 — LA CORRECTION A SENS UNIQUE EST RETIREE. La v1583 laissait le canal
      fin RABAISSER le maximum quand une minute etait recollee, sans jamais lui
      permettre de le restaurer quand la serie minute sous-estimait le pic. Sur
@@ -23409,7 +23373,7 @@ function wipeData(){if(!confirm('Vider TOUTES les données (démo incluse) et re
 function exportData(){const dump={};Object.keys(localStorage).forEach(k=>dump[k]=localStorage.getItem(k));const t=JSON.stringify(dump,null,2);try{const blob=new Blob([t],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='flint-data.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},1500);toast('⬇️ Données exportées (flint-data.json)')}catch(e){try{navigator.clipboard.writeText(t);toast('📋 Données copiées')}catch(e2){toast('Export impossible')}}}
 
 /* ===== Coach IA (réponses fondées sur les données du jour) ===== */
-const APP_VERSION='v3056';
+const APP_VERSION='v3110';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
@@ -24984,7 +24948,7 @@ function flPfMain(doc){var el=flPfScr(doc,'screen-fl-profil',85);
  var bSyncEtat='inconnu', bSyncCol='#c9c2b6';
  var bSync=(function(){
   if(W.synchroActive){bSyncEtat='encours';bSyncCol='#2b7fff';
-   return 'Synchronisation de la montre…';}
+   return 'Synchronisation du bracelet…';}
   if(!W.tSync){bSyncEtat='jamais';return 'Jamais synchronisée';}
   var m=Math.floor((Date.now()-W.tSync)/60000);
   var hh=new Date(W.tSync), h=String(hh.getHours()).padStart(2,'0')
@@ -24997,10 +24961,10 @@ function flPfMain(doc){var el=flPfScr(doc,'screen-fl-profil',85);
     ?flEtatSynchro(W.tSync,false,fresh,Date.now())
     :(m>=30?'ancienne':(m<10?'fraiche':'tiede'));
   if(bSyncEtat==='injoignable'){bSyncCol='#c9c2b6';
-   return 'Montre non joignable · dernière synchro '+h;}
+   return 'Bracelet non joignable · dernière synchro '+h;}
   if(bSyncEtat==='ancienne'){bSyncCol='#E0922A';return 'Dernière synchro à '+h;}
-  if(bSyncEtat==='fraiche'){bSyncCol='#2FAE67';return 'Montre synchronisée à '+h+' ✓';}
-  return 'Montre synchronisée à '+h;
+  if(bSyncEtat==='fraiche'){bSyncCol='#2FAE67';return 'Bracelet synchronisé à '+h+' ✓';}
+  return 'Bracelet synchronisé à '+h;
  })();
  var sexeLab=p.gender==='f'?'Femme':(p.gender==='h'?'Homme':'Choisir');
  var wake=p.wake||'07:00',need=p.need||8;
@@ -25205,7 +25169,7 @@ function flPfBracelet(doc){var W=window._watchLive||{};
     +'<span style="font-family:-apple-system,system-ui,sans-serif;font-size:12px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#8a8378">Journal Bluetooth</span>'
     +'<button class="pfb-copy" style="border:none;background:#f0ece4;border-radius:999px;padding:7px 14px;font-family:-apple-system,system-ui,sans-serif;font-size:12.5px;font-weight:600;color:#14110f;cursor:pointer">Copier</button>'
   +'</div>'
-  +'<pre id="flBlePre" style="margin:0;padding:14px;background:#14120F;color:#C9F0D2;border-radius:16px;height:230px;overflow:auto;-webkit-overflow-scrolling:touch;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10.5px;line-height:1.5;white-space:pre-wrap;word-break:break-all;-webkit-user-select:text;user-select:text">'+((window.flBleLogLines&&window.flBleLogLines.length)?window.flBleLogLines.join('\n'):'(rien encore — appuie sur Rechercher, puis approche la montre)')+'</pre>'
+  +'<pre id="flBlePre" style="margin:0;padding:14px;background:#14120F;color:#C9F0D2;border-radius:16px;height:230px;overflow:auto;-webkit-overflow-scrolling:touch;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10.5px;line-height:1.5;white-space:pre-wrap;word-break:break-all;-webkit-user-select:text;user-select:text">'+((window.flBleLogLines&&window.flBleLogLines.length)?window.flBleLogLines.join('\n'):'(rien encore — appuie sur Rechercher, puis approche le bracelet)')+'</pre>'
   +'<div style="font-family:-apple-system,system-ui,sans-serif;font-size:12px;color:#a7a29a;text-align:center;margin-top:10px;line-height:1.5">Une JC Vital se connecte seule (JCV8B / J2208A2).<br>Si son nom apparaît sans que rien ne suive, c\'est le protocole qui bloque, pas la détection.</div>',
   function(el){
    var pre=el.querySelector('#flBlePre');
@@ -25213,7 +25177,7 @@ function flPfBracelet(doc){var W=window._watchLive||{};
    try{flBleRenderList();}catch(e){}
    /* « Tout chercher » : mode sélecteur — le pont n'adopte plus personne tout seul
       et se contente de RAPPORTER tout ce qu'il voit, y compris les appareils sans
-      nom et sans service exploitable. C'est le recours quand une montre n'est pas
+      nom et sans service exploitable. C'est le recours quand un bracelet n'est pas
       reconnue automatiquement. */
    var all=el.querySelector('.pfb-all');
    if(all)all.addEventListener('click',function(){
@@ -25334,16 +25298,7 @@ function flPfImport(doc){
  f._flDoc=doc;f.click();}
 /* --- Réglages (engrenage) --- */
 function flPfRegl(doc){var APPV='';try{APPV=APP_VERSION||'';}catch(e){}
- function dataRow(cls,tit,sub){return '<div role="button" class="'+cls+'" style="display:flex;align-items:center;gap:16px;padding:18px 20px;cursor:pointer">'
-  +'<div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:600;letter-spacing:-.01em;color:#14110f">'+tit+'</div><div style="font-family:-apple-system,system-ui,sans-serif;font-size:12.5px;font-weight:300;color:#8f897f;margin-top:4px;line-height:1.45">'+sub+'</div></div>'
-  +'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c3bdb3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M9 18l6-6-6-6"></path></svg></div>';}
  var _th=(typeof flTheme==='function')?flTheme():'light';
- function _seg(lab,key){var on=(_th===key);
-  return '<span class="pfr-th-'+key+'" style="padding:6px 13px;border-radius:99px;font-family:Archivo,sans-serif;font-size:12.5px;font-weight:700;cursor:pointer;'
-   +(on?(key==='dark'?'background:#14110f;color:#fff;box-shadow:0 2px 6px rgba(0,0,0,.4)'
-        :key==='glass'?'background:linear-gradient(135deg,#e9ecff,#ffe4f0);color:#14110f;box-shadow:0 2px 8px rgba(88,80,140,.18)'
-        :'background:#fff;color:#14110f;box-shadow:0 2px 6px rgba(20,17,15,.12)')
-      :'color:#8a8378')+'">'+lab+'</span>';}
  flPfSub(doc,'screen-fl-pf-regl','Réglages',
   '<div style="background:#fff;border-radius:22px;box-shadow:0 8px 26px rgba(20,17,15,.05);overflow:hidden">'
   
@@ -25992,253 +25947,6 @@ window.flAddActivity=function(doc){flActSt=flActDefaults();flActAdd(doc);};
     +'<span style="font-family:Archivo,-apple-system,sans-serif;font-size:12.5px;font-weight:700;color:#fb6015;flex:none">Choisir</span></button>';
   }).join('');
  }catch(e){}};
-/* ═══════════════════════════════════════════════════════════════════════════
-   L'ECG À LA DEMANDE — LE MOTEUR (v1317)
-
-   CE QUE LA MONTRE SAIT FAIRE, ET QUI COMMANDE QUOI. Vérifié sélecteur par
-   sélecteur dans la bibliothèque du fabricant : une seule commande touche à
-   l'ECG, et elle OUVRE LE FLUX sans déclencher la mesure. Le déclenchement est
-   physique — le doigt sur l'électrode latérale — et c'est la MONTRE qui annonce
-   le début et la fin, par des notifications que le protocole appelle `StartECG`
-   et `StopECG`. Notre travail est donc : ouvrir, attendre, ramasser, analyser.
-
-   LA FRÉQUENCE D'ÉCHANTILLONNAGE EST MESURÉE, JAMAIS SUPPOSÉE. Le pont compte
-   les échantillons et le temps écoulé et rend le rapport. C'est la leçon de la
-   sonde optique : une première mesure annonçait 10 113 Hz faute de diviser par
-   le bon temps, quand la vraie valeur était 50,3.
-
-   TOUT CE QUI SUIT REFUSE DE CONCLURE PLUTÔT QUE DE DEVINER. Un tracé trop
-   court, trop bruité ou dont les intervalles ne tiennent pas debout ne rend pas
-   une fréquence approximative : il rend `null` et la raison, en français.
-   ═══════════════════════════════════════════════════════════════════════════ */
-window.flEcgEnCours=null;      /* l'état vivant, lu par l'écran */
-window.flEcgMorceaux=[];       /* le tracé qui se dessine, paquet après paquet */
-
-/* Démarre une mesure. L'écran n'a rien d'autre à faire que d'appeler ça et de
-   suivre `flEcgEnCours`. */
-window.flEcgDemarrer=function(dureeS){try{
- var nat=(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)||null;
- if(!nat)return false;
- window.flEcgMorceaux=[];
- /* v1358 — l'attente est LONGUE, et l'écran doit le dire. La montre ne lit
-    l'ECG que pendant sa mesure de variabilité, qui revient toutes les cinq
-    minutes. Un doigt posé au hasard a une chance sur cinq de tomber dedans.
-    `attenteLongue` permet à l'écran d'afficher la bonne consigne : garder le
-    doigt, ça peut prendre cinq minutes. */
- window.flEcgEnCours={etat:'attente',secondes:0,echantillons:0,hz:0,raison:null,
-   attenteLongue:false,
-   consigne:"Pose ton doigt sur le contact et ne bouge plus."};
- nat.postMessage({cmd:'ecgStart',duree:(dureeS||30)});
- return true;
-}catch(e){return false;}};
-
-window.flEcgArreter=function(){try{
- var nat=(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)||null;
- if(nat)nat.postMessage({cmd:'ecgStop'});
-}catch(e){}};
-
-/* ── LA DÉTECTION DES PICS R ────────────────────────────────────────────────
-   Trois étapes, dans l'ordre, et chacune répond à un défaut précis du signal
-   brut d'un bracelet.
-
-   1. LA LIGNE DE BASE DÉRIVE. La peau bouge, le contact change, et le tracé
-      monte ou descend lentement de plusieurs fois l'amplitude d'un pic. On
-      soustrait donc une médiane glissante d'environ 0,4 s : assez large pour ne
-      pas manger le pic, assez étroite pour suivre la dérive.
-
-   2. LE PIC EST BREF, LE BRUIT NE L'EST PAS. On dérive puis on élève au carré :
-      une pente forte et courte ressort, une ondulation lente disparaît.
-
-   3. LE SEUIL SE PREND SUR LE SIGNAL, PAS DANS UNE CONSTANTE. Un seuil absolu
-      serait calé sur un bracelet, un serrage, une peau. On prend une fraction du
-      maximum de la fenêtre, et on impose une PÉRIODE RÉFRACTAIRE de 200 ms :
-      physiologiquement, deux battements ne peuvent pas être plus proches. */
-function flEcgPics(serie,hz){
- if(!serie||serie.length<50||!(hz>0))return null;
- var n=serie.length;
- /* 1. dérive */
- var w=Math.max(3,Math.round(hz*0.4))|1, demi=w>>1, base=new Array(n);
- for(var i=0;i<n;i++){
-  var a=Math.max(0,i-demi), b=Math.min(n-1,i+demi), f=serie.slice(a,b+1).sort(function(x,y){return x-y;});
-  base[i]=f[f.length>>1];
- }
- var net=new Array(n);
- for(var j=0;j<n;j++)net[j]=serie[j]-base[j];
- /* 2. pente au carré */
- var e=new Array(n); e[0]=0;
- for(var k=1;k<n;k++){var d=net[k]-net[k-1]; e[k]=d*d;}
- /* 3. seuil relatif + période réfractaire */
- var tri=e.slice().sort(function(x,y){return x-y;});
- var med=tri[tri.length>>1], haut=tri[Math.floor(tri.length*0.99)];
- if(!(haut>med))return null;
- var seuil=med+(haut-med)*0.35;
- var refr=Math.max(1,Math.round(hz*0.2));
- var pics=[],dernier=-refr;
- for(var m=1;m<n-1;m++){
-  if(e[m]<seuil)continue;
-  if(m-dernier<refr)continue;
-  /* on recale sur le maximum local du signal net : le carré de la pente pointe
-     le FLANC du pic, pas son sommet. */
-  var a2=Math.max(0,m-refr), b2=Math.min(n-1,m+refr), best=a2;
-  for(var q=a2;q<=b2;q++)if(net[q]>net[best])best=q;
-  if(best-dernier<refr)continue;
-  pics.push(best); dernier=best;
- }
- return pics;
-}
-
-/* ── L'ANALYSE COMPLÈTE ─────────────────────────────────────────────────────
-   Rend `null` et une raison plutôt qu'un chiffre bancal. Les bornes viennent de
-   la physiologie, pas d'un réglage : un intervalle hors 300-2 000 ms n'est pas
-   un battement, et la règle de Malik (Task Force, 1996) écarte tout intervalle
-   qui s'écarte de plus de 20 % du précédent — un battement manqué compte double,
-   un battement en trop compte moitié, et les deux ruinent une variabilité. */
-window.flEcgAnalyser=function(serie,hz){try{
- if(!serie||!serie.length)return {ok:false,raison:'Aucun signal enregistré.'};
- if(!(hz>0))return {ok:false,raison:'Cadence d\'échantillonnage inconnue.'};
- var duree=serie.length/hz;
- if(duree<15)return {ok:false,raison:'Tracé trop court ('+duree.toFixed(0)+' s). Il en faut au moins quinze.'};
- var pics=flEcgPics(serie,hz);
- if(!pics||pics.length<8)return {ok:false,raison:'Signal trop bruité pour repérer les battements.'};
- var rr=[];
- for(var i=1;i<pics.length;i++){
-  var ms=(pics[i]-pics[i-1])/hz*1000;
-  if(ms>=300&&ms<=2000)rr.push(ms);
- }
- if(rr.length<6)return {ok:false,raison:'Trop peu de battements exploitables.'};
- /* Malik : on ne garde que les paires consécutives plausibles. */
- var mal=[];
- for(var j=1;j<rr.length;j++){
-  if(Math.abs(rr[j]-rr[j-1])<=0.2*rr[j-1])mal.push([rr[j-1],rr[j]]);
- }
- var part=mal.length/(rr.length-1);
- if(part<0.5)return {ok:false,raison:'Battements trop irréguliers pour être mesurés ('
-                     +Math.round(part*100)+' % d\'intervalles retenus).'};
- var somme=0; rr.forEach(function(v){somme+=v;});
- var moy=somme/rr.length;
- var carres=0; mal.forEach(function(p){carres+=(p[1]-p[0])*(p[1]-p[0]);});
- var rmssd=mal.length?Math.sqrt(carres/mal.length):null;
- var tri2=rr.slice().sort(function(a,b){return a-b;});
- return {ok:true, duree:Math.round(duree), battements:pics.length,
-         fc:Math.round(60000/moy),
-         fcMin:Math.round(60000/tri2[tri2.length-1]),
-         fcMax:Math.round(60000/tri2[0]),
-         rmssd:rmssd!=null?Math.round(rmssd):null,
-         intervalles:rr.length, retenus:mal.length,
-         rr:rr.map(function(v){return Math.round(v);}), /* tachogramme, cf. CONTRAT-ECG-NATIF §4ter */ qualite:Math.round(part*100), hz:Math.round(hz*10)/10, raison:null};
-}catch(e){return {ok:false,raison:'Analyse impossible.'};}};
-
-/* ── LA RÉCEPTION · `consigne` = ce que dit la MONTRE, cf. CONTRAT-ECG-NATIF §4bis ── */
-window.flEcgRecevoir=function(d){try{
- if(!d)return;
- window.flEcgEnCours={etat:d.etat,secondes:d.secondes||0,
-                      echantillons:d.echantillons||0,hz:d.hz||0,
-                      raison:d.raison||null,consigne:d.consigne||null};
- if(d.morceau&&d.morceau.length){
-  /* Le tracé vivant est BORNÉ : trente secondes à quelques centaines de hertz
-     font déjà des milliers de points, et un tableau qui grossit sans fin fige
-     l'écran. Le front n'affiche de toute façon qu'une fenêtre glissante. */
-  var t=window.flEcgMorceaux;
-  for(var i=0;i<d.morceau.length;i++)t.push(d.morceau[i]);
-  if(t.length>20000)t.splice(0,t.length-20000);
- }
- /* ── LA FRÉQUENCE EN DIRECT PENDANT LE TRACÉ ────────────────────────────────
-    C'est ce que Félix a trouvé bien fait chez eux : le chiffre s'installe
-    pendant que la courbe se dessine. On le calcule ICI et pas dans la vue, pour
-    la même raison que partout ailleurs : un écran ne calcule pas, il affiche.
-
-    On travaille sur les HUIT DERNIÈRES SECONDES seulement. Toute la mesure
-    serait plus stable, mais elle traînerait le début du tracé, celui où le doigt
-    se pose et où le signal ne vaut rien. Huit secondes, c'est cinq à douze
-    battements : assez pour une moyenne, assez court pour suivre.
-
-    Une fois par seconde au plus : la détection passe une médiane glissante sur
-    un millier de points, et la refaire quatre fois par seconde pour un chiffre
-    qui bouge à peine serait payé par l'utilisateur en fluidité de tracé. */
- if(d.etat==='mesure'&&d.hz>0){
-  var mnt=Date.now();
-  if(!window._flEcgDerFC||mnt-window._flEcgDerFC>1000){
-   window._flEcgDerFC=mnt;
-   var t2=window.flEcgMorceaux, besoin=Math.round(d.hz*8);
-   if(t2.length>=Math.round(d.hz*5)){
-    var fen=t2.slice(Math.max(0,t2.length-besoin));
-    var pk=flEcgPics(fen,d.hz), bat=[];
-    if(pk&&pk.length>=4){
-     for(var z=1;z<pk.length;z++){
-      var ms2=(pk[z]-pk[z-1])/d.hz*1000;
-      if(ms2>=300&&ms2<=2000)bat.push(ms2);
-     }
-    }
-    if(bat.length>=3){
-     bat.sort(function(a,b){return a-b;});
-     /* La MÉDIANE, pas la moyenne : un seul intervalle raté par un artefact
-        déplacerait une moyenne de dix battements par minute. */
-     window.flEcgEnCours.fcDirect=Math.round(60000/bat[bat.length>>1]);
-    }
-   }
-  } else if(window._flEcgFCPrec!=null){
-   window.flEcgEnCours.fcDirect=window._flEcgFCPrec;
-  }
-  window._flEcgFCPrec=window.flEcgEnCours.fcDirect||window._flEcgFCPrec||null;
-  if(window.flEcgEnCours.fcDirect==null&&window._flEcgFCPrec!=null)
-   window.flEcgEnCours.fcDirect=window._flEcgFCPrec;
- }
- if(d.etat==='attente'){window._flEcgDerFC=null;window._flEcgFCPrec=null;}
- if(d.etat==='fini'&&d.serie&&d.serie.length){
-  var an=flEcgAnalyser(d.serie,d.hz||0);
-  var cle='ecg_'+Math.round((d.horodatage||Date.now()/1000));
-  try{DB.set(cle,{t:d.horodatage,hz:d.hz,serie:d.serie,analyse:an,off:-(new Date().getTimezoneOffset())/* 21 sept. 2026 — le décalage d'enregistrement, cf. flint-fuseau.js */});}catch(e){}
-  window.flEcgEnCours.analyse=an;
-  window.flEcgEnCours.cle=cle;
-  try{flPurgerEcg(20);}catch(e){}
- }
- if(typeof window.flEcgSurMaj==='function')window.flEcgSurMaj(window.flEcgEnCours);
-}catch(e){}};
-
-/* Un tracé de trente secondes pèse quelques dizaines de milliers d'entiers. On
-   n'en garde que les vingt derniers : au-delà, c'est le stockage de l'app qu'on
-   met en danger, et la leçon du plafond de la v1309 est encore fraîche. */
-function flPurgerEcg(garde){
- var cles=[];
- try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);
-  if(k&&k.indexOf('ecg_')===0)cles.push(k);}}catch(e){return;}
- if(cles.length<=garde)return;
- cles.sort();
- cles.slice(0,cles.length-garde).forEach(function(k){try{DB.del?DB.del(k):localStorage.removeItem(k);}catch(e){}});
-}
-window.flEcgListe=function(){var out=[];
- try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);
-  if(k&&k.indexOf('ecg_')===0){var v=DB.get(k,null); if(v)out.push({cle:k,t:v.t,analyse:v.analyse,off:(typeof v.off==='number'?v.off:null),
-   /* v1404 — LA COURBE EST-ELLE ENCORE LÀ ? Le filet du stockage retire les
-      tracés au-delà des cinq derniers en gardant leur analyse (v1400). Sans ce
-      drapeau, l'écran proposerait de rouvrir une courbe qui n'existe plus, et
-      l'utilisateur croirait à une panne. */
-   serieRetiree:!!v.serieRetiree});}}}catch(e){}
- return out.sort(function(a,b){return (b.t||0)-(a.t||0);});};
-
-/* ═══ v1404 — LE TRACÉ D'UNE MESURE PASSÉE ══════════════════════════════════
-
-   RÉCEPTACLE DÉCLARÉ, appelé par `ShellBridge.ecgTrace(cle:)`. Il manquait, et
-   son absence était bien décrite dans `receptacles-attendus.txt` : on pouvait
-   lister les mesures passées et montrer leurs chiffres, jamais rouvrir leur
-   courbe.
-
-   POURQUOI `flEcgListe` NE LA REND PAS ELLE-MÊME, ET C'EST VOULU. Un tracé de
-   trente secondes à 240 Hz pèse sept mille entiers ; vingt mesures d'un coup en
-   feraient cent quarante mille dans une seule charge, pour n'en dessiner qu'une.
-   La liste porte les chiffres, cette fonction porte la courbe, et on ne paie que
-   celle qu'on regarde.
-
-   TROIS RÉPONSES POSSIBLES, ET IL FAUT LES DISTINGUER :
-     · la courbe est là                → on la rend
-     · elle a été retirée              → `retiree:true`, et l'écran peut le DIRE
-     · la clé n'existe pas             → `null`
-
-   Le deuxième cas n'est pas théorique : `flFaireDeLaPlace` retire les tracés
-   au-delà des cinq derniers quand le disque est plein, en gardant leur analyse.
-   Confondre « le disque était plein » avec « ça ne marche pas » ferait passer un
-   choix assumé pour une panne.
-   ════════════════════════════════════════════════════════════════════════ */
 /* ═══ v1406 — CE QUE LA JOURNÉE CONTIENT DÉJÀ, POUR LA VISITE GUIDÉE ════════
 
    RÉCEPTACLE DÉCLARÉ (voir PASSATION-VISITE.md). Le natif n'a aucun journal des
@@ -26281,7 +25989,7 @@ window.flVisiteContexte=function(){try{
     désigner des premières lignes différentes — la visite aurait entouré une
     ligne et décrit l'autre. On appelle donc la même source. */
  var _ent=[];
- try{if(typeof flEntreesJour==='function')_ent=flEntreesJour(_o)||[];}catch(x){_ent=[];}
+ try{if(typeof flEntreesJour==='function')_ent=flEntreesJour(_o)||[];}catch(x){_ent=[];} try{if(typeof flMarchesLignes==='function')_ent=flMarchesLignes(_ent)||_ent;}catch(x){}   /* 14 nov. 2026 — la visite désigne les lignes de « Ma journée » : les mêmes, une par sortie */
  var repas=0,boissons=0;
  _ent.forEach(function(o){
   if(o.source==='repas'){
@@ -26301,25 +26009,6 @@ window.flVisiteContexte=function(){try{
 
  return {repas:repas, boissons:boissons, jour:K,
          premiereLigne:(e.length?e[0].genre:null)};
-}catch(e){return null;}};
-
-window.flEcgTrace=function(cle){try{
- /* La clé vient du natif, qui la tient de `flEcgListe`. On vérifie quand même
-    sa forme : cette fonction lit le stockage, et rien ne doit pouvoir s'en
-    servir pour lire autre chose que des tracés. */
- if(typeof cle!=='string'||cle.indexOf('ecg_')!==0)return null;
- var v=DB.get(cle,null);
- if(!v)return null;
- if(!v.serie||!v.serie.length)return {serie:null,hz:(+v.hz||0),retiree:!!v.serieRetiree};
- /* `[Int]` côté Swift : un seul décimal fait échouer TOUT le décodage, et
-    l'écran devient muet sans qu'aucun chiffre n'ait été faux. La leçon de la
-    fiche de séance, appliquée avant qu'elle ne coûte une seconde fois. */
- var s=new Array(v.serie.length);
- for(var i=0;i<v.serie.length;i++){
-  var x=v.serie[i];
-  s[i]=(typeof x==='number'&&isFinite(x))?Math.round(x):0;
- }
- return {serie:s, hz:(+v.hz||0), retiree:false};
 }catch(e){return null;}};
 
  /* ═══ v1403 — LA SECONDE, GARDÉE POUR LA SÉANCE DU JOUR ══════════════════════
@@ -26505,7 +26194,7 @@ window.flMetriquesCourse=function(id,debutSec,finSec,estCourse){
      drapeau sans horodatage ne peut pas etre contredit. */
   W.tEvt=now;
   if(typeof window.flSansFutur==='function'&&!window.flSansFutur(type,data,now))return;   /* 5 nov. 2026 — flint-menage.js */
-  if(type==='ecg'){flEcgRecevoir(data);return;}
+  if(type==='ecg')return;   /* 15 nov. 2026 — plus d'ECG (nouveau bracelet) : un ancien binaire qui en enverrait encore n'écrit plus rien */
   /* ═══ v1982 — LES MESURES DE COURSE, RENDUES PAR SANTE ════════════════════
      Elles ne viennent PAS du bracelet et n'en viendront jamais : son SDK
      n'expose aucun accelerometre. C'est l'iPhone porte sur le corps qui les
@@ -26539,7 +26228,7 @@ window.flMetriquesCourse=function(id,debutSec,finSec,estCourse){
      ce qu une trame de coeur prouve tres bien. Deux faits differents, deux
      horodatages. */
   if(type==='synchro'){
-   if(data.memoire===true){window.flMemoireSynchroA=data.actif?now:0;return;}if(data.actif===false)window.flMemoireSynchroA=0;if(data.actif===false)W.tSync=now;   /* 31 oct. 2026 — la mémoire du bracelet arrive : la nuit ne se finalise pas seule tant qu'elle dure (`flMemoireEnCours`, flint-nuit-matin.js) */
+   if(data.memoire===true){window.flMemoireSynchroA=data.actif?now:0;window.flMemoireDebutA=data.actif?((+data.t>1e9)?+data.t*1000:now):0;return;}if(data.actif===false&&(+window.flMemoireDebutA>0||+data.memoireDebut>1e9)){try{if(typeof window.flMemoireFinie==='function')window.flMemoireFinie((+data.memoireDebut>1e9)?+data.memoireDebut*1000:+window.flMemoireDebutA,(+data.t>1e9)?+data.t*1000:now);}catch(e){}window.flMemoireDebutA=0;}if(data.actif===false)window.flMemoireSynchroA=0;if(data.actif===false)W.tSync=now;   /* 31 oct. 2026 — la mémoire du bracelet arrive : la nuit ne se finalise pas seule tant qu'elle dure (`flMemoireEnCours`, flint-nuit-matin.js) */
    W.synchroActive=!!data.actif;
    return;
   }
@@ -26568,9 +26257,9 @@ window.flMetriquesCourse=function(id,debutSec,finSec,estCourse){
       à la réception) : le tampon du pont retarde jusqu'à 45 s, et `new Date()`
       posait un battement de 11:41 sous 12:04 (hrSec du 31 août, « 12:04:59=51 »,
       valeur jamais émise). Sans estampille — anciens natifs, bancs — repli local. */
-   var mn=(data.ts&&dayKeyOf(new Date(data.ts*1000))===tk(0))?new Date(data.ts*1000):new Date();
+   var mn=(data.ts&&dayKeyOf(new Date(data.ts*1000))===tk(0))?new Date(data.ts*1000):new Date(),_vB=(data.ts&&dayKeyOf(new Date(data.ts*1000))!==tk(0)&&typeof flJourVeille==='function')?flJourVeille(new Date(data.ts*1000),wGet):null; if(!_vB&&typeof flCadranVivant==='function'){var _cvB=flCadranVivant(mn.getTime());if(_cvB)_vB=flCadranCible(_cvB,wGet);}   /* 9 nov. 2026 — la veille va dans la veille ; 11 nov. — un jour étiqueté ailleurs garde son cadran (flint-fuseau.js) */
    var mnj=mn.getHours()*60+mn.getMinutes(),der=d2.hr[d2.hr.length-1];
-   if(der&&der[0]===mnj)der[1]=data.hr; else d2.hr.push([mnj,data.hr]);
+   if(_vB){if(flPoserPoulsVeille(_vB,data.hr))flSauverVeille(_vB.K,wSaveK);} else if(der&&der[0]===mnj)der[1]=data.hr; else d2.hr.push([mnj,data.hr]);
    /* v1403 — et la SECONDE part de son côté, pour la courbe d une séance. La
       ligne du dessus reste maîtresse de `watch_<jour>` : rien de ce qui suit ne
       peut alourdir la journée ni la nuit. */
@@ -26664,13 +26353,13 @@ window.flMetriquesCourse=function(id,debutSec,finSec,estCourse){
         l'horloge locale. Ce qui reste hors de portee et le restera : un paquet
         que le bracelet a garde en memoire arrive horodate de sa RECEPTION, pas
         de ses battements — on ne peut pas inventer l'instant de chacun. */
-     var _dh=(data.ts&&dayKeyOf(new Date(data.ts*1000))===tk(0))?new Date(data.ts*1000):new Date();
-     var _mh=_dh.getHours()*60+_dh.getMinutes();
-     var _ch={}; (d2.rrH||[]).forEach(function(x){_ch[x[0]]=x[1];});
+     var _tsI=data.ts?new Date(data.ts*1000):null,_auj=_tsI&&dayKeyOf(_tsI)===tk(0),_v=(_tsI&&!_auj&&typeof flJourVeille==='function')?flJourVeille(_tsI,wGet):null,_dh=!_tsI?new Date():((_auj||_v)?_tsI:null); if(!_v&&_dh&&typeof flCadranVivant==='function'){var _cvR=flCadranVivant(_dh.getTime());if(_cvR)_v=flCadranCible(_cvR,wGet);} var _cib=_v?_v.w:d2;   /* 9 nov. 2026 — la veille va dans la veille (flint-vfc-source.js) ; 11 nov. — un jour étiqueté ailleurs garde son cadran */
+     if(_dh){var _mh=_v?_v.m:_dh.getHours()*60+_dh.getMinutes();
+     var _ch={}; (_cib.rrH||[]).forEach(function(x){_ch[x[0]]=x[1];});
      _ch[_mh]=(_ch[_mh]||[]).concat(_vh);
      if(_ch[_mh].length>200)_ch[_mh]=_ch[_mh].slice(-200);
-     d2.rrH=Object.keys(_ch).map(function(x){return [+x,_ch[x]];})
-                            .sort(function(a,b){return a[0]-b[0];});
+     _cib.rrH=Object.keys(_ch).map(function(x){return [+x,_ch[x]];})
+                            .sort(function(a,b){return a[0]-b[0];}); if(_v&&typeof flSauverVeille==='function')flSauverVeille(_v.K,wSaveK);}
     }
    }catch(e){}
    wSave();}
@@ -27018,11 +26707,11 @@ window.flMetriquesCourse=function(id,debutSec,finSec,estCourse){
     data.data.forEach(function(g){
      if(!g||!g.ts)return;
      var v=+g[champ]; if(!(v>=bas&&v<=haut))return;
-     var t=new Date(g.ts*1000);
-     var jk=t.getFullYear()+'-'+(t.getMonth()+1)+'-'+t.getDate();
-     (_j[jk]=_j[jk]||[]).push([t.getHours()*60+t.getMinutes(),v]);
+     var t=new Date(g.ts*1000),_cv=(typeof flCadranVivant==='function')?flCadranVivant(t.getTime()):null; if(_cv&&_cv.suite){flSuiteNoter(_cv,champ,v);return;}   /* 11 nov. 2026 — un jour étiqueté ailleurs garde son cadran (flint-fuseau.js) */
+     var jk=_cv?_cv.K:t.getFullYear()+'-'+(t.getMonth()+1)+'-'+t.getDate();
+     (_j[jk]=_j[jk]||[]).push([_cv?_cv.m:t.getHours()*60+t.getMinutes(),v]);
     });
-    var _n=0;
+    var _n=0; if(typeof flSuiteVerser==='function')flSuiteVerser();
     Object.keys(_j).forEach(function(jk){
      var dj=wGet(jk); if(!dj)return;
      var carte={};
@@ -27162,9 +26851,9 @@ window.flMetriquesCourse=function(id,debutSec,finSec,estCourse){
         lu dans le champ dont dépend le score de récupération. */
      if(_ch==='hrvMontre'&&!(_x>0&&_x<400))continue;
      if(_ch==='respMontre'&&!(_x>=4&&_x<=40))continue;
-     var _d=new Date((_t0+_i*_dt)*1000);
-     var _jk=_d.getFullYear()+'-'+(_d.getMonth()+1)+'-'+_d.getDate();
-     (_par[_jk]=_par[_jk]||[]).push([_d.getHours()*60+_d.getMinutes(), _x]);
+     var _d=new Date((_t0+_i*_dt)*1000),_cv=(typeof flCadranVivant==='function')?flCadranVivant(_d.getTime()):null; if(_cv&&_cv.suite){flSuiteNoter(_cv,_ch,_x);_ecrits++;continue;}   /* 11 nov. 2026 — un jour étiqueté ailleurs garde son cadran (flint-fuseau.js) */
+     var _jk=_cv?_cv.K:_d.getFullYear()+'-'+(_d.getMonth()+1)+'-'+_d.getDate();
+     (_par[_jk]=_par[_jk]||[]).push([_cv?_cv.m:_d.getHours()*60+_d.getMinutes(), _x]);
      _ecrits++;
     }
     Object.keys(_par).forEach(function(_jk){
@@ -27224,7 +26913,7 @@ window.flMetriquesCourse=function(id,debutSec,finSec,estCourse){
      /* 2 nov. 2026 — ET LES SÉANCES SE RELISENT, comme aux deux lecteurs de l'ancien bracelet. Le 28 oct., 22:28 → 22:46 (pouls 119, WHOOP « Activité ») n'est arrivé que par cette mémoire, le lendemain : jamais détecté, alors que `syncSessions` le trouve dès qu'on le relance. Le pouls et les pas : ce que lit la détection. */
      if(_ch==='hr'||_ch==='pasHeure'||_ch==='pasPhoto'){try{if(typeof window.flDetecterBientot==='function')window.flDetecterBientot(_jk);}catch(e){}}
     });
-    try{console.log('[flint] mémoire Fitcare : '+data.canal+' — '+_ecrits+' valeur(s) sur '
+    try{if(typeof flSuiteVerser==='function')flSuiteVerser();}catch(e){} try{console.log('[flint] mémoire Fitcare : '+data.canal+' — '+_ecrits+' valeur(s) sur '
       +Object.keys(_par).length+' jour(s), une toutes les '+_dt+' s');}catch(e){}
    }catch(e){}
   }
@@ -27430,7 +27119,7 @@ window.flMetriquesCourse=function(id,debutSec,finSec,estCourse){
      _j++;
     });
     if(_nb)console.log('[flint] intervalles datés : '+_nb+' battements, '+_m
-      +' minute(s) sur '+_j+' jour(s)'+(_tot!=null?', la montre en annonce '+_tot:''));
+      +' minute(s) sur '+_j+' jour(s)'+(_tot!=null?', le bracelet en annonce '+_tot:''));
    }catch(e){}
   }
   else if(type==='seanceOuverte'){
@@ -27632,10 +27321,9 @@ window.flMetriquesCourse=function(id,debutSec,finSec,estCourse){
      Object.keys(_jn).forEach(function(kk){window.flNuitRecouper(kk,null,true);});
     }
    }catch(e){}
-   try{native.postMessage({cmd:'nightack'});}catch(e){}
+   try{if(typeof window.flDetecterBientot==='function')Object.keys(perDay).forEach(function(kk){if(kk===tk(0)||kk===tk(-1))window.flDetecterBientot(kk);});}catch(e){}try{native.postMessage({cmd:'nightack'});}catch(e){}   /* 16 nov. 2026 — le rejeu du journal natif porte aussi les efforts vécus app en arrière-plan : comme la FC continue et la mémoire du bracelet, il relance la détection (aujourd'hui et hier seulement) */
    try{if(typeof injectToday==='function'){var fr=document.getElementById('frToday');if(fr&&fr.contentDocument)injectToday(fr.contentDocument);}}catch(e){}
   }
-  try{localStorage.setItem('flint_watch_live',JSON.stringify(W));}catch(e){}
   try{document.dispatchEvent(new CustomEvent('flintWatch',{detail:{type:type,data:data}}));}catch(e){}
  }catch(e){}};
  /* --- MODE RÉEL : surcharges du moteur de données (coquille uniquement) --- */
@@ -27714,7 +27402,7 @@ window.flMetriquesCourse=function(id,debutSec,finSec,estCourse){
    var r=wGet(K);
    var _coeur=!!(r&&r.night&&r.night.lecteur==='coeur'&&r.night.source!=='manuel'&&(r.night.source!=='ble'||/fitcare/.test(String(r.marque||''))));   /* 29 oct. 2026 — une nuit LUE AU POULS reste une lecture, stades compris (flint-sommeil.js) */ if(r&&r.night&&!r.night._est&&!_coeur)return null;      /* nuit mesuree : on ne touche pas */
    /* 3 nov. 2026 — une nuit au cœur DÉJÀ rangée que le bracelet ne confirme pas s'en va (la soirée du 2 nov. au téléphone). */
-   if(_coeur&&typeof window.flNuitConfirmee==='function'){var _cf0=window.flNuitConfirmee(K,r.night,r);if(!_cf0.ok){delete r.night;r.nuitRefusee={t:Date.now(),raison:_cf0.raison};wSaveK(K);_coeur=false;try{console.log('[flint] nuit '+K+' : '+_cf0.raison+' — retirée');}catch(e){}}}
+   if(_coeur&&typeof window.flNuitConfirmee==='function'){var _cf0=window.flNuitConfirmee(K,r.night,r);if(!_cf0.ok){try{window.flNuitJournalCoeur?window.flNuitJournalCoeur(K,'retiree',r.night,r,_cf0,lim):console.log('[flint] nuit '+K+' : '+_cf0.raison+' — retirée');}catch(e){}delete r.night;r.nuitRefusee={t:Date.now(),raison:_cf0.raison};wSaveK(K);_coeur=false;}}
    /* 12 septembre 2026 — LE DRAPEAU NE SUFFIT PAS, ON REGARDE LA CHOSE. Une
       nuit qui porte des stades, ou qui dit venir du bracelet ou de la main,
       est mesuree meme si `_est` traine encore dessus : `restageSleep` ecrivait
@@ -27761,7 +27449,7 @@ window.flMetriquesCourse=function(id,debutSec,finSec,estCourse){
    var n=(typeof window.flNuitDuCoeur==='function')?window.flNuitDuCoeur(K,lim):computeNight(flEchNuit(K,lim),lim);
    if(!n||n.K!==K)return null;
    /* 3 nov. 2026 — une nuit LUE AU CŒUR doit être confirmée (`flNuitConfirmee`, flint-sommeil.js) : sinon pas de nuit. */
-   if(typeof window.flNuitConfirmee==='function'){var _cf=window.flNuitConfirmee(K,n,r);if(!_cf.ok){try{console.log('[flint] nuit '+K+' : '+_cf.raison+' — pas de nuit');}catch(e){}return null;}}
+   if(typeof window.flNuitConfirmee==='function'){var _cf=window.flNuitConfirmee(K,n,r);if(!_cf.ok){try{window.flNuitJournalCoeur?window.flNuitJournalCoeur(K,'refusee',n,r,_cf,lim):console.log('[flint] nuit '+K+' : '+_cf.raison+' — pas de nuit');}catch(e){}return null;}}
    /* ═══ v2912 — UNE NUIT DÉDUITE NE COMMENCE PAS EN PLEIN JOUR ═══════════════
 
       LE FAIT, DEUX FOIS DE SUITE. Le 26 oct. à 21 h puis à minuit — après que
@@ -27826,7 +27514,7 @@ window.flMetriquesCourse=function(id,debutSec,finSec,estCourse){
    }
    r.night=n;wSaveK(K);
    try{window.flFigerVfcNuit&&window.flFigerVfcNuit(K);}catch(e){}
-   try{console.log('[flint] nuit '+K+' recoupee : '+n.bedMin+'→'+n.wakeMin+' ('+n.sleepMin+' min)');}catch(e){}
+   try{window.flNuitJournalCoeur?window.flNuitJournalCoeur(K,'ecrite',n,r,(typeof _cf!=='undefined'?_cf:null),lim):console.log('[flint] nuit '+K+' recoupee : '+n.bedMin+'→'+n.wakeMin+' ('+n.sleepMin+' min)');}catch(e){}   /* v3110 — au journal natif, sans bruit : flNuitJournalCoeur (flint-sommeil.js) */
    return n;
   }catch(e){return null;}};
   function rmssd(rr){if(!rr||rr.length<8)return null;var ds=[];/* Les bornes 300-2000 ms ne suffisent pas. Ces intervalles ne sont PAS des   battements consecutifs : la montre mesure par rafales, et l app les met bout   a bout dans un seul tableau. Le passage d une rafale a la suivante produit un   ecart enorme, entierement artificiel, que le calcul comptait comme de la   variabilite : la VFC affichee montait a 286 ms, quatre fois au-dessus du   physiologique. On ajoute la regle de Malik, standard depuis le rapport de la   Task Force de 1996 : un ecart de plus de 20 % du battement precedent n est pas   physiologique, c est un artefact ou une frontiere de rafale. Sur les donnees   reelles cela ramene la VFC a 80 ms et 64 ms, en conservant 66 a 70 % des   ecarts. On ne fabrique rien : on retire du bruit. */for(var i=1;i<rr.length;i++){var a=rr[i-1],b=rr[i];if(a>=260&&a<=2400&&b>=260&&b<=2400&&Math.abs(b-a)<=0.20*a)ds.push(b-a);}if(ds.length<6)return null;var s2=0;ds.forEach(function(x){s2+=x*x;});return Math.round(Math.sqrt(s2/ds.length));}
@@ -27869,8 +27557,9 @@ window.flMetriquesCourse=function(id,debutSec,finSec,estCourse){
      chaque appel dans le `catch` — en silence, ce qui est le pire. */
   window.flRmssdNuit=function(K){try{
    var _rmMemo=window._flRmssdMemo=window._flRmssdMemo||{};
+   function flVfcMinuteDouteuse(rr,paires,fcMinute){if(!rr||rr.length<2)return true;if(paires<0.7*(rr.length-1))return true;var m=0;for(var i=0;i<rr.length;i++)m+=rr[i];m/=rr.length;return !!(fcMinute>0&&60000/m>1.15*fcMinute);}   /* 10 nov. 2026 — nuit du 9 au 10 : 02:50-02:55, battements à 56-98 bpm pour un cœur à 48 (faux pics tus), rangés dans le profond : VFC 88 (WHOOP 65). Douteuse = battements > 1,15 × le pouls de la minute (médiane 1,00, p90 1,03), ou < 70 % de paires gardées. Plus LENTS que la minute, c'est la minute qui ment : gardés. Banc : tests/test-vfc-minutes-douteuses.js. */
    var w=watchOf(K); if(!w)return null;
-   var rh=((typeof flMatiereNuit==='function')?flMatiereNuit(K,w):w).rrH||[]; if(!rh.length)return {ok:false,raison:"Aucun battement enregistré cette nuit."};
+   var _mat=((typeof flMatiereNuit==='function')?flMatiereNuit(K,w):w)||w, rh=_mat.rrH||[]; if(!rh.length)return {ok:false,raison:"Aucun battement enregistré cette nuit."};
    var n=w.night||null;
    if(!n||n.sleepStart==null||n.sleepEnd==null)
     return {ok:false,raison:"Pas de nuit découpée pour ce jour."};
@@ -27880,7 +27569,7 @@ window.flMetriquesCourse=function(id,debutSec,finSec,estCourse){
    var am=a.getHours()*60+a.getMinutes(), bm=b.getHours()*60+b.getMinutes(); if(typeof flNuitDuSoir==='function'&&flNuitDuSoir(n)){am=+n.bedMin;bm=+n.wakeMin;}  /* 1er oct. 2026 — nuit du soir : minutes relatives (négatives), matière de la veille */
    function dans(m){return (am<=bm)?(m>=am&&m<=bm):(m>=am||m<=bm);}
 
-   var parMinute=[], totalBattements=0, totalRetenus=0;
+   var parMinute=[], totalBattements=0, totalRetenus=0, _douteuses=0, _fcMin={}; (_mat.hr||[]).forEach(function(x){if(x&&x[0]!=null&&+x[1]>0)_fcMin[x[0]]=+x[1];});
    rh.forEach(function(e){
     if(!e||e.length<2||!dans(e[0])||!Array.isArray(e[1]))return;
     var rr=e[1].filter(function(v){return v>=300&&v<=2000;});
@@ -27896,13 +27585,14 @@ window.flMetriquesCourse=function(id,debutSec,finSec,estCourse){
      if(Math.abs(rr[i]-rr[i-1])<=0.2*rr[i-1]){carres+=(rr[i]-rr[i-1])*(rr[i]-rr[i-1]);paires++;}
     }
     if(paires<6)return;                       /* une minute trop hachée ne compte pas */
+    if(flVfcMinuteDouteuse(rr,paires,_fcMin[e[0]])){_douteuses++;return;}   /* 10 nov. 2026 — voir flVfcMinuteDouteuse */
     totalRetenus+=paires;
     parMinute.push({min:e[0], v:Math.sqrt(carres/paires), paires:paires, battements:rr.length, carres:carres});
    });
 
    var _mn=parMinute.map(function(x){return x.min;}), _cv=_mn.length>1?((Math.max.apply(null,_mn)-Math.min.apply(null,_mn)+1440)%1440):0, _dn=((bm-am+1440)%1440)||1440;  /* v2521 — PAS LE NOMBRE, LA COUVERTURE (§50) : 20 points groupes se trompent de 12,3 ms p90, 9 repartis de 8,4. */
    var _prof=(typeof window.flVfcMinutesProfondes==='function')?window.flVfcMinutesProfondes(parMinute,n,am):[];   /* v3017 — le sommeil profond d'abord, comme WHOOP ; 2 nov. (v3019) : 6 minutes profondes mesurées suffisent, sans l'étendue des 66 % (la nuit du 2 nov. allongée à 23:38 la perdait : battements de 00:37 à 06:02 seulement) */
-   if(parMinute.length<6||((_cv/_dn)<0.66&&_prof.length<6)) return (_rmMemo[_cle]={ok:false, raison:(typeof flVfcMinutesPhrase==='function')?flVfcMinutesPhrase(parMinute.length,parMinute.length>=6):(parMinute.length+" minute(s) de VFC cette nuit."), minutes:parMinute.length, etenduePct:Math.round(100*_cv/_dn)});  /* 31 oct. 2026 — le message dit les MINUTES (« 4 minutes de VFC »), plus le « 48 % » : c etait l ETENDUE premiere→derniere minute, pas une couverture (flint-recup-cycle.js) */
+   var _tl=(!(parMinute.length<6||((_cv/_dn)<0.66&&_prof.length<6))&&typeof window.flVfcTrouLong==='function')?window.flVfcTrouLong(_mn,am,bm):null; if(_tl)return (_rmMemo[_cle]={ok:false, raison:_tl.phrase, minutes:parMinute.length, trou:_tl});   /* 12 nov. 2026 — nuit trouée (flint-vfc-source.js) */ if(parMinute.length<6||((_cv/_dn)<0.66&&_prof.length<6)) return (_rmMemo[_cle]={ok:false, raison:(typeof flVfcMinutesPhrase==='function')?flVfcMinutesPhrase(parMinute.length,parMinute.length>=6):(parMinute.length+" minute(s) de VFC cette nuit."), minutes:parMinute.length, etenduePct:Math.round(100*_cv/_dn)});  /* 31 oct. 2026 — le message dit les MINUTES (« 4 minutes de VFC »), plus le « 48 % » : c etait l ETENDUE premiere→derniere minute, pas une couverture (flint-recup-cycle.js) */
    /* ═══ 4 nov. 2026 — MÉTHODE 3 : LE SOMMEIL PROFOND, PONDÉRÉ VERS LA FIN DE NUIT, COMME WHOOP ═══
       WHOOP lit sa VFC pendant le sommeil, pondérée vers le DERNIER sommeil lent profond. Les minutes
       profondes sont mises en commun (Σ carrés / Σ paires, chaque minute pesée par ses paires) avec un
@@ -27927,7 +27617,7 @@ window.flMetriquesCourse=function(id,debutSec,finSec,estCourse){
            rmssd:Math.round(med),
            minutes:parMinute.length,
            battements:totalBattements,
-           retenus:totalRetenus,
+           retenus:totalRetenus, douteuses:_douteuses,
            qualite:totalBattements?Math.round(100*totalRetenus/totalBattements):0,
            etendue:[Math.round(vs[0]), Math.round(vs[vs.length-1])],
            detail:parMinute});
@@ -29927,7 +29617,7 @@ window.flDansFenetre=function(m,d,f){ return m>=d && m<f; };
     var w=(typeof watchOf==='function')?watchOf(K):DB.get('watch_'+K,null);
     if(!w||!w.hr||!w.hr.length){
      ligne('Courbe cardiaque du jour','aucune',false);
-     ligne('Ce qu’il faut faire','ouvrir l’app, bracelet connecté : la montre n’a rien transmis');
+     ligne('Ce qu’il faut faire','ouvrir l’app, bracelet connecté : le bracelet n’a rien transmis');
      return {jour:K,lignes:L};
     }
     ligne('Points de fréquence cardiaque',w.hr.length+' points',true);
@@ -29969,7 +29659,7 @@ window.flDansFenetre=function(m,d,f){ return m>=d && m<f; };
     try{enreg=DB.get('sessions_'+K,[])||[];}catch(e){}
     ligne('Séances enregistrées',enreg.length,enreg.length>0);
     enreg.forEach(function(x){
-     var h=function(m){return Math.floor(m/60)+'h'+String(Math.round(m%60)).padStart(2,'0');};
+     var h=function(m){m=Math.round(m);return Math.floor(m/60)+'h'+String(m%60).padStart(2,'0');};
      ligne('  · '+(x.name||x.type||'séance'),(x.startMin!=null?h(x.startMin):'?')+' · '+(x.dur||0)+' min');
     });
 
@@ -30121,7 +29811,6 @@ window.flDansFenetre=function(m,d,f){ return m>=d && m<f; };
                                                pas:m.pasTotal,int:m.int};})};
   };
 
-  function flsLogSafe(m){try{console.log('[flint] '+m);}catch(e){}}
   /* ═══ v1308 — UNE SEULE MISE EN FORME DE SÉANCE, PARTAGÉE ══════════════════
      `detectSessions` rend des segments bruts : des minutes, une charge, pas de
      nom. Deux endroits les transformaient en séances affichables, et le second
@@ -30177,7 +29866,7 @@ window.flDansFenetre=function(m,d,f){ return m>=d && m<f; };
       `try`, parce qu'une observation n'a pas le droit de casser une détection. */
    try{window.flOmbreC&&window.flOmbreC(K,det);}catch(e){}
    var w=watchOf(K);var names=(w&&w.sessNames)||{};var dis=(w&&w.disSess)||[];
-   var cur=DB.get('sessions_'+K,[])||[];if(window.flSansAutoDeLaVeille)cur=window.flSansAutoDeLaVeille(K,cur);   /* 6 nov. 2026 */
+   var cur=DB.get('sessions_'+K,[])||[];if(window.flSansAutoDeLaVeille)cur=window.flSansAutoDeLaVeille(K,cur);if(window.flSansAutoDuPoulsDouble)cur=window.flSansAutoDuPoulsDouble(K,cur);   /* 6 nov. 2026 ; 10 nov. : flint-sommeil.js */
    /* LA MONTRE PRIME SUR LA DEVINETTE. Quand le bracelet a lui-meme reconnu des
       seances (seance), on ne les remplace pas par ce que la courbe laisse
       supposer : il sait ce qu il a mesure, nous ne faisons qu inferer. Sans
@@ -30352,7 +30041,7 @@ window.flDansFenetre=function(m,d,f){ return m>=d && m<f; };
       d'absence — vaut désormais pour toutes les sources, pas seulement pour les
       séances automatiques déjà passées). */
    var _canon=flReconcilierSeances(cur,rows,K,dis);
-   try{flDeriverMetriques(K,_canon);}catch(e){}   /* v1711 — une seule période */
+   try{flDeriverMetriques(K,_canon);}catch(e){}try{if(typeof window.flJournalSansMouvement==='function')window.flJournalSansMouvement(K,_canon);}catch(e){}   /* v1711 — une seule période ; 16 nov. 2026 — le pouls haut sans mouvement est ÉCRIT, jamais retiré (flint-classement.js) */
    DB.set('sessions_'+K,_canon);return rows;}catch(e){return [];}}
   window._flSyncSessions=syncSessions;
   /* ═══ v1581 — LA SEANCE NAIT A L ARRIVEE DES DONNEES, PAS AU PROCHAIN ECRAN ═
@@ -30787,7 +30476,7 @@ window.flDansFenetre=function(m,d,f){ return m>=d && m<f; };
    });
    var z=(typeof flZonesOf==='function')?flZonesOf(c.jour):null;
    var rep=(typeof p05==='function'&&brut.length)?p05(brut):null;
-   function hm(m){return Math.floor(m/60)+'h'+String(Math.round(m%60)).padStart(2,'0');}
+   function hm(m){m=Math.round(m);return Math.floor(m/60)+'h'+String(m%60).padStart(2,'0');}
    return {
     aDesDonnees:true, jour:c.jour, jourLibelle:flJourLibelle(o),
     moyenne:c.moyenne, min:c.min, max:c.max,
@@ -30823,11 +30512,11 @@ window.flDansFenetre=function(m,d,f){ return m>=d && m<f; };
       arriere, et on demande QUATRE nuits : trois de reference, plus celle qu on
       evalue. Le seuil est le meme, il est simplement dit dans les termes de
       celui qui le lit. */
-   var n=0,_src=null,_ins='',d=new Date();
+   var n=0,_src=null,_ins='',d=new Date(),_sv1=window.flRecupSansVfc===1;   /* 17 nov. 2026 — LE COMPTE DIT LA RÈGLE DE LA RÉCUP, voir la ligne du test plus bas */
    for(var i=0;i<=30;i++){
     var k=d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();
-    var so=(typeof sensorOf==='function')?sensorOf(k):null;
-    if(so&&so.hrv!=null){if(i===0){_src=so.hrvSrc||null;_ins=(so.instr||'')+'|m'+(so.hrvMeth||1);} if(i===0||(!(so.sleepMin!=null&&so.sleepMin<240)&&!(_src&&so.hrvSrc&&so.hrvSrc!==_src)&&!(_src&&((so.instr||'')+'|m'+(so.hrvMeth||1))!==_ins)))n++;}   /* 28 sept. 2026 — les MÊMES nuits que `baseStat` : plus de 4 h, même source de VFC. « 4/4 » promettait un score que la récup refusait (S6) */
+    var so=(typeof sensorOf==='function')?sensorOf(k):null,_hn=!!(so&&i>0&&typeof flVfcHorsNorme==='function'&&flVfcHorsNorme(k,tk(0)));   /* 12 nov. 2026 — normale de VFC repartie de zéro (flint-vfc-source.js) : écarte la nuit de la VFC seulement */
+    if(so&&i===0&&so.hrv!=null){_src=so.hrvSrc||null;_ins=(so.instr||'')+'|m'+(so.hrvMeth||1);}var _okH=!!(so&&so.hrv!=null&&(i===0||(!_hn&&!(so.sleepMin!=null&&so.sleepMin<240)&&!(_src&&so.hrvSrc&&so.hrvSrc!==_src)&&!(_src&&((so.instr||'')+'|m'+(so.hrvMeth||1))!==_ins))));var _okR=!!(_sv1&&so&&so.rhr!=null&&(i>0||(typeof flRecupSansVfcPermis==='function'&&!!flRecupSansVfcPermis(so,0,true))));if(_okH||_okR)n++;   /* 17 nov. 2026 — LA RÈGLE DE `recovery`, PAS UNE AUTRE. Le premier score existe dès que la nuit du jour est mesurée ET qu'une normale existe : celle de la VFC (`baseStat('hrv')` : 3 nuits d'avant, de 4 h et plus, même source — `_okH`) OU, l'app ouvrant la voie « sans VFC » (`flRecupSansVfc`), celle du pouls de repos (`baseStat('rhr')` : 3 jours d'avant qui en portent un, SANS durée minimale — `_okR`), la nuit du jour passant alors par le permis du moteur (`flRecupSansVfcPermis`, pouls et couverture). Le compte écartait les nuits d'avant de moins de 4 h alors que la récup les prend : « 3/4 » et un score affiché (rejoué : test-nuits-de-base-regle.js). Affichage seul : `recovery` ne lit pas ce compte. */
     d.setDate(d.getDate()-1);
    }
    return {presentes:n,requises:4,manquantes:Math.max(0,4-n)};
@@ -31970,7 +31659,7 @@ window.flDansFenetre=function(m,d,f){ return m>=d && m<f; };
     sansReponse:'{x} matins n\'ont pas eu de réponse.',
     contrainte:'{x} nuits se sont terminées avec un réveil.',
     couverture:'{x} nuits ont été trop peu couvertes par le bracelet.',
-    bord:'{x} nuits ont été transmises incomplètes par la montre.',
+    bord:'{x} nuits ont été transmises incomplètes par le bracelet.',
     comble:'{x} nuits comportaient trop de minutes reconstituées.',
     implausible:'{x} nuits avaient une durée invraisemblable.',
     deduite:'{x} nuits ont été déduites et non mesurées.',
@@ -32390,7 +32079,7 @@ window.flDansFenetre=function(m,d,f){ return m>=d && m<f; };
     out.totalBattements+=nb; out.totalMinutes+=mins;
    }
    out.lecture = out.totalMinutes===0
-     ? 'aucun intervalle daté en base : soit la montre n en garde pas, soit la pagination ne remonte rien'
+     ? 'aucun intervalle daté en base : soit le bracelet n en garde pas, soit la pagination ne remonte rien'
      : out.totalMinutes+' minutes portant du battement-par-battement sur '
        +out.jours.filter(function(j){return j.minutesAvecBattements;}).length+' jour(s)';
    return out;
@@ -32683,7 +32372,7 @@ window.flFenetreValide=function(k,s){
        n'a jamais eu lieu. La distinction commande l'affichage — une fenêtre
        douteuse reste une activité dont on ne sait pas noter l'effort, un
        artefact n'est pas une activité du tout. */
-    return {ok:false,artefact:true,raison:'compte-rendu de la montre sous le '+
+    return {ok:false,artefact:true,raison:'compte-rendu du bracelet sous le '+
       'métabolisme de base : '+(_kc==null?'aucune calorie':(Math.round(_kc*100)/100+' kcal'))+
       ' pour '+duree+' min'};
   }
@@ -32705,14 +32394,14 @@ window.flFenetreValide=function(k,s){
   }catch(e){}
   if(!pm&&!repos)return {ok:true,raison:'rien pour juger — on ne condamne pas sans preuve'};
   var _fmS=null;if(repos>=60){try{_fmS=flFcMax();}catch(e){}}var seuilFC=(repos!=null)?(repos+((_fmS&&_fmS.v>repos+40)?Math.max(5,Math.round(0.07*(_fmS.v-repos))):10)):null;   /* +10 : le pas de zone le plus fin du moteur. 6 nov. 2026 — 7 % de SA réserve dès 60 de repos : le yoga d'un cœur à 72 ne passait pas 82 */
-  var soutenue=0, silence=0, pire=0, jugeables=0;
+  var soutenue=0, silence=0, pire=0, jugeables=0, _jv={0:{pm:pm,hr:hr}};   /* 16 nov. 2026 — une minute d'après minuit se lit dans SON jour (`flMesuresDuJourVoisin`, flint-fiche-seconde.js) : lue sur la nuit d'AVANT du même jour, elle passait pour un silence, la fenêtre était refusée et la séance recopiée à chaque synchro */
   for(var m=Math.round(d);m<=Math.round(f);m++){
-   var mm=((m%1440)+1440)%1440;
-   var vuPas=!!(pm&&pm.vu[mm]);
-   var vuFC=(hr[mm]!=null);
+   var mm=((m%1440)+1440)%1440, _o=Math.floor(m/1440), _J=_jv[_o]||(_jv[_o]=(typeof window.flMesuresDuJourVoisin==='function')?(window.flMesuresDuJourVoisin(k,_o)||{pm:null,hr:{}}):{pm:pm,hr:hr}), _pm=_J.pm, _hr=_J.hr;
+   var vuPas=!!(_pm&&_pm.vu&&_pm.vu[mm]);
+   var vuFC=(_hr[mm]!=null);
    if(!vuPas&&!vuFC)continue;              /* minute non mesurée : ne juge pas */
    jugeables++;
-   var actif=(vuPas&&pm.m[mm]>0)||(seuilFC!=null&&hr[mm]!=null&&hr[mm]>seuilFC);
+   var actif=(vuPas&&_pm.m[mm]>0)||(seuilFC!=null&&_hr[mm]!=null&&_hr[mm]>seuilFC);
    if(actif){soutenue++;silence=0;}
    else{silence++; if(silence>pire)pire=silence;}
   }
@@ -33029,7 +32718,7 @@ window.flKcalActivite=function(k,s,debut,fin){try{if(typeof flSansBracelet==='fu
  if(!s)return null;
  var _KC={1:6,2:8,3:10,4:13};
  var _iv=(typeof flIntensiteSeance==='function')?flIntensiteSeance(s):(s.int||2);
- return Math.round((s.dur||30)*(_KC[_iv]||8)*(((typeof flPoidsCorps==='function'&&+flPoidsCorps())||70)/70));   /* 28 sept. — au poids, comme ci-dessus (E9) */
+ return Math.round(Math.min(s.dur||30,180)*(_KC[_iv]||8)*(((typeof flPoidsCorps==='function'&&+flPoidsCorps())||70)/70));   /* 28 sept. — au poids, comme ci-dessus (E9). 7 nov. 2026 — 3 h au plus : sans aucune mesure, rien ne dit que la séance dure encore (une muscu oubliée 10 h : 5 994 kcal, 19,6/20) */
 }catch(e){return null;}};
 
 /* ═══ v1727 — LES CALORIES DES SORTIES, EN UNE SEULE DEMANDE ═════════════
@@ -35554,7 +35243,7 @@ window.flDeriverMetriques=function(k,liste){
     if(apres&&apres.length>avant){jours++;trouvees+=(apres.length-avant);}
    }
    if(jours)console.log('[flint] v1721 : '+trouvees+' activite(s) retrouvee(s) sur '+jours+
-     ' journee(s) que la fausse seance de la montre avait bloquees');
+     ' journee(s) que la fausse seance du bracelet avait bloquees');
   })();}catch(e){}
   /* ══════════ v1706 — LE SUFFIXE DE MOMENT, RETIRE DES NOMS DEJA ECRITS ═══
      Le bilan proposait « Randonnee de l apres-midi », « Marche du soir ». Le
@@ -35575,10 +35264,10 @@ window.flDeriverMetriques=function(k,liste){
      comme sa propre contribution, avant que la première relecture ne l'efface.
      Sans drapeau : la passe ne fait rien sur une base saine, et elle doit
      pouvoir rattraper une entrée écrite entre deux lancements. */
-  try{(function(){
+  try{(function(){var _R=null;try{_R=(window.__flCave&&window.__flCave.reel)||null;}catch(eR){}   /* 17 nov. 2026 — LE HAUT SEULEMENT : une journée en cave a déjà vu cette passe quand elle était en haut ; la relire coûtait un aller-retour synchrone par jour porté, à CHAQUE lancement (335 au bout d'un an, test-cave-une-annee.js). */
    for(var i=0;i<=400;i++){
     var K=tk(-i);
-    var cur=null; try{cur=DB.get('sessions_'+K,null);}catch(e){}
+    var cur=null; if(_R&&_R.getItem('sessions_'+K)===null)continue; try{cur=DB.get('sessions_'+K,null);}catch(e){}
     if(!cur||!cur.length)continue;
     var change=false;
     cur.forEach(function(x){
@@ -35857,8 +35546,8 @@ window.flDeriverMetriques=function(k,liste){
    var auj=(off||0)===0;
    if(!w||((!w.hrvMontre||!w.hrvMontre.length)&&!(w.rrH&&w.rrH.length)&&!w.stressFlint)){
     vide.raison=auj
-     ? 'la montre n\'a rien mesuré depuis minuit — la courbe revient après environ une heure de port'
-     : 'la montre n\'a rien mesuré ce jour-là'; return _pe(vide);}
+     ? 'le bracelet n\'a rien mesuré depuis minuit — la courbe revient après environ une heure de port'
+     : 'le bracelet n\'a rien mesuré ce jour-là'; return _pe(vide);}
 
    var _c=flStressCourbe(off||0);
    if(!_c){vide.raison='aucun indice de stress dans les mesures de ce jour-là'; return _pe(vide);} if(_c.raison){vide.raison=_c.raison; vide.source=_c.source; return _pe(vide);}
@@ -35961,7 +35650,7 @@ window.flDeriverMetriques=function(k,liste){
     var veille=(couche>=720);
 
     /* v1801 — PLUS DE NORMALE PERSONNELLE À PARTAGER. La courbe vient de
-       l'indice que la montre mesure ; il n'y a plus rien à calculer en amont,
+       l'indice que le bracelet mesure ; il n'y a plus rien à calculer en amont,
        donc plus rien à faire descendre d'un appel à l'autre. Le commentaire
        « une nuit, une normale » ci-dessus décrivait un problème qui n'existe
        plus : les deux moitiés de la nuit sont jugées par le même appareil, à la
@@ -36303,10 +35992,6 @@ window.flDeriverMetriques=function(k,liste){
   var TIMEm=(o&&o.t0&&o.t1)?(o.t0+' à '+o.t1):'';
   var SUBm=isNap?'Une pause courte et réparatrice.':((o&&o.duree&&/^([7-9]|1\d)/.test(o.duree))?'Une nuit complète et régulière.':'Une nuit plus courte que ton besoin.');
   var MOON='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6c4ff0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>';
-  function _mnCard(lab,val,sub,col,fs){return '<div style="flex:1;display:flex;flex-direction:column;background:#fff;border-radius:22px;padding:20px 20px 22px;box-shadow:0 3px 12px rgba(150,118,72,0.05),inset 0 0 0 1px rgba(20,17,15,0.04)">'
-   +'<div style="font-family:-apple-system,system-ui,sans-serif;font-size:12.5px;font-weight:700;letter-spacing:0.05em;color:#14110f">'+lab+'</div>'
-   +'<div style="display:flex;align-items:center;margin-top:18px;height:38px"><span style="font-family:\'Oswald\',\'Archivo\',sans-serif;font-size:'+fs+'px;font-weight:500;letter-spacing:0.005em;color:'+col+';line-height:0.9;white-space:nowrap">'+val+'</span></div>'
-   +'<div style="margin-top:auto;padding-top:14px;font-family:'+SANSm+';font-size:12.5px;font-weight:300;color:#9a938a">'+sub+'</div></div>';}
   el.innerHTML='<div style="min-height:100%;padding:max(18px,calc(env(safe-area-inset-top,0px) + 12px)) 20px calc(env(safe-area-inset-bottom,0px) + 40px)">'
    +'<div style="display:flex;align-items:center;gap:12px">'
     +'<button class="mn-back" aria-label="Retour" style="flex-shrink:0;width:48px;height:48px;border-radius:16px;background:#fff;border:none;padding:0;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(20,17,15,.05)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#14110f" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg></button>'
@@ -37421,7 +37106,7 @@ window.flShellHonest=function(doc){try{
   ['screen-trends','screen-balance'].forEach(function(id){
    var sc=doc.getElementById(id);if(sc&&!sc.__flHon2){sc.__flHon2=1;honBlank(sc);}});
   /* écran Calories (historique) — TOUJOURS « — » en coquille, et le clone avec.
-     L'ancien cycle blanchissait quand la montre n'avait rien envoyé AUJOURD'HUI
+     L'ancien cycle blanchissait quand le bracelet n'avait rien envoyé AUJOURD'HUI
      puis restaurait dès qu'elle parlait. Or ce que restauraient ces lignes,
      c'etaient les littéraux de la maquette (calPts, calMonthVals, calCPts :
      2 780 / 3 120 / 2 540 kcal écrits dans le composant React) — AUCUN

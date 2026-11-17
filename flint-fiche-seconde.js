@@ -192,6 +192,37 @@ window.flDessinCourbe = function (pts, durS, idxDense) {
   return idxDense(pts.length, function (k) { return pts[k][1]; }, 1200).map(function (k) { return pts[k]; });
 };
 
+/* ═══ 7 nov. 2026 — UNE ENTRÉE REGROUPÉE NE SE DESSINE PAS EN MARCHE D'ESCALIER ═══════
+
+   Dino, sur la marche de 10:33 ouverte à 00:20 : une courbe en escalier, hérissée de pics. Passé
+   minuit, la marche ne tient plus qu'une valeur par minute. Dépliée en douze tranches égales, elle
+   faisait un palier ; et son « haut », posé sur une seule tranche, une dent à chaque palier.
+   Le CALCUL garde ces tranches : `hrT` nourrit la moyenne et les zones de la fiche, il ne bouge pas
+   (une relecture a mesuré 16:35 en zone 3 au lieu de 5:35 quand le dessin l'avait remplacé). Le DESSIN
+   part à côté (`hrDessin`) : il relie les médianes mesurées d'un trait droit, comme la série minute,
+   et ne garde que le plus haut des « hauts », le vrai pic. Seul un binaire qui sait lire le pas
+   (`FL_NATIF_COURBE`) le reçoit : l'App Store 1.1 recalcule ses zones sur les points dessinés.
+   Aucune écriture : garder plus de secondes par séance ferait sauter le plafond du magasin
+   (banc : tests/test-seances-longues.js).
+   `fine` : [[secondes, bpm, …]], `gros` : { tranche: 1 }, `ancres` : [[secondes, médiane], …]. */
+window.flDessinRegroupe = function (fine, gros, ancres) {
+  if (!ancres || !ancres.length) return fine;
+  ancres = ancres.slice().sort(function (a, b) { return a[0] - b[0]; });
+  var pic = -1, iPic = -1, out = [], j = 0, i;
+  for (i = 0; i < fine.length; i++) {
+    if (fine[i].length < 3 && gros[Math.round(fine[i][0] / 5)] && fine[i][1] > pic) { pic = fine[i][1]; iPic = i; }
+  }
+  for (i = 0; i < fine.length; i++) {
+    var x = fine[i];
+    if (x.length >= 3 || !gros[Math.round(x[0] / 5)] || i === iPic) { out.push(x); continue; }
+    while (j < ancres.length - 1 && ancres[j + 1][0] <= x[0]) j++;
+    var a = ancres[j], b = ancres[j + 1];
+    var v = (!b || x[0] <= a[0]) ? a[1] : a[1] + (b[1] - a[1]) * (x[0] - a[0]) / (b[0] - a[0]);
+    out.push([x[0], Math.round(v)]);
+  }
+  return out;
+};
+
 window.flSecCases = function (e, cb) {
   var pas = e[2] || 1;
   if (pas <= 5) { cb(e[0], e[1], false); return; }
@@ -315,6 +346,13 @@ window.flFinVeille = function (K) {
     try { ss = DB.get('sessions_' + kj, null); } catch (e) {}
     (ss || []).forEach(function (s) {
       if (s && (s.auto === false || s.gps || s.geste) && s.endMin != null) limite = Math.max(limite, s.endMin - d * 1440);
+      /* 16 nov. 2026 — ET UNE DÉTECTION DE LA VEILLE QUI A PASSÉ MINUIT. Le soir, la nuit n'est pas encore
+         connue : la veille s'arrête à minuit et le lendemain détecte 00:00 → 00:40 à part. Le matin, la nuit
+         connue, la veille reprend ces minutes (`flPtsEveil` va jusqu'au coucher) — et le lendemain gardait sa
+         copie (une détection que rien ne redétecte est conservée, v1238) : 40 minutes comptées deux fois.
+         Seulement la veille, seulement une fenêtre jugée saine, jamais au-delà de midi. */
+      else if (d === 1 && s && s.auto === true && s.type !== 'nap' && s.src !== 'montre' && s.fenetreOk !== false && s.endMin > 1440)
+        limite = Math.max(limite, Math.min(720, s.endMin - 1440));
     });
   }
   return limite;
@@ -329,6 +367,22 @@ window.flSansAutoDeLaVeille = function (K, cur) {
   return cur.filter(function (s) {
     return !(s && s.auto === true && !s.geste && !s.gps && s.startMin != null && s.startMin < l);
   });
+};
+/* 16 nov. 2026 — les mesures d'un jour VOISIN (dec = +1 : le lendemain, −1 : la veille), pour qui juge une
+   fenêtre qui passe minuit (`flFenetreValide`). Les minutes 1 440 et plus d'une séance vivent dans le magasin
+   du lendemain ; les relire dans celui du jour, c'était relire la nuit d'AVANT. Mesuré au banc : une
+   activité 23:00 → 00:40 était refusée (« silence de 41 min au milieu »), restait seule dans son groupe
+   à la réconciliation et revenait en double à CHAQUE synchro du jour (5 copies après 4 synchros). */
+window.flMesuresDuJourVoisin = function (k, dec) {
+  if (!k || !dec) return null;
+  var q = String(k).split('-'), x = new Date(+q[0], +q[1] - 1, +q[2] + dec);
+  var kj = x.getFullYear() + '-' + (x.getMonth() + 1) + '-' + x.getDate(), pm = null, hr = {};
+  try { pm = (typeof flPasParMinute === 'function') ? flPasParMinute(kj) : null; } catch (e) {}
+  try {
+    var w = (typeof watchOf === 'function') ? watchOf(kj) : null;
+    ((w && w.hr) || []).forEach(function (p) { if (p && p.length > 1 && p[0] < 1440) hr[p[0]] = p[1]; });
+  } catch (e) {}
+  return { pm: pm, hr: hr };
 };
 window.flRecalculerJoursSuivants = function (K, s) {
   try {
@@ -412,9 +466,17 @@ window.flFicheSeconde = function (K, sm0, dur, dejaReel, lireSecondes, idxDense,
     if (grossier) grossiers[k4] = 1;
     (seauxS[k4] = seauxS[k4] || []).push(v2);
   };
+  var ancres = [];
   for (var _s = 0; _s < sec.length; _s++) {
-    if ((sec[_s][2] || 1) > 5 && typeof window.flSecCases === 'function') window.flSecCases(sec[_s], poser);
-    else poser(sec[_s][0], sec[_s][1], false);
+    if ((sec[_s][2] || 1) > 5 && typeof window.flSecCases === 'function') {
+      window.flSecCases(sec[_s], poser);
+      var tMil = sec[_s][0] + sec[_s][2] / 2;
+      if (tMil >= s0 && tMil <= s1 && !enArret(tMil)) ancres.push([tMil - s0, sec[_s][1]]);
+    } else {
+      poser(sec[_s][0], sec[_s][1], false);
+      /* la seconde vraie, voisine d'une zone regroupée, tient aussi le trait */
+      if (sec[_s][0] >= s0 && sec[_s][0] <= s1 && !enArret(sec[_s][0]) && !(_s && (sec[_s - 1][2] || 1) <= 5 && sec[_s + 1] && (sec[_s + 1][2] || 1) <= 5)) ancres.push([sec[_s][0] - s0, sec[_s][1]]);
+    }
   }
   var couvS = Object.keys(minutesS).length;
   var seuilMin = dejaReel ? Math.max(5, Math.round(dur * 0.75))
@@ -469,6 +531,8 @@ window.flFicheSeconde = function (K, sm0, dur, dejaReel, lireSecondes, idxDense,
   }
 
   return {
+    hrDessin: (window.FL_NATIF_COURBE && Object.keys(grossiers).length)
+                ? window.flDessinRegroupe(fineS, grossiers, ancres).map(function (x) { return [x[0], x[1]]; }) : null,
     hrT: (typeof window.flPointsCourbe === 'function')
            ? fineS.map(function (x) { return [x[0], x[1]]; })   /* le dessin s'allège à la sortie de la fiche */
            : idxDense(fineS.length, function (i) { return fineS[i][1]; }, 1200)
@@ -536,16 +600,24 @@ window.flCourbeSecondeMinute = function (K, sm0, dur, lireSecondes, idxDense, mi
   try { sec = lireSecondes(K); } catch (e) { return null; }
   if (!sec || !sec.length) return null;
   var mur = (fen && fen.mur > 0) ? fen.mur : dur, arrets = (fen && fen.pauses) || [];
-  var s0 = sm0 * 60, s1 = (sm0 + mur) * 60, seaux = {};
-  var poser = function (t, v) {
+  var s0 = sm0 * 60, s1 = (sm0 + mur) * 60, seaux = {}, gros = {}, ancres = [];
+  var arret = function (t) { return arrets.length && typeof flEnPause === 'function' && flEnPause(sm0 + (t - s0) / 60, arrets); };
+  var poser = function (t, v, grossier) {
     if (t < s0 || t > s1 || !(v > 25 && v < 240)) return;
-    if (arrets.length && typeof flEnPause === 'function' && flEnPause(sm0 + (t - s0) / 60, arrets)) return;
+    if (arret(t)) return;
     var k = Math.round((t - s0) / 5);
+    if (grossier) gros[k] = 1;
     (seaux[k] = seaux[k] || []).push(v);
   };
   for (var i = 0; i < sec.length; i++) {
-    if ((sec[i][2] || 1) > 5 && typeof window.flSecCases === 'function') window.flSecCases(sec[i], poser);
-    else poser(sec[i][0], sec[i][1]);
+    if ((sec[i][2] || 1) > 5 && typeof window.flSecCases === 'function') {
+      window.flSecCases(sec[i], poser);
+      var tM = sec[i][0] + sec[i][2] / 2;
+      if (tM >= s0 && tM <= s1 && !arret(tM)) ancres.push([tM - s0, sec[i][1]]);
+    } else {
+      poser(sec[i][0], sec[i][1]);
+      if (sec[i][0] >= s0 && sec[i][0] <= s1 && !arret(sec[i][0]) && !(i && (sec[i - 1][2] || 1) <= 5 && sec[i + 1] && (sec[i + 1][2] || 1) <= 5)) ancres.push([sec[i][0] - s0, sec[i][1]]);
+    }
   }
   var fine = Object.keys(seaux).map(Number).sort(function (a, b) { return a - b; })
     .map(function (k) {
@@ -553,6 +625,8 @@ window.flCourbeSecondeMinute = function (K, sm0, dur, lireSecondes, idxDense, mi
       return [k * 5, vv[vv.length >> 1]];
     });
   if (!fine.length) return null;
+  /* 7 nov. 2026 — cette fonction ne sert qu'au dessin : même trait que `flFicheSeconde`. */
+  if (window.FL_NATIF_COURBE && Object.keys(gros).length) fine = window.flDessinRegroupe(fine, gros, ancres);
   var tout = window.flCourbeTrouee(fine, minute, null) || fine;
   if (typeof window.flPointsCourbe === 'function') return tout;
   return idxDense(tout.length, function (k) { return tout[k][1]; }, 1200)
@@ -659,4 +733,115 @@ window.flMemoireSeconde = function (data, dep) {
     try { if (typeof dep.detecter === 'function') dep.detecter(jk); } catch (e) {}
   });
   return r;
+};
+
+/* ═══ 7 nov. 2026 — LE MAX VU, POUR LE COACH ════════════════════════════════════
+
+   `s.maxHr` passe par la médiane de 5 minutes (−21 bpm contre WHOOP sur 30 séances) et il
+   reste le chiffre du classement : on n'y touche pas. Le Coach, lui, disait « max 154 » d'une
+   séance dont la fiche montrait davantage. Ici, les mêmes séries que la fiche : `hrT` et
+   `serieCanon`, avec la mémoire du bracelet dans les trous, ou cette mémoire seule quand les
+   secondes ne couvrent pas la séance (foot du 31 oct., 33 min sur 48). Rend null sans aucune
+   série : l'appelant retombe sur `s.maxHr`. Jamais sous `s.maxHr`.
+   Limite : au-delà de deux jours les secondes sont purgées (`flSecondesPassees`), le Coach
+   retombe alors sur ce qui reste ; la fiche, figée au Stop, garde son chiffre. */
+/* 7 nov. 2026 — FC MAX 121 À CÔTÉ D'UNE COURBE QUI MONTE À 173. Foot de Dino, téléphone au bord du
+   terrain : 25 % de secondes, la fiche calcule sur la minute et dessine aussi la seconde. Le pic du
+   dessin relève le maximum s'il tient sur deux cases voisines (≤ 15 s, ≤ 15 bpm d'écart) : une valeur
+   isolée n'est pas un pic. Moyenne et zones ne bougent pas : elles restent sur leur série. */
+window.flMaxDuDessin = function (dessin) {
+  if (!dessin || dessin.length < 2) return 0;
+  var haut = 0;
+  for (var i = 1; i < dessin.length; i++) {
+    var a = dessin[i - 1], b = dessin[i];
+    if (b[0] - a[0] > 15 || Math.abs(b[1] - a[1]) > 15) continue;
+    haut = Math.max(haut, a[1], b[1]);
+  }
+  return Math.round(haut);
+};
+
+window.flMaxVuSeance = function (K, s) {
+  if (!s || s.startMin == null || !(s.dur > 0)) return null;
+  if (typeof window.flSecondesDuJour !== 'function' || typeof flIdxDense !== 'function') return null;
+  var pz = (typeof flPausesDe === 'function') ? flPausesDe(s) : [];
+  var mur = s.dur + ((typeof flMinutesDePause === 'function') ? flMinutesDePause(pz) : 0);
+  var fine = null;
+  try { if (typeof flHrFine === 'function') fine = flHrFine(K, s.startMin, mur); } catch (e) {}
+  var pf = fine && fine.pointsDessin;
+  var f = window.flFicheSeconde(K, s.startMin, s.dur, s.avgHr != null, window.flSecondesDuJour, flIdxDense,
+                                pf, (typeof flMinuteCoherente === 'function') ? flMinuteCoherente : null,
+                                { mur: mur, pauses: pz });
+  var haut = 0;
+  function voir(serie) { (serie || []).forEach(function (x) { var v = Array.isArray(x) ? x[1] : x; if (v > haut) haut = v; }); }
+  if (f) { voir(f.hrT); voir(f.serieCanon); }
+  else if (fine) voir(pf || fine.points);
+  var dessin = null;
+  try { dessin = window.flCourbeSecondeMinute(K, s.startMin, s.dur, window.flSecondesDuJour, flIdxDense, null, { mur: mur, pauses: pz }); } catch (e) {}
+  haut = Math.max(haut, window.flMaxDuDessin(dessin));
+  if (!(haut > 0)) return null;
+  return Math.round(Math.max(haut, +s.maxHr || 0));
+};
+
+/* ═══ 14 nov. 2026 — LE POULS AUTOUR D'UNE SÉANCE, POUR LE STYLO ═══════════════════
+
+   Dino, capture de « Modifier l'activité » (12:55 → 13:43) : « quand je viens modifier
+   une courbe, j'aimerais bien que ce soit pas le vide, voir ce qu'il y a avant et ce
+   qu'il y a après aussi en courbe ». L'écran ne recevait que la courbe de la fiche —
+   la fenêtre de la séance, 13:30 → 13:43 ce jour-là. En tirant le début vers 12:55 on
+   taillait dans du vide, alors que la journée portait un pouls par minute tout du long
+   (lu dans la base de son téléphone : 12:55 → 13:27, autour de 60).
+
+   Rend les minutes MESURÉES de `watch_<jour>.hr` entre `aMin` et `bMin` (minutes
+   depuis minuit, bornes comprises) : [[minute, bpm]], triées. Rien n'est inventé ni
+   comblé : une minute sans mesure n'y est pas. `jour` est l'écart en jours (0 =
+   aujourd'hui), comme pour `flActiviteData`. Les deux formes de `hr` sont lues : des
+   paires [minute, bpm], ou un tableau dont le rang est la minute.
+   Banc : tests/test-pouls-autour.js. */
+window.flPoulsAutour = function (jour, aMin, bMin) {
+  var out = [];
+  try {
+    if (typeof tk !== 'function') return out;
+    var K = tk(jour != null ? Math.min(0, jour | 0) : Math.min(0, (window.flDayOff | 0)));
+    var w = DB.get('watch_' + K, null);
+    if (w && typeof window.flJourVu === 'function') w = window.flJourVu(K, w);
+    var hr = (w && Array.isArray(w.hr)) ? w.hr : [];
+    var a = Math.max(0, aMin | 0), b = Math.min(1439, bMin | 0);
+    for (var i = 0; i < hr.length; i++) {
+      var p = hr[i], m = Array.isArray(p) ? +p[0] : i, v = Array.isArray(p) ? +p[1] : +p;
+      if (m >= a && m <= b && v > 25 && v < 235) out.push([m, Math.round(v)]);
+    }
+    out.sort(function (x, y) { return x[0] - y[0]; });
+  } catch (e) {}
+  return out;
+};
+
+/* ═══ 14 nov. 2026 — L'EFFORT MESURÉ D'UNE SÉANCE, RETROUVÉE PAR SON TRACÉ ═══════════
+   Dino, 13 nov. : « quand je viens de finir une course, 3, 4, 5 minutes après, ce
+   serait bien d'avoir une petite notif. Belle course, t'as fait tel effort ». La
+   nouvelle existe depuis la v3093 (durée, distance, pouls moyen) ; il lui manquait
+   « tel effort ». Le natif la programme à l'arrêt — avant que le moteur ait noté la
+   séance — puis demande la note ici et la complète tant qu'elle n'est pas partie.
+
+   Rend la note sur 20 de `flEffortSeance` pour la séance d'aujourd'hui (ou d'hier :
+   une course qui passe minuit) dont le tracé est `idTrace`, ou `null`. `null` aussi
+   sans assez de pouls dans sa fenêtre : c'est la note MESURÉE ou rien, jamais
+   l'estimation de repli d'`actStrain` — la nouvelle ne dit pas un effort deviné.
+   Lecture seule. Banc : tests/test-effort-du-trace.js. */
+window.flEffortDuTrace = function (idTrace) {
+  try {
+    if (!idTrace || typeof tk !== 'function' || typeof window.flEffortSeance !== 'function') return null;
+    for (var d = 0; d >= -1; d--) {
+      var K = tk(d), l = DB.get('sessions_' + K, null);
+      if (!Array.isArray(l)) continue;
+      for (var i = 0; i < l.length; i++) {
+        var s = l[i];
+        if (!s || !s.gps || String(s.gps) !== String(idTrace) || s.startMin == null) continue;
+        var fin = (s.endMin != null) ? +s.endMin : (+s.startMin + (+s.dur || 0));
+        var r = window.flEffortSeance(K, +s.startMin, fin, (typeof flPausesDe === 'function') ? flPausesDe(s) : null);
+        var e = (r && r.effort != null) ? +r.effort : NaN;
+        return (isFinite(e) && e > 0) ? e : null;
+      }
+    }
+  } catch (e) {}
+  return null;
 };

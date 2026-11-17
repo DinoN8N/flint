@@ -186,7 +186,11 @@ function flExpDecal(K, n) {
 function flExpJours() {
   var vus = {}, i, k, m, a = [];
   var minuitCeSoir = flExpSur(function () { return flExpMs(tk(0)); }, null);
-  var demain = (minuitCeSoir === null ? Date.now() : minuitCeSoir) + 86400000;
+  /* 17 nov. 2026 — MINUIT DE DEMAIN SE LIT SUR LE CALENDRIER : le jour du passage à l'heure d'été dure
+     23 h, et « minuit ce soir + 24 h » tombait à 01 h le lendemain — la clé de demain passait la borne
+     (test-jours-heure-ete.js). */
+  var demain = flExpSur(function () { return flExpMs(tk(1)); }, null);
+  if (demain === null) demain = (minuitCeSoir === null ? Date.now() : minuitCeSoir) + 86400000;
   var FAM = /^(watch|sensor|sessions|meals|recov|sante|journal|hrfine)_(\d{4}-\d{1,2}-\d{1,2})$/;
   try {
     for (i = 0; i < localStorage.length; i++) {
@@ -834,13 +838,14 @@ function flExpLignesSante(J) {
    jours d'intervalles, eux, se comptent dans la boucle principale — `watch_`
    y est déjà déplié, le recompter le serait deux fois. */
 function flExpCanauxFins() {
-  var o = { hrfine: 0, ecg: 0, rr: 0, premier: null, dernier: null }, i, k, m;
+  var o = { hrfine: 0, rr: 0, premier: null, dernier: null }, i, k, m;
   var FIN = /^hrfine_(\d{4}-\d{1,2}-\d{1,2})$/;
   try {
     for (i = 0; i < localStorage.length; i++) {
       k = localStorage.key(i);
       if (!k) continue;
-      if (k.indexOf('ecg_') === 0) { o.ecg++; continue; }
+      /* 15 nov. 2026 — les ECG ne se comptent plus (plus de mesure, plus de
+         ligne dans la notice) ; leurs clés partent toujours dans le JSON brut. */
       m = FIN.exec(k);
       if (!m) continue;
       if (localStorage.getItem(k) === 'null') continue;

@@ -184,14 +184,23 @@ window.flMesureDans=function(deb,fin){
   for(;t<=fin+86400000&&garde<16;t+=43200000,garde++){
    var K=flCleLocaleDe(t,null); if(!K||vues[K])continue; vues[K]=1;
    var w=_porteMontre(K), L=(w&&w.hr&&w.hr.length)?w.hr:null;
-   if(!L)continue;
+   /* 11 nov. 2026 (v3075) — LE VOYAGE : le pouls d'une journée peut aussi vivre dans sa `suite` (après ses 24 h, vers
+      l'Ouest) et dans `avant` (mis de côté à la bascule), et ses minutes d'APRÈS la bascule se comptent au décalage
+      d'arrivée (`tz.bascule`, flint-fuseau.js). Sans cela la nuit dormie dans l'avion avait un « trou » de six heures
+      et était refusée (« nuit sans mesure »). Une journée sans rien de tout cela : la boucle d'avant, à la lettre. */
+   var Ls=(w&&w.suite&&w.suite.hr&&w.suite.hr.length)?w.suite.hr:null, La=(w&&w.avant&&w.avant.hr&&w.avant.hr.length)?w.avant.hr:null;
+   if(!L&&!Ls&&!La)continue;
    var m0=flMinuitMsDe(K); if(m0==null||isNaN(m0))continue;
+   var bs=(w.tz&&w.tz.bascule)||null, m0b=m0; if(bs){var pk=String(K).split('-');m0b=Date.UTC(+pk[0],+pk[1]-1,+pk[2])-bs.off*60000;}
    var nu={}; if(w.sansContact)for(var q=0;q<w.sansContact.length;q++)nu[w.sansContact[q]]=1;
-   for(var i=0;i<L.length;i++){
-    var p=L[i]; if(!p||p[0]==null||p[1]==null||nu[p[0]])continue;
-    var ms=m0+(+p[0])*60000;
-    if(ms>=deb&&ms<=fin)min.push(ms);
-   }
+   [L,Ls,La].forEach(function(Lx,rang){
+    if(!Lx)return;
+    for(var i=0;i<Lx.length;i++){
+     var p=Lx[i]; if(!p||p[0]==null||p[1]==null||(rang===0&&nu[p[0]]))continue;
+     var ms=((rang===0&&bs&&+p[0]>=bs.m)?m0b:m0)+(+p[0])*60000;
+     if(ms>=deb&&ms<=fin)min.push(ms);
+    }
+   });
   }
   out.n=min.length;
   min.sort(function(a,b){return a-b;});

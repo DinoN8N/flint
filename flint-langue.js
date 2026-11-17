@@ -240,12 +240,12 @@ window.flT=function(fr){
     nom du champ (`? champ · phrase`) : la liste dit s'il manque un champ à la
     politique ou une phrase au dictionnaire. Les tableaux de nombres (courbes)
     sont rendus tels quels, sans copie. */
- var CHAMP_TEXTE=/^(titre|phrase|libelle|sous|conseil|texte|note|detail|verdict|raison|explication|legende|label|lecture|resume|description|message|astuce|aide|question|reponse|intitule|corps|commentaire|bulle|accroche|sousTitre|titreCourt|nomAffiche|txt|synchro|etatTexte|statutTexte|besoinRaison|besoinAjusteSrc)[A-Za-z0-9]*$/;
+ var CHAMP_TEXTE=/^(limites|choix|manque|repere|delta|titre|phrase|libelle|sous|conseil|texte|note|detail|verdict|raison|explication|legende|label|lecture|resume|description|message|astuce|aide|question|reponse|intitule|corps|commentaire|bulle|accroche|sousTitre|titreCourt|nomAffiche|txt|synchro|etatTexte|statutTexte|besoinRaison|besoinAjusteSrc)[A-Za-z0-9]*$/;
  var CHAMP_JAMAIS=/^(id|cle|key|genre|type|mode|etat|statut|source|nom|unite|sport|code|couleur|icone|icon|jour|date|heure|url|src|href|sym|symbole|classe|class|fmt|format)[A-Za-z0-9]*$/i;
  var FRANCAIS=/[éèàùçêôîû]|\b(le|la|les|des|une|du|ton|ta|tes|pas|est|sur|pour|avec|dans|cette|ce|au|aux)\b/;
  function chargeTraduite(v,champ,prof){
   if(typeof v==='string'){
-   if(champ&&CHAMP_TEXTE.test(champ)){var t=traduire(v);return t!=null?t:v;}
+   if(champ&&(CHAMP_TEXTE.test(champ)||(champ==='unite'&&v.length>12))){var t=traduire(v);return t!=null?t:v;}
    if(releve&&v.length>2&&v.length<=200&&FRANCAIS.test(v)&&!(champ&&CHAMP_JAMAIS.test(champ)))noter('? '+(champ||'')+' · '+v.replace(/\s+/g,' ').trim());
    return v;
   }
@@ -253,7 +253,7 @@ window.flT=function(fr){
   if(Array.isArray(v)){if(!v.length||typeof v[0]==='number')return v;var a=new Array(v.length);for(var i=0;i<v.length;i++)a[i]=chargeTraduite(v[i],champ,prof+1);return a;}
   var o={};for(var k in v)if(Object.prototype.hasOwnProperty.call(v,k))o[k]=chargeTraduite(v[k],k,prof+1);return o;
  }
- var PONT_NOMS=/^fl[A-Z]\w*Data$/, PONT_AUSSI={flCatalogue:1,flProfilRecords:1,flAgePage:1,flBalanceOuvrir:1,flDiagPont:1};
+ var PONT_NOMS=/^fl[A-Z]\w*Data$/, PONT_AUSSI={flCatalogue:1,flProfilRecords:1,flAgePage:1,flBalanceOuvrir:1,flDiagPont:1,flStressJour:1};
  function brancherPont(){
   try{var h=window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint;
    if(h&&typeof h.postMessage==='function'&&!h.__flPont){var orig=h.postMessage;h.__flPont=1;

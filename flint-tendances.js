@@ -162,8 +162,6 @@ function pickMetric(k){closeMetricPicker();_tMetric=k;_tRange='M';_tOff=0;_tSel=
 
 function trendRange(r){_tRange=r;_tOff=0;renderMetrend()}
 
-function trendShift(d){_tOff=Math.min(0,_tOff+d);renderMetrend()}
-
 function trendSelect(i){var M=TREND[_tMetric],pts=trendPts(M,_tRange,_tOff);if(pts[i]){var k=dkey(pts[i].date);_tDaySel=(_tDaySel===k?null:k);renderMetrend()}}
 
 function trendPts(M,range,off){var n=range==='S'?7:(range==='M'?30:185),step=range==='S'?7:(range==='M'?30:182),base=off*step,pts=[],t=new Date();t.setHours(0,0,0,0);
@@ -402,8 +400,6 @@ var TR={
 function trAnchor(cfg){return (cfg&&cfg.anchor)?new Date(cfg.anchor[0],cfg.anchor[1],cfg.anchor[2]):new Date(2025,10,26)}
 
 function trDlab(d){return ['DIM.','LUN.','MAR.','MER.','JEU.','VEN.','SAM.'][d.getDay()]+' '+d.getDate()+' '+CAL_MONTHS[d.getMonth()]}
-
-function trTotal(w){return Array.isArray(w[2])?w[2].reduce(function(a,b){return a+b},0):w[2]}
 
 function trSeed(s){var h=0;for(var i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))>>>0;
  /* v680 — étape de brassage. Sans elle, deux dates consécutives (« 2026-7-14 »,

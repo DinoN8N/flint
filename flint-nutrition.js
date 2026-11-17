@@ -841,25 +841,6 @@ function flNScanFromFile(file){if(!file)return;
  if(typeof window.analyzeMealPhoto==='function')window.analyzeMealPhoto(file).then(function(r){flNScanUpdate(r);}).catch(function(){flNScanUpdate(null);});
  else flNScanUpdate(null);}
 
-function flNFoodDetail(f){var doc=flNdoc();var base={kcal:f[1],prot:f[2],carb:f[4],fat:f[5]},grams=100;
- function recalc(){var r=grams/100;return {kcal:Math.round(base.kcal*r),prot:+(base.prot*r).toFixed(1),carb:+(base.carb*r).toFixed(1),fat:+(base.fat*r).toFixed(1)};}
- var body='<div class="fln-card"><div class="fln-k">Portion</div>'
-  +'<div class="fln-row" style="justify-content:center;gap:16px;border:1px solid rgb(240,236,229);border-radius:14px;padding:12px;background:rgb(250,248,245)">'
-  +'<button id="flnGm" style="font-size:20px;font-weight:700;background:none;border:none;color:rgb(251,96,21);cursor:pointer;padding:0 8px">−</button>'
-  +'<span id="flnGval" style="font-family:Archivo,sans-serif;font-size:20px;font-weight:700;cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px">100</span><span style="color:rgb(167,162,154);font-size:14px">g</span>'
-  +'<button id="flnGp" style="font-size:20px;font-weight:700;background:none;border:none;color:rgb(251,96,21);cursor:pointer;padding:0 8px">+</button></div>'
-  +'<div class="fln-row" style="margin-top:12px;font-size:13px;font-family:-apple-system,system-ui,sans-serif"><span><b id="flnFk" style="font-family:Archivo,sans-serif;font-size:16px">130</b> kcal</span><span style="flex:1"></span><span id="flnFm" style="color:rgb(111,106,97)">2 P · 9 G · 12 L</span></div></div>'
-  +'<div class="fln-row" style="margin-bottom:14px"><span class="fln-k" style="margin:0">Mangé :</span><span style="flex:1"></span><button class="fln-when fln-whenbtn4">🕐 <span class="fln-wlab">'+flNWhenLabel()+'</span> ▾</button></div>'
-  +'<button class="fln-btn pri" id="flnFadd">Ajouter</button>';
- var el=flNScreen('screen-fln-food',esc(f[0]),body);
- function upd(){var r=recalc();el.querySelector('#flnGval').textContent=grams;el.querySelector('#flnFk').textContent=flNInt(r.kcal);el.querySelector('#flnFm').textContent=r.prot+' P · '+r.carb+' G · '+r.fat+' L';}
- el.querySelector('#flnGm').addEventListener('click',function(){grams=Math.max(5,grams-10);upd();});
- el.querySelector('#flnGp').addEventListener('click',function(){grams+=10;upd();});
- el.querySelector('#flnGval').addEventListener('click',function(){var v=prompt('Grammes ?',grams);if(v!=null&&!isNaN(+v)&&+v>0){grams=Math.round(+v);upd();}});
- el.querySelector('.fln-whenbtn4').addEventListener('click',function(){flNOpenWhen('food');});
- el.querySelector('#flnFadd').addEventListener('click',function(){var r=recalc();flNAddMeal(f[0]+' '+grams+' g',r.kcal,r.prot,{carb:r.carb,fat:r.fat});});
- upd();flNOpen('screen-fln-food');}
-
 function flMealBase(m){if(m.k0==null){m.k0=+m.kcal||0;m.p0=+m.prot||0;m.c0=+m.carb||0;m.f0=+m.fat||0;}if(m.portion==null)m.portion=1;return m;}
 
 function flNRenameMeal(K,i){var doc=flNdoc();var m=mealsOf(K)[i];if(!m)return;
@@ -1046,8 +1027,6 @@ function renderNutrition(){var k=tk(),tt=nutTotals(k),g=getNutGoals(k);renderHyd
    +'<button class="nutx-mx" type="button" aria-label="Supprimer" onclick="event.stopPropagation();delMeal('+i+')">✕</button></div>';
  }).join('');
 }
-
-function addMeal(){const g=id=>document.getElementById(id);const name=g('nmName').value.trim()||'Repas';const kcal=parseInt(g('nmKcal').value)||0;if(!kcal){toast('Indique les calories');return}const meal={name,kcal,prot:parseInt(g('nmProt').value)||0,carb:parseInt(g('nmCarb').value)||0,fat:parseInt(g('nmFat').value)||0};const k=tk(),a=mealsOf(k);a.push(meal);DB.set('meals_'+k,a);['nmName','nmKcal','nmProt','nmCarb','nmFat'].forEach(x=>g(x).value='');toast('Repas ajouté 🍽️');renderNutrition()}
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -1575,7 +1554,6 @@ function nutStreak(){var s=0,start=mealsOf(tk()).length?0:1;for(var i=start;i<40
 var FLN_PREFIX=/^\s*(petit[\s-]*d[ée]j(?:euner)?|d[ée]jeuner|d[îi]ner|souper|brunch|collation|snack|go[ûu]ter|en[\s-]?cas|repas)\s*[-–—:·,]*\s*/i;
 function flNCleanName(n){if(!n)return n;var c=(''+n).replace(FLN_PREFIX,'').trim();if(!c)return n;return c.charAt(0).toUpperCase()+c.slice(1);}
 function nutTotals(k){return mealsOf(k).reduce((a,x)=>({kcal:a.kcal+(+x.kcal||0),prot:a.prot+(+x.prot||0),carb:a.carb+(+x.carb||0),fat:a.fat+(+x.fat||0)}),{kcal:0,prot:0,carb:0,fat:0})}
-function macroStat(lbl,val,goal,col){const pct=Math.min(100,goal?val/goal*100:0);return '<div class="stat"><div class="sl">'+lbl+'</div><div class="sv" style="font-size:23px">'+Math.round(val)+'<small style="font-size:11px;color:var(--ink2);font-family:var(--sans);font-weight:700"> /'+Math.round(goal)+'g</small></div><div class="progbar" style="margin-top:7px;height:8px"><i style="width:'+pct+'%;background:'+col+'"></i></div></div>'}
 function hydroKey(k){return 'hydro_'+(k||tk());}
 /* ═══ v2000 — LA CIBLE D'EAU VIENT DE LA PERSONNE, PLUS D'UN HUIT ═════════
    `goal=8` — huit verres de 25 cl, soit deux litres — était posé pour tout le

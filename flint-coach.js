@@ -190,7 +190,7 @@ function coachReply(q){var n=_cnorm(q),rv=recovery(),t=sensorOf(tk()),p=getProfi
   return 'Tu as dormi <b>'+hh+'</b> (besoin '+Math.floor(need/60)+'h). '+v+' '+((typeof flConseilSommeil==='function')?flConseilSommeil():'');
  }
  if(/(effort|charge|intensite|combien|forcer|borg)/.test(n))return 'Vise un effort entre <b>'+tg[0]+' et '+tg[1]+'</b> aujourd\'hui (échelle 0-21). Au-delà tu creuses ta récup ; en dessous tu progresses moins. En crossfit, alterne une grosse séance et une séance technique le lendemain.';
- if(/(mieux recup|recuperer|recup plus|progresser|conseil|ameliorer)/.test(n))return 'Tes 3 leviers, par ordre d\'impact : <b>1) le sommeil</b> (régularité + durée), <b>2) doser l\'effort</b> (évite d\'enchaîner les séances max), <b>3) l\'hygiène</b> ('+((typeof flLevierHygiene==='function')?flLevierHygiene():'hydratation, alcool/caféine tardifs')+'). Remplis ton journal et je te dirai ce qui pèse le plus pour toi.';
+ if(/(mieux recup|recuperer|recup plus|progresser|conseil|ameliorer)/.test(n))return 'Tes 3 leviers, par ordre d\'impact : <b>1) le sommeil</b> (régularité + durée), <b>2) doser l\'effort</b> (évite d\'enchaîner les séances max), <b>3) l\'hygiène</b> ('+((typeof flLevierHygiene==='function')?flLevierHygiene():'hydratation, alcool/caféine tardifs')+'). Porte ton bracelet jour et nuit : la page Comportements te dira ce qui pèse le plus pour toi.';
  if(/(vfc|hrv|variabilite)/.test(n)){var b=baseStat('hrv'),hv=t&&t.hrv!=null?t.hrv:null;if(hv==null)return "Pas de VFC mesurée cette nuit.";var rel=b?(hv>=b.m+b.sd?'au-dessus de ta normale (bon signe)':hv<=b.m-b.sd?'sous ta normale (fatigue ou stress)':'dans ta plage habituelle'):'';return 'Ta VFC cette nuit : <b>'+hv+' ms</b>'+(rel?', '+rel:'')+'. Une VFC haute = système nerveux bien récupéré. Sommeil régulier, gestion du stress et hydratation l\'améliorent.';}
  if(/(fc |cardiaque|pouls|battement|coeur|rhr)/.test(n)){var hr=t&&t.rhr!=null?t.rhr:null;if(hr==null)return "Pas de FC au repos mesurée cette nuit.";var br=baseStat('rhr'),rel=br?(hr>br.m+br.sd?'plus haute que ta normale — fatigue, stress ou début de maladie possible':'dans ta normale'):'';return 'Ta FC au repos : <b>'+hr+' bpm</b>'+(rel?', '+rel:'')+'. Plus elle est basse et stable, mieux c\'est.';}
  if(/(fatigue|creve|epuise|nase|hs|crame)/.test(n)){if(s<34)return 'Tes données confirment : récup basse ('+s+'%). Normal de te sentir entamé. Priorise sommeil, hydratation et repos actif — tu reviendras plus fort.';return 'Tes données sont plutôt bonnes ('+s+'%). Si tu te sens fatigué malgré ça, écoute ton ressenti : le stress du quotidien pèse parfois plus que les chiffres.';}
@@ -353,26 +353,7 @@ function flcParNum(arr,num,numDe){
  return undefined;
 }
 
-/* Le journal du soir, compact : « alcool 2 · café 1-2 · avion 3 à 6 h ».
-   `_saved` sans aucun « oui » = trois « Non » (les « Non » sont retirés) → 'rien'.
-   Le journal de K agit sur la récup de K+1 : c'est au lecteur de le dire. */
-var FLC_JRN_NOMS={alcool:'alcool',cafeine:'café',avion:'avion'};
-function flcJournal(j,avecNote){
- if(!j||typeof j!=='object')return null;
- var t=[],oui=false,rep=false;
- Object.keys(j).forEach(function(k){
-  if(k.charAt(0)==='_'||k==='note'||/_(n|q|duree|arrivee)$/.test(k))return;
-  if(j[k]===false){rep=true;return;}
-  if(j[k]!==true)return;
-  oui=true;rep=true;
-  var q=j[k+'_n']||j[k+'_duree']||j[k+'_q']||'';
-  if(k==='avion'&&j.avion_arrivee)q=(q?q+', ':'')+String(j.avion_arrivee).toLowerCase();
-  t.push((FLC_JRN_NOMS[k]||k)+(q?' '+q:''));
- });
- if(!oui&&(j._saved===true||rep))t.push('rien');
- if(avecNote&&j.note)t.push('note « '+flcTxt(String(j.note).replace(/\s+/g,' '),80)+' »');
- return t.length?flcTxt(t.join(' · '),200):null;
-}
+/* 15 nov. 2026 — `flcJournal` (le journal du soir, compact) est parti avec lui. */
 
 /* ═══ LES BRIQUES D'UNE JOURNÉE — partagées par l'instantané et getDay ═══════ */
 var FLC_FACTEURS_COLS=['cle','valeur','unite','reference','refNom','ecartSigma','contribLogit','motifAbsence'];
@@ -429,21 +410,12 @@ function flcDureeHM(s){
  p=p.map(Number);
  return flcHM(p.length===3?p[0]*60+p[1]+p[2]/60:p[0]+p[1]/60);
 }
-/* Les ECG s'écrivent sous « ecg_<epoch> » : DB.famille n'ôte que les dates,
-   chaque ECG est donc SA famille et DB.tampon('ecg_') reste à 0. On somme les
-   compteurs de toutes les familles ecg_ (revue du 25 sept.). */
-function flcTamponEcg(){
- var p=window._flEcrPar||{},n=0;
- for(var k in p){if(Object.prototype.hasOwnProperty.call(p,k)&&k.indexOf('ecg_')===0)n+=(+p[k]||0);}
- return n;
-}
 function flcRecupBase(rd){
  rd=rd||{};
  return {score:(rd.score==null?null:rd.score), verdict:rd.verdict||null,
          estVeille:!!rd.estVeille, jourAffiche:rd.jourAffiche||null,
          baseNuits:(rd.baseNuits==null?null:rd.baseNuits),
          nuitsManquantes:(rd.nuitsManquantes==null?null:rd.nuitsManquantes),
-         journalAjust:rd.journalAjust?flcTxt(rd.journalAjust,160):null,
          facteursCols:FLC_FACTEURS_COLS, facteurs:flcFacteurs(rd)};
 }
 /* La nuit, liste blanche de Ma nuit. Jamais fc, segments, semaine/mois bruts,
@@ -676,11 +648,7 @@ function flcJour(off,opts){
    return {moyenne:flcR(c.moyenne,0), min:flcR(c.min,0), max:flcR(c.max,0),
            reposJournee:flcR(c.repos,0), couverture:flcR(c.couverture,0)};
   },manques);
-  o.journal=flcSur('journal',function(){
-   return {jour:flcJournal(DB.get('journal_'+K,null),true),
-           veille:flcJournal(DB.get('journal_'+tk(off-1),null),true),
-           note:'le journal de ce jour agit sur la récup du lendemain ; celui de la veille explique celle-ci'};
-  },manques);
+  /* 15 nov. 2026 — la section `journal` est partie avec le journal du soir. */
   o.qualite=flcSur('qualite',function(){
    var qj=flQualiteJour(off); return qj?flcPrendre(qj,['couverture','confiance','verdict']):null;
   },manques);
@@ -712,13 +680,12 @@ window.flCoachJour=function(off,opts){
    FAMILLE (DB.tampon) — watch_ en est exclu exprès : il bouge à chaque trame du
    bracelet (v1599) ; la limite de 120 s couvre les pas et l'effort. */
 var FLC_FAMILLES=['recov_','recovFige_','recovAj_','nuitFige_','nuitScoreFige_','sensor_',
-  'sessions_','meals_','journal_','profile','bodylog',
+  'sessions_','meals_','profile','bodylog',
   /* ajout : l'état de la nuit du matin (porte de publication) s'écrit ici */
   'nuitSess_'];
 function flcCleMemo(opts){
- /* + les ECG (une famille par tracé, cf. flcTamponEcg) : un ECG neuf ne
-    doit pas attendre la fin des 120 s pour être dit */
- return FLC_FAMILLES.map(function(f){return DB.tampon(f);}).join('.')+'.'+flcTamponEcg()+'|'+tk(0)+'|'+
+ /* 15 nov. 2026 — le compteur des ECG est sorti de la clé avec la mesure */
+ return FLC_FAMILLES.map(function(f){return DB.tampon(f);}).join('.')+'|'+tk(0)+'|'+
         (opts.jourAffiche==null?'':opts.jourAffiche)+'|'+(opts.plafond||8192)+(opts.leger?'|L':'');
 }
 /* Deux mémoires du JOUR (tk(0)) pour les parties lentes et stables : les
@@ -912,7 +879,6 @@ function flcInstantane(opts){
  /* LES SEPT JOURS, du plus ancien à aujourd'hui, pris dans les payloads des
     ÉCRANS : la parité tient par construction. Jamais flRecovLu(d) en boucle :
     il écrit un repli dans le registre. */
- var jrnSansNote=[];
  if(!L)o.semaine=flcSur('semaine',function(){
   var heb=(rd&&rd.hebdo)||[], er=(rd&&rd.effortRecup)||[];
   var sem=(sd&&sd.semaine)||[], rn=(sd&&sd.regularite&&sd.regularite.nuits)||[];
@@ -930,8 +896,6 @@ function flcInstantane(opts){
    var s=flcParNum(sem,num,function(j){return flcNumJour(j.jour);});
    var n=flcParNum(rn,num,function(j){return (j.date==null?null:+j.date);});
    var sn=null;try{sn=sensorOf(K);}catch(x){}
-   var jr=DB.get('journal_'+K,null);
-   jrnSansNote.push(flcJournal(jr,false));
    var ki=null,ko=null;try{ki=FL_HEBDO.kcalIn.get(d);ko=FL_HEBDO.kcalOut.get(d);}catch(x){}
    lignes.push([flcJourCourt(K), pv(hR), pv(hV), pv(hF), pv(hP),
     e&&e.effort!=null?flcR(e.effort,1):null,
@@ -940,13 +904,13 @@ function flcInstantane(opts){
     s&&s.dette!=null?flcHM(s.dette*60):null,
     n?flcHHMM(n.couche):null, n?flcHHMM(n.reveil):null,
     ((typeof flSansBracelet==='function'&&flSansBracelet())?null:flcR(flStepsOf(K),0)), flcR(ki,0), flcR(ko,0),
-    (d<0?stressPasse[d+6]:flcR(flStressMoy(d),2)), sn&&sn.hrvSrc||null, flcJournal(jr,true)]);
+    (d<0?stressPasse[d+6]:flcR(flStressMoy(d),2)), sn&&sn.hrvSrc||null]);
   }
   var r={cols:['jour','recup','vfc','fcRepos','resp','effort','qualite','efficacite','dormi','besoin','dette',
-                'coucher','reveil','pas','kcalIn','kcalOut','stress','vfcSrc','journal'],
+                'coucher','reveil','pas','kcalIn','kcalOut','stress','vfcSrc'],
           lignes:lignes,
           /* pas le mot « null » dans une phrase : le banc refuse toute chaîne qui le porte */
-          note:'journal du jour K → récup de K+1 ; dette = cumul de Ma nuit sur la fenêtre ; case vide = pas mesuré'};
+          note:'dette = cumul de Ma nuit sur la fenêtre ; case vide = pas mesuré'};
   /* une source de VFC unique sur la semaine se dit une fois (sept fois « rmssd »
      n'apprennent rien) ; deux sources mêlées gardent leur colonne : on ne
      compare jamais une VFC puce à une RMSSD */
@@ -982,15 +946,19 @@ function flcInstantane(opts){
  },manques);
 
  if(!L)o.impacts=flcSur('impacts',function(){
-  /* 90 jours de paires journal → récup du lendemain : ~450 lectures. Gardé pour
-     la journée, invalidé par la récup (publication du matin) et par le journal
-     d'HIER — le seul qui puisse former une nouvelle paire aujourd'hui. */
-  var jv=DB.get('journal_'+tk(-1),null);
-  var cle=[DB.tampon('recov_'),DB.tampon('recovAj_'),jv?JSON.stringify(jv).length+':'+Object.keys(jv).join(','):'-'].join('.');
+  /* 90 jours de paires journée → récup du lendemain : ~450 lectures. Gardé pour
+     la journée, invalidé par la récup (publication du matin).
+     15 nov. 2026 — LE JOURNAL DU SOIR EST RETIRÉ : les comportements DÉCLARÉS
+     (alcool, caféine, avion) reposaient sur ses réponses ; le moteur les relit
+     encore dans l'historique, le Coach ne les reçoit plus — comme la page
+     Comportements (`ImpactsStore.mesuresSeules`). Ce que le bracelet mesure
+     seul reste. */
+  var cle=[DB.tampon('recov_'),DB.tampon('recovAj_')].join('.');
   return flcJourMemo('impacts',cle,function(){
    var im=flImpactsData()||{};
-   var b=(im.behaviors||[]).filter(function(x){return x&&x.isUnlocked;});
-   if(!b.length)return 'pas assez de soirées';
+   var DECLARES={alcool:1,cafeine:1,plane_travel:1};
+   var b=(im.behaviors||[]).filter(function(x){return x&&x.isUnlocked&&!DECLARES[x.behaviorId];});
+   if(!b.length)return 'pas assez de jours';
    return {cols:['id','direction','impactPercent','avecRecup','sansRecup','oui','non'],
            lignes:b.map(function(x){return [x.behaviorId||null,x.direction||null,flcR(x.impactPercent,0),
              flcR(x.avgRecoveryWithBehavior,0),flcR(x.avgRecoveryWithoutBehavior,0),x.yesCount||0,x.noCount||0];})};
@@ -1049,8 +1017,8 @@ function flcInstantane(opts){
  if(!L)o.indices=flcSur('indices',function(){
   /* l'Âge FLINT lit les nuits −1 à −30 (jamais celle du jour) et sa trajectoire
      coûte 1,5 s de calcul : gardé pour la journée ; la série et la moyenne de
-     récup suivent le registre ; un ECG neuf invalide aussi (flcTamponEcg) */
-  return flcJourMemo('indices',DB.tampon('recov_')+'.'+flcTamponEcg(),function(){
+     récup suivent le registre */
+  return flcJourMemo('indices',DB.tampon('recov_'),function(){
   var r={};
   var af=flAgeFlint();
   if(af)r.ageFlint={valeurN:flcR(af.valeurN,1), reelN:flcR(af.reelN,1), ecartN:flcR(af.ecartN,1), nuits:af.nuits||null,
@@ -1062,12 +1030,6 @@ function flcInstantane(opts){
   var rm=flRecupMoyenne();
   r.recupMoy30=(rm&&rm.valeur!=null&&rm.valeur!=='')?flcR(+rm.valeur,0):null;
   r.serie=recovStreak();
-  var ec=(flEcgListe()||[])[0];
-  if(ec&&ec.analyse&&ec.t&&(Date.now()-ec.t)<=30*86400000){
-   var dt=new Date(ec.t);
-   r.ecg=flcPrendre(ec.analyse,['ok','fc','rmssd','qualite']);
-   r.ecg.date=dt.getFullYear()+'-'+(dt.getMonth()+1)+'-'+dt.getDate();
-  }
   return flcSansNuls(r);
   });
  },manques);
@@ -1096,8 +1058,6 @@ function flcInstantane(opts){
   ['impacts',function(x){if(!x.impacts)return false;delete x.impacts;}],
   ['corps',function(x){if(!x.corps)return false;delete x.corps;}],
   ['indices',function(x){if(!x.indices)return false;delete x.indices;}],
-  ['semaine.journal.notes',function(x){if(!x.semaine||!x.semaine.lignes)return false;
-   var c=x.semaine.cols.indexOf('journal');x.semaine.lignes.forEach(function(l,i){l[c]=jrnSansNote[i]==null?null:jrnSansNote[i];});}],
   ['seances.detail>1',function(x){if(!x.seances||!x.seances.detail||x.seances.detail.length<2)return false;x.seances.detail=x.seances.detail.slice(0,1);}],
   ['nutrition.repas',function(x){if(!x.nutrition||!x.nutrition.repas)return false;delete x.nutrition.repas;delete x.nutrition.repasCols;}],
   ['semaine>4',function(x){if(!x.semaine||!x.semaine.lignes||x.semaine.lignes.length<=4)return false;x.semaine.lignes=x.semaine.lignes.slice(-4);}],
@@ -1165,7 +1125,7 @@ window.flCoachInstantane=function(opts){
    Tout résultat porte q:'good'|'partial'|'missing'. */
 var FLC_COLONNES=['recup','scoreSommeil','dormi','besoin','dette7n','coucher','lever','efficacite','vfc','vfcSrc',
   'fcRepos','resp','temp','spo2Bas','effort','zones13','zones45','muscu','pas','kcalBrulees','kcalMangees',
-  'balance','poids','stress','journal'];
+  'balance','poids','stress'];
 function flcGetHistory(a){
  var cols=a.colonnes;
  if(typeof cols==='string')cols=cols.split(',');
@@ -1217,14 +1177,12 @@ function flcGetHistory(a){
    case 'balance': v=(ki==null||ko==null)?null:Math.round(ki-ko); break;
    case 'poids': v=flcR(mdGet('weight',d),1); break;
    case 'stress': v=flcR(flStressMoy(d),2); break;
-   case 'journal': var j=flcJournal(DB.get('journal_'+K,null),true), pen=DB.get('recovAj_'+tk(d+1),null);
-    v=j?(j+((pen!=null&&+pen!==0)?' → récup J+1 '+flcR(pen,0)+' pts':'')):null; break;
   }}catch(e){v=null;}
   l.push(v===undefined?null:v);});
   lignes.push(l);
  }
  var o={q:'good', cols:['jour'].concat(cols), lignes:lignes,
-        note:'journal du jour K → récup de K+1 ; null = pas mesuré ; aujourd\'hui est dans l\'instantané'};
+        note:'null = pas mesuré ; aujourd\'hui est dans l\'instantané'};
  if(veut('effort')&&N>60)o.noteEffort='effort limité aux 60 derniers jours';
  if(veut('dette7n'))o.noteDette='dette7n = « Dette accumulée » de Ma nuit, cumul sur 7 nuits, h:mm';
  if(ignorees.length)o.ignorees=ignorees.slice(0,10);
@@ -1414,6 +1372,313 @@ window.flCoachOutils=function(appels){
      case 'getSession': return flcGetSession(a);
      default: return {q:'inconnu', nom:flcTxt(nom,40)};
     }}catch(e){return {q:'erreur', raison:flcTxt(nom+' : '+((e&&e.message)||e),80)};}
+   });
+  });
+ }finally{_flcLot=null;}
+};
+/* ═══ flCoachBlocs(liste) — CE QUE L'APP DESSINE SOUS UNE RÉPONSE (15 nov. 2026) ═══
+   Le Coach v3 peut joindre à sa réponse 0 à 2 « blocs » : il choisit QUOI montrer,
+   jamais une valeur (flint-app, COACH-V3-PLAN.md § 5). Le natif les dessine ; ici le
+   moteur rend, pour chaque bloc, la matière du dessin — par les MÊMES accesseurs que
+   getHistory / getSession / getDay, donc les chiffres que le modèle a lus.
+
+   [{type,…,ancre?}] (ou sa chaîne JSON) → un tableau dans le MÊME ordre.
+   · `null` = RIEN À MONTRER (donnée absente, séance introuvable, jour hors de portée,
+     trop peu de jours mesurés). Jamais un zéro inventé, jamais un cadre vide.
+   · `ancre` = la clé du jour (tk) où la réponse a été écrite. Un fil relu trois jours
+     plus tard montre les jours dont la réponse parlait, pas les trois suivants.
+     Absente : aujourd'hui — et chaque résultat la porte, pour que le natif la range.
+   · ⚠️ CE RÉSULTAT NE PART JAMAIS AU SERVEUR : il porte des séries et les segments de
+     la nuit (`pts`, `seg`, `fc`), que flcPurger interdit aux outils. Il n'est lu que
+     par BlocsCoachDonnees (natif), pour dessiner.
+   Les symboles des autres satellites sont gardés par `typeof` : un binaire qui ne
+   télécharge pas tout (NATIF_MINIMUM) rend moins de blocs, il ne lève pas. */
+var FLCB_M={
+ recup:{u:'pct',d:0,g:'b'}, vfc:{u:'ms',d:0,g:'l'}, fcRepos:{u:'bpm',d:0,g:'l'},
+ dormi:{u:'duree',d:0,g:'b'}, scoreSommeil:{u:'pct',d:0,g:'b',h:'sleepscore'}, dette7n:{u:'duree',d:0,g:'b'},
+ effort:{u:'sur20',d:1,g:'b',h:'charge'}, kcalBrulees:{u:'kcal',d:0,g:'l',h:'kcalOut'},
+ kcalMangees:{u:'kcal',d:0,g:'b',h:'kcalIn'}, balance:{u:'kcal',d:0,g:'b',s:1}, pas:{u:'pas',d:0,g:'b'},
+ poids:{u:'poids',d:1,g:'l'}, stress:{u:'stress',d:2,g:'l'}, resp:{u:'rpm',d:1,g:'l'},
+ temp:{u:'temp',d:1,g:'l',s:1}, spo2Bas:{u:'pct',d:0,g:'l'}};
+var FLCB_EFFORT_JOURS=60;   /* la borne de getHistory : l'effort coûte ~4 s à froid sur 30 jours */
+function flcbDateDe(K){var p=String(K).split('-');return new Date(+p[0],(+p[1])-1,+p[2]);}
+function flcbJourTxt(d){
+ try{var x=flcbDateDe(tk(d));return x.getDate()+' '+flMoisCourts()[x.getMonth()];}catch(e){return String(tk(d));}
+}
+function flcbJourLong(d){
+ try{var x=flcbDateDe(tk(d));return flcNomJour(x)+' '+x.getDate()+' '+flMoisCourts()[x.getMonth()];}catch(e){return String(tk(d));}
+}
+/* Le lecteur d'UNE métrique : la valeur du jour d (≤ fin), un NOMBRE ou null.
+   Chaque branche est celle de flcGetHistory, à la lettre — le banc
+   test-coach-blocs.js compare les deux sur l'export réel —, sauf le zéro d'un
+   jour muet (pas, effort), qu'un graphique de la maison ne dessine jamais : voir
+   leurs branches. Les durées sortent en minutes (getHistory les écrit en h:mm). */
+function flcbLecteur(m,fin,N){
+ var serie=null;
+ if(m==='dormi'||m==='scoreSommeil'||m==='dette7n'||m==='besoin')serie=flSerieSommeil(N+7,fin);
+ return function(d){
+  var K=tk(d), v=null;
+  try{switch(m){
+   case 'recup': var r=DB.get('recov_'+K,null); v=(r==null||isNaN(+r))?null:flcR(r,0); break;
+   case 'scoreSommeil': case 'dormi': case 'dette7n': case 'besoin':
+    var i=serie?(serie.length-1)+(d-fin):-1, s=(serie&&i>=0)?serie[i]:null;
+    if(m==='scoreSommeil')v=s&&s.qualite!=null?s.qualite:null;
+    else if(m==='dormi')v=s&&s.heures!=null?Math.round(s.heures*60):null;
+    else if(m==='besoin')v=s&&s.besoinAjuste!=null?Math.round(s.besoinAjuste*60):null;
+    else if(serie&&i>=6){var dt=0,eu=false;
+     for(var q=i-6;q<=i;q++){var x=serie[q];if(x&&x.heures!=null){dt=Math.max(0,dt+(x.besoin-x.heures));eu=true;}}
+     v=eu?Math.round(Math.round(dt*100)/100*60):null;}
+    break;
+   case 'vfc': var sv=sensorOf(K); v=sv?flcR(sv.hrv,0):null; break;
+   case 'fcRepos': var sf=sensorOf(K); v=sf?flcR(sf.rhr,0):null; break;
+   case 'resp': var sr=sensorOf(K); v=sr?flcR(sr.resp,1):null; break;
+   case 'temp': var t=(typeof flTempNuit==='function')?flTempNuit(d):null; v=t?flcR(t.ecart,1):null; break;
+   case 'spo2Bas': v=(typeof flSpo2BasNuitDe==='function')?flcR(flSpo2BasNuitDe(K),0):null; break;
+   /* 15 nov. 2026 — DEUX ÉCARTS À getHistory, ET CE SONT LES RÈGLES DES GRAPHIQUES DE LA MAISON
+      (`flhSeries`, index.html) : vu au simulateur, les jours où rien n'a été synchronisé
+      sortaient en barres à zéro — un chiffre absent dessiné comme une mesure, et la moyenne
+      tirée vers le bas. Les pas suivent `vide0` (zéro = « rien de compté », comme la page
+      Tendances qu'ouvre le bloc) ; l'effort suit `vu` (zéro n'est une mesure que si la
+      journée a laissé une trace : une nuit, des pas, une séance). getHistory, lui, n'a pas
+      bougé : ce qu'il dit au modèle reste ce qu'il disait. */
+   case 'effort': v=(d>=-FLCB_EFFORT_JOURS)?flcR(flEffortJour(d),1):null;
+    if(v===0&&typeof flhJourVu==='function'&&!flhJourVu(d))v=null; break;
+   case 'pas': v=(typeof flSansBracelet==='function'&&flSansBracelet())?null:flcR(flStepsOf(K),0);
+    if(v===0)v=null; break;
+   case 'kcalBrulees': v=flcR(FL_HEBDO.kcalOut.get(d),0); break;
+   case 'kcalMangees': v=flcR(FL_HEBDO.kcalIn.get(d),0); break;
+   case 'balance': var ki=FL_HEBDO.kcalIn.get(d), ko=FL_HEBDO.kcalOut.get(d); v=(ki==null||ko==null)?null:Math.round(ki-ko); break;
+   case 'poids': v=flcR(mdGet('weight',d),1); break;
+   case 'stress': v=(typeof flStressMoy==='function')?flcR(flStressMoy(d),2):null; break;
+  }}catch(e){v=null;}
+  return (v==null||!isFinite(+v))?null:+v;
+ };
+}
+/* Le nombre tel qu'on l'écrit, SANS son unité (le natif la traduit). */
+function flcbTxt(m,v){
+ if(v==null||!isFinite(+v))return null;
+ var c=FLCB_M[m]; if(!c)return null; v=+v;
+ var signe=(v<0?'−':((c.s&&v>0)?'+':'')), a=Math.abs(v);
+ try{switch(c.u){
+  case 'duree': return flcHM(Math.round(v));
+  case 'poids': return flDecimal((typeof flMetrique==='function'&&!flMetrique())?a*2.20462262:a,1);
+  case 'stress': return (window.flEchelleStress===100)?String(Math.round(a)):flDecimal(a,1);
+  default: return signe+(c.d?flDecimal(a,c.d):flNombre(a));
+ }}catch(e){return signe+String(c.d?a.toFixed(c.d):Math.round(a));}
+}
+/* Un écart entre deux moyennes : signé, et une durée sous l'heure se dit en minutes. */
+function flcbEcartTxt(m,e){
+ var c=FLCB_M[m]; if(!c||e==null||!isFinite(+e))return null;
+ var s=(e>0?'+':(e<0?'−':'')), a=Math.abs(e);
+ if(c.u==='duree'){a=Math.round(a);return s+(a>=60?flcHM(a):a+' min');}
+ var t=flcbTxt(m,a); if(t==null)return null;
+ return s+String(t).replace(/^[+−]/,'');
+}
+function flcbUnite(m){
+ var c=FLCB_M[m]; if(!c)return null;
+ if(c.u==='poids')return (typeof flMetrique==='function'&&!flMetrique())?'lb':'kg';
+ if(c.u==='stress')return (window.flEchelleStress===100)?'sur100':'sur3';
+ return c.u;
+}
+function flcbArrondi(m,v){var c=FLCB_M[m];return (c.u==='duree')?Math.round(v):flcR(v,c.d);}
+/* Le repère d'une série. « normale » : la plage habituelle de la maison
+   (flPlageHabituelle : quartiles de 30 jours mesurés, 8 au moins, jamais le jour
+   en cours) — par la clé et le lecteur des Tendances quand la métrique y a les
+   siens, sinon par le lecteur du bloc. « cible » : celle que l'app porte, et
+   seulement pour les métriques qui en ont une. Pas de repère : null, la courbe
+   se dessine sans lui. */
+function flcbRepere(b,fin,lire){
+ var m=b.metrique, c=FLCB_M[m], rep=b.repere, T=function(v){return flcbTxt(m,flcbArrondi(m,v));};
+ try{
+  if(rep==='normale'&&typeof flPlageHabituelle==='function'){
+   var cfg=(c.h&&typeof FL_HEBDO!=='undefined')?FL_HEBDO[c.h]:null;
+   /* la plage remonte jusqu'à 90 jours : le lecteur du sommeil, lui, ne porte
+      que sa fenêtre — on lui en donne un qui va assez loin */
+   var loin=(m==='dormi'||m==='dette7n')?flcbLecteur(m,fin,92):lire;
+   var p=(cfg&&cfg.get)?flPlageHabituelle(c.h,cfg.get,fin):flPlageHabituelle('coach:'+m,loin,fin);
+   if(p&&isFinite(p.min)&&isFinite(p.max)&&p.max>p.min)return {g:'plage', nom:'habituelle', min:p.min, max:p.max, minTxt:T(p.min), maxTxt:T(p.max)};
+   return null;
+  }
+  if(rep==='cible'){
+   if(typeof flSansBracelet==='function'&&flSansBracelet()&&m!=='kcalMangees')return null;
+   if(m==='effort'&&fin===0){var st=strainTarget();
+    if(Array.isArray(st)&&st.length===2&&st[1]>st[0])return {g:'plage', nom:'cibleJour', min:+st[0], max:+st[1], minTxt:flNombre(st[0]), maxTxt:flNombre(st[1])};}
+   if(m==='dormi')return {g:'serie', nom:'besoin'};
+   if(m==='kcalMangees'){var ng=flNutGoals(); if(ng&&+ng.kcal>0)return {g:'ligne', nom:'plan', v:+ng.kcal, vTxt:T(+ng.kcal)};}
+   if(m==='pas'){var sg=stpGoal(); if(+sg>0)return {g:'ligne', nom:'objectif', v:+sg, vTxt:T(+sg)};}
+  }
+ }catch(e){}
+ return null;
+}
+function flcbSerie(b,base){
+ var m=b.metrique, c=FLCB_M[m]; if(!c)return null;
+ var N=+b.jours; if(N!==7&&N!==30&&N!==90)return null;
+ var fin=base, n=N;
+ if(m==='effort'&&fin-(n-1)<-FLCB_EFFORT_JOURS)n=fin+FLCB_EFFORT_JOURS+1;
+ if(n<2)return null;
+ var lire=flcbLecteur(m,fin,n), rep=flcbRepere(b,fin,lire);
+ var besoin=(rep&&rep.g==='serie')?flcbLecteur('besoin',fin,n):null;
+ var pts=[], mes=0, som=0, dernier=null;
+ for(var d=fin-(n-1);d<=fin;d++){
+  var v=lire(d), l=[flcbJourTxt(d), v, flcbTxt(m,v)];
+  if(besoin)l.push(besoin(d));
+  if(v!=null){mes++;som+=v;dernier=l;}
+  pts.push(l);
+ }
+ /* une courbe demande deux mesures : en dessous, il n'y a rien à montrer */
+ if(mes<2)return null;
+ if(rep&&rep.g==='serie'&&!pts.some(function(l){return l[3]!=null;}))rep=null;
+ var moy=flcbArrondi(m,som/mes);
+ return {type:'serie', ancre:tk(base), metrique:m, jours:n, demande:N, unite:flcbUnite(m), genre:c.g, signe:!!c.s,
+         auj:(fin===0), debut:flcbJourTxt(fin-(n-1)), fin:flcbJourTxt(fin), mesures:mes,
+         moy:moy, moyTxt:flcbTxt(m,moy), dernierJour:dernier?dernier[0]:null, dernierTxt:dernier?dernier[2]:null,
+         repere:rep, pts:pts};
+}
+/* « Calculée comme les Tendances » : la moyenne des jours MESURÉS de chaque
+   période (flHebdoDetail), et la règle de flhReadPhrase — moins de trois jours
+   mesurés d'un côté, pas de comparaison. */
+function flcbComparaison(b,base){
+ var m=b.metrique, c=FLCB_M[m]; if(!c)return null;
+ var N=+b.jours; if(N!==7&&N!==30&&N!==90)return null;
+ var fin=base, debut=fin-(2*N-1);
+ if(m==='effort'&&debut<-FLCB_EFFORT_JOURS)return null;
+ var lire=flcbLecteur(m,fin,2*N), cur=[], prev=[];
+ for(var d=debut;d<=fin;d++){var v=lire(d); if(v==null)continue; (d>fin-N?cur:prev).push(v);}
+ if(cur.length<3||prev.length<3)return null;
+ var moy=function(a){return a.reduce(function(x,y){return x+y;},0)/a.length;};
+ var a=flcbArrondi(m,moy(cur)), p=flcbArrondi(m,moy(prev)), e=flcbArrondi(m,a-p);
+ var aT=flcbTxt(m,a), pT=flcbTxt(m,p);
+ return {type:'comparaison', ancre:tk(base), metrique:m, jours:N, unite:flcbUnite(m), auj:(fin===0),
+         a:a, aTxt:aT, p:p, pTxt:pT, ecart:e, ecartTxt:(aT===pT?null:flcbEcartTxt(m,e)),
+         sens:(aT===pT?0:(e>0?1:-1)), nA:cur.length, nP:prev.length,
+         aDebut:flcbJourTxt(fin-N+1), aFin:flcbJourTxt(fin), pDebut:flcbJourTxt(debut), pFin:flcbJourTxt(fin-N)};
+}
+/* Le jour d'un bloc : `date` (absolue) ou `jour` (relatif à l'ancre) ; rien = `defaut`. */
+function flcbOff(b,base,defaut){
+ if(b.date!=null&&b.date!=='')return flcOffset({date:b.date});
+ if(b.jour!=null&&b.jour!==''){var j=parseInt(b.jour,10); if(!isFinite(j)||j>0||j<-400)return null;
+  var o=base+j; return (o<-400)?null:o;}
+ return defaut;
+}
+/* La séance d'un bloc, par la règle de getSession : l'id, puis l'heure de début,
+   puis « la seule séance de ce jour ». Deux séances et rien pour choisir : rien. */
+function flcbTrouverSeance(b,base){
+ var off=flcbOff(b,base,null); if(off==null)return null;
+ var ents=flcSeancesDe(off), e=null;
+ if(b.id)ents.forEach(function(x){if(!e&&x.id===b.id)e=x;});
+ /* une séance d'après minuit vit dans la journée LOGIQUE de la veille, et la
+    liste de getSessions la date de son jour civil : un id se cherche à côté */
+ var K0=tk(off);
+ if(!e&&b.id)[off-1,off+1].forEach(function(o2){if(e||o2>0||o2<-400)return;
+  flcSeancesDe(o2).forEach(function(x){if(!e&&x.id===b.id){e=x;off=o2;}});});
+ if(!e&&b.debut)ents.forEach(function(x){if(!e&&x.debut===String(b.debut))e=x;});
+ /* … et une heure de début aussi, à condition que la séance soit bien DATÉE du jour demandé */
+ if(!e&&b.debut&&!b.id)[off-1,off+1].forEach(function(o2){if(e||o2>0||o2<-400)return;
+  flcSeancesDe(o2).forEach(function(x){if(!e&&x.debut===String(b.debut)&&x.jour===K0){e=x;off=o2;}});});
+ if(!e&&ents.length===1&&!b.id&&!b.debut)e=ents[0];
+ if(!e)return null;
+ var dc=flcOffDe(e.jour); if(dc==null)dc=off;
+ var a=flcAvecJour(dc,function(){return flActiviteData(e.rang,dc,null,e.id);});
+ if(!a||!a.aDesDonnees)return null;
+ return {e:e, a:a, off:dc};
+}
+/* « 0:17:49 » ou « 17:49 » → des minutes ; illisible : null. */
+function flcbMinutes(s){
+ if(s==null||s==='')return null;
+ var p=String(s).trim().split(':'); if(p.length<2||p.length>3||p.some(function(x){return !/^\d+$/.test(x);}))return null;
+ p=p.map(Number); return p.length===3?p[0]*60+p[1]+p[2]/60:p[0]+p[1]/60;
+}
+function flcbZonesDeFiche(a){
+ var min=[0,0,0,0,0,0], eu=false;
+ (a.zones||[]).forEach(function(z){var i=+z.id, v=flcbMinutes(z.duree); if(i>=0&&i<=5&&v!=null){min[i]+=v; if(v>0)eu=true;}});
+ return eu?min.map(function(v){return Math.round(v*10)/10;}):null;
+}
+function flcbSeance(b,base){
+ var t=flcbTrouverSeance(b,base); if(!t)return null;
+ var e=t.e, a=t.a, s=flcBrute(e), fc=null;
+ /* la courbe du cœur, 48 points au plus, et seulement si la fiche la juge fiable */
+ if(a.coeurFiable!==false&&a.hr&&a.hr.length>=8){
+  var H=a.hr, n=Math.min(48,H.length); fc=[];
+  for(var i=0;i<n;i++){var v=+H[Math.round(i*(H.length-1)/(n-1))]; fc.push(isFinite(v)&&v>0?Math.round(v):null);}
+  if(fc.filter(function(v){return v!=null;}).length<8)fc=null;
+ }
+ var gps=null;
+ try{if((s&&s.gps)||e.gps){var g=flcAvecJour(t.off,function(){return flSortieData(e.rang,t.off);});
+  if(g&&g.aDesDonnees&&g.distanceTxt)gps=flcPrendre(g,['distanceTxt','allureTxt','deniveleTxt']);}}catch(x){}
+ var dur=(a.minutes==null?e.dur:a.minutes);
+ return {type:'seance', ancre:tk(base), jour:e.jour||tk(t.off), rang:(e.rang==null?null:e.rang), id:e.id||null,
+         nom:flcTxt(a.nom||e.nom,40), quand:flcbJourLong(t.off), auj:(t.off===0), debut:a.debut||e.debut||null, fin:a.fin||null,
+         dureeTxt:(dur==null||!isFinite(+dur))?null:(+dur>=60?flcHM(+dur):Math.round(+dur)+' min'),
+         effort:(a.effort==null?null:String(a.effort)), fcMoy:(a.moyenne==null?null:String(a.moyenne)),
+         fcMax:(a.maximum==null?null:String(a.maximum)), kcal:(a.kcal==null?null:String(a.kcal)),
+         coeurFiable:(a.coeurFiable==null?null:!!a.coeurFiable), zones:flcbZonesDeFiche(a), fc:fc, gps:gps};
+}
+/* Les minutes par zone, Z0 → Z5. Les minutes s'additionnent, l'effort non. */
+function flcbZones(b,base){
+ var p=b.portee, o={type:'zones', ancre:tk(base), portee:p};
+ if(p==='seance'){
+  var t=flcbTrouverSeance(b,base); if(!t)return null;
+  o.min=flcbZonesDeFiche(t.a); if(!o.min)return null;
+  o.nom=flcTxt(t.a.nom||t.e.nom,40); o.quand=flcbJourLong(t.off); o.auj=(t.off===0); o.debut=t.a.debut||t.e.debut||null;
+  o.jour=t.e.jour||tk(t.off); o.rang=(t.e.rang==null?null:t.e.rang); o.id=t.e.id||null;
+  return o;
+ }
+ if(typeof flZonesJour!=='function')return null;
+ var jourDe=function(d){try{return (d===0&&typeof flZonesJourLogique==='function')?flZonesJourLogique(0):flZonesJour(tk(d));}catch(e){return null;}};
+ if(p==='jour'){
+  var off=flcbOff(b,base,base); if(off==null)return null;
+  var z=jourDe(off); if(!z||!z.min)return null;
+  o.min=z.min.map(function(v){return Math.round((+v||0)*10)/10;}); o.quand=flcbJourLong(off); o.auj=(off===0); o.jours=1;
+ }else if(p==='semaine'){
+  var min=[0,0,0,0,0,0], eu=0;
+  for(var d=base-6;d<=base;d++){var zj=jourDe(d); if(!zj||!zj.min)continue; eu++; for(var q=0;q<6;q++)min[q]+=(+zj.min[q]||0);}
+  if(!eu)return null;
+  o.min=min.map(function(v){return Math.round(v*10)/10;}); o.jours=7; o.mesures=eu; o.auj=(base===0);
+  o.debut=flcbJourTxt(base-6); o.fin=flcbJourTxt(base);
+ }else return null;
+ /* du temps dans une zone au moins, sinon il n'y a rien à répartir */
+ if(!(o.min.reduce(function(x,y){return x+y;},0)>=1))return null;
+ return o;
+}
+/* Les jalons de la nuit rangée sous le jour du réveil. Sans jour : la dernière
+   nuit (flSommeilData la replie sur la veille et le dit). Avec un jour : CETTE
+   nuit-là, ou rien. */
+function flcbNuit(b,base){
+ var donne=(b.date!=null&&b.date!=='')||(b.jour!=null&&b.jour!=='');
+ var off=flcbOff(b,base,base); if(off==null)return null;
+ var sd=flcAvecJour(off,function(){return flcSommeilData(off);});
+ if(!sd||!sd.aDesDonnees||sd.estSieste)return null;
+ if(donne&&sd.estVeille)return null;
+ var seg=(sd.segments||[]).map(function(g){return [g.stade,flcR(g.debut,1),flcR(g.duree,1)];})
+   .filter(function(g){return g[0]&&g[1]!=null&&g[2]>0;});
+ if(!sd.couche&&!sd.reveil&&!seg.length)return null;
+ return {type:'nuit', ancre:tk(base), jour:sd.jour||tk(off), libelle:sd.nuitLibelle||null, estVeille:!!sd.estVeille,
+         dernier:(off===0), couche:sd.couche||null, reveil:sd.reveil||null, duree:sd.duree||null,
+         score:(sd.score==null?null:sd.score), reveils:(sd.reveils==null?null:sd.reveils),
+         tempsReveil:sd.tempsReveil||null, litMin:(sd.litMin==null?null:sd.litMin), coucheMin:(sd.coucheMin==null?null:sd.coucheMin),
+         stades:(sd.stades||[]).map(function(s){return [s.nom||null,(s.pct==null?null:s.pct),s.duree||null];}), seg:seg};
+}
+window.flCoachBlocs=function(liste){
+ var L=liste;
+ if(typeof L==='string'){try{L=JSON.parse(L);}catch(e){L=null;}}
+ if(!Array.isArray(L))return [];
+ _flcLot={};
+ try{
+  return flcAvecJour0(function(){
+   return L.map(function(b){
+    try{
+     if(!b||typeof b!=='object')return null;
+     var base=0;
+     if(b.ancre!=null&&b.ancre!==''){base=flcOffDe(b.ancre); if(base==null)return null;}
+     switch(b.type){
+      case 'serie': return flcbSerie(b,base);
+      case 'comparaison': return flcbComparaison(b,base);
+      case 'seance': return flcbSeance(b,base);
+      case 'zones': return flcbZones(b,base);
+      case 'nuit': return flcbNuit(b,base);
+      default: return null;
+     }
+    }catch(e){return null;}
    });
   });
  }finally{_flcLot=null;}

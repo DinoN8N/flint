@@ -249,7 +249,7 @@ window.flFcSeanceSuspecte = function (serie, dureeMin) {
 
     var motifs = [];
     if (couv < 8)
-      motifs.push('la montre n\'a rendu que ' + (Math.round(couv * 10) / 10)
+      motifs.push('le bracelet n\'a rendu que ' + (Math.round(couv * 10) / 10)
                   + ' valeurs par minute, là où elle en rend douze quand elle tient le pouls');
     if (relief >= 70)
       motifs.push('un pic à ' + mx + ' très au-dessus du reste de la séance (médiane ' + Math.round(med) + ')');

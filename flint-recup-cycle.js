@@ -79,6 +79,8 @@
 (function () {
   'use strict';
 
+  if (!window.flMoteurNeA) window.flMoteurNeA = Date.now();   /* 17 nov. 2026 — la naissance de cette page, à l'horloge de la machine (la file du pont, plus bas) */
+
   /* La génération du CYCLE — à ne pas confondre avec `RECOV_ALGO_GEN`, qui est
      celle de la FORMULE. Si la politique de publication change (les états, ce
      qui autorise une réouverture), les scellés d'avant ne décrivent plus la
@@ -286,6 +288,22 @@
          revient aux règles d'avant. Banc : tests/test-nuit-file-en-attente.js. */
       try {
         var _file = +window.flTramesEnAttente || 0, _fileA = +window.flTramesEnAttenteA || 0;
+        /* 17 nov. 2026 — ET TANT QUE LE PONT N'A PAS DIT SA FILE, ON NE LA SUPPOSE PAS VIDE.
+           La nuit du 16 au 17, lue dans le journal du téléphone : à 05:30:00 le fond s'ouvre
+           avec 183 trames au disque, le premier paquet arrive, le moteur juge — « réveil de
+           240 min », nuit scellée à 3 h 46, récup 20, nouvelle envoyée à 07:30 — et la taille
+           de la file n'arrive qu'après (elle partait avec la reprise du disque). À 09:40:36,
+           même chose avec 847 trames : une correction périmée s'applique deux secondes avant
+           le déversement. Le pont annonce maintenant sa file AVANT chaque paquet et dès que la
+           page est prête (`annoncerLaFile`, PontPouls) ; un binaire qui le fait le dit au
+           document (`flPontDitSaFile`, CoquilleWeb) : tant qu'il n'a pas parlé depuis la
+           naissance de cette page — 30 s au plus, à l'horloge de la machine —, collecte. */
+        if (!_fileA && window.flPontDitSaFile === 1 && Date.now() - (+window.flMoteurNeA || 0) >= 0 && Date.now() - (+window.flMoteurNeA || 0) < 30000
+            && out.depuisReveil < 360) {
+          out.etat = 'collecte'; out.fileInconnue = true;
+          out.raison = 'le pont n\'a pas encore dit ce qu\'il tient en file — on ne juge pas une demi-nuit';
+          return out;
+        }
         if (_file > 0 && (now - _fileA) < 600000 && out.depuisReveil < 360) {
           out.etat = 'collecte'; out.fileEnAttente = _file;
           out.raison = 'les mesures de la nuit arrivent encore (' + _file + ' en file) — on ne juge pas une demi-nuit';
@@ -656,7 +674,9 @@
      Et ce `true` autorise AUSSI le sceau en `grace` : un clic sur « Traiter »
      est une déclaration (« ma nuit est finie »), exactement comme TRAITER sur
      une séance depuis la v1236. Sans geste, on continue d'exiger `finale`. */
-  window.flRecupPublier = function (K, trig, forcerFinale) {
+  window.flRecupPublier = function (K, trig, forcerFinale, opts) {
+    /* 12 nov. 2026 — une remise à zéro de la normale de VFC demandée au lancement se pose AVANT toute lecture du sceau (flint-vfc-source.js) */
+    try { if (typeof window.flVfcNormeDepuis === 'function') window.flVfcNormeDepuis(); } catch (e) {}
     K = K || tk(0);
     trig = trig || 'lecture';
     var res = { K: K, s: null, etat: null, attente: false, publie: false, raison: null, h: null };
@@ -709,7 +729,18 @@
            2 oct. 2026 — « Tu t'es rendormi ? — Oui » non plus : c'est la même
            parole. Ce matin-là la nuit est passée de 112 à 271 min à 07:37 et la
            récup est restée à 5, la seule réouverture brûlée à 03:23. */
-        if (deja >= 1 && trig !== 'manuel' && trig !== 'rendormi') {
+        /* 17 nov. 2026 — LA NUIT RESCELLÉE PAR L'APP NON PLUS. Ce matin-là, une correction périmée
+           (01:01 → 07:26) a pris l'unique réouverture à 09:40 ; à 10:25 la vraie nuit (02:30 → 09:18)
+           a été rescellée et la récup, refusée, est restée calculée sur l'autre. Quand l'appelant a
+           LUI-MÊME rescellé la nuit (`opts.nuitRescellee` : la correction stable, la récup qui suit le
+           sceau) et que la nuit a VRAIMENT bougé, la récup est rejugée sur elle SANS consommer la
+           réouverture. Ce qu'elle protège — un score qui oscille à nuit inchangée — reste refusé : le
+           motif doit être la nuit, pas le journal ni une dérive. Les bornes sont celles des appelants
+           (`CORR_MAX` corrections par nuit, `recupSuit_` une fois par jour, 4 h après le réveil).
+           Le jour même seulement : le calcul ne sait viser que `recovery(0)`. */
+        var _parNuit = !!(opts && opts.nuitRescellee === true && K === tk(0)
+                          && nuitABouge((fige && fige.e) || {}, emp.e || {}));
+        if (deja >= 1 && trig !== 'manuel' && trig !== 'rendormi' && !_parNuit) {
           res.raison = 'score scellé — une réouverture a déjà eu lieu, la seconde est refusée';
           tracer({ t: new Date().toISOString(), K: K, trig: trig, cycle: cyc.etat, etat: 'finale',
                    avant: res.s, apres: res.s, publie: false, h: emp.h, raison: res.raison,
@@ -722,7 +753,7 @@
         try { vr = window.recovery(0); } catch (e) {}
         if (!vr || vr.s == null) { res.raison = 'réouverture impossible : le calcul ne rend rien'; return res; }
         var sn = Math.round(vr.s), avant = res.s;
-        DB.set('recovReouv_' + K, deja + 1);
+        if (!_parNuit) DB.set('recovReouv_' + K, deja + 1);
         if (DB.get('recovAvant_' + K, null) == null) DB.set('recovAvant_' + K, avant);
         var _er = ecrire(K, sn, emp, (vr.journalAjust && vr.journalAjust.total) || 0, true, cyc, vr.sansVfc === true);
         if (_er && _er.sceau === false) res.etat = 'provisoire';
@@ -730,7 +761,8 @@
         if (forcerFinale !== true) {          /* même raison qu'à la publication */
           try { if (typeof window.flRafraichirDouce === 'function') window.flRafraichirDouce(); } catch (e) {}
         }
-        res.s = sn; res.publie = true; res.raison = 'réouverture contrôlée : ' + motif;
+        res.s = sn; res.publie = true; res.raison = 'réouverture contrôlée : ' + motif
+                                         + (_parNuit ? ' — nuit rescellée par l\'app, la réouverture reste entière' : '');
         tracer({ t: new Date().toISOString(), K: K, trig: trig, cycle: cyc.etat, etat: 'finale',
                  avant: avant, apres: sn, publie: true, h: emp.h, raison: res.raison,
                  hrv: emp.e.hrv, hrvSrc: emp.e.hrvSrc, rhr: emp.e.rhr, sleepMin: emp.e.sleepMin,
@@ -1038,6 +1070,73 @@
      au registre. Ne remet AUCUN score en cause — elle ne fait que forcer la
      relecture des entrées. */
   window.flRecupOublierMemo = function () { memo = null; };
+
+  /* 11 nov. 2026 — RETIRER la récup d'un jour, en entier. Un seul appelant :
+     l'aperçu de nuit qu'on retire parce que le sommeil a repris
+     (`retirerApercu`, flint-nuit-matin.js). Le score de 3 h 24 n'est pas une
+     récup à corriger, c'est une récup qui n'a pas lieu d'être : la nuit
+     redevient une nuit qui court, et sa récup se calculera au matin comme si le
+     geste n'avait pas existé. Sceau, score, état, compteurs : tout part, sinon
+     le matin croirait republier (réouverture consommée, « avant » faux). */
+  window.flRecupOublier = function (K) {
+    if (!K) return false;
+    ['recovFige_', 'recov_', 'recovEtat_', 'recovAvant_', 'recovNuitSig_', 'recovSnap_',
+     'recovMes_', 'recovNuitReg_', 'recupSuit_'].forEach(function (c) {
+      try { DB.set(c + K, null); } catch (e) {}
+    });
+    ['recovReouv_', 'recovAj_', 'recovRepub_'].forEach(function (c) {
+      try { if (DB.get(c + K, null) != null) DB.set(c + K, 0); } catch (e) {}
+    });
+    memo = null;
+    return true;
+  };
+
+  /* ═══ 15 nov. 2026 — UNE NUIT SCELLÉE SANS RÉCUP LA RETROUVE ═════════════════
+     Le 13 nov., la nuit a été scellée sans récup (voir `flRecupSansNormeVfc`,
+     plus bas) et la session de nuit est FINALIZED : plus rien ne repassait. Un
+     jour passé ne se calculait qu'en le REGARDANT (`flRecovLu(off<0)`).
+     LA RÈGLE, en une phrase : pour les 7 derniers jours, une nuit scellée qui
+     n'a aucune récup en reçoit une, calculée sur cette nuit-là par le même
+     `recovery()` que le matin, et scellée comme le matin.
+     JAMAIS : aujourd'hui (il appartient à la machine du matin), le futur, un
+     jour sans nuit scellée (`nuitFige_`), un jour qui a déjà un score ou un
+     sceau, un jour que le calcul ne sait pas noter (il reste vide). Appelée par
+     `_flPasseReparation` (démarrage, retour au premier plan, réveil) ; une
+     mémoire de séance évite de recalculer un jour resté vide tant que les
+     mesures (`sensor_`) n'ont pas bougé. Banc : test-recup-vfc-sans-normale.js. */
+  var RATTRAPE_JOURS = 7, rattrapeVu = {};
+  window.flRecupRattraper = function (trig) {
+    var faits = [];
+    try {
+      var tamp = '';
+      try { tamp = (DB.tampon ? DB.tampon('sensor_') : '') + '|' + tk(0); } catch (e) {}
+      for (var i = 1; i <= RATTRAPE_JOURS; i++) {
+        var K = tk(-i);
+        var nf = null; try { nf = DB.get('nuitFige_' + K, null); } catch (e) {}
+        if (!nf || !(nf.asleep > 0)) continue;
+        var r = DB.get('recov_' + K, null);
+        if (r != null && !isNaN(+r)) continue;
+        if (DB.get('recovFige_' + K, null)) continue;
+        if (rattrapeVu[K] === tamp) continue;
+        var v = null; try { v = window.recovery(-i); } catch (e) { v = null; }
+        if (!v || v.s == null) { rattrapeVu[K] = tamp; continue; }
+        var emp = window.flRecupEmpreinte(K, -i), s = Math.round(v.s);
+        var _er = ecrire(K, s, emp, (v.journalAjust && v.journalAjust.total) || 0, true,
+                         { etat: 'rattrapage' }, v.sansVfc === true);
+        if (!_er || !_er.score) continue;
+        tracer({ t: new Date().toISOString(), K: K, trig: trig || 'rattrapage', cycle: 'rattrapage',
+                 etat: _er.sceau ? 'finale' : 'provisoire', avant: null, apres: s, publie: true, h: emp.h,
+                 raison: 'nuit scellée sans récup — récup rattrapée' + (v.sansVfc === true ? ' (sans VFC)' : ''),
+                 hrv: emp.e.hrv, hrvSrc: emp.e.hrvSrc, rhr: emp.e.rhr, sleepMin: emp.e.sleepMin,
+                 bedMin: emp.e.bedMin, wakeMin: emp.e.wakeMin, n: emp.e.hrvN, depuisReveil: null });
+        faits.push({ K: K, s: s, sansVfc: v.sansVfc === true });
+      }
+      if (faits.length) {
+        try { if (typeof window.flRafraichirDouce === 'function') window.flRafraichirDouce(); } catch (e) {}
+      }
+    } catch (e) {}
+    return faits;
+  };
 })();
 
 
@@ -1196,6 +1295,8 @@ window.flRecovLu=function(off){
    if(_corr&&Math.round(_v.s)!==Math.round(+_r)&&DB.get('recovAvant_'+K,null)==null)
     DB.set('recovAvant_'+K,Math.round(+_r));
    DB.set('recov_'+K,Math.round(_v.s));
+   /* 15 nov. 2026 — un score « sans VFC » d'une nuit qui AVAIT une VFC (normale absente, flRecupSansNormeVfc) le dit à côté : sans ça, flRecupProvenance le croirait complet (la nuit porte une VFC) */
+   if(_v.vfcSansNorme===true)DB.set('recovEtat_'+K,{etat:'provisoire',h:null,sansVfc:true,ts:new Date().toISOString(),cycle:'lecture',cycleGen:1});
    if(_sn)DB.set('recovNuitReg_'+K,_sn);
    /* v1846 — l'ajustement journal se fige AVEC le score : sans cette trace,
       l'analyse d'impact corrélerait notre propre malus (doctrine flJournalAjust).
@@ -1708,10 +1809,12 @@ window.flVfcMinutesPhrase = function (n, assez) {
                : m + ' : il en faut 6 pour la calculer.';
 };
 
-window.flRecupSansVfcPermis = function (t, off) {
+window.flRecupSansVfcPermis = function (t, off, sansNorme) {
   try {
     if (window.flRecupSansVfc !== 1) return null;
-    if (!t || t.hrv != null || !t._watch) return null;
+    /* `sansNorme` : seul appelant, `flRecupSansNormeVfc` (plus bas) — la VFC est
+       là mais n'a pas encore de normale pour la juger. */
+    if (!t || (t.hrv != null && sansNorme !== true) || !t._watch) return null;
     if (!(t.sleepMin > 0) || t.rhr == null) return null;
     var K = tk(Math.min(0, off || 0));
     var w = null; try { w = DB.get('watch_' + K, null); } catch (e) {}
@@ -1738,6 +1841,7 @@ window.flRecupSansVfcPermis = function (t, off) {
       if (!r || o.Z == null) return r;
       r.sansVfc = true; r.recupModele = 'sansVfc';
       r.vfcMinutes = o.minutes; r.vfcRaison = o.raison;
+      if (o.sansNorme === true) r.vfcSansNorme = true;
       if (r.c && r.c[0]) r.c[0] = ['HRV', '—', null];
       if (r.recupEcarts) r.recupEcarts.vfc = null;
       r.recupContrib = o.ctb;
@@ -1749,6 +1853,41 @@ window.flRecupSansVfcPermis = function (t, off) {
       r.recupFiabilite = Math.max(0, Math.min(1, +(((r.bR && r.bR.n) || 0) / 20).toFixed(2)));
       return r;
     };
+    return o;
+  } catch (e) { return null; }
+};
+
+/* ═══ 15 nov. 2026 — UNE VFC SANS NORMALE NE PRIVE PLUS LA NUIT DE SA RÉCUP ══════
+   LE MATIN DU 13 NOV. Dino a vu « — /100 » sous une nuit de 6 h 31. La normale de
+   VFC avait été remise à zéro la veille (`flVfcNormeDepuis` = 12 nov.) : moins
+   de trois nuits de même provenance, `baseStat('hrv')` rend null. Rejoué sur la
+   base du 14 nov. : le 12 (pas de VFC) → 84 « sans VFC », le 14 (pas de VFC)
+   → 21 « sans VFC », et le 13, qui AVAIT une VFC (91 ms), → rien : le permis du
+   score sans VFC ne s'ouvrait que si la VFC était ABSENTE, et le score complet
+   exige sa normale. Avoir mesuré la VFC coûtait la récup. La finalisation du
+   matin a donc scellé la nuit « sans score de récupération » à 08:03 (session
+   `nuitSess_`, 6 essais) ; le rescellement en CORRECTION de 16:28 n'a rien
+   retiré — il n'y avait rien.
+   LA RÈGLE : une VFC qu'on ne sait pas encore juger compte comme une VFC
+   absente — même modèle, mêmes poids, même étiquette « sans VFC ». Le calcul du
+   score ne change pas d'un chiffre ; c'est la porte qui choisit le modèle.
+   CE QU'ELLE NE FAIT JAMAIS : réécrire un jour dont le registre porte déjà un
+   score (sauf AUJOURD'HUI quand ce score est lui-même « sans VFC » — sinon ses
+   republications du matin se tairaient). Les jours passés dont la normale de
+   VFC n'existe plus (13 jours du 15 oct. au 3 nov. sur la base de Dino, tous
+   notés) restent donc EXACTEMENT comme avant : `recovery(off)` y rend null.
+   Banc : tests/test-recup-vfc-sans-normale.js. */
+window.flRecupSansNormeVfc = function (t, off) {
+  try {
+    if (!t || t.hrv == null) return null;
+    var _o = Math.min(0, off || 0), K = tk(_o);
+    var r = null; try { r = DB.get('recov_' + K, null); } catch (e) { return null; }
+    if (r != null && !isNaN(+r)) {
+      if (_o !== 0) return null;
+      if (typeof window.flRecupProvenance !== 'function' || window.flRecupProvenance(K, t) !== 'sansVfc') return null;
+    }
+    var o = window.flRecupSansVfcPermis(t, _o, true);
+    if (o) o.sansNorme = true;
     return o;
   } catch (e) { return null; }
 };

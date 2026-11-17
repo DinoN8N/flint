@@ -879,3 +879,298 @@ window.flRetirerDetectionsDansSeances = function (contribs, debutDe, finDe, estD
     });
   } catch (e) { return contribs; }
 };
+
+/* ═══ 14 nov. 2026 — « MA JOURNÉE » NE MONTRE QUE LES VRAIES SORTIES ════════════
+
+   FÉLIX, devant sa journée du 13 : « c'est pas possible de déclencher une marche
+   pour 100 mètres […] je vais chez le coiffeur, je m'assois 5 minutes et je repars
+   — ça compte en une seule marche ». Neuf lignes ce jour-là, dont six détections
+   automatiques : deux marches à quatorze minutes d'écart, une « Activité » de dix
+   minutes à 1,2/20, une marche de nuit à 2,1.
+
+   RÈGLE DE LA MAISON : on obéit au bracelet, on travaille l'AFFICHAGE. Rien ici ne
+   touche à la détection, à `sessions_<jour>`, à l'effort du jour (il se lit sur la
+   courbe du cœur de toute la journée : cacher une ligne n'en retire rien), aux nuits,
+   aux siestes, ni aux séances saisies ou lancées au tracker. Ce qui ne s'affiche plus
+   reste en base, identique.
+
+   LA RÈGLE, calibrée sur les 30 jours de la base du téléphone du 14 nov. (rejeu sur
+   le moteur entier — 65 détections affichées → 19 lignes ; jours à 3 lignes ou
+   plus : 10 → 1) :
+     1. REGROUPER — deux détections « Marche » / « Activité » (sources `auto` seules,
+        sans tracé, état conclu, identifiant connu, même jour de rangement) séparées
+        de ≤ 15 min forment une seule sortie, en chaîne. Sur les 30 jours, les écarts
+        tombent à 0, 7 et 14 min puis plus rien avant 21 : quinze minutes coupent
+        dans le vide. Une séance (saisie, tracker, sieste, ou détection que la
+        personne a nommée) ferme le groupe : on ne regroupe jamais par-dessus. Un
+        repas, lui, ne coupe pas une sortie.
+     2. NE GARDER QUE CE QUI VAUT UNE LIGNE — la sortie compte si (mouvement ≥ 20 min
+        ET note ≥ 4/20) OU note ≥ 6/20. La note d'une sortie regroupée est celle de
+        la maison sur SA fenêtre, pauses retirées (`flEffortSeance`) : 4,3 + 4,6 le
+        13 nov. donnent 6,6 sur 14:13-15:31. Sans note mesurée, la durée seule
+        décide (≥ 20 min) : on ne cache pas ce qu'on n'a pas pu juger.
+     3. JAMAIS EN COURS — une entrée qui attend encore sa mesure (`waitingForData`,
+        tout état autre que conclu) n'entre dans aucun groupe et s'affiche telle
+        quelle ; elle sera jugée quand elle aura conclu.
+     4. JAMAIS SUR UNE HEURE AMBIGUË — une séance rangée sous la veille avec une
+        minute au-delà de minuit (`startMin` 1478 pour un `start` « 00:38 ») ne se
+        lit pas pareil selon qu'on prend l'un ou l'autre : la fiche prend `start`,
+        la note prend `startMin`. Une telle entrée n'entre dans aucun groupe et
+        s'affiche telle quelle (`flMarcheSure`).
+
+   LA LISTE ENVOYÉE NE PERD AUCUNE ENTRÉE. La charge `journee` nourrit aussi les
+   halos de la page Cardio, la sonde de finalisation, le cycle des activités : on
+   n'y retire rien (`test-cardio-frise-jours-passes.js` garde ses 62 événements).
+   `flMarchesAnnoter` POSE DES CHAMPS sur les entrées, et ce sont les deux listes
+   natives (« Ma journée », « Activités du jour » — `EntreeJournee.lignesAffichees`)
+   qui en tirent l'affichage :
+     · `discret` — l'entrée ne fait pas de ligne ; `discretMin` sur la première
+       d'une sortie cachée porte ses minutes de mouvement (la ligne « N petits
+       déplacements ») ;
+     · `groupe` — l'identifiant de la sortie, `grp:<id1>+<id2>…`, sur chaque
+       morceau ; la tête (`groupeTete`) porte la ligne entière : `gDebut`, `gFin`,
+       `gNom`, `gValeur`, `gDur`, `gIcone`, et `gRangs` pour « Supprimer ».
+   Une ligne regroupée s'ouvre par son identifiant : `flActiviteData` reçoit
+   `grp:…` et `flSeanceDeGroupe` lui rend la sortie entière, les arrêts en pauses —
+   la machinerie des pauses du tracker (14 sept.) fait le reste. */
+window.FL_MARCHES = { pauseMax: 15, durMin: 20, noteMin: 4, noteSeule: 6 };
+/* Règle 4. Vraie quand la séance stockée sous `jour`/`rang` est bien celle de la
+   ligne et que son `startMin` dit la même minute que son `start`. Sans base
+   (bac à sable d'un banc), rien ne peut être ambigu. */
+window.flMarcheSure = function (e) {
+  try {
+    if (typeof DB === 'undefined' || !DB || typeof DB.get !== 'function') return true;
+    var s = (DB.get('sessions_' + e.jour, []) || [])[e.rang];
+    if (!s || s.id !== e.id) return false;
+    if (s.startMin == null) return true;
+    var p = String(s.start || '').split(':');
+    return s.startMin === (+p[0]) * 60 + (+p[1] || 0);
+  } catch (x) { return false; }
+};
+window.flGroupesMarches = function (entrees, opts) {
+  opts = opts || window.FL_MARCHES;
+  var P = opts.pauseMax, DM = opts.durMin, NM = opts.noteMin, NS = opts.noteSeule;
+  var sure = (typeof opts.sure === 'function') ? opts.sure : window.flMarcheSure;
+  function mn(t) { if (!t) return null; var p = String(t).split(':'); return (+p[0]) * 60 + (+p[1] || 0); }
+  function num(v) { if (v == null) return null; var x = parseFloat(String(v).replace(',', '.')); return isFinite(x) ? x : null; }
+  /* La longueur se lit sur les heures affichées (fin - début), comme la ligne. */
+  function len(e) { var a = mn(e.debut), b = mn(e.fin); if (a != null && b != null) return ((b - a) % 1440 + 1440) % 1440; return +e.dur || 0; }
+  function famille(e) {
+    return !!e && e.source === 'seance' && e.genre === 'auto'
+      && (e.nom === 'Marche' || e.nom === 'Activité')
+      && (e.srcs == null || e.srcs === 'auto') && !e.gps
+      && (e.etat === 'ready' || e.etat === 'needsClassification')
+      && !!e.id && e.rang != null && sure(e);
+  }
+  var groupes = [], autres = [], cur = null;
+  function fermer() {
+    if (!cur) return;
+    var g = cur; cur = null;
+    var p0 = g.morceaux[0], d0 = mn(p0.debut), span = g.fin - g.debut, mouv = 0, pauses = [], bout = p0.tri;
+    for (var i = 0; i < g.morceaux.length; i++) {
+      var q = g.morceaux[i]; mouv += len(q);
+      if (i > 0 && q.tri > bout) pauses.push([d0 + (bout - p0.tri), d0 + (q.tri - p0.tri)]);
+      bout = Math.max(bout, q.tri + len(q));
+    }
+    var note = null;
+    if (g.morceaux.length === 1) note = num(p0.valeur);
+    else {
+      try {
+        var r = (typeof flEffortSeance === 'function') ? flEffortSeance(p0.jour, d0, d0 + span, pauses) : null;
+        if (r && r.effort != null) note = Math.round(r.effort * 10) / 10;
+      } catch (e) { note = null; }
+    }
+    var gardee = (note == null) ? (mouv >= DM) : ((mouv >= DM && note >= NM) || note >= NS);
+    groupes.push({ morceaux: g.morceaux, debut: p0.debut, fin: g.morceaux[g.morceaux.length - 1].fin,
+      jour: p0.jour, debutMin: d0, finMin: d0 + span, pauses: pauses, mouvement: mouv,
+      note: note, marche: g.morceaux.some(function (q) { return q.nom === 'Marche'; }), gardee: gardee });
+  }
+  (entrees || []).forEach(function (e) {
+    if (!famille(e)) {
+      /* Une séance ferme le groupe ; un repas ne le coupe pas. */
+      if (e && e.source === 'seance') fermer();
+      autres.push(e); return;
+    }
+    var fin = e.tri + len(e);
+    /* Un seul jour de rangement par sortie : ses morceaux se retrouvent tous dans
+       la même `sessions_<jour>`, là où la fiche et « Supprimer » vont les chercher. */
+    if (cur && e.tri - cur.fin <= P && e.jour === cur.morceaux[0].jour) { cur.morceaux.push(e); if (fin > cur.fin) cur.fin = fin; }
+    else { fermer(); cur = { debut: e.tri, fin: fin, morceaux: [e] }; }
+  });
+  fermer();
+  return { groupes: groupes, autres: autres };
+};
+/* Pose les champs d'affichage (voir le pavé). Rend la MÊME liste, mêmes objets,
+   même ordre ; toute panne la rend telle qu'elle est arrivée. */
+window.flMarchesAnnoter = function (entrees, opts) {
+  try {
+    if (!entrees || !entrees.length) return entrees;
+    var sep = (typeof flSeparateurDecimal === 'function') ? flSeparateurDecimal() : ',';
+    window.flGroupesMarches(entrees, opts).groupes.forEach(function (g) {
+      if (!g.gardee) {
+        g.morceaux.forEach(function (q) { q.discret = true; });
+        g.morceaux[0].discretMin = g.mouvement;
+        return;
+      }
+      if (g.morceaux.length < 2) return;
+      var gid = 'grp:' + g.morceaux.map(function (q) { return q.id; }).join('+');
+      var t = g.morceaux[0], m = g.morceaux.filter(function (q) { return q.nom === 'Marche'; })[0] || t;
+      g.morceaux.forEach(function (q) { q.groupe = gid; });
+      t.groupeTete = true;
+      t.gDebut = g.debut; t.gFin = g.fin; t.gNom = g.marche ? 'Marche' : 'Activité';
+      t.gValeur = (g.note == null) ? null : String(g.note).replace('.', sep);
+      t.gDur = g.mouvement; t.gIcone = m.icone || null;
+      t.gRangs = g.morceaux.map(function (q) { return q.rang; });
+    });
+    return entrees;
+  } catch (e) { return entrees; }
+};
+/* Le nombre de lignes qu'affichent les deux listes natives — celui du « N entrées ». */
+window.flMarchesCompte = function (entrees) {
+  var n = 0;
+  (entrees || []).forEach(function (e) { if (e && !e.discret && !(e.groupe && !e.groupeTete)) n++; });
+  return n;
+};
+/* La liste telle qu'elle s'affiche, en objets NEUFS (une ligne par sortie) : la
+   visite guidée désigne les lignes de « Ma journée », elle doit voir les mêmes. */
+window.flMarchesLignes = function (entrees, opts) {
+  try {
+    if (!entrees || !entrees.length) return entrees;
+    var copie = entrees.map(function (e) { if (!e || typeof e !== 'object') return e; var c = {}; for (var k in e) c[k] = e[k]; return c; });
+    window.flMarchesAnnoter(copie, opts);
+    var out = [];
+    copie.forEach(function (e) {
+      if (!e || typeof e !== 'object') { out.push(e); return; }
+      if (e.discret) return;
+      if (e.groupe && !e.groupeTete) return;
+      if (e.groupeTete) {
+        e.id = e.groupe; e.debut = e.gDebut; e.fin = e.gFin; e.nom = e.gNom;
+        e.valeur = e.gValeur; e.dur = e.gDur; e.icone = e.gIcone || e.icone; e.etat = 'ready';
+      }
+      out.push(e);
+    });
+    return out;
+  } catch (e) { return entrees; }
+};
+/* La séance d'une ligne regroupée, pour sa fiche. `ss` = `sessions_<jour>` de la
+   tête. Chaque morceau est retrouvé par SON identifiant ; s'il en manque un (la
+   journée a bougé depuis l'affichage), on rend `null` et la fiche dit qu'elle ne
+   trouve plus l'activité — jamais une sortie à moitié. Un objet NEUF : rien n'est
+   écrit dans la base. */
+window.flSeanceDeGroupe = function (ss, id) {
+  try {
+    if (!id || String(id).indexOf('grp:') !== 0) return null;
+    var ids = String(id).slice(4).split('+'), m = [];
+    for (var i = 0; i < ids.length; i++) {
+      var s = null;
+      for (var j = 0; j < (ss || []).length; j++) if (ss[j] && ss[j].id === ids[i]) { s = ss[j]; break; }
+      if (!s || s.type === 'nap' || s.startMin == null || s.endMin == null) return null;
+      m.push(s);
+    }
+    if (m.length < 2) return null;
+    m.sort(function (a, b) { return a.startMin - b.startMin; });
+    var t = m.filter(function (q) { return q.name === 'Marche'; })[0] || m[0], v = {};
+    for (var k in t) v[k] = t[k];
+    var deb = m[0].startMin, bout = m[0].endMin, pauses = [];
+    for (var n = 1; n < m.length; n++) {
+      if (m[n].startMin > bout) pauses.push([bout, m[n].startMin]);
+      bout = Math.max(bout, m[n].endMin);
+    }
+    var arret = 0; pauses.forEach(function (p) { arret += p[1] - p[0]; });
+    function hh(x) { x = ((x % 1440) + 1440) % 1440; return String(Math.floor(x / 60)).padStart(2, '0') + ':' + String(x % 60).padStart(2, '0'); }
+    v.id = String(id); v.name = t.name; v.start = hh(deb); v.startMin = deb; v.endMin = bout;
+    v.dur = Math.max(1, bout - deb - arret);
+    if (pauses.length) v.pauses = pauses; else delete v.pauses;
+    /* Les mesures rangées sont celles d'UN morceau : la fiche les recalcule. Sauf
+       les calories, quand chaque morceau a les siennes : la sortie dépense leur
+       SOMME — la dérivation, elle, compterait la fenêtre sans ses pauses. */
+    var kc = 0; m.forEach(function (q) { kc = (kc == null || q.kcal == null || !isFinite(+q.kcal)) ? null : kc + (+q.kcal); });
+    ['avgHr', 'maxHr', 'trimp', 'kcal', 'pas', 'steps', 'eff', 'fcFiable'].forEach(function (c) { delete v[c]; });
+    if (kc != null) v.kcal = kc;
+    v.morceaux = m.map(function (q) { return q.id; });
+    return v;
+  } catch (e) { return null; }
+};
+/* « Supprimer » sur une ligne regroupée : chaque morceau retrouvé par SON
+   identifiant au moment de couper, du dernier au premier, et coupé par
+   `flSupprimerEntree` — la même coupe, le même registre anti-résurrection. Rend
+   le nombre de morceaux coupés. */
+window.flSupprimerGroupe = function (id, jour) {
+  try {
+    if (!id || String(id).indexOf('grp:') !== 0 || typeof flSupprimerEntree !== 'function') return 0;
+    var K = jour || ((typeof tk === 'function') ? tk(0) : null);
+    var ids = String(id).slice(4).split('+'), L = DB.get('sessions_' + K, []) || [], idx = [];
+    ids.forEach(function (x) { for (var i = 0; i < L.length; i++) if (L[i] && L[i].id === x) { idx.push(i); break; } });
+    idx.sort(function (a, b) { return b - a; });
+    var n = 0;
+    idx.forEach(function (i) { if (flSupprimerEntree('seance', i, K)) n++; });
+    return n;
+  } catch (e) { return 0; }
+};
+/* ═══ 16 nov. 2026 — LE POULS HAUT SANS MOUVEMENT, ÉCRIT ET RIEN DE PLUS ═══════════════════════════
+   Audit de la détection (detection-activite-16nov.md, règle B) : un pouls au-dessus de la zone 1 sans
+   aucun pas (stress assis, bracelet desserré) devient une « Activité ». Le 1er nov. 22:13 : 19 min à
+   112, 0 pas au bracelet, puis 15 min figées à 100. Retirer ces séances est un réglage que Dino
+   tranchera sur des chiffres : cette fonction ne fait QUE les ranger. Elle ne touche ni la séance, ni
+   l'écran, ni la base des séances.
+   Pour chaque détection AU CŒUR (ni déclarée, ni tracée, ni comptée aux pas), elle note : jour, début,
+   durée, pouls moyen et max, part de la réserve, pas du téléphone et du bracelet pendant la fenêtre,
+   le nom (s'il a été donné) et CE QUE LA RÈGLE AURAIT FAIT : sous 50 % de la réserve, moins de
+   3 pas/min au téléphone comme au bracelet → « retirerait » ; aucun capteur de pas → « sans preuve ».
+   Le registre `flJournalSansMouvement` (150 lignes au plus) survit à la rotation du journal ; une
+   séance qui disparaît (supprimée, redétectée autrement) y reste, marquée `partie` — c'est un indice. */
+window.flJournalSansMouvement = function (K, canon) {
+  try {
+    if (!K || !Array.isArray(canon) || typeof DB === 'undefined') return 0;
+    var fm = (typeof flFcMax === 'function') ? flFcMax() : null, rp = (typeof flFcRepos === 'function') ? flFcRepos(K) : null;
+    var repos = rp && rp.v, R = (fm && fm.v && repos) ? fm.v - repos : null;
+    var sante = null, w = null;
+    try { sante = DB.get('sante_' + K, null); } catch (e) {}
+    try { w = (typeof watchOf === 'function') ? watchOf(K) : null; } catch (e) {}
+    var tranches = (sante && Array.isArray(sante.pas)) ? sante.pas : null;
+    var photos = (w && Array.isArray(w.pasPhoto)) ? w.pasPhoto : null;
+    function pasTel(a, b) {
+      if (!tranches) return null;
+      var n = 0; tranches.forEach(function (p) { if (p && p[0] >= a - 2 && p[0] < b) n += (+p[1] || 0); }); return Math.round(n);
+    }
+    function pasBracelet(a, b) {   /* le compteur de l'heure de la photo : on somme ce qui AVANCE, une baisse = l'heure d'après */
+      if (!photos) return null;
+      var dedans = photos.filter(function (p) { return p && p[0] >= a - 15 && p[0] <= b + 15; }).sort(function (x, y) { return x[0] - y[0]; });
+      if (dedans.length < 2) return null;
+      var n = 0; for (var i = 1; i < dedans.length; i++) { var d = (+dedans[i][1] || 0) - (+dedans[i - 1][1] || 0); n += d >= 0 ? d : (+dedans[i][1] || 0); }
+      return n;
+    }
+    var reg = DB.get('flJournalSansMouvement', []) || [], change = false, vus = {}, lignes = [];
+    canon.forEach(function (s) {
+      if (!s || s.type === 'nap' || s.auto !== true || s.geste || s.gps || s.source === 'pas' || s.startMin == null || s.endMin == null) return;
+      if (s.src === 'montre') return;   /* un compte-rendu du bracelet n'est pas une détection au cœur ; une détection renommée (« C'était quoi ? ») reste notée, avec son nom */
+      var dur = s.endMin - s.startMin; if (!(dur > 0)) return;
+      var pct = (R && s.avgHr) ? Math.round(100 * (s.avgHr - repos) / R) : null;
+      var tel = pasTel(s.startMin, s.endMin), brac = pasBracelet(s.startMin, s.endMin);
+      var bouge = (tel != null && tel >= 3 * dur) || (brac != null && brac >= 3 * dur);
+      var verdict = pct == null ? 'inconnu' : (pct >= 50 ? 'garderait' : (bouge ? 'garderait' : ((tel == null && brac == null) ? 'sans preuve' : 'retirerait')));
+      var id = s.id || (K + '@' + s.startMin);
+      vus[id] = 1;
+      var neuf = { id: id, jour: K, debut: s.start || null, dur: dur, moy: s.avgHr || null, max: s.maxHr || null, pct: pct, pasTel: tel, pasBracelet: brac,
+                   nom: (s.name && s.name !== 'Activité') ? s.name : null, verdict: verdict };
+      var i = -1; for (var j = 0; j < reg.length; j++) if (reg[j] && reg[j].id === id) { i = j; break; }
+      var avant = i >= 0 ? reg[i] : null;
+      var pareil = avant && ['dur', 'moy', 'max', 'pct', 'pasTel', 'pasBracelet', 'nom', 'verdict'].every(function (c) { return avant[c] === neuf[c]; }) && !avant.partie;
+      if (pareil) return;
+      neuf.vu = Date.now(); neuf.premier = avant ? (avant.premier || avant.vu) : neuf.vu;
+      if (i >= 0) reg[i] = neuf; else reg.push(neuf);
+      change = true;
+      if ((verdict === 'retirerait' || verdict === 'sans preuve') && (!avant || avant.verdict !== verdict))
+        lignes.push('pouls sans mouvement · ' + K + ' ' + (s.start || s.startMin) + ' · ' + dur + ' min · moy ' + s.avgHr + ' (' + pct + ' % de la réserve) · pas téléphone ' + (tel == null ? '—' : tel) +
+                    ', bracelet ' + (brac == null ? '—' : brac) + ' · la règle B l\'aurait ' + (verdict === 'retirerait' ? 'RETIRÉE' : 'retirée faute de capteur') + ' — rien n\'est retiré');
+    });
+    reg.forEach(function (e) { if (e && e.jour === K && !vus[e.id] && !e.partie) { e.partie = Date.now(); change = true; } });
+    if (reg.length > 150) { reg = reg.slice(reg.length - 150); change = true; }
+    if (change) DB.set('flJournalSansMouvement', reg);
+    lignes.forEach(function (m) {
+      try { console.log('[flint] ' + m); } catch (e) {}
+      try { var h = window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.flint; if (h) h.postMessage({ cmd: 'journal', texte: m }); } catch (e) {}
+    });
+    return lignes.length;
+  } catch (e) { return 0; }
+};

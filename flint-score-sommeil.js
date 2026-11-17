@@ -209,3 +209,77 @@ window.flScoreSommeil=function(K,dormi,eveil,besoin,regul){
   return _r;
  }catch(e){return _calcul(K,dormi,eveil,besoin,regul);}
 };
+
+/* ═══ 14 nov. 2026 (v3098) — LE SEUIL « ASSEZ DORMI » APPRIS SUR LES NUITS DE LA PERSONNE ═══
+   Dino, 13 nov. : le réveil « Quand tu es prêt » réveille quand « ça sert pas à grand chose
+   qu'il continue de dormir. Le rapport, il s'inverse. » Le seuil était un réglage (7 h, mesuré
+   sur SES 564 nuits WHOOP) ; il devient appris, pour chacun, sur ce que ce moteur publie déjà :
+   la récupération du jour et la durée dormie de la nuit principale.
+
+   LA RÈGLE (`flSeuilAppriseCalcul`, pure — banc : tests/test-seuil-appris.js) :
+     · moins de 21 nuits lisibles → pas de seuil (`manque` dit combien il en faut encore) ;
+     · fenêtres de 60 min de large, tous les 15 min, de 5 h à 10 h de sommeil ; une fenêtre ne
+       compte qu'avec 5 nuits au moins ; sa valeur est la MÉDIANE des récups ;
+     · l'écart entre la meilleure et la moins bonne fenêtre est sous 5 points (ou aucune fenêtre)
+       → PLAT : la durée ne prédit pas la récup ; seuil = la durée habituelle (médiane) ;
+     · sinon PLATEAU : la première fenêtre (la plus courte) à 3 points de la meilleure ; seuil =
+       son centre. Une redescente après (les nuits très longues sont souvent des nuits malades)
+       ne compte donc pas ;
+     · arrondi au quart d'heure inférieur, borné entre 6 h 30 et 8 h 30.
+   La lecture (`flSeuilSommeilAppris`) ne fait QUE lire : jamais `flRecovLu` (il écrit), jamais
+   `wSaveK`. Le natif la demande à l'ouverture des alarmes et une fois par jour (PontSommeil). */
+window.flSeuilAppriseCalcul=function(points){
+ var NUITS_MIN=21, LARGE=60, PAS=15, DEBUT=300, FIN=600, PAR_FENETRE=5, PLAT=5, PROCHE=3,
+     BAS=390, HAUT=510;
+ function mediane(t){var s=t.slice().sort(function(a,b){return a-b;}),n=s.length;
+  return n?((n%2)?s[n>>1]:(s[n/2-1]+s[n/2])/2):null;}
+ var p=(Array.isArray(points)?points:[]).filter(function(x){
+  return x&&typeof x.dormi==='number'&&isFinite(x.dormi)&&x.dormi>0&&x.dormi<=1440&&
+         typeof x.recup==='number'&&isFinite(x.recup)&&x.recup>=0&&x.recup<=100;});
+ var n=p.length;
+ if(n<NUITS_MIN)return {min:null,nuits:n,manque:NUITS_MIN-n};
+ /* 14 nov. 2026 (soir) — SEULES COMPTENT LES DURÉES QU'IL DORT VRAIMENT. Sur 548 nuits
+    WHOOP de Dino la règle rendait 8 h 30 : douze nuits très longues, récup 76, faisaient
+    à elles seules la « meilleure » fenêtre — des lendemains de repos, pas un besoin.
+    Une fenêtre ne concourt donc que si son centre tombe entre le 10e et le 90e centile
+    de SES durées : le plateau se cherche là où il dort, pas dans ses exceptions. */
+ var durees=p.map(function(x){return x.dormi;}).sort(function(a,b){return a-b;});
+ var q10=durees[Math.floor(0.10*(n-1))], q90=durees[Math.ceil(0.90*(n-1))];
+ var f=[];
+ for(var s=DEBUT;s+LARGE<=FIN;s+=PAS){
+  if(s+LARGE/2<q10||s+LARGE/2>q90)continue;
+  var r=p.filter(function(x){return x.dormi>=s&&x.dormi<s+LARGE;}).map(function(x){return x.recup;});
+  if(r.length>=PAR_FENETRE)f.push({debut:s,med:mediane(r),n:r.length});
+ }
+ var seuil, plat;
+ var meilleure=f.length?Math.max.apply(null,f.map(function(x){return x.med;})):null;
+ var pire=f.length?Math.min.apply(null,f.map(function(x){return x.med;})):null;
+ if(!f.length||meilleure-pire<PLAT){
+  plat=true; seuil=mediane(p.map(function(x){return x.dormi;}));
+ }else{
+  plat=false;
+  for(var i=0;i<f.length;i++){if(f[i].med>=meilleure-PROCHE){seuil=f[i].debut+LARGE/2;break;}}
+ }
+ seuil=Math.floor(seuil/PAS)*PAS;
+ seuil=Math.max(BAS,Math.min(HAUT,seuil));
+ return {min:seuil,nuits:n,plat:plat};
+};
+window.flSeuilSommeilAppris=function(){
+ try{
+  var pts=[];
+  for(var i=0;i<120;i++){
+   var K=tk(-i);
+   var rv=DB.get('recov_'+K,null);
+   if(rv&&typeof rv==='object')rv=rv.score;
+   rv=(rv==null||rv==='')?NaN:+rv;
+   if(!isFinite(rv))continue;
+   if(typeof flNuitSansMesure==='function'&&flNuitSansMesure(K))continue;
+   var w=(typeof watchOf==='function')?watchOf(K):DB.get('watch_'+K,null);
+   var nt=w&&w.night;
+   var d=nt?+nt.sleepMin:NaN;     /* la durée DORMIE de « Ma nuit » (sleepMin = profond + léger + paradoxal), pas le temps au lit */
+   if(!isFinite(d)||d<180)continue;   /* la nuit principale : trois heures au moins, jamais une sieste */
+   pts.push({dormi:d,recup:rv});
+  }
+  return window.flSeuilAppriseCalcul(pts);
+ }catch(e){return {min:null,nuits:0,manque:21};}
+};

@@ -853,3 +853,144 @@ window.flBornesTempNuit = function (marque, instr) {
   if (i === 'mixte') return [26, 38];
   return [32, 38];
 };
+
+/* ═══ 9 nov. 2026 — UN BATTEMENT DE LA VEILLE VA DANS LA VEILLE ══════════════════════════════
+
+   Le moteur classait un battement ou un intervalle à son instant (`data.ts`, v2093 / 26 oct.)
+   SEULEMENT s'il datait d'aujourd'hui ; sinon il le rangeait à `new Date()`, l'instant de la
+   VIDANGE. Nuit du 8 au 9 nov. : la file du pont tenait la soirée en mémoire (l'app dort la
+   nuit), la séance de fond de 05:00 l'a vidangée par la tête — la plus vieille d'abord — et
+   trois minutes de la nuit, 05:00, 05:30 et 06:00, ont reçu chacune 200 intervalles de la veille
+   (le plafond par minute), en plein sommeil, là où la VFC se lit. Le pouls de la soirée, lui,
+   réécrivait la valeur de la minute de vidange, battement après battement.
+
+   La règle : ce qui date de moins de 36 h et d'un autre jour va dans SON jour (`wGet`, le cache
+   que `wSaveK` écrit), à SA minute ; la veille est sauvée une fois, 1,5 s après. Plus vieux :
+   rien, plutôt que l'écraser dans une minute d'aujourd'hui. Sans estampille, rien ne change
+   (l'horloge locale). Branché dans index.html par `typeof` ; banc : garde-rr-a-son-instant.js. */
+window.flJourVeille = function (ts, wGetF) {
+  try {
+    if (!(ts instanceof Date) || typeof wGetF !== 'function') return null;
+    var age = Date.now() - ts.getTime();
+    if (!(age < 36 * 3600000) || age < -300000) return null;
+    var cv = (typeof window.flCadranVivant === 'function') ? window.flCadranVivant(ts.getTime()) : null;   /* 11 nov. 2026 — un jour étiqueté ailleurs garde son cadran (flint-fuseau.js) */
+    if (cv) return window.flCadranCible(cv, wGetF);
+    var K = ts.getFullYear() + '-' + (ts.getMonth() + 1) + '-' + ts.getDate();
+    return { K: K, w: wGetF(K), m: ts.getHours() * 60 + ts.getMinutes() };
+  } catch (e) { return null; }
+};
+window.flSauverVeille = function (K, wSaveKF) {
+  try {
+    var a = window._flVeilleASauver = window._flVeilleASauver || {};
+    if (a[K] || typeof wSaveKF !== 'function') return;
+    a[K] = 1;
+    setTimeout(function () { try { delete a[K]; wSaveKF(K); } catch (e) {} }, 1500);
+  } catch (e) {}
+};
+/* Le pouls de la veille : une valeur par minute, insérée À SA PLACE (la veille porte déjà les
+   minutes rapatriées de la mémoire du bracelet, plus tardives). */
+window.flPoserPoulsVeille = function (v, bpm) {
+  try {
+    var a = v.w.hr = v.w.hr || [], i = a.length;
+    while (i > 0 && a[i - 1][0] > v.m) i--;
+    if (i > 0 && a[i - 1][0] === v.m) a[i - 1][1] = bpm; else a.splice(i, 0, [v.m, bpm]);
+    return true;
+  } catch (e) { return false; }
+};
+
+/* ═══ 12 nov. 2026 — UNE NUIT TROUÉE N'A PAS DE VFC ═════════════════════════════
+   LE CAS : nuit du 11 au 12 nov., Fitcare. Le pouls arrive toute la nuit (300
+   relevés par 5 min dans `sonde-nuit.txt`), mais les battements fins (R-R)
+   s'arrêtent : 679 à 0 h, 1 027 à 1 h, 27 à 2 h, RIEN de 3 h à 5 h, 5 à 6 h, 622
+   à 7 h. La VFC se calculait quand même, sur le début et la fin de la nuit :
+   64 ms contre une normale de 78 (−1,5 σ), récup 45 — WHOOP 79, VFC 69 « dans la
+   plage ». La règle des deux tiers (v2521) ne voyait rien : elle mesure
+   l'ÉTENDUE première → dernière minute, et un trou au MILIEU ne la réduit pas.
+
+   LA RÈGLE : si les minutes de VFC exploitables laissent un trou de plus de 3 h
+   (bords de nuit compris), la VFC de la nuit n'est pas calculée. La récup passe
+   par le modèle « sans VFC » (flint-recup-cycle.js), qui le dit, et la nuit
+   n'entre dans aucune normale.
+
+   POURQUOI 3 H, MESURÉ sur les nuits Fitcare de novembre où les R-R sont encore
+   là : plus long trou 80 min (10 nov.), 104 (11 nov.), 142 (8 nov.) — toutes
+   gardées ; 292 min la nuit du 12 — refusée. Banc : tests/test-vfc-nuit-trouee.js. */
+window.FL_VFC_TROU_MAX = 180;
+window.flVfcTrouLong = function (mins, am, bm) {
+  try {
+    var dur = ((bm - am + 1440) % 1440) || 1440;
+    if (dur < 240 || !mins || !mins.length) return null;   /* nuit courte, ou trop peu de minutes : d'autres règles décident */
+    var rel = mins.map(function (m) { return ((m - am) % 1440 + 1440) % 1440; })
+                  .filter(function (r) { return r <= dur; })
+                  .sort(function (a, b) { return a - b; });
+    if (!rel.length) return null;
+    var best = { l: rel[0], a: 0, b: rel[0] };
+    for (var i = 1; i < rel.length; i++) {
+      if (rel[i] - rel[i - 1] > best.l) best = { l: rel[i] - rel[i - 1], a: rel[i - 1], b: rel[i] };
+    }
+    if (dur - rel[rel.length - 1] > best.l) best = { l: dur - rel[rel.length - 1], a: rel[rel.length - 1], b: dur };
+    if (best.l <= window.FL_VFC_TROU_MAX) return null;
+    var hh = function (r) { var m = ((am + r) % 1440 + 1440) % 1440;
+      return String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0'); };
+    var de = hh(best.a), a = hh(best.b);
+    return { minutes: best.l, de: de, a: a,
+             phrase: "Le bracelet a cessé d'envoyer tes battements de " + de + ' à ' + a + ' : VFC non calculée cette nuit.' };
+  } catch (e) { return null; }
+};
+
+/* ═══ 12 nov. 2026 — LA NORMALE DE VFC PEUT REPARTIR DE ZÉRO ════════════════════
+   Demandé par Dino : « réinitialise la norme de la VFC comme si c'était le
+   jour 1 du bracelet, pour tester ». Rien n'est effacé : une DATE de départ
+   (`flVfcNormeDepuis`) que `baseStat('hrv')`, le compteur « Encore N nuits »
+   (`flNuitsBase`) et la plage du Moniteur respectent pour tout jour égal ou
+   postérieur. Les jours d'avant gardent leur normale et leur score.
+   Remettre comme avant : la même demande avec « aucune ».
+
+   QUI DEMANDE : seulement le natif, et seulement sur un lancement explicite
+   depuis le Mac (`devicectl … process launch` avec FLINT_NORME_VFC=<date>,
+   CoquilleWeb.swift → `window.flNormeVfcDemandee`). Aucun utilisateur ne peut
+   la déclencher sans le vouloir.
+
+   LE JOUR MÊME : son score repart (`flRecupOublier`), sa première valeur est
+   gardée dans `recovAvant_` — sinon on ne verrait l'effet que le lendemain. */
+(function () {
+  var _dep;   /* undefined = pas encore lu */
+  function num(k) { var p = String(k || '').split('-'); return (+p[0]) * 10000 + (+p[1]) * 100 + (+p[2]); }
+  function depuis() {
+    if (_dep !== undefined) return _dep;
+    var v = null; try { v = DB.get('flVfcNormeDepuis', null); } catch (e) { return null; }
+    var dem = window.flNormeVfcDemandee;
+    if (typeof dem === 'string' && dem) {
+      var cible = (dem === 'aucune') ? null
+                : (/^\d{4}-\d{1,2}-\d{1,2}$/.test(dem) ? dem.split('-').map(Number).join('-') : undefined);
+      if (cible !== undefined && cible !== v) {
+        try { DB.set('flVfcNormeDepuis', cible); } catch (e) {}
+        _dep = cible;
+        try { _bsCle = null; } catch (e) {}          /* la mémoire de baseStat */
+        var K = tk(0);
+        if (cible && num(K) >= num(cible) && typeof window.flRecupOublier === 'function') {
+          var av = null; try { av = DB.get('recov_' + K, null); } catch (e) {}
+          window.flRecupOublier(K);
+          try { if (av != null && !isNaN(+av)) DB.set('recovAvant_' + K, Math.round(+av)); } catch (e) {}
+        }
+        try { window.webkit.messageHandlers.flint.postMessage({ cmd: 'journal',
+          texte: 'VFC — normale repartie de zéro le ' + (cible || '(annulé)') + ' · score du jour ' + K + ' relancé' }); } catch (e) {}
+        return _dep;
+      }
+    }
+    _dep = v; return v;
+  }
+  window.flVfcNormeDepuis = depuis;
+  /* la nuit `k` est-elle hors de la normale d'un jour `cible` ? */
+  window.flVfcHorsNorme = function (k, cible) {
+    var d = depuis(); if (!d) return false;
+    var nd = num(d); return num(cible) >= nd && num(k) < nd;
+  };
+  /* le Moniteur : la nuit d'avant la date garde sa valeur, pas la provenance du jour */
+  window.flVfcMarquerAvant = function (x, k, cible) {
+    if (!x || !x.hrvSrc || !window.flVfcHorsNorme(k, cible)) return x;
+    var c = {}; for (var p in x) c[p] = x[p];
+    c.hrvSrc = x.hrvSrc + '|avant';
+    return c;
+  };
+})();

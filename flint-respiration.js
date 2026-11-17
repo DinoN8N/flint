@@ -337,10 +337,13 @@ window.flRespirationBloc=function(rr){
     régler l'appareil sur WHOOP. 0,15–0,40 est publiée, et elle tombe juste. */
  var pas=FS/N, k0=Math.ceil(0.15/pas), k1=Math.floor(0.40/pas);
  if(k1-k0<4)return null;
- var P=[], meilleur=-1, kMax=k0;
+ /* 15 nov. 2026 — LA TABLE : cos et sin de 2πm/N calculés UNE fois par bloc, la case k lit l'indice k·i mod N
+    (82 fois plus vite ; même verdict et même dixième sur 191 nuits réelles — test-respiration.js § 6). */
+ var P=[], meilleur=-1, kMax=k0, C=new Float64Array(N), S=new Float64Array(N);
+ for(i=0;i<N;i++){C[i]=Math.cos(2*Math.PI*i/N);S[i]=Math.sin(2*Math.PI*i/N);}
  for(var k=k0;k<=k1;k++){
-  var re=0,im=0, w2=2*Math.PI*k/N;
-  for(i=0;i<N;i++){re+=x[i]*Math.cos(w2*i);im-=x[i]*Math.sin(w2*i);}
+  var re=0,im=0, ix=0;
+  for(i=0;i<N;i++){re+=x[i]*C[ix];im-=x[i]*S[ix];ix+=k;if(ix>=N)ix-=N;}
   var p=re*re+im*im;
   P.push(p);
   if(p>meilleur){meilleur=p;kMax=k;}
