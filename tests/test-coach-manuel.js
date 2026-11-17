@@ -151,10 +151,16 @@ console.log('\n4 · Les constantes du MANUEL sont celles du moteur publié');
       /« sans VFC » \(FC de repos, sommeil, respiration, température\) ; sans pouls sur la moitié de la nuit, pas de score/,
       /RECUP_SANS_VFC = \{ c: [0-9.]+, fcRepos: -[0-9.]+, sommeil: [0-9.]+, respiration: -[0-9.]+, temperature: -[0-9.]+ \}[\s\S]{0,2500}?if \(cov != null && cov < 50\) return null/,
       ['flint-recup-cycle.js']],
-    // Les « nuits de base » (16 nov., accueil des 200) : 4 nuits, plus de 4 h,
-    // sur aujourd'hui + 30 jours — un compteur d'affichage, le même aux deux écrans.
-    ['nuits de base : 4, de 4 h ou plus, sur 30 jours', /Premier score après 4 nuits de base \(« NUITS DE BASE » : 4 h ou plus, même source de VFC, sur 30 jours/,
-      /flNuitsBase=function\(\)\{try\{[\s\S]{0,1500}?for\(var i=0;i<=30;i\+\+\)[\s\S]{0,800}?sleepMin<240[\s\S]{0,400}?requises:4/, ['index.html']],
+    // Les « nuits de base » — 17 nov. 2026 : la règle de la RÉCUP, pas celle du
+    // compteur d'affichage (dont la phrase « une nuit de moins de 4 h ne compte
+    // pas » était fausse, retirée de l'app en flint-ios 3926b614). Une normale
+    // exige 3 nuits d'avant (baseStat : moins de 3 → null) ; la VFC écarte les
+    // nuits de moins de 4 h (_minNuit, appliqué au seul champ hrv) ; le pouls de
+    // repos n'a pas de durée minimale.
+    ['nuits de base : la nuit du jour + 3 nuits de VFC de 4 h, ou 3 jours de pouls de repos',
+      /Premier score \(« NUITS DE BASE », n \/ 4\) : la nuit du jour mesurée, plus 3 nuits d'avant de 4 h ou plus avec VFC \(même source\), ou 3 jours d'avant avec une FC de repos, sans durée minimale/,
+      /function baseStat\(field,fen,jour\)\{[\s\S]{0,6000}?const _minNuit=240;[\s\S]{0,1500}?if\(field==='hrv'&&s\.sleepMin!=null&&s\.sleepMin<_minNuit\)continue;[\s\S]{0,1500}?if\(a\.length<3\)\{_bsMemo\[k2\]=null;return null;\}/,
+      ['index.html']],
     // 28 sept. 2026 (v2699) — les protéines se comptent sur le poids de
     // RÉFÉRENCE : le poids, plafonné à celui d'un IMC 25 (flPrudenceApport).
     ['protéines 2.2 / 2.0 g/kg du poids de référence', /2\.2 g\/kg en sèche, 2\.0 sinon, par kg de ton poids plafonné/,

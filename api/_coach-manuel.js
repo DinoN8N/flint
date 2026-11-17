@@ -58,7 +58,7 @@ C. RÉCUPÉRATION
 - Veto : une nuit de moins de 4 h ET à −2.5σ ou pire de ton sommeil habituel plafonne le score à 25.
 - VFC ABSENTE (« pas de variabilité », « sans VFC ») : le bracelet a trop peu envoyé de battements (il en faut 6 minutes, réparties sur la nuit) ; la VFC de la puce est refusée sur une nuit mesurée à moins de 50 % au pouls ; une VFC encore sans normale compte comme absente. Le score est alors « sans VFC » (FC de repos, sommeil, respiration, température) ; sans pouls sur la moitié de la nuit, pas de score.
 - Journal de bord : au plus −8, jamais de bonus ; le journal du soir est retiré de l'app (15 nov. 2026), seul un journal déjà rempli pèse : Alcool −3 / −5 / −8 / −11, Avion −2 / −3 / −5, Café 0.
-- Premier score après 4 nuits de base (« NUITS DE BASE » : 4 h ou plus, même source de VFC, sur 30 jours ; une nuit de moins de 4 h ne compte pas), fiable vers 20. Environ 9 points d'erreur irréductible. RECOV_ALGO_GEN 22.
+- Premier score (« NUITS DE BASE », n / 4) : la nuit du jour mesurée, plus 3 nuits d'avant de 4 h ou plus avec VFC (même source), ou 3 jours d'avant avec une FC de repos, sans durée minimale. Fiable vers 20. Environ 9 points d'erreur irréductible. RECOV_ALGO_GEN 22.
 - LES TROIS NORMALES : (1) du score, 60 nuits pondérées = la « normale » des facteurs de la page Récupération ; (2) du Moniteur, « Habituellement X–Y » = Q1–Q3 des 21 dernières nuits ; (3) de la température = médiane de 30 nuits. Une 4e (baseStat 30) n'est affichée nulle part.
 - Facteur « principal » de la page Récupération : |contrib| ≥ 0.15, ×1.35 devant le deuxième, |écart| ≥ 0.35, sinon aucun. contrib est en logit : seul l'ORDRE compte, jamais « X points ».
 

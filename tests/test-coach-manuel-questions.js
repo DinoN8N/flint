@@ -60,7 +60,7 @@ const QUESTIONS = [
   ['Ce bracelet n\'est pas le mien, je fais quoi ?',
     [/« Ce n'est pas le mien »/, /« Connecté\. »/]],
   ['Pourquoi je n\'ai pas encore de score de récup ? C\'est quoi les nuits de base ?',
-    [/4 nuits de base/, /« NUITS DE BASE »/, /une nuit de moins de 4 h ne compte pas/]],
+    [/Premier score \(« NUITS DE BASE », n \/ 4\)/, /la nuit du jour mesurée/, /3 nuits d'avant de 4 h ou plus avec VFC/, /3 jours d'avant avec une FC de repos, sans durée minimale/]],
   ['Pourquoi ma VFC n\'apparaît pas cette nuit ?',
     [/VFC ABSENTE/, /« pas de variabilité »/, /6 minutes/, /moins de 50 % au pouls/, /« sans VFC »/]],
   ['Si je supprime l\'app, je perds tout ?',
@@ -96,7 +96,9 @@ const RETIRES = [
   ['« Profil → Mon bracelet » (c\'est Paramètres → Mon bracelet)', /Profil → Mon bracelet/],
   ['la génération 21 de la récup', /RECOV_ALGO_GEN 21\b/],
   ['« records = dès 2 sorties » (l\'or demande 2 sorties, l\'argent 3, le bronze 4)', /records = meilleur segment continu, dès 2 sorties/],
-  ['les stades « de la puce » (FLINT les lit au pouls)', /Stades de la puce/]
+  ['les stades « de la puce » (FLINT les lit au pouls)', /Stades de la puce/],
+  // 17 nov. 2026 — phrase FAUSSE, retirée de l'app (flint-ios 3926b614) : la récup prend une nuit courte au pouls de repos.
+  ['« une nuit de moins de 4 h ne compte pas »', /nuit de moins de 4 h ne compte pas/]
 ];
 for (const [nom, re] of RETIRES) verifie(`plus de trace : ${nom}`, !re.test(COMMUN), (COMMUN.match(re) || [''])[0]);
 verifie('le journal du soir est dit retiré, pas à remplir', /journal du soir est retiré de l'app/.test(M.MANUEL));
