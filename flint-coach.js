@@ -1395,8 +1395,8 @@ window.flCoachOutils=function(appels){
    télécharge pas tout (NATIF_MINIMUM) rend moins de blocs, il ne lève pas. */
 var FLCB_M={
  recup:{u:'pct',d:0,g:'b'}, vfc:{u:'ms',d:0,g:'l'}, fcRepos:{u:'bpm',d:0,g:'l'},
- dormi:{u:'duree',d:0,g:'b'}, scoreSommeil:{u:'pct',d:0,g:'b',h:'sleepscore'}, dette7n:{u:'duree',d:0,g:'b'},
- effort:{u:'sur20',d:1,g:'b',h:'charge'}, kcalBrulees:{u:'kcal',d:0,g:'l',h:'kcalOut'},
+ dormi:{u:'duree',d:0,g:'l'}, scoreSommeil:{u:'pct',d:0,g:'b',h:'sleepscore'}, dette7n:{u:'duree',d:0,g:'b'},
+ effort:{u:'sur20',d:1,g:'b',h:'charge'}, kcalBrulees:{u:'kcal',d:0,g:'b',h:'kcalOut'},
  kcalMangees:{u:'kcal',d:0,g:'b',h:'kcalIn'}, balance:{u:'kcal',d:0,g:'b',s:1}, pas:{u:'pas',d:0,g:'b'},
  poids:{u:'poids',d:1,g:'l'}, stress:{u:'stress',d:2,g:'l'}, resp:{u:'rpm',d:1,g:'l'},
  temp:{u:'temp',d:1,g:'l',s:1}, spo2Bas:{u:'pct',d:0,g:'l'}};

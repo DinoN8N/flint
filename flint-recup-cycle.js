@@ -736,7 +736,7 @@
            sceau) et que la nuit a VRAIMENT bougé, la récup est rejugée sur elle SANS consommer la
            réouverture. Ce qu'elle protège — un score qui oscille à nuit inchangée — reste refusé : le
            motif doit être la nuit, pas le journal ni une dérive. Les bornes sont celles des appelants
-           (`CORR_MAX` corrections par nuit, `recupSuit_` une fois par jour, 4 h après le réveil).
+           (`CORR_MAX` corrections par nuit, `recupSuit_` trois fois par jour, 4 h après le réveil).
            Le jour même seulement : le calcul ne sait viser que `recovery(0)`. */
         var _parNuit = !!(opts && opts.nuitRescellee === true && K === tk(0)
                           && nuitABouge((fige && fige.e) || {}, emp.e || {}));
@@ -1882,7 +1882,9 @@ window.flRecupSansNormeVfc = function (t, off) {
     if (!t || t.hrv == null) return null;
     var _o = Math.min(0, off || 0), K = tk(_o);
     var r = null; try { r = DB.get('recov_' + K, null); } catch (e) { return null; }
-    if (r != null && !isNaN(+r)) {
+    /* 21 nov. 2026 — `_flRecupDetailSeul` : la page Récupération redemande le DÉTAIL d'un jour dont le score est déjà au registre et dont
+       la VFC vient de passer au bracelet sans repère (index.html, « LE DÉTAIL D'UN JOUR FIGÉ »). Le score affiché reste celui du registre. */
+    if (r != null && !isNaN(+r) && window._flRecupDetailSeul !== true) {
       if (_o !== 0) return null;
       if (typeof window.flRecupProvenance !== 'function' || window.flRecupProvenance(K, t) !== 'sansVfc') return null;
     }
@@ -1930,6 +1932,7 @@ window.flVfcMotif = function (K, rv, rvd, s) {
     var r = (typeof flRmssdNuit === 'function') ? (flRmssdNuit(K) || {}) : {};
     var T = function (x) { return (typeof flT === 'function') ? flT(x) : x; };
     var a = r.raison ? T(r.raison) : null;
+    try { if (typeof window.flVfcAttendBracelet === 'function' && window.flVfcAttendBracelet(K)) a = (typeof tk === 'function' && K === tk(0)) ? T("Le bracelet n'a pas encore rendu assez de mesures de VFC pour cette nuit.") : T("Le bracelet n'a pas rendu assez de mesures de VFC pour cette nuit."); } catch (e2) {}   /* 21 nov. 2026 — bracelet en 2.3.7, moins de trois valeurs horaires */
     if (window.flRecupEstSansVfc(K, rv, rvd, s) === true) {
       var b = T('Récup calculée sans VFC : pouls de repos, sommeil, respiration, température.');
       return a ? a + ' ' + b : b;

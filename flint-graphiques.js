@@ -293,7 +293,7 @@ window.flHebdoAnnee = function (key, recul, leger) {
   var mn, mx, ticks;
   if (cfg.ticks) { mx = cfg.ticks[0]; mn = cfg.ticks[cfg.ticks.length - 1]; ticks = cfg.ticks; }
   else if (cfg.kind === 'bars') { ticks = flhTicksAuto(allv.length ? Math.max.apply(null, allv) : 1, cfg.tickSteps); mx = ticks[0]; mn = 0; }
-  else { var rr = flhRange(allv.length ? allv : [0, 1]); mn = rr.min; mx = rr.max; ticks = rr.ticks; }
+  else { var rr = flhRange(allv.length ? allv : [0, 1], cfg); mn = rr.min; mx = rr.max; ticks = rr.ticks; }
   var plg = null;
   if (estPlage) {
    var cib = null; try { cib = cfg.cibles ? cfg.cibles() : null; } catch (e) {}

@@ -3324,8 +3324,12 @@ function restageSleep(dayKey) {
                      /* 17 nov. 2026 — le premier sommeil trop court pour le bracelet : voir « UN PREMIER SOMMEIL… » */
                      premierDuree: 20, premierEcart: 15, premierEcartMax: 120, premierUsage: 30, premierUsageMin: 10,
                      /* 11 nov. 2026 (v3070) — voir « LE SECOND SOMMEIL A SON PROPRE POULS DE REPOS » */
-                     secondEcart: 30, secondFen: 180, secondPlafond: 6 };
-  var SECOND_DIT = {};
+                     secondEcart: 30, secondFen: 180, secondPlafond: 6,
+                     /* 18 nov. 2026 — voir « UN LONG RÉVEIL DEMANDE UN TÉMOIN » */
+                     sansTemoinMin: 10, sansTemoinFen: 10, sansTemoinSeuil: 9, sansTemoinFin: 30,
+                     /* 18 nov. 2026 — voir « DES PICS COLLÉS NE FONT PAS UN RÉVEIL » */
+                     salveEcartNuit: 2 };
+  var SECOND_DIT = {}, SANS_TEMOIN_DIT = {}, DOUBLE_IMMOBILE_DIT = {};
   window.flNuitCoeurReglages = NUIT_COEUR;
 
   /* ═══ 11 nov. 2026 (v3074) — LES MARGES SUIVENT LE CŒUR DE CHACUN ══════════════════════════
@@ -3358,7 +3362,7 @@ function restageSleep(dayKey) {
      WHOOP et FLINT pendant deux semaines. `salve` sert aussi de DURÉE (« retour » plus bas) : la
      marge des salves voyage sous `salveBpm`, `salve` ne change pas. */
   var AMPLITUDE = { ref: 14, jours: 14, recul: 28, minutes: 600, mini: 5, bas: 0.85, haut: 1.15, pleinBas: 0.7, pleinHaut: 1.35, plancher: 0.6, plafond: 1.6, version: 1,
-                    cles: ['calme', 'montee', 'eveil', 'retour', 'secondPlafond', 'netReveil', 'picCoucher'] };
+                    cles: ['calme', 'montee', 'eveil', 'retour', 'secondPlafond', 'netReveil', 'picCoucher', 'sansTemoinSeuil'] };
   window.flAmplitudeReglages = AMPLITUDE;
   var _ampMemo = {};
   window.flAmplitudeCoeur = function (K) {
@@ -4294,6 +4298,79 @@ function restageSleep(dayKey) {
       for (var zb3 = av3 + 1; zb3 < s3; zb3++) { bords.push(out[zb3][0]); bordsBase.push([out[zb3][0], Math.round(ba3)]); }
       s3 = e3;
     }
+    /* ═══ 20 nov. 2026 — LE PALIER DOUBLÉ D'UN CORPS IMMOBILE (quatrième passe) ═══════════════════
+       « Je veux ne jamais pouvoir l'avoir » (Dino, devant la bosse 81-102 de 00:00 à 00:20 sur « Ma
+       nuit »). Rejoué sur les 31 jours de sa base : 26 paliers suspects, 8 corrigés. Les trois passes
+       jugent sur la FORME seule, et à un demi-battement près : la nuit du 20 était refusée pour une
+       sortie à 51 (50,5 admis), celles des 10, 11 et 16 nov. pour un palier de 7 à 9 minutes.
+       Cette passe ajoute une PREUVE que la forme n'a pas : le bracelet compte les pas. Elle ne juge
+       que ce que les trois premières ont laissé, et seulement si l'appelant donne les pas
+       (`flPoulsCorrigerJour` ; sans eux rien ne change). Toutes ces conditions ensemble :
+         · une ENTRÉE brusque depuis le repos (+25 en 3 min au plus) ;
+         · un palier de 7 à 180 min dont chaque minute vaut 1,5 à 2,5 fois le vrai pouls (la moyenne
+           du repos d'avant et de celui d'après) et dont la médiane en vaut 1,75 à 2,3 fois ;
+         · une SORTIE verticale : une minute de bord au plus, puis le repos (repos d'après + 6) ;
+         · le repos d'après ne dépasse pas celui d'avant de plus de 5, ni ne tombe de plus de 12 ;
+         · AUCUN PAS : les photos de pas du bracelet (toutes les ~11 min) sont à zéro de 20 min avant
+           à 20 min après, trois au moins, une avant et une après ; faute de photos, les pas de
+           chaque heure touchée sont à zéro. Un seul pas compté, et la passe ne touche à rien ;
+         · un palier à 130 au plus : le double d'un pouls de repos. Au-delà, on ne juge pas.
+       Un effort, même immobile (vélo), ne retombe pas au repos en deux minutes et s'entoure de pas ;
+       un réveil ne tient pas le double pile. Banc : tests/test-pouls-double.js § 8. */
+    var opts4 = arguments.length > 1 ? arguments[1] : null;
+    var pasPh = (opts4 && Array.isArray(opts4.pas)) ? opts4.pas : [], pasH = (opts4 && Array.isArray(opts4.heures)) ? opts4.heures : [];
+    if (pasPh.length || pasH.length) {
+      var immobile4 = function (m0, m1) {
+        var k, p, nPh = 0, avant = false, apres = false, vuPh = false;
+        for (k = 0; k < pasPh.length; k++) {
+          p = pasPh[k]; if (!p || p[0] == null || p[0] < m0 - 20 || p[0] > m1 + 20) continue;
+          vuPh = true;
+          if (+p[1] > 0) return false;
+          nPh++; if (p[0] <= m0) avant = true; if (p[0] >= m1) apres = true;
+        }
+        if (vuPh) return nPh >= 3 && avant && apres;
+        var h0 = Math.floor(m0 / 60), h1 = Math.floor(m1 / 60), vues = {};
+        for (k = 0; k < pasH.length; k++) {
+          p = pasH[k]; if (!p || p[0] == null) continue;
+          var hh = Math.floor(p[0] / 60);
+          if (hh < h0 || hh > h1) continue;
+          if (+p[1] > 0) return false;
+          vues[hh] = true;
+        }
+        for (var h = h0; h <= h1; h++) if (!vues[h]) return false;
+        return true;
+      };
+      for (var s4 = 1; s4 < out.length; s4++) {
+        if (fait[s4] || !(out[s4][1] > limRepos)) continue;
+        var av4 = null;
+        for (var q7 = s4 - 1; q7 >= 0 && out[s4][0] - out[q7][0] <= 3; q7--) if (out[q7][1] <= limRepos && out[s4][1] - out[q7][1] >= 25) { av4 = q7; break; }
+        if (av4 == null) continue;
+        var av4P = [];
+        for (var q8 = av4; q8 >= 0 && out[av4][0] - out[q8][0] <= 20 && av4P.length < 10; q8--) if (out[q8][1] > 0) av4P.push(out[q8][1]);
+        if (av4P.length < 5) continue;
+        var bA0 = med(av4P), bAR = av4P.filter(function (y) { return y <= 1.3 * bA0; }), bA = bAR.length >= 5 ? med(bAR) : bA0;
+        if (!(bA <= limRepos)) continue;
+        var e4 = s4;
+        while (e4 + 1 < out.length && out[e4 + 1][0] - out[e4][0] <= 2 && !fait[e4 + 1] && out[e4 + 1][1] >= 1.6 * bA) e4++;
+        var duree4 = out[e4][0] - out[s4][0];
+        if (duree4 < 6 || duree4 > 180) { s4 = e4; continue; }
+        var x4 = e4 + 1, y4 = e4 + 2;
+        if (!(y4 < out.length) || out[y4][0] - out[e4][0] > 3) { s4 = e4; continue; }
+        var ap4 = [];
+        for (var y5 = y4; y5 < out.length && out[y5][0] - out[y4][0] <= 20 && ap4.length < 10; y5++) if (out[y5][1] > 0) ap4.push(out[y5][1]);
+        if (ap4.length < 5) { s4 = e4; continue; }
+        var bB0 = med(ap4), bBR = ap4.filter(function (y) { return y <= 1.3 * bB0; }), bB = bBR.length >= 5 ? med(bBR) : bB0;
+        if (!(bB <= limRepos) || bB > bA + 5 || bB < bA - 12 || !(out[y4][1] <= bB + 6) || !(out[x4][1] <= bB + 35)) { s4 = e4; continue; }
+        var pal4 = out.slice(s4, e4 + 1).map(function (y) { return y[1]; }), mp4 = med(pal4), ref4 = (bA + bB) / 2;
+        if (!(mp4 >= 1.75 * ref4 && mp4 <= 2.3 * ref4) || mp4 > 130
+            || pal4.some(function (y) { return y < 1.5 * ref4 || y > 2.5 * ref4; })
+            || !immobile4(out[s4][0], out[e4][0])) { s4 = e4; continue; }
+        for (var z4 = s4; z4 <= e4; z4++) { out[z4][1] = Math.round(out[z4][1] / 2); n++; fait[z4] = true; }
+        for (var zb4 = av4 + 1; zb4 < s4; zb4++) { bords.push(out[zb4][0]); bordsBase.push([out[zb4][0], Math.round(bA)]); }
+        if (out[x4][1] > bB + 6) { bords.push(out[x4][0]); bordsBase.push([out[x4][0], Math.round(bB)]); }
+        s4 = e4;
+      }
+    }
     return { pts: out, n: n, bords: bords, bordsBase: bordsBase };
   };
 
@@ -4348,15 +4425,54 @@ function restageSleep(dayKey) {
     (Array.isArray(veilleHr) ? veilleHr : []).forEach(function (x) { if (x && x[0] >= 1380 && +x[1] > 0) pts.push([x[0] - 1440, +x[1]]); });
     d.hr.forEach(function (x) { if (x && x[0] != null && +x[1] > 0) pts.push([+x[0], +x[1]]); });
     pts.sort(function (a, c) { return a[0] - c[0]; });
-    var dd = window.flPoulsDedouble(pts);
-    if (!dd.n) return 0;
+    /* 20 nov. 2026 — les pas du bracelet (photos et heures), veille comprise, pour la quatrième passe. */
+    var veille4 = arguments.length > 2 ? arguments[2] : null, pas4 = [], heures4 = [];
+    [[veille4, -1440], [d, 0]].forEach(function (x) {
+      var w4 = x[0]; if (!w4) return;
+      (Array.isArray(w4.pasPhoto) ? w4.pasPhoto : []).forEach(function (p) { if (p && p[0] != null) pas4.push([+p[0] + x[1], +p[1] || 0]); });
+      (Array.isArray(w4.pasHeure) ? w4.pasHeure : []).forEach(function (p) { if (p && p[0] != null) heures4.push([+p[0] + x[1], +p[1] || 0]); });
+    });
+    var dd = window.flPoulsDedouble(pts, { pas: pas4, heures: heures4 });
     var corr = {};
-    for (var i = 0; i < pts.length; i++) if (pts[i][0] >= 0 && dd.pts[i][1] !== pts[i][1]) corr[pts[i][0]] = dd.pts[i][1];
-    (dd.bordsBase || []).forEach(function (x) { if (x[0] >= 0) corr[x[0]] = x[1]; });
+    if (dd.n) {
+      for (var i = 0; i < pts.length; i++) if (pts[i][0] >= 0 && dd.pts[i][1] !== pts[i][1]) corr[pts[i][0]] = dd.pts[i][1];
+      (dd.bordsBase || []).forEach(function (x) { if (x[0] >= 0) corr[x[0]] = x[1]; });
+    }
     var brut = Array.isArray(d.hrDouble) ? d.hrDouble : [], vu = {}, n = 0;
     brut.forEach(function (x) { vu[x[0]] = true; });
+    /* ═══ 20 nov. 2026 — UNE MINUTE JUGÉE DOUBLÉE LE RESTE ═══════════════════════════════════════
+       Matin du 20, iPhone de Dino : la page « Ma nuit » s'ouvre avec une bosse à 81-102 de 00:00 à
+       00:20 (le double de 45, parti à l'heure pile) et une échelle 40-100, puis redevient normale
+       quelques secondes après. La règle avait bien jugé ces 21 minutes doublées (`hrDouble` les
+       porte) ; mais chaque relecture de la mémoire du bracelet RÉÉCRIT `hr` avec les valeurs brutes
+       de son fichier, et il faut alors tout rejuger sur des valeurs un peu différentes (81, 85, 89…
+       au lieu de 75, 90, 90…). Ce palier-là tremble : rejugé, il est refusé d'un demi-battement
+       (sortie à 51 pour 50,5 admis) — la bosse revenait, puis repartait à l'écriture suivante.
+       Le verdict ne se rejoue plus : une minute déjà jugée doublée (elle est dans `hrDouble`, avec
+       sa valeur d'origine) qui revient BRUTE est de nouveau divisée par deux. « Brute » se lit sur
+       deux signes ensemble : elle vaut au moins 80 % de sa valeur d'origine, ET au moins 1,6 fois
+       le pouls vrai autour (médiane des minutes voisines, à 45 min près, jamais jugées doublées).
+       Une minute déjà corrigée (≈ la moitié, ou le repos pour un bord) ne passe aucun des deux :
+       rien n'est divisé deux fois. Le PREMIER verdict reste celui de `flPoulsDedouble`, inchangé :
+       un jour sans `hrDouble` n'est pas touché. Banc : tests/test-pouls-double.js § 7. */
+    var orig = {}, aOrig = false;
+    brut.forEach(function (x) { if (x && +x[1] > 0) { orig[x[0]] = +x[1]; aOrig = true; } });
+    function vraiAutour(m) {
+      var a = [];
+      for (var k = 0; k < d.hr.length; k++) {
+        var y = d.hr[k];
+        if (y && orig[y[0]] == null && +y[1] > 0 && Math.abs(y[0] - m) <= 45) a.push(+y[1]);
+      }
+      if (a.length < 5) return null;
+      a.sort(function (p, q) { return p - q; });
+      return a[a.length >> 1];
+    }
     d.hr.forEach(function (x) {
       var c = x ? corr[x[0]] : null;
+      if (c == null && aOrig && x && orig[x[0]] > 0 && +x[1] >= 0.8 * orig[x[0]]) {
+        var rf = vraiAutour(x[0]);
+        if (rf != null && +x[1] >= 1.6 * rf) c = Math.round(+x[1] / 2);
+      }
       if (c == null || c === x[1]) return;
       if (!vu[x[0]]) { brut.push([x[0], x[1]]); vu[x[0]] = true; }
       x[1] = c; n++;
@@ -4693,6 +4809,114 @@ function restageSleep(dayKey) {
       });
       function med(v) { v = v.slice().sort(function (x, y) { return x - y; });
         var n = v.length; return !n ? null : (n % 2 ? v[n >> 1] : (v[n / 2 - 1] + v[n / 2]) / 2); }
+      /* 18 nov. 2026 — LES TÉMOINS DU BRACELET, lus une fois : ses minutes (0 = « éveillé », 1 à 3 =
+         « endormi », rien hors de ses fichiers) et ses deux compteurs de pas, remis à zéro chaque
+         heure — sa photo (toutes les 10 min) qui monte date un mouvement à 10 min près ; sa mémoire
+         de l'heure ne sert que là où la photo manque (lien coupé), sur l'heure entière de part et
+         d'autre. Voir « UN LONG RÉVEIL DEMANDE UN TÉMOIN » et « LE POULS DOUBLÉ D'UN DORMEUR IMMOBILE ». */
+      var TB = { aH: false, code: new Array(N), PB: new Array(N) };
+      try {
+        [wKN.nuitFitcare].concat(Array.isArray(wKN.siestesFitcare) ? wKN.siestesFitcare : []).forEach(function (x) {
+          if (!x || !(+x.debut > 0) || !Array.isArray(x.hypno) || !x.hypno.length) return;
+          var dT = Math.round((+x.debut * 1000 - t0) / 60000);
+          for (var zT = 0; zT < x.hypno.length; zT++) { var kT = dT + zT; if (kT >= 0 && kT < N) { TB.code[kT] = +x.hypno[zT]; TB.aH = true; } }
+        });
+        if (TB.aH) [[Kv, 720, -720], [K, 0, 720]].forEach(function (jr) {
+          var wj = jr[0] === K ? wKN : (flsLire('watch_' + jr[0], null) || {});
+          if (wj && typeof window.flJourVu === 'function') wj = window.flJourVu(jr[0], wj);   /* au cadran du téléphone, comme le pouls */
+          var ph = (Array.isArray(wj.pasPhoto) ? wj.pasPhoto : []).filter(function (x) { return x && x[0] != null && x[0] >= jr[1]; })
+            .sort(function (x, y) { return x[0] - y[0]; }), vu = {};
+          ph.forEach(function (x, iP) {
+            for (var zV = x[0] - 15; zV <= x[0] + 15; zV++) vu[zV] = true;
+            var prev = (iP > 0 && Math.floor(ph[iP - 1][0] / 60) === Math.floor(x[0] / 60)) ? ph[iP - 1] : null;
+            if (!(prev ? +x[1] > +prev[1] : +x[1] > 0)) return;
+            for (var zP = x[0] - 10; zP <= x[0]; zP++) { var kP = zP + jr[2]; if (kP >= 0 && kP < N) TB.PB[kP] = true; }
+          });
+          (Array.isArray(wj.pasHeure) ? wj.pasHeure : []).forEach(function (x) {
+            if (!x || !(+x[1] > 0) || x[0] < jr[1] - 60) return;
+            for (var zH = x[0] - 60; zH < x[0] + 60; zH++) { var kH = zH + jr[2]; if (!vu[zH] && kH >= 0 && kH < N) TB.PB[kH] = true; }
+          });
+        });
+      } catch (eT) { TB.aH = false; }
+      /* 19 nov. 2026 — LE TÉMOIN À ± 10 MIN, PLUS ± 20. Nuit du 19 : téléphone déverrouillé 40 s à 04:19, puis un
+         plateau de pouls (repos + 8 à + 12) de 04:33 à 04:51 — WHOOP, lu à la minute sur la capture de Dino, y voit du
+         paradoxal, et un réveil de 5 min à 04:18. À ± 20 min le déverrouillage « témoignait » pour un plateau commencé
+         14 min après lui : 18 min de faux réveil. Un témoin prouve qu'on était éveillé QUAND il a eu lieu, pas un quart
+         d'heure plus tard. Mesuré de ± 20 à ± 5 sur les 32 nuits de la base (labo.js) : la nuit du 19 perd ce bloc (38 →
+         20 min d'éveil, ce que FLINT appelle « réveil » est du réveil chez WHOOP à 80 % au lieu de 42 %), celle du 9 nov.
+         change de 3 min, aucune autre, aucune heure de coucher ni de réveil ; les sept longs réveils connus (5, 6, 11 ×2,
+         15, 16 et 17 nov.) restent entiers : leurs témoins sont DEDANS. Vaut pour les trois règles (plateau, pouls
+         doublé, pics collés). Banc : tests/test-eveil-sans-temoin.js, cas J et K. */
+      function sansAucunTemoin(a, b) {   /* de a à b compris : le bracelet écrit « endormi » partout, et rien ne bouge à ± sansTemoinFen */
+        if (!TB.aH) return false;
+        for (var zR = a; zR <= b; zR++) if (!(TB.code[zR] >= 1)) return false;
+        for (var zW = Math.max(0, a - p.sansTemoinFen); zW <= Math.min(N - 1, b + p.sansTemoinFen); zW++)
+          if (P[zW] > 0 || (U && U[zW]) || TB.code[zW] === 0 || TB.PB[zW]) return false;
+        return true;
+      }
+      /* ═══ 18 nov. 2026 — LE POULS DOUBLÉ D'UN DORMEUR IMMOBILE ═══════════════════════════════════
+         LE FAIT. Dino, 18 nov. : « je veux plus qu'on se trompe avec des faux pouls ». Trois nuits de
+         la base gardent un palier au DOUBLE du repos que `flPoulsDedouble` ne prend pas : 30 oct.
+         01:38 (22 min à 106 pour 53), 11 nov. 23:14 (9 min à 101 pour 54), 15 nov. 03:00 (17 min à
+         100 pour 48 — pris le 15 par la troisième passe, puis perdu : la mémoire du bracelet,
+         relue, a rendu 86 pour 82 et 103 pour 102, et le palier a manqué la tolérance d'un demi-
+         battement). Chacun était compté en éveil : 22, 14 et 22 min.
+         LA CAUSE. `flPoulsDedouble` ne sait rien du dormeur : pour ne pas diviser un vrai effort, il
+         exige un palier PLAT à quelques battements près. Un capteur qui ne double pas toutes les
+         minutes à fond lui échappe.
+         LA RÈGLE. Ici on sait ce que le dormeur faisait. Un palier de 9 à 180 min, entré depuis le
+         repos en 4 min au plus et retombé au repos en 3 min au plus, dont la médiane vaut 1,8 à 2,2
+         fois le repos (le plus bas de ceux d'avant et d'après), aux trois quarts de ses minutes
+         entre 1,7 et 2,3 fois ce repos, est divisé par deux SI le bracelet écrit « endormi » sur
+         toutes ses minutes ET qu'il n'y a aucun témoin à ± `sansTemoinFen` min (ni pas, ni
+         téléphone, ni minute « éveillé »). Un cœur ne double pas, puis ne perd pas cinquante
+         battements en une minute, sans que le corps bouge. Avec un témoin, ou sans fichier
+         détaillé du bracelet, rien ne change. Banc : tests/test-eveil-sans-temoin.js § pouls. */
+      (function () {
+        if (!TB.aH || !(p.sansTemoinMin > 0)) return;
+        var hV = []; for (var iV = 0; iV < N; iV++) if (H[iV] != null) hV.push(H[iV]);
+        var limD = window.flPoulsLimiteRepos ? window.flPoulsLimiteRepos(hV) : 75, nD = 0, ditsD = [];
+        for (var s = 20; s < N; s++) {
+          if (H[s] == null || !(H[s] > limD)) continue;
+          var av = [];
+          for (var q = s - 1; q >= s - 20 && av.length < 10; q--) if (H[q] != null) av.push(H[q]);
+          if (av.length < 5) continue;
+          var b0 = med(av), avR = av.filter(function (y) { return y <= 1.3 * b0; }), bp = avR.length >= 5 ? med(avR) : b0;
+          if (!(bp <= limD) || !(H[s] >= 1.5 * bp)) continue;
+          var ent = -1;
+          for (var q2 = s - 1; q2 >= s - 3; q2--) if (H[q2] != null && H[q2] <= 1.3 * bp) { ent = q2; break; }
+          if (ent < 0) continue;
+          var e = s;
+          while (e + 1 < N) {
+            if (H[e + 1] != null && H[e + 1] >= 1.5 * bp) { e++; continue; }
+            if (H[e + 1] == null && e + 2 < N && H[e + 2] != null && H[e + 2] >= 1.5 * bp) { e += 2; continue; }
+            break;
+          }
+          if (e - s + 1 < 9 || e - s + 1 > 180) { s = e; continue; }
+          var x = -1;
+          for (var y = e + 1; y <= Math.min(N - 1, e + 3); y++) if (H[y] != null && H[y] <= 1.3 * bp) { x = y; break; }
+          if (x < 0) { s = e; continue; }
+          var ap = [];
+          for (var y2 = x; y2 < Math.min(N, x + 20) && ap.length < 10; y2++) if (H[y2] != null) ap.push(H[y2]);
+          if (ap.length < 5) { s = e; continue; }
+          var a0m = med(ap), apR = ap.filter(function (u) { return u <= 1.3 * a0m; }), ba = apR.length >= 5 ? med(apR) : a0m;
+          var bas = Math.min(bp, ba), vals = [];
+          for (var z = s; z <= e; z++) if (H[z] != null) vals.push(H[z]);
+          var mp = med(vals), plein = vals.filter(function (u) { return u >= 1.7 * bas && u <= 2.3 * bas; }).length;
+          /* l'entrée et la sortie sont BRUSQUES : du repos au palier plein (1,7 fois le repos) en 4 min au plus, et retour en 3 */
+          var fp = -1, lp = -1;
+          for (var zf = s; zf <= e; zf++) if (H[zf] != null && H[zf] >= 1.7 * bas) { if (fp < 0) fp = zf; lp = zf; }
+          if (!(ba <= limD) || ba > bp + 5 || !(mp >= 1.8 * bas && mp <= 2.2 * bas) || plein < 0.75 * vals.length
+              || fp < 0 || fp - ent > 4 || x - lp > 3 || !sansAucunTemoin(s, e)) { s = e; continue; }
+          for (var zh = s; zh <= e; zh++) if (H[zh] != null) { H[zh] = Math.round(H[zh] / 2); nD++; }
+          for (var zb = ent + 1; zb < s; zb++) bordsDouble[zb] = true;
+          for (var zx = e + 1; zx < x; zx++) bordsDouble[zx] = true;
+          var dD = new Date(t0 + s * 60000);
+          ditsD.push(dD.getHours() + 'h' + ('0' + dD.getMinutes()).slice(-2) + ' (' + (e - s + 1) + ' min à ' + Math.round(mp) + ' pour un repos à ' + Math.round(bas) + ')');
+          s = e;
+        }
+        if (nD && DOUBLE_IMMOBILE_DIT[K] !== ditsD.join(',')) { DOUBLE_IMMOBILE_DIT[K] = ditsD.join(','); flsLog('nuit ' + K + ' : pouls DOUBLÉ d\'un dormeur immobile (bracelet « endormi », ni pas ni téléphone) divisé par deux sur ' + nD + ' minute(s) — ' + ditsD.join(', ')); }
+      })();
       var R = new Array(N), p5 = new Array(N);
       for (i = 0; i < N; i++) {
         var v = [];
@@ -4827,12 +5051,53 @@ function restageSleep(dayKey) {
          c'est ce que l'ancien facteur d'échelle ne garantissait pas. */
       var eveil = 0, dorm = [], etats = [];
       /* 27 oct. — les salves du Fitcare (flSalvesEveil) ; l'ancien bracelet n'en a pas */
-      var salve = null;
+      /* ═══ 18 nov. 2026 — DES PICS COLLÉS NE FONT PAS UN RÉVEIL ═══════════════════════════════════
+         LE FAIT. Dino, 18 nov. : « si je dors, il n'y aura pas écrit réveil ». Sa nuit, une fois les
+         longs faux réveils retirés, écrivait encore 42 min d'éveil en blocs de 5 à 9 min : 02:34 →
+         02:43, neuf minutes pour trois pics d'une minute (72, 79, 65) dans un pouls à 49 ; WHOOP y
+         trace une minute, et 25 min sur la nuit.
+         LA CAUSE. `flSalvesEveil` colle en UN éveil les pics à 5 min d'écart au plus (`salveEcart`,
+         réglé le 27 oct. sur deux nuits) : les minutes calmes entre deux pics deviennent de l'éveil.
+         LA RÈGLE. Un bloc de pics collés ne reste collé que s'il a un témoin (un pas, le téléphone
+         déverrouillé, une minute « éveillé » du bracelet à ± `sansTemoinFen` min), ou s'il touche les
+         `sansTemoinFin` dernières minutes de la nuit (le réveil reste au cœur, calibré avec ce
+         collage). Sans témoin, quand le bracelet écrit « endormi » sur tout le bloc, seuls les pics à
+         `salveEcartNuit` min d'écart au plus (2) restent ensemble : un micro-réveil dure ce que
+         durent ses pics. Sans fichier détaillé du bracelet, rien ne change.
+         MESURÉ (17 nuits Fitcare, les deux règles du matin déjà posées) : 9 nuits changent, de 3 à
+         18 min ; aucune heure de coucher ni de réveil ne bouge. 18 nov. 42 → 24 min d'éveil (WHOOP
+         25), plus aucun bloc de 5 min ; 15 nov. 40 → 28 (38) ; 3 nov. 14 → 11 (20) ; 11 nov. 173 →
+         170 (161). Écart moyen à WHOOP sur 7 nuits : 12,0 → 10,9. Les blocs de 5 min et plus qui
+         restent sont les vrais réveils (5, 6, 11, 16, 17 nov.) et des blocs à témoin. 15 nuits de
+         sept.-oct. : identiques. `wakeEvents` (index.html) ne compte plus un « réveil » qu'à partir
+         de 5 min. Banc : tests/test-eveil-sans-temoin.js § pics. */
+      var salve = null, salveColle = null;
       try {
         var _wK = flsLire('watch_' + K, null) || {};
-        if (typeof window.flInstrumentVfc === 'function' && window.flInstrumentVfc(_wK.marque) === 'fitcare')
-          salve = window.flSalvesEveil(H, 0, N, p);
-      } catch (e) { salve = null; }
+        if (typeof window.flInstrumentVfc === 'function' && window.flInstrumentVfc(_wK.marque) === 'fitcare') {
+          salveColle = window.flSalvesEveil(H, 0, N, p);
+          salve = salveColle;
+          if (TB.aH && p.sansTemoinMin > 0 && p.salveEcartNuit != null && p.salveEcartNuit < p.salveEcart) {
+            var pN = {}, cN; for (cN in p) pN[cN] = p[cN];
+            pN.salveEcart = p.salveEcartNuit;
+            salve = window.flSalvesEveil(H, 0, N, pN);
+          }
+        }
+      } catch (e) { salve = null; salveColle = null; }
+      /* `salveVue[i]` : la minute est un éveil par ses pics, pour la fin de nuit `fin` du moment. */
+      var salveVue = null;
+      function salves() {
+        salveVue = salve;
+        if (!salve || salve === salveColle) return;
+        salveVue = new Array(N);
+        for (var iS = 0; iS < N; iS++) {
+          if (!salveColle[iS]) continue;
+          var jS = iS; while (jS + 1 < N && salveColle[jS + 1]) jS++;
+          var garde = (jS >= fin - p.sansTemoinFin) || !sansAucunTemoin(iS, jS);
+          for (var zS = iS; zS <= jS; zS++) if (garde || salve[zS]) salveVue[zS] = true;
+          iS = jS;
+        }
+      }
       /* ═══ 4 nov. 2026 — LA MESURE DE L'HEURE PILE N'EST PAS UN RÉVEIL ═══════════════════════════
          Le Fitcare mesure l'oxygène et la VFC à chaque heure pile (voir `flPoulsDedouble`) et son pouls
          saute une minute : la nuit du 4 nov., 2h 50 → 76, 3h 46 → 67, 7h 51 → 73. Relue avec toutes
@@ -4912,13 +5177,78 @@ function restageSleep(dayKey) {
           }
         } catch (eS) { k2 = -1; F2 = F; }
       }
+      /* ═══ 18 nov. 2026 — UN LONG RÉVEIL DEMANDE UN TÉMOIN ═══════════════════════════════════════
+         LE FAIT. Nuit du 17 au 18 nov. : FLINT écrit 1 h 32 d'éveil, WHOOP 25 min, et Dino : « il y a
+         un truc qui est complètement faux, j'ai jamais été réveillé comme ça autant ». Le bracelet
+         n'écrit AUCUN éveil de la nuit. Deux blocs font l'écart : 03:31 → 04:01 (30 min) et 05:29 →
+         05:44 (15 min), pouls à 54-57 pour un repos à 47 — WHOOP y lit du paradoxal. Même panne le
+         15 nov. (1 h 32 contre 38 min), le 6 (2 h 03 contre 1 h 14), le 3 (31 contre 20).
+
+         LA CAUSE. `classer` dit « éveillé » dès que le pouls lissé passe le repos + `eveil` (6). Un
+         rêve monte le pouls d'autant : le pouls seul ne sépare pas « allongé, éveillé, calme » de
+         « rêve » (v3070 le disait déjà). Ce qui les sépare est le MOUVEMENT, et le bracelet en rend
+         trois traces : ses minutes « éveillé » (code 0), son compteur de pas, la fin d'un fichier.
+
+         LA RÈGLE. Un plateau de pouls haut d'au moins `sansTemoinMin` min (10) n'est compté en éveil
+         que s'il a un TÉMOIN à ± `sansTemoinFen` min (10 depuis le 19 nov.) : un pas (iPhone ou bracelet), le téléphone
+         déverrouillé, une minute « éveillé » du bracelet. Sans aucun témoin, alors que le bracelet
+         écrit « endormi » sur TOUT le plateau, ses minutes ne restent un éveil que si le pouls passe
+         le repos + `sansTemoinSeuil` (9). Un seul témoin, et le plateau ENTIER reste jugé comme
+         avant. Ne sont jamais rejugés : un plateau court (les petits réveils), les `sansTemoinFin`
+         (30) dernières minutes de la nuit (le réveil reste au cœur), une minute hors du fichier du
+         bracelet (un trou entre deux fichiers EST un réveil), une nuit sans fichier détaillé du
+         bracelet (autre capteur, fichier pas encore rendu) : là, rien ne change.
+
+         MESURÉ (labo du 18 nov., base du téléphone, 17 nuits Fitcare du 2 au 18 nov.) : 6 nuits
+         changent, 11 non ; AUCUNE heure de coucher ni de réveil ne bouge. Éveil 18 nov. 92 → 42
+         (WHOOP 25), 15 nov. 87 → 61 (38), 6 nov. 123 → 77 (74), 3 nov. 31 → 14 (20), 5 nov. 60 → 49,
+         11 nov. 184 → 183 (161 — le grand réveil 03:14 → 06:03, témoins partout, reste entier).
+         Écart moyen à WHOOP sur les 7 nuits comparées : 34,7 → 16,4 min. 15 nuits de sept.-oct.
+         (ancien bracelet, pas de fichier détaillé) : identiques.
+
+         LA LIMITE, DITE (c'est la crainte de Dino du 15 nov. : « il ne faut pas que les règles
+         annulent le jour où il y aura des vrais réveils nocturnes »). Réveils d'essai posés dans
+         deux vraies nuits, 30, 60 et 90 min, bracelet muet : avec un pas, un déverrouillage ou une
+         minute « éveillé » du bracelet, comptés en entier quel que soit le pouls ; SANS témoin,
+         comptés en entier à repos + 10 et plus, presque en entier à + 9, et PLUS DU TOUT à + 6, + 7
+         ou + 8. Un long réveil parfaitement immobile, téléphone non touché, pouls à peine plus haut,
+         n'est donc plus compté. Les vrais réveils connus de la base (5, 6 et 11 nov.) ont tous un
+         témoin, dont un du bracelet lui-même (fichier coupé, ou minutes « éveillé »).
+         Banc : tests/test-eveil-sans-temoin.js. */
+      var sansT = null;
+      function sansTemoin() {
+        sansT = null;
+        if (!(p.sansTemoinMin > 0)) return;
+        if (!TB.aH) return;
+        function haut(z) { return R[z] != null && R[z] >= ((k2 >= 0 && z >= k2) ? F2 : F) + p.eveil && !picHeure[z]; }
+        var out = {}, dits = [], nb = 0;
+        for (var iT = a0; iT < fin; iT++) {
+          if (!haut(iT)) continue;
+          var jT = iT; while (jT + 1 < fin && haut(jT + 1)) jT++;
+          if ((jT - iT + 1 >= p.sansTemoinMin) && (fin - 1 - jT >= p.sansTemoinFin) && sansAucunTemoin(iT, jT)) {
+            var nP = 0;
+            for (var zO = iT; zO <= jT; zO++) if (R[zO] < ((k2 >= 0 && zO >= k2) ? F2 : F) + p.sansTemoinSeuil) { out[zO] = true; nP++; }
+            if (nP) { nb += nP; var dP = new Date(t0 + iT * 60000); dits.push(dP.getHours() + 'h' + ('0' + dP.getMinutes()).slice(-2) + ' (' + nP + ' min)'); }
+          }
+          iT = jT;
+        }
+        if (!nb) return;
+        sansT = out;
+        var sT = a0 + '·' + fin + '·' + dits.join(',');
+        if (SANS_TEMOIN_DIT[K] !== sT) {
+          SANS_TEMOIN_DIT[K] = sT;
+          flsLog('nuit ' + K + ' : ' + nb + ' min de pouls haut SANS TÉMOIN (ni pas, ni téléphone, ni éveil du bracelet) lues comme du sommeil — ' + dits.join(', '));
+        }
+      }
       function classer() {
         eveil = 0; dorm = []; etats = new Array(fin - a0);
         secondSommeil();
+        sansTemoin();
+        salves();
         for (i = a0; i < fin; i++) {
           var Fi = (k2 >= 0 && i >= k2) ? F2 : F;
-          var _long = (R[i] != null && R[i] >= Fi + p.eveil && !picHeure[i]) || P[i] > 0 || !!(U && U[i]);   /* v2994 — téléphone déverrouillé = éveillé ; 4 nov. — pas un pic d'heure pile */
-          if (_long || (salve && salve[i] && !picHeure[i])) {
+          var _long = (R[i] != null && R[i] >= Fi + p.eveil && !picHeure[i] && !(sansT && sansT[i])) || P[i] > 0 || !!(U && U[i]);   /* v2994 — téléphone déverrouillé = éveillé ; 4 nov. — pas un pic d'heure pile ; 18 nov. — pas un plateau sans témoin */
+          if (_long || (salveVue && salveVue[i] && !picHeure[i])) {
             eveil++; etats[i - a0] = 'awake';
             /* une salve d'une ou deux minutes ne change pas le NIVEAU de la nuit : son pouls lissé reste
                dans les quartiles des stades — sans quoi la règle « nuit trop plate » (v2888) bascule pour
@@ -6077,7 +6407,22 @@ window.flStadesNuit = function (n) {
       var dDebut = circ(n.bedMin, f.bedMin), dFin = circ(n.wakeMin, f.wakeMin);
       if (dFin > 5) { log('nuit ' + K + ' : le réveil a bougé de ' + dFin + ' min depuis le sceau — pas de rescellement (' + cause + '), la réouverture décidera'); return null; }
       var contenu = (cause === 'sansBattements') && (n.sleepMin !== f.asleep || n.awake !== f.awake);
-      if (!dDebut && !contenu) return null;
+      /* 19 nov. 2026 — LE FICHIER DU BRACELET CHANGE AUSSI L'INTÉRIEUR DE LA NUIT. Depuis la v3113 les
+         trois règles du témoin lisent son hypnogramme : à bornes ÉGALES, la nuit ne compte plus le même
+         éveil avec et sans lui. Le 19, « Traiter » à 09:27:37 ; le fichier arrive incomplet à 09:28:15
+         (le sceau suit l'endormissement, 00:49, et garde 1 h 04 d'éveil), entier à 09:28:35 : le dessin
+         passe à 38 min, les titres restent à 1 h 04 — la correction attendait ses trente minutes
+         (`corrigerSiStable`). Dino, deux captures à la même minute : « ils ont changé d'une minute à
+         l'autre ». Pour la nuit DU JOUR, dans les 4 h qui suivent le réveil (la fenêtre de
+         `recupSuitLeSceau`), le sceau suit donc aussi le contenu dès que l'écart passe le seuil de la
+         maison (5 min). Plus tard, ou pour une nuit passée : rien ne change, la stabilité décide. */
+      var dedans = false;
+      if (cause === 'bracelet' && !dDebut) {
+        var eDedans = Math.max(Math.abs((+n.sleepMin || 0) - (+f.asleep || 0)), Math.abs((+n.awake || 0) - (+f.awake || 0)));
+        var depuisReveil = Date.now() - msDe(K, +f.wakeMin);
+        dedans = eDedans > 5 && K === cleDe(new Date()) && depuisReveil >= 0 && depuisReveil <= 240 * 60000;
+      }
+      if (!dDebut && !contenu && !dedans) return null;
       try { if (typeof window.flintSommeilRecalculer === 'function') window.flintSommeilRecalculer(); } catch (e) {}
       var rs = window.flNuitResceller(K, cause);
       if (rs && rs.ok) {
@@ -6087,7 +6432,8 @@ window.flStadesNuit = function (n) {
           try { if (typeof DB !== 'undefined' && DB && DB.set) DB.set('nuitFige_' + K, g); else localStorage.setItem('nuitFige_' + K, JSON.stringify(g)); } catch (e) {}
         }
       }
-      log('nuit ' + K + ' : sceau ' + (rs && rs.ok ? 'réécrit' : 'inchangé') + ' (' + cause + ') — endormissement ' + f.bedMin + '→' + n.bedMin + ', réveil gardé ' + f.wakeMin);
+      log('nuit ' + K + ' : sceau ' + (rs && rs.ok ? 'réécrit' : 'inchangé') + ' (' + cause + ') — endormissement ' + f.bedMin + '→' + n.bedMin
+          + (dedans ? ', intérieur changé par le fichier du bracelet (dormi ' + f.asleep + '→' + n.sleepMin + ', éveil ' + f.awake + '→' + n.awake + ')' : '') + ', réveil gardé ' + f.wakeMin);
       return rs;
     } catch (e) { return null; }
   }
@@ -6200,6 +6546,45 @@ window.flStadesNuit = function (n) {
       }
       return neufs;
     } catch (e) { return 0; }
+  };
+
+  /* ═══ 19 nov. 2026 — LE FICHIER DE NUIT DU BRACELET COUVRE-T-IL LA NUIT ? ════════════════════
+     Depuis la v3113 l'intérieur de la nuit (l'éveil) se lit AVEC l'hypnogramme du bracelet : les
+     règles du témoin ne rejugent une minute que si le bracelet l'a écrite. Or le bracelet n'écrit sa
+     nuit que sur demande (objet 96) et ne la montre qu'à la connexion suivante : le matin, la case
+     porte d'abord le morceau écrit vers 5 h 30 (00:49 → 05:29 le 19, rangé sans hypnogramme parmi
+     les sommes), puis la nuit entière (00:49 → 09:24) vingt à quarante secondes après l'ouverture.
+     Une nuit affichée entre les deux est recalculée sous les yeux de la personne (Dino, le 19 :
+     « on recalcule et on recalcule »). Ce fait dit si l'attente est finie : un enregistrement du
+     bracelet qui touche la nuit et va jusqu'à `sansTemoinFin` (30) minutes du réveil — la dernière
+     demi-heure n'est jamais rejugée, ce qui manque là ne changerait rien.
+     Rend null sans nuit lue. Lu par flint-nuit-matin.js (`fichierNuitAttendu`). */
+  window.flNuitFichierCouvre = function (K, n, tolMin) {
+    try {
+      /* la copie vivante quand elle existe : ce fait est lu à chaque passe pendant l'attente */
+      var jour = function (k) { var x = null; try { if (typeof window.watchOf === 'function') x = window.watchOf(k); } catch (e) {} return x || lire('watch_' + k) || {}; };
+      var w = jour(K);
+      n = n || w.night;
+      if (!n || !(+n.sleepStart > 0) || !(+n.sleepEnd > +n.sleepStart)) return null;
+      var tol = (tolMin != null ? +tolMin : (+(window.flNuitCoeurReglages || {}).sansTemoinFin || 30)) * 60000;
+      var q = String(K).split('-'), wV = (+n.sleepStart < msDe(K, 0)) ? jour(cleDe(new Date(+q[0], +q[1] - 1, +q[2] - 1, 12))) : null;
+      var fin = 0, vus = 0;
+      [w, wV].forEach(function (j) {
+        if (!j) return;
+        [j.nuitFitcare].concat(Array.isArray(j.siestesFitcare) ? j.siestesFitcare : []).forEach(function (x) {
+          if (!x || !(+x.debut > 0)) return;
+          /* Relecture du 19 nov. — la FIN de l'enregistrement, qu'il porte son hypnogramme ou non : une nuit
+             en deux enregistrements range le second parmi les sommes, SANS hypnogramme ; ne compter que les
+             hypnogrammes faisait attendre 75 s à chaque geste une couverture qui ne pouvait pas venir. Ce
+             que ce fait établit, c'est que le bracelet a écrit jusqu'au réveil — que sa lecture est fraîche. */
+          var a = +x.debut * 1000, b = Math.max(a + ((Array.isArray(x.hypno) ? x.hypno.length : 0) * 60000), (+x.fin > +x.debut) ? +x.fin * 1000 : 0);
+          if (!(b > a) || b <= +n.sleepStart || a >= +n.sleepEnd) return;
+          vus++; if (b > fin) fin = b;
+        });
+      });
+      return { couvre: fin > 0 && fin >= +n.sleepEnd - tol, fin: fin || null, fichiers: vus,
+               manque: fin ? Math.max(0, Math.round((+n.sleepEnd - fin) / 60000)) : null };
+    } catch (e) { return null; }
   };
 
   /* ═══ LE MATIN : LA NUIT DU BRACELET EST ATTENDUE ═══════════════════════════════════════════

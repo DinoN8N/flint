@@ -702,5 +702,7 @@ window.FL_LANG.es={
  "re:^(\\d+) minutes de VFC cette nuit, groupées sur une partie de la nuit : trop peu réparties pour la calculer\\.$":"$1 minutos de VFC esta noche, agrupados en una parte de la noche: demasiado poco repartidos para calcularla.",
  "re:^Le bracelet a cessé d'envoyer tes battements de (\\d\\d:\\d\\d) à (\\d\\d:\\d\\d) : VFC non calculée cette nuit\\.$":"La pulsera dejó de enviar tus latidos de $1 a $2: VFC no calculada esta noche.",
  "Aucune minute de VFC exploitable cette nuit.":"Ningún minuto de VFC aprovechable esta noche.",
+ "Le bracelet n'a pas rendu assez de mesures de VFC pour cette nuit.":"La pulsera no entregó suficientes medidas de VFC para esta noche.",
+ "Le bracelet n'a pas encore rendu assez de mesures de VFC pour cette nuit.":"La pulsera aún no ha entregado suficientes medidas de VFC para esta noche.",
  "Récup calculée sans VFC : pouls de repos, sommeil, respiration, température.":"Recuperación calculada sin VFC: pulso en reposo, sueño, respiración, temperatura."
 };

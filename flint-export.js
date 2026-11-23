@@ -226,6 +226,8 @@ function flExpSur(f, repli) {
    rendrait un export vide sur le seul appareil qui compte, le téléphone. */
 function flExpNuit(K) {
   return flExpSur(function () {
+    /* 22 nov. 2026 — « telle que les ÉCRANS la voient » : la nuit du jour est la nuit publiée (`flCapteurNuit`). */
+    if (typeof window.flCapteurNuit === 'function') return window.flCapteurNuit(K);
     return (typeof sensorOf === 'function') ? sensorOf(K) : null;
   }, null);
 }

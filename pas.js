@@ -779,6 +779,137 @@
   }
   racine.flPasHeure = pasHeure;
 
+  /* ═══ 21 nov. 2026 — LES PAS D'UNE SÉANCE AU FITCARE : LA DIFFÉRENCE DE DEUX RELEVÉS ═════════════
+
+     Dino, 21 nov. : « quand je vais courir, il n'y a pas les pas. À chaque fois. » Depuis le Fitcare
+     (27 oct.), aucune séance n'a de pas : la fiche et le journal les additionnent À LA MINUTE
+     (`flPasParMinute`, les blocs `actDet` de l'ancien bracelet), et le Fitcare n'en écrit pas. Il
+     les compte pourtant — 1 404 pendant la séance du 21 nov., ~3 700 pendant la course de 23 min du
+     16 — mais par COMPTEURS :
+       · `pasJour`  ([minute, total du jour]) : le compteur du jour de chaque photo de l'instant
+         (objet 95, champ 11), noté par `noterReleve` à chaque évènement `steps` du natif. Toutes
+         les 2 min en mode sport, relevés inchangés compris ; au moins toutes les 10 min sinon.
+         Il n'existe que depuis ce commit.
+       · avant lui, deux compteurs DE L'HEURE (remis à zéro à chaque heure d'horloge) :
+         `pasPhoto` ([minute, compteur]), une photo sur cinq (10 min) ; et `pasHeure`, dont chaque
+         case [début du paquet, compteur À LA FERMETURE du paquet] se ferme au paquet suivant de la
+         même heure, sinon à la fin de l'heure. Vérifié sur la course du 16 nov. (11:54 → 12:17) :
+         lus ainsi, les paquets donnent 169, 150, 192, 155 pas/min pendant la course puis 96 en
+         marchant ; lus à leur estampille, ils contredisent les photos de 250 pas.
+     Les pas d'une fenêtre = la courbe cumulée du jour à sa fin, moins à son début.
+     CE QU'ON NE FAIT PAS : fabriquer des pas à la minute pour les autres lecteurs (le sommeil lit
+     un pas à la minute comme une preuve d'éveil) ; ni attribuer des pas tombés dans un TROU de plus
+     de 15 min à cheval sur un bord de la fenêtre — on ne sait pas de quel côté ils sont : rien.
+     Banc : tests/test-pas-seance-compteurs.js. */
+  var RELEVE_RAMPE = 3, RELEVE_TROU = 15, RELEVE_PAS_NEGLIGEABLES = 30;
+
+  /* Un relevé du compteur du jour. `minute` : minute du jour (0-1439). Rend vrai s'il est noté.
+     Un relevé livré en retard (minute plus ancienne) ou un compteur qui recule n'entrent pas. */
+  function noterReleve(w, total, minute) {
+    total = +total; minute = Math.floor(+minute);
+    if (!w || !(total >= 0) || !(minute >= 0 && minute < 1440)) return false;
+    var L = Array.isArray(w.pasJour) ? w.pasJour : (w.pasJour = []);
+    var d = L.length ? L[L.length - 1] : null;
+    if (d && (minute < d[0] || total < d[1])) return false;
+    if (d && d[0] === minute) { d[1] = total; return true; }
+    /* trois relevés égaux de suite : celui du milieu ne dit rien de plus, il laisse sa place */
+    if (d && L.length >= 2 && d[1] === total && L[L.length - 2][1] === total) { d[0] = minute; return true; }
+    L.push([minute, total]);
+    if (L.length > 900) L.splice(0, L.length - 900);
+    return true;
+  }
+
+  /* Les tronçons [t1, c1, t2, c2, sur] de la courbe cumulée, depuis `pasJour`. Entre deux relevés
+     qui diffèrent, les pas sont tombés dans les RELEVE_RAMPE dernières minutes (le relevé d'avant,
+     2 min plus tôt, ne les avait pas) ; au-delà de RELEVE_TROU minutes sans relevé, on ne sait
+     plus quand (`sur` faux). */
+  function tronconsJour(serie) {
+    var P = (serie || []).filter(function (x) { return Array.isArray(x) && x[0] >= 0 && x[1] >= 0; })
+                         .map(function (x) { return [+x[0], +x[1]]; }).sort(function (a, b) { return a[0] - b[0]; });
+    var T = [];
+    for (var i = 1; i < P.length; i++) {
+      var a = P[i - 1], b = P[i]; if (b[1] < a[1] || b[0] <= a[0]) continue;
+      var trou = (b[0] - a[0]) > RELEVE_TROU;
+      if (b[1] === a[1] || trou) { T.push([a[0], a[1], b[0], b[1], !trou || (b[1] - a[1]) <= RELEVE_PAS_NEGLIGEABLES]); continue; }
+      var s0 = Math.max(a[0], b[0] - RELEVE_RAMPE);
+      if (s0 > a[0]) T.push([a[0], a[1], s0, a[1], true]);
+      T.push([s0, a[1], b[0], b[1], true]);
+    }
+    return T;
+  }
+
+  /* Les mêmes tronçons, reconstruits des deux compteurs de l'heure (journées d'avant `pasJour`). */
+  function tronconsHeures(pasPhoto, pasHeureSerie) {
+    var H = {}, ajouter = function (t, v) { if (!(t >= 0) || !(v >= 0)) return; var h = Math.min(23, Math.floor((t - 1e-6) / 60)); if (t === 0) h = 0; (H[h] = H[h] || []).push([t, v]); };
+    (pasPhoto || []).forEach(function (x) { if (Array.isArray(x)) { var m = +x[0]; (H[Math.floor(m / 60)] = H[Math.floor(m / 60)] || []).push([m + 0.5, +x[1] || 0]); } });
+    var E = (pasHeureSerie || []).filter(function (x) { return Array.isArray(x) && x[0] >= 0 && x[1] >= 0; })
+                                 .map(function (x) { return [+x[0], +x[1]]; }).sort(function (a, b) { return a[0] - b[0]; });
+    for (var i = 0; i < E.length; i++) {
+      var h = Math.floor(E[i][0] / 60), fin = (h + 1) * 60;
+      var ferme = (i + 1 < E.length && Math.floor(E[i + 1][0] / 60) === h) ? E[i + 1][0] : fin;
+      (H[h] = H[h] || []).push([ferme, E[i][1]]);
+    }
+    var T = [], base = 0;
+    for (var hh = 0; hh < 24; hh++) {
+      var R = (H[hh] || []).sort(function (a, b) { return a[0] - b[0] || a[1] - b[1]; });
+      if (!R.length) continue;
+      var P = [[hh * 60, 0]], mx = 0;
+      /* Un compteur ne recule pas dans l'heure — sauf UN cas, vu sous le logiciel 2.3.4 : tant que l'heure n'a
+         vu aucun pas, la photo redit le compteur de l'heure D'AVANT (63, 63, 63, 63 de 11:06 à 11:42 le 16 nov.,
+         puis 36 au premier pas). Un palier constant depuis le début de l'heure, suivi d'une valeur plus basse :
+         le palier était un reste, l'heure repart de cette valeur. Toute autre baisse (un paquet périmé de la
+         même heure) est ignorée. */
+      var palier = true;
+      R.forEach(function (r) {
+        if (r[1] < mx && palier && P.length > 1) { P = [[hh * 60, 0]]; mx = 0; }
+        if (P.length > 1 && r[1] !== mx) palier = false;
+        mx = Math.max(mx, r[1]); var d = P[P.length - 1]; if (r[0] > d[0]) P.push([r[0], mx]); else d[1] = mx;
+      });
+      if (P[P.length - 1][0] < (hh + 1) * 60) P.push([(hh + 1) * 60, mx]);
+      for (var j = 1; j < P.length; j++) {
+        var a = P[j - 1], b = P[j], trou = (b[0] - a[0]) > RELEVE_TROU;
+        T.push([a[0], base + a[1], b[0], base + b[1], !trou || (b[1] - a[1]) <= RELEVE_PAS_NEGLIGEABLES]);
+      }
+      base += mx;
+    }
+    return T;
+  }
+
+  /* Les pas tombés dans [deb, fin) (minutes du jour), arrêts exclus. `null` : pas de relevé autour,
+     ou des pas dans un trou à cheval sur un bord (on ne sait pas de quel côté). */
+  function pasDesTroncons(T, deb, fin, enPause) {
+    if (!T || !T.length || !(fin > deb)) return null;
+    var t0 = T[0][0], t1 = T[T.length - 1][2];
+    if (deb < t0 - RELEVE_RAMPE || fin > t1 + RELEVE_TROU) return null;
+    var tot = 0;
+    for (var i = 0; i < T.length; i++) {
+      var s = T[i], a = Math.max(s[0], deb), b = Math.min(s[2], fin), dc = s[3] - s[1];
+      if (!(b > a) || dc <= 0) continue;
+      if (!s[4] && (s[0] < deb || s[2] > fin)) return null;
+      if (typeof enPause === 'function') {
+        for (var m = Math.floor(a); m < b; m++) {
+          var x = Math.max(a, m), y = Math.min(b, m + 1);
+          if (y > x && !enPause(m)) tot += dc * (y - x) / (s[2] - s[0]);
+        }
+      } else tot += dc * (b - a) / (s[2] - s[0]);
+    }
+    return Math.round(tot);
+  }
+
+  /* Les pas d'une fenêtre de la journée `w` : le compteur du jour s'il couvre la fenêtre, sinon
+     les compteurs de l'heure. Rend { pas, source } ou null. */
+  function seanceCompteurs(w, deb, fin, enPause) {
+    if (!w) return null;
+    deb = Math.max(0, +deb); fin = Math.min(1440, +fin);
+    var r = pasDesTroncons(tronconsJour(w.pasJour), deb, fin, enPause);
+    if (r != null) return { pas: r, source: 'compteurJour' };
+    r = pasDesTroncons(tronconsHeures(w.pasPhoto, w.pasHeure), deb, fin, enPause);
+    return r != null ? { pas: r, source: 'compteursHeure' } : null;
+  }
+  racine.flPasReleves = { noter: noterReleve, tronconsJour: tronconsJour, tronconsHeures: tronconsHeures,
+                          pasDesTroncons: pasDesTroncons, seance: seanceCompteurs,
+                          RAMPE: RELEVE_RAMPE, TROU: RELEVE_TROU };
+
   racine.flPas = { fraicheurPas: fraicheurPas, phraseFraicheur: phraseFraicheur,
                    SILENCE_ALERTE: SILENCE_ALERTE,
                    nettoyer: nettoyer, total: total, signature: signature,

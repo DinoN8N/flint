@@ -190,11 +190,15 @@ window.flRespirationNuit=function(K){
  var _calcul=function(K){try{
  var memo=window._flRespMemo=window._flRespMemo||{};
  var w=watchOf(K); if(!w)return null;
- var rh=((typeof flMatiereNuit==='function')?flMatiereNuit(K,w):w).rrH||[]; if(!rh.length)return {ok:false, blocs:0, refuses:0,   /* 1er oct. 2026 — nuit finie avant minuit : sa matière vit dans la veille (flint-porte.js) */
+ /* 21 nov. 2026 — nuit COMMENCÉE avant minuit : ses battements d'avant minuit vivent dans la veille aussi, et
+    la soirée du jour K est à la nuit d'après (`flMatiereACheval`, flint-porte.js) — même lecture que `flRmssdNuit`.
+    Les minutes de la veille arrivent en négatif (23:59 → −1) : le recollage ci-dessous traverse minuit sans rien changer. */
+ var _mr=(typeof flMatiereNuit==='function')?flMatiereNuit(K,w):w; if(typeof flMatiereACheval==='function')_mr=flMatiereACheval(K,_mr,['rrH'])||_mr;
+ var rh=_mr.rrH||[]; if(!rh.length)return {ok:false, blocs:0, refuses:0,   /* 1er oct. 2026 — nuit finie avant minuit : sa matière vit dans la veille (flint-porte.js) */
    motif:"Le bracelet n'a enregistré aucun battement cette nuit."};
  var n=w.night||null;
  if(!n||n.sleepStart==null||n.sleepEnd==null)return null;
- var cle=K+'|'+rh.length+'|'+n.sleepStart+'|'+n.sleepEnd;
+ var cle=K+'|'+rh.length+'|'+n.sleepStart+'|'+n.sleepEnd+(_mr._aCheval?'|v'+_mr._nVeille:'');
  if(memo[cle])return memo[cle];
  var a=new Date(n.sleepStart), b=new Date(n.sleepEnd);
  var am=a.getHours()*60+a.getMinutes(), bm=b.getHours()*60+b.getMinutes();

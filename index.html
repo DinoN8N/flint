@@ -4369,11 +4369,11 @@ function sleepNight(k){k=k||tk();var s=sensorOf(k);if(!s||s.sleepMin==null)retur
        plutot qu au re-staging : les nuits deja enregistrees en beneficient sans
        qu il faille les recalculer, et le compte ne vit qu a un seul endroit.
        On ne compte QUE les reveils du MILIEU : celui du debut est
-       l endormissement, celui de la fin est le lever. Deux minutes minimum, en
-       dessous c est une micro-transition que personne ne vit comme un reveil. */
+       l endormissement, celui de la fin est le lever. CINQ minutes minimum (deux jusqu au 18 nov. 2026) :
+       en dessous c est un micro-reveil, que personne ne vit comme un reveil (Dino : « si je dors, il n y aura pas ecrit reveil »). */
     if(s.wakeEvents!=null)return s.wakeEvents;
     var g=s.stages||[];if(g.length<3)return null;
-    var n=0;for(var q=1;q<g.length-1;q++)if(g[q].stage==='awake'&&g[q].durMin>=2)n++;
+    var n=0;for(var q=1;q<g.length-1;q++)if(g[q].stage==='awake'&&g[q].durMin>=5)n++;
     return n;
    })(),efficiency:inBed>0?Math.round(asleep/inBed*100):null,restorative:(s.deep||0)+(s.rem||0),stages:(s.stages&&s.stages.length)?s.stages:null,
    /* v1402 — LA PROVENANCE VOYAGE AVEC LA NUIT.
@@ -4431,7 +4431,7 @@ function baseStat(field,fen,jour){
  var _srcH=null,_insH='',_parI=(field==='hrv'||field==='resp'||field==='tempNuit');
  if(_parI){try{var _s0=(typeof sensorOf==='function')?sensorOf(tk(_j)):DB.get('sensor_'+tk(_j),null);_srcH=(_s0&&(field==='hrv'?_s0.hrvSrc:field==='resp'?_s0.respSrc:null))||null;_insH=((_s0&&_s0.instr)||'')+(field==='tempNuit'?'|'+((_s0&&_s0.tempSrc)||''):'')+(field==='hrv'?'|m'+((_s0&&_s0.hrvMeth)||1):'');}catch(e){}}  /* 27 oct. 2026 — et le même BRACELET (VFC, respiration, température ; pas la FC de repos, égale à WHOOP sur les deux) : flInstrumentVfc, flint-vfc-source.js */
  var k2=field+'|'+(fen||30)+'|'+_j+'|'+(_srcH||'')+'|'+_insH;
- if(k2 in _bsMemo)return _bsMemo[k2];
+ if(k2 in _bsMemo)return _bsMemo[k2]; if(field==='hrv'&&_srcH==='montre'&&typeof window.flVfcRepereBase==='function'){var _rb=window.flVfcRepereBase(tk(_j),_s0);if(_rb)_bsMemo[k2]=_rb;return _rb;}   /* relecture du 21 nov. : un repère ABSENT n'est pas gardé en mémoire (la nuit d'avant peut arriver après : la récup restait « sans VFC » pendant que le Moniteur colorait) · 21 nov. 2026 — LA VFC DU BRACELET (« montre ») A SON REPÈRE : les nuits de même provenance des 30 derniers jours, en logarithme (flint-vfc-source.js, `flVfcRepere`) ; la récup le lit à partir de 3 nuits (`flVfcRepereBase`), null avant et elle passe « sans VFC ». Toute autre provenance : la normale d'avant, au chiffre près. Banc : test-vfc-montre.js */
  /* ═══ v2034 — LA NORMALE DE LA VFC NE MELANGE JAMAIS DEUX ECHELLES ══════════
     Depuis que la VFC vient de notre RMSSD avec la puce en repli (voir
     `sensorOf`), deux grandeurs cohabitent sous le champ `hrv` : le vrai RMSSD
@@ -4645,7 +4645,7 @@ window.flRecovRejuger=function(){
    nourrit l'AFFICHAGE de la VFC d'un jour sans découpe de nuit, pas un score.
    `persistRecov` cesse du même coup de figer un score d'avant-sommeil au
    registre. Verrou : test-recup-sans-nuit.js. */
-function recovery(off){const _o=Math.min(0,(off||0));const t=sensorOf(tk(_o));if(!t)return null;let _sv=(t.hrv==null&&typeof flRecupSansVfcPermis==='function')?flRecupSansVfcPermis(t,_o):null;/* 31 oct. 2026 — sans VFC, le score se calcule sans elle et le DIT (flint-recup-cycle.js, « UNE RÉCUP TOUJOURS DONNÉE ») */if(t.hrv==null&&!_sv)return null;if(t._watch&&t.sleepMin==null)return null;const bH=baseStat('hrv',60,_o),bR=baseStat('rhr',60,_o),bP=baseStat('resp',60,_o);if(!_sv&&!bH&&typeof flRecupSansNormeVfc==='function')_sv=flRecupSansNormeVfc(t,_o);/* 15 nov. 2026 — VFC mesurée mais pas encore de normale : même score « sans VFC » (flint-recup-cycle.js) */if(_sv?!bR:!bH)return null;const z=(v,b,cv)=>{if(!(b&&v!=null))return 0;
+function recovery(off){const _o=Math.min(0,(off||0));const t=sensorOf(tk(_o));if(!t)return null;let _sv=(t.hrv==null&&typeof flRecupSansVfcPermis==='function')?flRecupSansVfcPermis(t,_o):null;/* 31 oct. 2026 — sans VFC, le score se calcule sans elle et le DIT (flint-recup-cycle.js, « UNE RÉCUP TOUJOURS DONNÉE ») */if(t.hrv==null&&!_sv)return null;if(t._watch&&t.sleepMin==null)return null;const bH=baseStat('hrv',60,_o),bR=baseStat('rhr',60,_o),bP=baseStat('resp',60,_o);if(!_sv&&!bH&&typeof flRecupSansNormeVfc==='function')_sv=flRecupSansNormeVfc(t,_o);/* 15 nov. 2026 — VFC mesurée mais pas encore de normale : même score « sans VFC » (flint-recup-cycle.js) */if(_sv?!bR:!bH)return null;const z=(v,b,cv)=>{if(!(b&&v!=null))return 0;if(b.lnM!=null&&b.sdPred>0&&v>0)return Math.max(-2.5,Math.min(2.5,(Math.log(v)-b.lnM)/b.sdPred))*Math.min(1,Math.max(0,((b.n!=null?b.n:8)-2)/6));/* 21 nov. 2026 — VFC du bracelet : l'écart PRÉDICTIF à son repère (`flVfcRepereBase`, flint-vfc-source.js), borné à ±2,5, pesé par la rampe `_w6` ((n−2)/6, plein à 8 nuits ; relecture du 21 nov.). Seul un repère « montre » porte `lnM`. */
  /* v1774 — UN PLANCHER DE DISPERSION, ET SEULEMENT SUR LA VARIABILITE.
     Mesure sur trois corps d epreuve : la methode d avant CONFONDAIT une derive
     lente et un effondrement soudain — -1,99 contre -2,50, un demi ecart-type
@@ -7822,7 +7822,7 @@ window.flSommeilData=function(_argJour){try{
      source que slCurveSVG cote web (slStageSegs2), donc les deux ecrans surlignent
      exactement les memes segments. */
   segments: n?(function(){try{
-   var sg=(typeof slStageSegs2==='function')?slStageSegs2(n):null;
+   var sg=(typeof slStageSegs2==='function')?slStageSegs2(n):null;if(sg&&typeof window.flNuitAxe==='function')sg=window.flNuitAxe(n).stages;   /* 22 nov. 2026 — coupés à l'axe des titres (`flNuitAxe`) */
    if(!sg||!sg.length)return null;
    var FR={deep:'PROFOND',light:'LÉGER',rem:'PARADOXAL',awake:'RÉVEIL'};
    return sg.map(function(g){return {stade:FR[g.stage]||g.stage,
@@ -7830,8 +7830,8 @@ window.flSommeilData=function(_argJour){try{
   }catch(e){return null;}})():null,
   /* Duree au lit et heure de coucher en minutes : le natif en a besoin pour
      convertir la position du doigt sur la courbe en heure affichable. */
-  litMin: (n&&n.inBed!=null)?n.inBed:null,
-  coucheMin: (n&&n.bedVive!=null)?n.bedVive:((n&&n.bedMin!=null)?n.bedMin:null)   /* 17 nov. 2026 — l'axe du graphique suit la nuit qu'il dessine (`bedVive`, flNuitServir) */
+  litMin: (n&&typeof window.flNuitAxe==='function')?window.flNuitAxe(n).lit:((n&&n.inBed!=null)?n.inBed:null),   /* 22 nov. 2026 — l'axe dure l'écart entre les TITRES, pour toute nuit, scellée ou non (`flNuitAxe`) */
+  coucheMin: (n&&n.bedMin!=null)?n.bedMin:null   /* 22 nov. 2026 — l'axe du graphique et les titres sortent du MÊME objet : `flNuitServir` ne sert plus le sceau quand il ne parle pas de la nuit dessinée (l'axe « à côté », `bedVive`, du 17 nov. est parti) */
  };
 }catch(e){return {aDesDonnees:false};}};
 /* ═══ v904 — PONT DE LA PAGE PRINCIPALE (accueil) ═══════════════════════════
@@ -8530,7 +8530,7 @@ window.flHebdoDetail=function(key,mode,recul,leger){
  var mn,mx,ticks;
  if(cfg.ticks){mx=cfg.ticks[0];mn=cfg.ticks[cfg.ticks.length-1];ticks=cfg.ticks;}
  else if(cfg.kind==='bars'){ticks=flhTicksAuto(allv.length?Math.max.apply(null,allv):1,cfg.tickSteps);mx=ticks[0];mn=0;}
- else{var rr=flhRange(allv.length?allv:[0,1]);mn=rr.min;mx=rr.max;ticks=rr.ticks;}
+ else{var rr=flhRange(allv.length?allv:[0,1],cfg);mn=rr.min;mx=rr.max;ticks=rr.ticks;}
  var avg=vals.length?vals.reduce(function(a,b){return a+b;},0)/vals.length:null;
  /* La période PRÉCÉDENTE : autant de journées que celle qu'on affiche, et elle
     ne sert qu'à la phrase de comparaison, tout en bas de la page. */
@@ -8920,7 +8920,7 @@ window.flRecupData=function(_argJour){try{
     (porte unique, partagée avec flAccueilData et flDayCard) : même logique
     qu'ici avant elle, PLUS l'écriture qui fige le secours calculé. */
  var rv=(typeof flRecovLu==='function')?flRecovLu(_off):null;
- var s0=(typeof sensorOf==='function')?sensorOf(K):null; if(_off===0&&s0&&s0.hrv==null&&s0.rhr==null&&s0.resp==null&&!s0.sleepMin)s0=null;   /* 6 oct. 2026 — une nuit SANS une valeur n'est pas une nuit : à 00 h 30 sans sommeil, sensorOf(6) rendait un objet vide, le repli sur l'ancre (v1471, plus bas) ne jouait jamais, et le Moniteur de santé passait à vide (VFC, FCR, respiration, sommeil). Aujourd'hui seulement : un jour passé se montre tel quel. */
+ var s0=(typeof flCapteurNuit==='function')?flCapteurNuit(K):((typeof sensorOf==='function')?sensorOf(K):null); if(_off===0&&s0&&s0.hrv==null&&s0.rhr==null&&s0.resp==null&&!s0.sleepMin)s0=null;   /* 6 oct. 2026 — une nuit SANS une valeur n'est pas une nuit : à 00 h 30 sans sommeil, sensorOf(6) rendait un objet vide, le repli sur l'ancre (v1471, plus bas) ne jouait jamais, et le Moniteur de santé passait à vide (VFC, FCR, respiration, sommeil). Aujourd'hui seulement : un jour passé se montre tel quel. */
  /* 6 sept. 2026 — LA MEME PORTE QUE L ACCUEIL ET LE SOMMEIL, qui l ont depuis la v2184.
     Celle-ci lisait `sensorOf(K)` en direct : VFC, FC de repos, respiration et
     SOMMEIL PAR RAPPORT AU BESOIN (la duree de la nuit, en %) etaient servis
@@ -8991,7 +8991,7 @@ window.flRecupData=function(_argJour){try{
     `recovery(0)` en entier, et ce bloc ne s'exécute pas. */
  var rvd=rv;
  if(rv&&!rv.c&&typeof recovery==='function'){
-  try{var _rd=recovery(_off); if(_rd&&_rd.c)rvd=_rd;}catch(e){}
+  try{var _rd=recovery(_off); if(!(_rd&&_rd.c)&&s0&&s0.hrvSrc==='montre'){window._flRecupDetailSeul=true;try{_rd=recovery(_off);}finally{window._flRecupDetailSeul=false;}} if(_rd&&_rd.c)rvd=_rd;}catch(e){}   /* 21 nov. 2026 — la VFC passée au bracelet sans repère encore : le détail se recalcule « sans VFC » (pouls, respiration, sommeil gardent LEUR couleur) au lieu de quatre lignes ambre ; le score reste celui du registre */
  }
  var need=(function(){try{var _ba=(typeof flBesoinJourAjuste==='function')?flBesoinJourAjuste(K):null;if(_ba&&_ba.min>0)return _ba.min;}catch(e){}return ((getProfile().need)||8)*60;})();   /* 28 sept. 2026 — le besoin DU JOUR (âge, dette, effort), comme la carte hebdo de la même page : 7h30 d une ado jugés sur 8 h au lieu de 9 (S3). Et du jour de la NUIT montrée, `K` — la page peut s être repliée sur la veille : 85 % au lieu de 79 (R8) */
  var score=rv?Math.round(rv.s):null;
@@ -9053,7 +9053,7 @@ window.flRecupData=function(_argJour){try{
     ordinaire, peinte « plus élevé que d'habitude ». Même source : 62–70 ms
     (WHOOP le même jour : 63–71). La courbe, elle, garde tous ses points :
     c'est le JUGEMENT qui doit être homogène, pas le trait. */
- var _srcH=function(x){return (x&&x.hrvSrc)?(x.hrvSrc+(x.instr?'|'+x.instr:'')+(x.hrvMeth>=2?'|m'+x.hrvMeth:'')):null;}, hHsrc=_n22.map(_srcH), _srcP=function(x){return (x&&x.resp!=null)?('resp'+(x.instr?'|'+x.instr:'')):null;};  /* 27 oct. 2026 — « rmssd|fitcare » : le Moniteur ne juge une nuit Fitcare que sur des nuits Fitcare (`homogene`) */
+ var _srcH=function(x){return (x&&x.hrvSrc)?(x.hrvSrc+(x.instr?'|'+x.instr:'')+(x.hrvMeth>=2?'|m'+x.hrvMeth:(typeof x.hrvMeth==='string'?'|'+x.hrvMeth:''))):null;}, hHsrc=_n22.map(_srcH), _srcP=function(x){return (x&&x.resp!=null)?('resp'+(x.instr?'|'+x.instr:'')):null;}; var _repV=null; try{_repV=(typeof window.flVfcRepereMoniteur==='function')?window.flVfcRepereMoniteur(_n31):null;}catch(e){}   /* 21 nov. 2026 — « montre|fitcare|h1 » : la VFC du bracelet a sa provenance, et `_repV` son repère jugé par le moteur (null pour toute autre provenance) */  /* 27 oct. 2026 — « rmssd|fitcare » : le Moniteur ne juge une nuit Fitcare que sur des nuits Fitcare (`homogene`) */
  /* v2199 — LA PLAGE INFORMATIVE DE LA SpO2, MEME FENETRE QUE LES AUTRES. */
  var hO=colNuit(function(x){return x?x.spo2Bas:null;});
  var hR=colNuit(function(x){return x?x.rhr:null;});
@@ -9075,7 +9075,7 @@ window.flRecupData=function(_argJour){try{
   {cle:'sleep', libelle:'SOMMEIL PAR RAPPORT\nAU BESOIN',
    valeur:sPct!=null?String(sPct):null, unite:'%',
    dir:flRcDir(sPct,hS), spark:hS, couleur:mcol(2)}
- ];
+ ]; if(_repV&&metriques[0]&&metriques[0].cle==='hrv'){metriques[0].repereMoteur=_repV;if(_repV.niveau)metriques[0].couleur=({vert:_RCZ.g,orange:_RCZ.a,rouge:_RCZ.r})[_repV.niveau];metriques[0].dir=flRcDir(s0&&s0.hrv,hH.map(function(v,i){return hHsrc[i]===hHsrc[hHsrc.length-1]?v:null;}));}   /* 21 nov. 2026 — VFC du bracelet : le Moniteur lit le repère, l'écart et la couleur DITS PAR LE MOTEUR (`repereMoteur`, MoniteurSante.swift), et la ligne de cette page prend la même couleur — une VFC, une couleur ; sa flèche ne se compare qu'aux nuits de même provenance (les anciennes nuits, d'une autre mesure, la feraient pointer vers le bas trois semaines). Absent pour toute autre provenance : la charge ne bouge pas d'un octet. */
  /* ═══ v1784 — LE REPÈRE AUQUEL CHAQUE MESURE SE COMPARE ══════════════
     Dino : « je veux comprendre POURQUOI mon score vaut ça ». Une valeur
     seule ne l explique pas, et une flèche sans référent n en dit pas plus :
@@ -9603,7 +9603,7 @@ window.flTendancesData=function(mi,pi){try{
   ['recov','Récupération','#fb6015',function(k){return DB.get('recov_'+k,null);}],
   ['hrv','HRV (ms)','#6C7BD6',function(k){var s=sensorOf(k);return s?s.hrv:null;}],
   ['rhr','FC repos','#E0723A',function(k){var s=sensorOf(k);return s?s.rhr:null;}],
-  ['sleep','Sommeil (h)','#3A4FB0',function(k){var s=sensorOf(k);return (s&&s.sleepMin!=null)?s.sleepMin/60:null;}],
+  ['sleep','Sommeil (h)','#3A4FB0',function(k){var s=(typeof flCapteurNuit==='function')?flCapteurNuit(k):sensorOf(k);return (s&&s.sleepMin!=null)?s.sleepMin/60:null;}],   /* 22 nov. 2026 — la nuit du jour est la nuit PUBLIÉE (`flCapteurNuit`) */
   ['load','Charge','#3FB57A',function(k){return ((_vus&&!_vus[k])||(typeof flSansBracelet==='function'&&flSansBracelet()))?null:loadOf(k);}]];   /* v2492 — un jour que la base ne connaît pas n'a pas une charge nulle : il n'a PAS DE CHARGE. */
  var PER=[[7,'1 sem'],[30,'1 mois'],[180,'6 mois']];
  var m=METR[mi], nd=PER[pi][0];
@@ -9727,8 +9727,8 @@ window.flAgeFlintAu=function(off,maintenant,cache){try{
   else{s30=null;try{s30=sensorOf(k30);}catch(e){}
    if(cache)cache[k30]=s30;}
   if(!s30)continue;
-  if(s30.hrv!=null&&!isNaN(s30.hrv)){aH.push(+s30.hrv);
-   if(s30.hrvSrc==='rmssd')aHr.push(+s30.hrv);}
+  var _hA=(s30.hrvSrc==='montre')?((typeof flVfcRmssdRR==='function')?flVfcRmssdRR(k30):null):s30.hrv; if(_hA!=null&&!isNaN(_hA)){aH.push(+_hA);   /* 21 nov. 2026 — L'ÂGE NE BOUGE PAS PARCE QUE LA MESURE CHANGE : une nuit servie par la voie « montre » (VFC du bracelet, plus basse que notre RMSSD) fournit ici le RMSSD gardé en silence dans son résumé (`rmssdRR`, flint-vfc-source.js) — la même échelle que les nuits d'avant et que la norme d'âge ; sans lui, elle ne compte pas pour ce terme. Rejoué : sans cela l'âge de Dino passait de 20,2 à 22,8 ans vers le 14 déc. Toute autre nuit : comme avant. */
+   if(s30.hrvSrc==='rmssd'||s30.hrvSrc==='montre')aHr.push(+_hA);}
   if(s30.rhr!=null&&!isNaN(s30.rhr))aR.push(+s30.rhr);
   if(s30.sleepMin!=null&&!isNaN(s30.sleepMin))aS.push(s30.sleepMin/60);
  }
@@ -10025,7 +10025,7 @@ window.flProfilData=function(){try{
   recupJour:(function(){try{
    var rv=(typeof flRecovLu==='function')?flRecovLu(0):null;
    var K=tk(0), dec=0;
-   var so=(typeof sensorOf==='function')?sensorOf(K):null;
+   var so=(typeof flCapteurNuit==='function')?flCapteurNuit(K):((typeof sensorOf==='function')?sensorOf(K):null);   /* 22 nov. 2026 — la nuit du jour est la nuit PUBLIÉE (`flCapteurNuit`) */
    if(!so||so.sleepMin==null){
     var s1=(typeof sensorOf==='function')?sensorOf(tk(-1)):null;
     if(s1&&s1.sleepMin!=null){so=s1;K=tk(-1);dec=-1;}
@@ -12482,7 +12482,7 @@ window.flAccueilData=function(_argJour){try{
          _hb.push((_v==null||isNaN(_v))?null:+_v);}
         _l.sparkBas=_hb;
        }
-       return _l;})(),
+       try{if(typeof window.flSpo2PourMoniteur==='function')window.flSpo2PourMoniteur(_l,_off);}catch(e){} return _l;})(),   /* 19 nov. 2026 — sur le Fitcare, le niveau de la nuit et l'habitude (flint-oxygene.js) */
       /* v1775 — la nuit, pas la journee ; et l ecart a cote quand il existe. */
       (function(){var _t=(typeof flTempNuit==='function')?flTempNuit():null;
        var _l={libelle:'Température', cle:'temp',
@@ -16572,20 +16572,20 @@ var FL_HEBDO={
     Le founder : « t'as inventé des graphiques… je voulais exactement les mêmes
     qu'on avait faits ». Les siens sont les sparklines des bulles : des lignes,
     dans la couleur de la bulle. On reprend ces couleurs à l'identique. */
- kcalOut:{title:'Calories brûlées',lab:'TES CALORIES BRÛLÉES',heroLab:'MOYENNE / JOUR',unit:'kcal',col:'#f2870f',kind:'line',fmt:flhInt,tickFmt:function(t){return ''+Math.round(t);},
+  kcalOut:{title:'Calories brûlées',lab:'TES CALORIES BRÛLÉES',heroLab:'MOYENNE / JOUR',unit:'kcal',col:'#F95001',kind:'bars',/* 21 nov. 2026 — LES BRULEES REDEVIENNENT DES BARRES. Dino : « les calories sont annoncees en orange et en barres avant de cliquer, et quand on clique ca devient des points : c est pas bon ». La v848 avait raison pour les sparklines d alors ; la carte est en barres aujourd hui, donc le detail aussi — une barre par jour (S, M), une par semaine (A), depuis 0 kcal. Teinte : #F95001, l orange de reference, en aplat (le natif ne lit pas cet hexadecimal, il lit FL.calories, qui vaut la meme chose). kcalIn et kcalBal ne sont pas touchees. */fmt:flhInt,tickFmt:function(t){return ''+Math.round(t);},
   get:function(off){try{return flCalVue(off)?caloriesBurned(tk(off)):null;}catch(e){return null;}}},   /* 15 sept. — la garde est DANS le `get`, pas un drapeau de config : `flint-tendances.js` (_flhGet) préfère lui aussi `cfg.get` et court-circuite `flhSeries`. Voir `flCalVue`. */
- kcalIn:{title:'Calories consommées',lab:'TES CALORIES CONSOMMÉES',heroLab:'MOYENNE / JOUR',unit:'kcal',col:'#f4231d',kind:'line',fmt:flhInt,tickFmt:function(t){return ''+Math.round(t);},
+ kcalIn:{title:'Calories consommées',lab:'TES CALORIES CONSOMMÉES',heroLab:'MOYENNE / JOUR',unit:'kcal',col:'#f4231d',kind:'bars',/* 21 nov. 2026 — en barres, comme sa carte de la page Calories : meme forme avant et apres le clic */fmt:flhInt,tickFmt:function(t){return ''+Math.round(t);},
   get:function(off){try{var t=nutTotals(tk(off));return (t&&t.kcal)?t.kcal:null;}catch(e){return null;}}},
  /* La balance n'est pas une série de plus : c'est l'ÉCART entre les deux
     courbes. On trace donc brûlées (orange) et consommées (jaune) sur la même
     échelle — « la comparaison », mot pour mot. `parts` ne sert ici QUE de
     légende : le branchement des barres empilées teste kind==='bars'. */
- kcalBal:{title:'Balance calorique',lab:'BRÛLÉES CONTRE CONSOMMÉES',heroLab:'BRÛLÉES / JOUR',unit:'kcal',col:'#f2870f',colB:'#D6455B',kind:'line',fmt:flhInt,tickFmt:function(t){return ''+Math.round(t);},
+ kcalBal:{title:'Balance calorique',lab:'BRÛLÉES CONTRE CONSOMMÉES',heroLab:'BRÛLÉES / JOUR',unit:'kcal',col:'#F95001',colB:'#D6455B',kind:'line',fmt:flhInt,tickFmt:function(t){return ''+Math.round(t);},
   parts:[['#f2870f','Brûlées'],['#D6455B','Consommées']],
   get:function(off){try{return flCalVue(off)?caloriesBurned(tk(off)):null;}catch(e){return null;}},   /* 15 sept. — même garde que `kcalOut` : la courbe orange de la Balance est LA MÊME grandeur, elle ne peut pas tomber à zéro là où l'autre écran se tait. */
   v2Mesure:true,get2:function(off){try{var t=nutTotals(tk(off));return (t&&t.kcal)?t.kcal:null;}catch(e){return null;}}},   /* 15 sept. 2026 — `v2Mesure` : LA SECONDE COURBE DE CETTE MÉTRIQUE EST UNE MESURE, ET C'EST LA SEULE DE LA MAISON. `get2` vaut ici `nutTotals`, c'est-à-dire des repas que quelqu'un a SAISIS : une observation, au même titre que les brûlées. Le natif refuse de charger un graphique qui n'a aucune mesure dedans (`aUneMesure`, DetailHebdo.swift) et ne regardait que la PREMIÈRE courbe : depuis que les brûlées savent se taire faute de source, douze repas photographiés sans bracelet ne suffisaient plus à ouvrir l'écran — mesuré, `v` nul 30 fois sur 30 et `v2` plein 12 fois. Ce drapeau le rouvre, et il est posé ICI, sur la métrique, parce que la réponse dépend de la métrique et d'elle seule (pavé v1553). CONTRE-EXEMPLE MESURÉ, ET C'EST LUI QUI INTERDIT DE GÉNÉRALISER LE JETON CÔTÉ NATIF : le `get2` du SOMMEIL est le besoin en heures, CALCULÉ depuis le profil, jamais observé ; il vaut un nombre même sur une fenêtre sans une seule nuit mesurée — 8 fenêtres dans la base du 9 septembre (S7, S8, M3 à M8). Sans ce drapeau, le sommeil aurait ouvert un graphique ne contenant QUE la ligne grise du besoin : un cadre qui ressemble à une panne, ce que le pavé v1553 interdit. Une seconde courbe n'autorise le dessin que là où elle est elle-même une mesure. */
- hrv:{title:'VFC',lab:'TA VFC',unit:'ms',kind:'line',fmt:flhInt},
- rhr:{title:'FC au repos',lab:'TA FC AU REPOS',unit:'bpm',kind:'line',fmt:flhInt},
+ hrv:{title:'VFC',lab:'TA VFC',unit:'ms',kind:'line',spanMin:20,fmt:flhInt},
+ rhr:{title:'FC au repos',lab:'TA FC AU REPOS',unit:'bpm',kind:'line',spanMin:10,fmt:flhInt},
  /* v684 — métriques de la page Effort : elles ouvrent désormais la MÊME page de
     détail que les métriques de Sommeil et de Récupération (moteur flOpenHebdo),
     au lieu d'une page à part. Durées exprimées en heures décimales, comme la
@@ -16944,7 +16944,7 @@ function flhTicksAuto(mx,steps){var step;
  if(steps){step=steps[steps.length-1];for(var i=0;i<steps.length;i++){if(Math.max(mx,0.01)/steps[i]<=4){step=steps[i];break;}}}
  else{step=Math.pow(10,Math.floor(Math.log10(Math.max(mx,1)/3)));var e=mx/(3*step);if(e>=5)step*=5;else if(e>=2)step*=2;}
  var top=Math.ceil(mx/step)*step;if(top<mx+step*0.15)top+=step;var t=[];for(var v=top;v>=0.0001;v-=step)t.push(+v.toFixed(4));t.push(0);return t;}
-function flhRange(vals){var pos=Math.min.apply(null,vals)>=0,lo=Math.min.apply(null,vals),hi=Math.max.apply(null,vals);if(lo===hi){lo-=1;hi+=1;}var pad=(hi-lo)*0.15,mn=lo-pad,mx=hi+pad;if(mn<0&&pos)mn=0;
+function flhRange(vals,o){/* 21 nov. 2026 — LE RECUL, PAR METRIQUE. Dino, capture WHOOP a cote de la notre sur la VFC : le creux du jeudi et le pic du vendredi mangeaient tout le graphique. Deux reglages optionnels, lus dans la fiche FL_HEBDO de la metrique (`o`), et RIEN ne change pour celles qui ne les portent pas : la marge au-dessus du maxi et sous le mini passe de 15 a 30 % POUR TOUTES LES COURBES (uniformite demandee le meme jour ; `pad` permet a une fiche d en changer) ; `spanMin` — l etendue plancher de l axe, pour qu une semaine a 68-70 ms ne se lise pas comme une montagne (l axe ne se resserre plus sous cette etendue, il se centre sur la serie). Les graduations restent regulieres et encadrent toujours [mini, maxi] : aucun point ne sort. */var pos=Math.min.apply(null,vals)>=0,lo=Math.min.apply(null,vals),hi=Math.max.apply(null,vals);if(lo===hi){lo-=1;hi+=1;}var sm=(o&&o.spanMin)||0;if(hi-lo<sm){var c=(hi+lo)/2;lo=c-sm/2;hi=c+sm/2;if(lo<0&&pos){hi-=lo;lo=0;}}var pad=(hi-lo)*((o&&o.pad)||0.3),mn=lo-pad,mx=hi+pad;if(mn<0&&pos)mn=0;
  var step=Math.pow(10,Math.floor(Math.log10((mx-mn)/3)));var e=(mx-mn)/(3*step);if(e>=5)step*=5;else if(e>=2)step*=2;   /* ═══ 8 sept. 2026 — L AXE ENCADRE LA COURBE, ET IL LA SERRE. Dino, capture a l appui : « l axe doit monter plus haut que 80 : tu vois bien qu il y a des endroits de la courbe qui depassent, donc on en a besoin. Meme la, ca ne doit pas s arreter a 52. » Deux defauts d origine, tous les deux ici. (1) LA MARGE ETAIT DE 40 % DE CHAQUE COTE : la serie ne tenait que dans 56 % de la hauteur du cadre, centree — une VFC de 48 a 85 ms laissait 22 % de vide au-dessus du sommet, ~82 pt d ecran. Une courbe qui n occupe que la moitie de sa hauteur PARAIT plate ; a l ecran, elle l est. 15 % suffisent a ne pas coller aux bords. (2) LES GRADUATIONS NE COUVRAIENT PAS LA DONNEE : elles s arretaient au dernier multiple du pas tenant sous mx, donc 40/60/80 sur cette meme VFC — et le sommet a 85 passait AU-DESSUS de tout repere. Un axe qui s arrete sous la courbe ne gradue plus rien. Elles encadrent desormais [mini, maxi] et les bornes s ouvrent jusqu a elles. LES DEUX SE TIENNENT : encadrer avec 40 % de marge aurait rallonge l axe d un pas entier (100 au lieu de 80) et rendu la courbe plus plate encore ; serrer sans encadrer l aurait fait deborder par le haut ET par le bas. UN SEUL ENDROIT POUR LES TROIS DESSINS — flHebdoDetail (ecran natif), flhChart (cartes web) et flHebdoAnnee lisent tous cette fonction : le cadrage ne descend pas dans Swift, comme c est deja la regle ecrite pour les metriques d horaire. ═══ */
  var t0=Math.floor(lo/step)*step,t1=Math.ceil(hi/step)*step;if(t0<0&&pos)t0=0;var t=[];for(var v=t0;v<=t1+1e-9;v+=step)t.push(+v.toFixed(4));mn=Math.min(mn,t0);mx=Math.max(mx,t1);if(mn<0&&pos)mn=0;return {min:mn,max:mx,ticks:t.reverse()};}
 function flhX(i,n){return n===7?82.86+77.71*i:52+(588-52)*(i+0.5)/n;}
@@ -16968,7 +16968,7 @@ function flhChart(cfg,pts,n,gid){
  var mn,mx,ticks;
  if(cfg.ticks){mx=cfg.ticks[0];mn=cfg.ticks[cfg.ticks.length-1];ticks=cfg.ticks;}
  else if(cfg.kind==='bars'){ticks=flhTicksAuto(allv.length?Math.max.apply(null,allv):1,cfg.tickSteps);mx=ticks[0];mn=0;}
- else{var r=flhRange(allv.length?allv:[0,1]);mn=r.min;mx=r.max;ticks=r.ticks;}
+ else{var r=flhRange(allv.length?allv:[0,1],cfg);mn=r.min;mx=r.max;ticks=r.ticks;}
  var s='',avg=vals.length?vals.reduce(function(a,b){return a+b;},0)/vals.length:null;
  s+='<g stroke="#e7ded1" stroke-width="1.3" stroke-dasharray="4 5">';
  ticks.forEach(function(t){var y=flhY(t,mn,mx);if(Math.abs(y-660)>2)s+='<line x1="52" y1="'+y.toFixed(1)+'" x2="588" y2="'+y.toFixed(1)+'"></line>';});
@@ -20456,7 +20456,7 @@ function renderSleep(){var t=sensorOf(tk(gDay)),
   /* v1312 — LE NOMBRE DE RÉVEILS ÉTAIT DEVINÉ. Le repli valait « minutes
      d'éveil divisées par vingt », ce qui invente un compte à partir d'une durée.
      `sleepNight` sait pourtant les COMPTER sur l'hypnogramme — les segments
-     d'éveil du milieu de nuit d'au moins deux minutes — et rend `null` quand il
+     d'éveil du milieu de nuit d'au moins cinq minutes — et rend `null` quand il
      n'a pas les stades. On affiche ce qu'il rend. */
   var wk=(nm.wakeEvents!=null?nm.wakeEvents:null);
   if(wk==null){
@@ -22337,7 +22337,7 @@ function flEffData(doc){
     La fiche et la carte donnent désormais le même nombre, par construction. */
  var steps=(function(){try{
    var pm=(typeof flPasParMinute==='function')?flPasParMinute(K):null;
-   if(!pm||!pm.m)return null;
+   if(!pm||!pm.m){var _rcF=window.flPasReleves?window.flPasReleves.seance(watchOf(K),sm0,sm0+_murF,_pzF.length?function(m){return flEnPause(m,_pzF);}:null):null;return _rcF?_rcF.pas:null;}   /* 21 nov. 2026 — Fitcare : les compteurs du bracelet (pas.js) */
    var tot=0,vus=0;
    for(var mn=Math.max(0,Math.round(sm0));mn<Math.min(1440,Math.round(sm0+_murF));mn++){
      if(_pzF.length&&flEnPause(mn,_pzF))continue;   /* 6 nov. 2026 — la fenêtre réelle, arrêts exclus */
@@ -23373,7 +23373,7 @@ function wipeData(){if(!confirm('Vider TOUTES les données (démo incluse) et re
 function exportData(){const dump={};Object.keys(localStorage).forEach(k=>dump[k]=localStorage.getItem(k));const t=JSON.stringify(dump,null,2);try{const blob=new Blob([t],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='flint-data.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},1500);toast('⬇️ Données exportées (flint-data.json)')}catch(e){try{navigator.clipboard.writeText(t);toast('📋 Données copiées')}catch(e2){toast('Export impossible')}}}
 
 /* ===== Coach IA (réponses fondées sur les données du jour) ===== */
-const APP_VERSION='v3110';
+const APP_VERSION='v3128';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
@@ -25761,7 +25761,7 @@ window.flAddActivity=function(doc){flActSt=flActDefaults();flActAdd(doc);};
  function wSaveK(K){try{var d=wGet(K);
   d.hr=wDedoublonner(d.hr);
   /* 3 nov. 2026 — le pouls doublé corrigé à la source, une fois pour tous (flint-sommeil.js, `flPoulsCorrigerJour`). */
-  if(typeof window.flPoulsCorrigerJour==='function'){try{var qv=String(K).split('-'),dv=new Date(+qv[0],+qv[1]-1,+qv[2]-1),Kv=dv.getFullYear()+'-'+(dv.getMonth()+1)+'-'+dv.getDate(),wv=cache[Kv]||DB.get('watch_'+Kv,null);window.flPoulsCorrigerJour(d,wv&&wv.hr);}catch(eD){}}
+  if(typeof window.flPoulsCorrigerJour==='function'){try{var qv=String(K).split('-'),dv=new Date(+qv[0],+qv[1]-1,+qv[2]-1),Kv=dv.getFullYear()+'-'+(dv.getMonth()+1)+'-'+dv.getDate(),wv=cache[Kv]||DB.get('watch_'+Kv,null);window.flPoulsCorrigerJour(d,wv&&wv.hr,wv);}catch(eD){}}
   if(d.hr.length>4000)d.hr=d.hr.slice(-4000);
   /* ═══ v1328 — LE PLAFOND DES BATTEMENTS MANGEAIT LA NUIT, COMME CELUI DE LA FC
      Même défaut que la v1309, sur le canal le plus précieux qu'on ait. Relevé
@@ -26279,7 +26279,7 @@ window.flMetriquesCourse=function(id,debutSec,finSec,estCourse){
           consulte lisait `undefined` et retombait sur le comportement de
           l'ancien bracelet. Le capteur qui tient le poignet est un fait
           durable, pas un etat de page. */
-       DB.set('flMarqueCapteur',String(data.family));}catch(e){}}
+       DB.set('flMarqueCapteur',String(data.family));}catch(e){} if(data.logiciel!=null&&typeof flPoserLogiciel==='function')flPoserLogiciel(data,wGet,wSaveK);}   /* 21 nov. 2026 — la version du logiciel du bracelet, posée sur la journée à côté de `marque` (flint-vfc-source.js) ; aucun calcul ne la lit */
   else if(type==='battery'&&data.level!=null){W.battery=data.level;d2.battery=data.level;wSave();ensureChip();chipBat.textContent='· '+data.level+'%';}
   /* v1162 — UNE TRAME SANS VALEUR NE DOIT PAS EFFACER LE COMPTEUR.
      Les branches voisines se gardent toutes (`data.level!=null`, `data.hr`), et
@@ -26287,7 +26287,7 @@ window.flMetriquesCourse=function(id,debutSec,finSec,estCourse){
      Une trame `steps` sans valeur ecrivait donc `undefined` dans watch_<K>.steps,
      et `flStepsOf` retombait sur son dernier `return ... : 0`. Autrement dit un
      bon chiffre remplace par un zero, sans rien dans la console. */
-  else if(type==='steps'&&data.steps!=null){W.steps=data.steps;d2.steps=data.steps;wSave();}
+  else if(type==='steps'&&data.steps!=null){W.steps=data.steps;d2.steps=data.steps;try{if(window.flPasReleves){var _tr=(+data.t>1000000000)?new Date(+data.t*1000):new Date();if(tk(0)===(_tr.getFullYear()+'-'+(_tr.getMonth()+1)+'-'+_tr.getDate()))window.flPasReleves.noter(d2,+data.steps,_tr.getHours()*60+_tr.getMinutes());}}catch(e){}wSave();}   /* 21 nov. 2026 — le total du jour du bracelet est aussi un RELEVÉ daté (`pasJour`) : les pas d'une séance au Fitcare = la différence de deux relevés (pas.js, `flPasReleves`) */
   else if(type==='kcal'){W.kcal=data.kcal;d2.kcal=data.kcal;wSave();}
   else if(type==='distance'){W.dist=data.distance;d2.dist=data.distance;wSave();}
   else if(type==='rr'&&data.rr&&data.rr.length){W.rr=data.rr;Array.prototype.push.apply(d2.rr,data.rr);
@@ -27559,11 +27559,11 @@ window.flMetriquesCourse=function(id,debutSec,finSec,estCourse){
    var _rmMemo=window._flRmssdMemo=window._flRmssdMemo||{};
    function flVfcMinuteDouteuse(rr,paires,fcMinute){if(!rr||rr.length<2)return true;if(paires<0.7*(rr.length-1))return true;var m=0;for(var i=0;i<rr.length;i++)m+=rr[i];m/=rr.length;return !!(fcMinute>0&&60000/m>1.15*fcMinute);}   /* 10 nov. 2026 — nuit du 9 au 10 : 02:50-02:55, battements à 56-98 bpm pour un cœur à 48 (faux pics tus), rangés dans le profond : VFC 88 (WHOOP 65). Douteuse = battements > 1,15 × le pouls de la minute (médiane 1,00, p90 1,03), ou < 70 % de paires gardées. Plus LENTS que la minute, c'est la minute qui ment : gardés. Banc : tests/test-vfc-minutes-douteuses.js. */
    var w=watchOf(K); if(!w)return null;
-   var _mat=((typeof flMatiereNuit==='function')?flMatiereNuit(K,w):w)||w, rh=_mat.rrH||[]; if(!rh.length)return {ok:false,raison:"Aucun battement enregistré cette nuit."};
+   var _mat=((typeof flMatiereNuit==='function')?flMatiereNuit(K,w):w)||w; if(typeof flMatiereACheval==='function')_mat=flMatiereACheval(K,_mat,['rrH','hr'])||_mat; var rh=_mat.rrH||[]; if(!rh.length)return {ok:false,raison:"Aucun battement enregistré cette nuit."};   /* 21 nov. 2026 — nuit commencée avant minuit : ses R-R (et le pouls de ses minutes) d'avant minuit vivent dans la VEILLE, et la soirée du jour K est à la nuit d'après (`flMatiereACheval`, flint-porte.js) ; toute autre nuit : le même objet */
    var n=w.night||null;
    if(!n||n.sleepStart==null||n.sleepEnd==null)
     return {ok:false,raison:"Pas de nuit découpée pour ce jour."};
-   var _cle=K+'|'+rh.length+'|'+n.sleepStart+'|'+n.sleepEnd;
+   var _cle=K+'|'+rh.length+'|'+n.sleepStart+'|'+n.sleepEnd+(_mat._aCheval?'|v'+_mat._nVeille:'');   /* 21 nov. 2026 — une nuit à cheval se recalcule quand la veille change */
    if(_rmMemo[_cle])return _rmMemo[_cle];
    var a=new Date(n.sleepStart), b=new Date(n.sleepEnd);
    var am=a.getHours()*60+a.getMinutes(), bm=b.getHours()*60+b.getMinutes(); if(typeof flNuitDuSoir==='function'&&flNuitDuSoir(n)){am=+n.bedMin;bm=+n.wakeMin;}  /* 1er oct. 2026 — nuit du soir : minutes relatives (négatives), matière de la veille */
@@ -27612,9 +27612,9 @@ window.flMetriquesCourse=function(id,debutSec,finSec,estCourse){
     });
     med=_sw>0?Math.sqrt(_sc/_sw):null;
    }
-   if(med==null)med=vs[vs.length>>1];
-   return (_rmMemo[_cle]={ok:true, methode:3, profond:_prof.length,
-           rmssd:Math.round(med),
+   var _voie='profond'; if(med==null){med=vs[vs.length>>1];_voie='repli';}   /* 21 nov. 2026 — DEUX CALCULS SOUS LA MÊME ÉTIQUETTE : sans six minutes profondes, c'est la médiane de toutes les minutes (68,6 contre 76,5 sur la même nuit). La voie se note, la valeur et la méthode ne bougent pas. */
+   return (_rmMemo[_cle]={ok:true, methode:3, profond:_prof.length, voie:_voie,
+           rmssd:Math.round(med), exact:Math.round(med*10)/10,   /* 21 nov. 2026 — le même chiffre au dixième, gardé avec le résumé d'une nuit « montre » (`rmssdRR1`) ; rien ne le sert */
            minutes:parMinute.length,
            battements:totalBattements,
            retenus:totalRetenus, douteuses:_douteuses,
@@ -27674,10 +27674,10 @@ window.flMetriquesCourse=function(id,debutSec,finSec,estCourse){
     if(r&&r.ok){
      /* gen.12 — la puce et le verdict se figent avec la nuit : la bande relit la puce, et la valeur servie hier ne change pas demain. */
      var _pu=(typeof flPuceNuit==='function')?flPuceNuit(w):null,_vd=(typeof flVfcRetenue==='function')?flVfcRetenue(r.rmssd,_pu&&_pu.v,K):null;
-     w.night.vfcNuit=(_vd&&_vd.src==='puce')?{v:_vd.hrv,src:'puce',rmssd:r.rmssd,puce:_vd.hrv,desaccord:_vd.desaccord,minutes:r.minutes,qualite:r.qualite,m:r.methode||1}
-                    :{v:r.rmssd,src:'rmssd',puce:(_pu?_pu.v:null),desaccord:(_vd?_vd.desaccord:null),minutes:r.minutes,qualite:r.qualite,m:r.methode||1};
+     w.night.vfcNuit=(_vd&&_vd.src==='puce')?{v:_vd.hrv,src:'puce',rmssd:r.rmssd,puce:_vd.hrv,desaccord:_vd.desaccord,minutes:r.minutes,qualite:r.qualite,voie:r.voie||null,m:r.methode||1}
+                    :{v:r.rmssd,src:'rmssd',puce:(_pu?_pu.v:null),desaccord:(_vd?_vd.desaccord:null),minutes:r.minutes,qualite:r.qualite,voie:r.voie||null,m:r.methode||1};   /* 21 nov. 2026 — `voie` : 'profond' (sommeil profond pondéré) ou 'repli' (médiane de toutes les minutes) ; aucun calcul ne la lit, la provenance du repère reste `rmssd|…|m3` */
      change=true;
-    }
+    } if(typeof window.flVfcFigerMontre==='function'&&window.flVfcFigerMontre(K,w,r))change=true;   /* 21 nov. 2026 — bracelet ≥ 2.3.7 : la VFC figée est la moyenne de ses valeurs horaires (`src:'montre'`, `m:'h1'`), notre RMSSD gardé à côté (`rmssdRR`, `voie`, `vfcPonderee`) — y compris quand nos intervalles ont refusé (flint-vfc-source.js) */
    }
    /* ⚠️ `typeof` OBLIGATOIRE, ET LE BANC L'A DIT. Les bancs découpent cette
       fonction SEULE et la rejouent sans ses voisines : sans la garde, l'appel
@@ -27860,7 +27860,7 @@ window.flMetriquesCourse=function(id,debutSec,finSec,estCourse){
       sous son étiquette de provenance. */
    var hrv=null,hrvSrc=null,hrvPuce=null,hrvN=0,hrvMeth=null;
    try{
-    var _wh=(typeof _wn!=='undefined'&&_wn)||w; if(_wh.hrvMontre&&_wh.hrvMontre.length){
+    var _wh=(typeof _wn!=='undefined'&&_wn)||w; if(typeof flMatiereACheval==='function')_wh=flMatiereACheval(k,_wh,['hrvMontre'],true)||_wh; if(_wh.hrvMontre&&_wh.hrvMontre.length){   /* 21 nov. 2026 — nuit commencée avant minuit : la puce d'avant minuit vit dans la veille, la soirée du jour k est à la nuit d'après (`flMatiereACheval`, flint-porte.js) — même lecture que `flPuceNuit` */
      /* ON LIT LA NUIT DIRECTEMENT, PAS LA VARIABLE `n`.
         `n` est declaree PLUS BAS dans cette fonction : par remontee des `var`,
         elle vaut `undefined` ici, la condition serait toujours fausse et ce
@@ -27899,7 +27899,7 @@ window.flMetriquesCourse=function(id,debutSec,finSec,estCourse){
      if(_rm&&_rm.ok){hrv=_rm.rmssd;hrvSrc='rmssd';hrvMeth=_rm.methode||1;}
     }
     /* gen.14 — le desaccord RMSSD/puce se NOTE sur la nuit (flint-vfc-source.js), il ne remplace plus rien : WHOOP a donne raison au RMSSD (81/87/79 contre nos 81/85/76, la puce a 65/64/62). Un resume bascule sur la puce par la gen.13 est restaure. */
-    if(hrv!=null&&typeof flVfcRetenue==='function'&&(hrvSrc==='rmssd'&&(!_fz||_fz.desaccord==null)||(_fz&&_fz.src==='puce'&&_fz.rmssd!=null))){var _vr=flVfcRetenue(_fz&&_fz.rmssd!=null?_fz.rmssd:hrv,hrvPuce,k,w);if(_vr&&_vr.hrv!=null){hrv=_vr.hrv;hrvSrc=_vr.src;}}
+    if(hrv!=null&&typeof flVfcRetenue==='function'&&(hrvSrc==='rmssd'&&(!_fz||_fz.desaccord==null)||(_fz&&_fz.src==='puce'&&_fz.rmssd!=null))){var _vr=flVfcRetenue(_fz&&_fz.rmssd!=null?_fz.rmssd:hrv,hrvPuce,k,w);if(_vr&&_vr.hrv!=null){hrv=_vr.hrv;hrvSrc=_vr.src;}} if(typeof window.flVfcServie==='function'){var _vm=window.flVfcServie(k,w,_fz);if(_vm){hrv=_vm.v;hrvSrc=_vm.src;hrvMeth=_vm.m;}}   /* 21 nov. 2026 — LA VFC COMME L'APP DU BRACELET : logiciel ≥ 2.3.7 et trois valeurs horaires dans la nuit → leur moyenne, provenance « montre », méthode « h1 » (flint-vfc-source.js). `flVfcServie` rend null pour tout le reste : le calcul d'avant, au centième. */
    }catch(e){}
    /* 18 oct. 2026 — LA VFC DE LA PUCE NE REMPLACE PAS UNE NUIT QU ON N A PAS MESUREE. 16 oct. : l app arretee 45 h, la montre
       avait perdu le pouls de la nuit (13 % mesure) mais garde ses VFC ; la puce (77) a servi et la recup a dit 89 — WHOOP 62.
@@ -30512,14 +30512,14 @@ window.flDansFenetre=function(m,d,f){ return m>=d && m<f; };
       arriere, et on demande QUATRE nuits : trois de reference, plus celle qu on
       evalue. Le seuil est le meme, il est simplement dit dans les termes de
       celui qui le lit. */
-   var n=0,_src=null,_ins='',d=new Date(),_sv1=window.flRecupSansVfc===1;   /* 17 nov. 2026 — LE COMPTE DIT LA RÈGLE DE LA RÉCUP, voir la ligne du test plus bas */
+   var n=0,_nh=0,_src=null,_ins='',d=new Date(),_sv1=window.flRecupSansVfc===1;   /* 17 nov. 2026 — LE COMPTE DIT LA RÈGLE DE LA RÉCUP, voir la ligne du test plus bas */
    for(var i=0;i<=30;i++){
     var k=d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();
     var so=(typeof sensorOf==='function')?sensorOf(k):null,_hn=!!(so&&i>0&&typeof flVfcHorsNorme==='function'&&flVfcHorsNorme(k,tk(0)));   /* 12 nov. 2026 — normale de VFC repartie de zéro (flint-vfc-source.js) : écarte la nuit de la VFC seulement */
-    if(so&&i===0&&so.hrv!=null){_src=so.hrvSrc||null;_ins=(so.instr||'')+'|m'+(so.hrvMeth||1);}var _okH=!!(so&&so.hrv!=null&&(i===0||(!_hn&&!(so.sleepMin!=null&&so.sleepMin<240)&&!(_src&&so.hrvSrc&&so.hrvSrc!==_src)&&!(_src&&((so.instr||'')+'|m'+(so.hrvMeth||1))!==_ins))));var _okR=!!(_sv1&&so&&so.rhr!=null&&(i>0||(typeof flRecupSansVfcPermis==='function'&&!!flRecupSansVfcPermis(so,0,true))));if(_okH||_okR)n++;   /* 17 nov. 2026 — LA RÈGLE DE `recovery`, PAS UNE AUTRE. Le premier score existe dès que la nuit du jour est mesurée ET qu'une normale existe : celle de la VFC (`baseStat('hrv')` : 3 nuits d'avant, de 4 h et plus, même source — `_okH`) OU, l'app ouvrant la voie « sans VFC » (`flRecupSansVfc`), celle du pouls de repos (`baseStat('rhr')` : 3 jours d'avant qui en portent un, SANS durée minimale — `_okR`), la nuit du jour passant alors par le permis du moteur (`flRecupSansVfcPermis`, pouls et couverture). Le compte écartait les nuits d'avant de moins de 4 h alors que la récup les prend : « 3/4 » et un score affiché (rejoué : test-nuits-de-base-regle.js). Affichage seul : `recovery` ne lit pas ce compte. */
+    if(so&&i===0&&so.hrv!=null){_src=so.hrvSrc||null;_ins=(so.instr||'')+'|m'+(so.hrvMeth||1);}var _okH=!!(so&&so.hrv!=null&&(i===0||(!_hn&&!(so.sleepMin!=null&&so.sleepMin<240)&&!(_src&&so.hrvSrc&&so.hrvSrc!==_src)&&!(_src&&((so.instr||'')+'|m'+(so.hrvMeth||1))!==_ins))));var _okR=!!(_sv1&&so&&so.rhr!=null&&(i>0||(typeof flRecupSansVfcPermis==='function'&&!!flRecupSansVfcPermis(so,0,true))));if(_okH||_okR)n++;if(_okH)_nh++;   /* 17 nov. 2026 — LA RÈGLE DE `recovery`, PAS UNE AUTRE. Le premier score existe dès que la nuit du jour est mesurée ET qu'une normale existe : celle de la VFC (`baseStat('hrv')` : 3 nuits d'avant, de 4 h et plus, même source — `_okH`) OU, l'app ouvrant la voie « sans VFC » (`flRecupSansVfc`), celle du pouls de repos (`baseStat('rhr')` : 3 jours d'avant qui en portent un, SANS durée minimale — `_okR`), la nuit du jour passant alors par le permis du moteur (`flRecupSansVfcPermis`, pouls et couverture). Le compte écartait les nuits d'avant de moins de 4 h alors que la récup les prend : « 3/4 » et un score affiché (rejoué : test-nuits-de-base-regle.js). Affichage seul : `recovery` ne lit pas ce compte. */
     d.setDate(d.getDate()-1);
    }
-   return {presentes:n,requises:4,manquantes:Math.max(0,4-n)};
+   var _rq=4,_pr=n; return {presentes:_pr,requises:_rq,manquantes:Math.max(0,_rq-_pr)};   /* relecture du 21 nov. (suite de la retouche 7) — la récupération attend TROIS nuits « montre » d'avant (`flVfcRepereBase`), comme toute autre mesure : le compte redevient celui d'avant, sur 4, pour tout le monde. La branche du 21 nov. (« trois nuits vécues suffisent », `_rq=3`) annonçait « 3 sur 3 » au troisième matin sans score, puis « 4 sur 3 ». Même doctrine que le 17 nov. : le compte dit la règle de `recovery`. `_nh` reste compté, plus lu. */
   }catch(e){return null;}};
 
   window.flAge=function(){try{
@@ -30900,7 +30900,7 @@ window.flDansFenetre=function(m,d,f){ return m>=d && m<f; };
    for(var d=0;d<=2;d++){
     var k=tk(-d);
     if(flReveilLu(k))continue;
-    var so=(typeof sensorOf==='function')?sensorOf(k):null;
+    var so=(typeof flCapteurNuit==='function')?flCapteurNuit(k):((typeof sensorOf==='function')?sensorOf(k):null);   /* 22 nov. 2026 — la question parle de la nuit PUBLIÉE, celle que « Ma nuit » affiche */
     if(!so||so.sleepMin==null||so.wakeMin==null)continue;
     if(so.sleepMin<180)continue;              /* une nuit tres courte ne dit rien du besoin */
     return {jour:k, reveil:_flHM(so.wakeMin), coucher:_flHM(so.bedMin),
@@ -32646,7 +32646,7 @@ window.flMetriquesCanoniques=function(k,d,f,ps){
     }
     if(window.flPasAuDelaDeMinuit){var _pa=window.flPasAuDelaDeMinuit(k,f,_ps);tot+=_pa.tot;vus+=_pa.vus;}   /* 6 nov. 2026 */
     if(vus){out.pas=tot; try{if(typeof flPasConfirmes==='function')out.pasConfirmes=flPasConfirmes(pm,d,f,_ps);}catch(_e){}}
-   }
+   }else if(window.flPasReleves){var _rc=window.flPasReleves.seance(watchOf(k),d,f,_ps.length?function(m){return flEnPause(m,_ps);}:null);if(_rc){out.pas=_rc.pas;out.pasSrc=_rc.source;}}   /* 21 nov. 2026 — le Fitcare n'écrit pas de pas à la minute : ses compteurs, relevés au début et à la fin (pas.js) */
   }catch(e){}
   return out;
  }catch(e){return null;}

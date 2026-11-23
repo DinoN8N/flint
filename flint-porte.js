@@ -269,7 +269,10 @@ window.flMesureDans=function(deb,fin){
    une copie : aucune valeur existante ne peut bouger. Le jour où l'on voudra
    que les nuits commencées avant minuit lisent AUSSI leur première heure dans
    la veille (elles l'ignorent aujourd'hui), ce sera ici, et ce sera une
-   génération de récupération — pas un effet de bord de ce correctif. */
+   génération de récupération — pas un effet de bord de ce correctif.
+   21 nov. 2026 — ce jour est venu pour la VFC, la respiration tirée des
+   battements et la puce, et pour elles seules : `flMatiereACheval`, plus bas.
+   Cette fonction-ci n'a pas changé d'un caractère. */
 window.flNuitDuSoir=function(n){return !!(n&&n.bedMin!=null&&n.wakeMin!=null&&+n.wakeMin<0);};
 var FL_CANAUX_NUIT=['hr','hrvMontre','rrH','spo2','temp','tempPhoto'];   /* 28 oct. 2026 — la température des photos (flTempNuitPhoto) */
 window.flMatiereNuit=function(K,w){try{
@@ -285,6 +288,71 @@ window.flMatiereNuit=function(K,w){try{
   }
   v[ch]=o;
  }
+ return v;
+}catch(e){return w;}};
+
+/* ═══ 21 nov. 2026 — UNE NUIT COMMENCÉE AVANT MINUIT LIT SA SOIRÉE DANS LA VEILLE ═══
+
+   L'audit de la VFC du 21 nov. : `flRmssdNuit` ne lisait que les R-R du jour du
+   RÉVEIL. Ceux d'avant minuit sont rangés dans la veille (un battement est
+   classé à son instant, v2093) et n'étaient jamais lus. Rejeu sur une vraie
+   nuit complète, décalée dans l'horloge : coucher 23:30 → 68,5 ms, 22:15 → 69,9,
+   20:45 → REFUS « nuit trouée 20:45→00:00 ». Chez un couche-tôt, la VFC était
+   refusée chaque nuit.
+
+   ET LA BRANCHE « À CHEVAL » DU FILTRE LISAIT LE MAUVAIS SOIR. Les lecteurs
+   filtrent `(am<=bm)?(m>=am&&m<=bm):(m>=am||m<=bm)` sur le jour K : pour une
+   nuit 23:30 → 07:00, `m>=am` prenait 23:30-23:59 du jour K — le début de la
+   nuit SUIVANTE — comme la première demi-heure de celle-ci.
+
+   LA MÊME RECETTE QUE `flMatiereNuit`, pour la nuit à cheval sur minuit et pour
+   les SEULS canaux demandés : on ne réécrit aucun lecteur, on lui présente la
+   bonne matière. La veille à partir de la minute d'endormissement, décalée de
+   −1440 (23:30 la veille devient −30), PUIS le jour K sans sa soirée (minutes
+   ≥ l'endormissement : elles sont à la nuit d'après). Les minutes sont dans
+   l'ordre du temps, aucune n'existe deux fois, et le filtre de toujours retombe
+   juste (une minute négative est ≤ le réveil). Tout le reste de la journée est
+   celui de K, inchangé.
+
+   `parLit` : la fenêtre du lecteur — `bedMin`/`wakeMin` (la puce, `sensorOf`)
+   ou, par défaut, `sleepStart`/`sleepEnd` (`flRmssdNuit`, `flRespirationNuit`).
+   POUR TOUTE AUTRE NUIT (entière après minuit, nuit du soir, pas de nuit),
+   l'objet rendu EST l'objet reçu : aucune valeur existante ne peut bouger.
+   `_nVeille` (ce que la veille apporte) entre dans la clé de mémoire des
+   lecteurs : une nuit à cheval se recalcule quand la veille change.
+
+   LA PUCE D'UN AUTRE BRACELET N'ENTRE PAS. Un intervalle R-R ou un pouls sont
+   des millisecondes et des battements, quel que soit le poignet ; la VFC de la
+   puce (`hrvMontre`), elle, a l'échelle de son bracelet (`flInstrumentVfc`).
+   Le soir où l'on change de bracelet, la veille ne prête donc pas sa puce —
+   même règle que l'oxygène recollé (flint-oxygene.js).
+
+   CE QUI NE PASSE PAS PAR ICI, exprès : le pouls du repos, l'oxygène, la
+   température du `.slep`, la respiration de la puce — `flMatiereNuit` leur rend
+   toujours le jour K seul. Les y amener déplacerait la récupération entière ;
+   ce serait une génération, pas un correctif de la VFC.
+   Banc : tests/test-vfc-nuit-avant-minuit.js. */
+window.flMatiereACheval=function(K,w,canaux,parLit){try{
+ var n=w&&w.night; if(!n||w._matiereNuit||w._aCheval||!canaux||!canaux.length||flNuitDuSoir(n))return w;
+ var am,bm;
+ if(parLit){ if(n.bedMin==null||n.wakeMin==null)return w; am=+n.bedMin; bm=+n.wakeMin; }
+ else{ if(n.sleepStart==null||n.sleepEnd==null)return w;
+  var a=new Date(n.sleepStart), b=new Date(n.sleepEnd); am=a.getHours()*60+a.getMinutes(); bm=b.getHours()*60+b.getMinutes(); }
+ if(!(am>bm)||!(am<1440)||!(bm>=0))return w;
+ var m0=flMinuitMsDe(K); if(m0==null||isNaN(m0))return w;
+ var Kv=flCleLocaleDe(m0-43200000,null), wv=((typeof watchOf==='function')?watchOf(Kv):_porteMontre(Kv))||{};
+ var v={}, nv=0, c; for(c in w)if(Object.prototype.hasOwnProperty.call(w,c))v[c]=w[c];
+ var autre=(typeof window.flInstrumentVfc==='function')&&window.flInstrumentVfc(wv.marque)!==window.flInstrumentVfc(w.marque);
+ for(var i=0;i<canaux.length;i++){
+  var ch=canaux[i], Lv=(ch==='hrvMontre'&&autre)?[]:(wv[ch]||[]), Lj=w[ch]||[], o=[], j, x;
+  for(j=0;j<Lv.length;j++){
+   x=Lv[j]; if(!x||x[0]==null||!(+x[0]>=am)||!(+x[0]<1440))continue;
+   var y=x.slice(); y[0]=+x[0]-1440; o.push(y); nv++;
+  }
+  for(j=0;j<Lj.length;j++){ x=Lj[j]; if(x&&x[0]!=null&&+x[0]>=am)continue; o.push(x); }
+  v[ch]=o;
+ }
+ v._aCheval=Kv; v._nVeille=nv;
  return v;
 }catch(e){return w;}};
 

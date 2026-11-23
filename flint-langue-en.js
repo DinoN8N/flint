@@ -710,5 +710,7 @@ window.FL_LANG.en={
  "re:^(\\d+) minutes de VFC cette nuit, groupées sur une partie de la nuit : trop peu réparties pour la calculer\\.$":"$1 minutes of HRV last night, bunched in one part of the night: too unevenly spread to compute it.",
  "re:^Le bracelet a cessé d'envoyer tes battements de (\\d\\d:\\d\\d) à (\\d\\d:\\d\\d) : VFC non calculée cette nuit\\.$":"The band stopped sending your heartbeats from $1 to $2: HRV not computed last night.",
  "Aucune minute de VFC exploitable cette nuit.":"No usable minute of HRV last night.",
+ "Le bracelet n'a pas rendu assez de mesures de VFC pour cette nuit.":"The band didn't deliver enough HRV readings for this night.",
+ "Le bracelet n'a pas encore rendu assez de mesures de VFC pour cette nuit.":"The band hasn't delivered enough HRV readings for this night yet.",
  "Récup calculée sans VFC : pouls de repos, sommeil, respiration, température.":"Recovery computed without HRV: resting heart rate, sleep, breathing, temperature."
 };

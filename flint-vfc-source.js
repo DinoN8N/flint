@@ -113,6 +113,10 @@ window.flPuceNuit = function (w) {
     /* 1er oct. 2026 — une nuit finie avant minuit lit la puce de la veille
        (`flMatiereNuit`, flint-porte.js) ; la nuit porte sa clé (`night.K`). */
     if (w && w.night && w.night.K && typeof flMatiereNuit === 'function') w = flMatiereNuit(w.night.K, w);
+    /* 21 nov. 2026 — une nuit COMMENCÉE avant minuit lit la puce d'avant minuit dans la veille, et plus la
+       soirée du jour du réveil, qui est à la nuit d'après (`flMatiereACheval`, flint-porte.js). Même fenêtre
+       que le filtre ci-dessous (`bedMin`/`wakeMin`), même lecture que `sensorOf`. */
+    if (w && w.night && w.night.K && typeof flMatiereACheval === 'function') w = flMatiereACheval(w.night.K, w, ['hrvMontre'], true) || w;
     if (!w || !w.hrvMontre || !w.hrvMontre.length) return null;
     /* ═══ 14 sept. 2026 — LE REPLI SUR LA JOURNÉE ENTIÈRE EST RETIRÉ ══════════
        La ligne disait « la nuit si elle porte au moins trois mesures, TOUTE LA
@@ -203,6 +207,7 @@ window.flVfcRefiger = function (K, w, fz) {
     var nv = {};
     for (var c in fz) if (Object.prototype.hasOwnProperty.call(fz, c)) nv[c] = fz[c];
     nv.ancien = fz.v; nv.v = r.rmssd; nv.m = 3; nv.minutes = r.minutes; nv.qualite = r.qualite;
+    if (r.voie) nv.voie = r.voie;   /* 21 nov. 2026 — la voie du calcul qui vient de refaire le résumé (index.html, flRmssdNuit) */
     w.night.vfcNuit = nv;
     if (typeof wSaveK === 'function') wSaveK(K);
     try { window._flBandeMemo = {}; } catch (e) {}
@@ -797,6 +802,43 @@ window.flInstrumentVfc = function (marque) {
   return neuf ? (ancien ? 'mixte' : 'fitcare') : '';
 };
 
+/* ═══ 21 nov. 2026 — LA VERSION DU LOGICIEL DU BRACELET SE POSE SUR LA JOURNÉE ══════════════════
+
+   L'audit de la VFC : le même champ `hrvMontre` (la VFC horaire de la puce du Fitcare) valait
+   50-180 sous le logiciel 2.3.4 et 45-75 sous le 2.3.7. La version n'était que journalisée au natif
+   (« bracelet : matériel … · logiciel … », HistoriqueFitcare.swift), et chaque athlète sera mis à
+   jour à sa propre date : sans elle sur la journée, on ne saura jamais dire sous quel logiciel une
+   nuit a été mesurée.
+
+   LE NATIF l'envoie à chaque connexion, dès que le bracelet a décliné son identité : un second
+   évènement `family`, avec `logiciel` (le texte du bracelet, tel quel) et `t` (l'instant de la
+   réponse — le pont peut livrer l'évènement des heures plus tard). ICI on la pose sur la journée
+   de cet instant, à côté de `marque` : `watch_<jour>.logiciel`, la DERNIÈRE version vue ce jour-là.
+   La journée n'est réécrite que si la valeur change — une fois par jour, pas à chaque connexion.
+   Et on ne CRÉE jamais une journée passée pour elle : livrée le lendemain d'un jour où le bracelet
+   n'a rien écrit (ni marque, ni pouls), la version n'a rien à qualifier, elle est laissée.
+
+   AUCUN CALCUL NE LA LIT. C'est une provenance qu'on commence à garder ; le jour où une normale
+   devra distinguer deux logiciels, la matière sera là. Une journée sans `logiciel` (avant ce jour,
+   ancien binaire, autre bracelet) est un état légitime, pas une lacune à combler.
+   Branché dans index.html (`flintNative`, évènement `family`) par `typeof` ;
+   banc : tests/test-memoire-fitcare.js. */
+window.flPoserLogiciel = function (data, wGetF, wSaveKF) {
+  try {
+    var v = (data && data.logiciel != null) ? String(data.logiciel).trim() : '';
+    if (!v || v === '?' || v.length > 32 || typeof wGetF !== 'function') return false;
+    var now = Date.now(), t = (data && +data.t > 0) ? +data.t * 1000 : now;
+    if (!(t <= now + 300000) || !(t >= now - 36 * 3600000)) t = now;   /* une estampille folle ne choisit pas la journée */
+    var cle = function (x) { return x.getFullYear() + '-' + (x.getMonth() + 1) + '-' + x.getDate(); };
+    var K = cle(new Date(t)), w = wGetF(K);
+    if (!w || w.logiciel === v) return false;
+    if (K !== cle(new Date(now)) && !w.marque && !(w.hr && w.hr.length)) return false;   /* pas de journée fantôme */
+    w.logiciel = v;
+    if (typeof wSaveKF === 'function') wSaveKF(K);
+    return true;
+  } catch (e) { return false; }
+};
+
 /* ═══ 28 oct. 2026 — LA TEMPÉRATURE DE NUIT A LES BORNES DE SON BRACELET ═══════
 
    Dino, le 28 au matin : « les autres cartes du Moniteur ne sont pas apparues ».
@@ -994,3 +1036,472 @@ window.flVfcTrouLong = function (mins, am, bm) {
     return c;
   };
 })();
+
+/* ═══ 21 nov. 2026 — LA VFC COMME L'APP DU BRACELET : SES VALEURS HORAIRES, UN REPÈRE NEUF, TROIS COULEURS ═══
+
+   LES TROIS DÉCISIONS DE DINO (21 nov., après l'audit de la VFC) :
+     1 · « Il n'y a rien de déconnant à prendre chaque heure comme l'envoie la montre et en faire une
+         moyenne. » La VFC de nuit affichée = la MOYENNE SIMPLE des valeurs horaires que le bracelet
+         calcule lui-même (fichier `.hrv` → `hrvMontre`), comme l'app du fabricant. Nuit de référence,
+         21 nov. : 45, 56, 68, 57, 75, 56, 74, 55, 68 → 61,56 (WHOOP 57,1 ; notre RMSSD 69).
+     2 · Les anciennes nuits ne servent plus de repère : le repère repart avec cette mesure.
+     3 · Trois couleurs, jugées contre l'habitude de la personne, calibrées sur ses 564 nuits WHOOP —
+         « et le reste suit » : la récupération se calcule sur cette même VFC.
+
+   A · LA MESURE (`flVfcMontreNuit`). La voie « valeurs horaires du bracelet » s'applique à une nuit si :
+       (i)  le logiciel du bracelet est ≥ 2.3.7 pour cette nuit (`flVfcLogicielNuit`) ;
+       (ii) trois valeurs horaires plausibles au moins (5 à 250 ms) ont leur estampille dans
+            ]coucher ; réveil + 60 min] — l'estampille est la FIN de l'heure mesurée (120 = 01:00-02:00).
+     La VFC = leur moyenne arithmétique, gardée au dixième. Sous le logiciel 2.3.4 ce même champ valait
+     50 à 180 (plafonné à 180) avec des valeurs en journée : une autre échelle, jamais lue ici.
+     La version : `watch_<jour>.logiciel` du jour du réveil (`flPoserLogiciel`). Si la dernière version
+     connue des 7 jours d'avant est PLUS ANCIENNE, c'est le jour de la mise à jour (la nuit a été mesurée
+     sous l'ancien logiciel) : refus, sans regarder la signature (relecture du 21 nov.) ; si aucune n'est
+     connue, la nuit doit montrer la signature ci-dessous. Sans version ce jour-là : la dernière connue
+     des 7 jours d'avant ; et un RATTRAPAGE pour la nuit d'avant l'installation de ce code : quand une
+     version ≥ 2.3.7 est connue pour un jour J, le jour d'avant — UN seul : sept laissaient entrer des
+     nuits de l'ancien logiciel — est tenu pour 2.3.7 si ses valeurs horaires ont la SIGNATURE du nouveau
+     logiciel : toutes ≤ 110 ms, aucune hors du sommeil (`flVfcSignatureNeuve`). Dino : le 21 nov. oui, le 20 non.
+     La règle du 4 nov. reste : une valeur qui se répète trois heures n'est pas une mesure
+     (`flPuceSansGel`) — un bracelet gelé ne fabrique pas une VFC. LOGICIEL ≥ 2.3.7 RECONNU MAIS MOINS DE TROIS
+     VALEURS (gelé compris) : AUCUNE VFC n'est servie (`flVfcServie` rend l'absence, `flVfcMotif` la dit).
+     TOUT LE RESTE — logiciel plus ancien, inconnu sans signature, jour de la mise à jour, autre bracelet, nuit
+     mêlée à l'ancien bracelet — garde le calcul d'avant AU CENTIÈME : `flVfcServie` rend null. Le témoin du banc.
+
+   B · LA PROVENANCE, ET CE QU'ON GARDE EN SILENCE. La VFC servie porte `hrvSrc:'montre'` et la méthode
+     `h1` (« montre|fitcare|h1 ») : `baseStat`, le compte des nuits et le Moniteur ne la mêlent à
+     aucune nuit `rmssd|fitcare|m3`. Le résumé figé (`night.vfcNuit`) garde en plus, sans rien en
+     afficher : `rmssdRR` (ce que notre calcul sur les intervalles rendait) et sa `voie`, `heures` (le
+     nombre de valeurs horaires), et `vfcPonderee` — les mêmes valeurs pesées par les minutes de
+     sommeil profond de chaque heure × 0,5^((fin de nuit − minute)/90 min), la pondération de WHOOP
+     (56,5 le 21 nov.). Une nuit figée sur nos intervalles AVANT que la version soit connue est
+     refaite une fois (`flVfcFigerMontre`), son ancien chiffre gardé sous `rmssdRR`. Une ligne au
+     journal natif par nuit finalisée. `rmssdRR` n'a qu'UN lecteur : l'Âge FLINT (`flVfcRmssdRR`, plus
+     bas), pour ne pas vieillir de 2,6 ans parce que la mesure change.
+
+   C · LE REPÈRE (`flVfcRepereCalcul`). Sur les nuits PRÉCÉDENTES de même provenance des 30 derniers
+     jours, en logarithme : moyenne m, écart-type s (celui de la population, comme le calibrage), n nuits.
+       · moins de 2 nuits : pas de repère (l'écran dit qu'il se construit, avec le compte) ;
+       · pour TOUT n : σ = √((8 × 0,13² + n × s²) / (8 + n)) — 0,13 est la variation habituelle de la
+         VFC mesurée sur 564 nuits, à laquelle les nuits de la personne prennent peu à peu la place
+         (s compte pour 0 sous deux nuits) ;
+       · « provisoire » (n < 8) n'est qu'une ÉTIQUETTE : elle ne change pas le calcul. La première
+         version posait σ = s (plancher 0,05) dès 8 nuits : σ tombait d'un coup ce matin-là (0,107 →
+         0,068, et 0,095 → 0,05 chez qui dort toujours pareil), l'orange commençait à −2,6 %. Une
+         marche d'escalier qu'aucune donnée ne justifiait — retirée le 21 nov. au soir, le plancher
+         avec : le lissage en tient lieu (30 nuits identiques : σ 0,0596, orange à −3,0 %).
+     L'écart jugé est PRÉDICTIF : z = (ln x − m) / (σ × √(1 + 1/n)) — une moyenne de trois nuits est
+     elle-même incertaine, la nuit jugée ne doit pas en payer le prix. La plage affichée : du premier
+     entier VERT (plafond du seuil z = −0,5) à exp(m + σ) arrondi ; la carte juge l'entier qu'elle imprime.
+
+   D · LES COULEURS (`flVfcCouleur`). vert si z ≥ −0,5 ; orange si −2 ≤ z < −0,5 ; rouge si z < −2. Une
+     VFC AU-DESSUS de sa plage reste verte : ce n'est pas une alerte. Calibrage (547 nuits WHOOP de la
+     même personne, écart à sa normale de 30 jours) : z ≥ −0,5 → 379 nuits dont 18 rouges chez WHOOP ;
+     −2 ≤ z < −0,5 → 138 nuits dont 113 jaunes et 1 verte ; z < −2 → 30 nuits dont 22 rouges, 0 verte.
+
+   E · LA RÉCUPÉRATION lit cette VFC et CE repère : `baseStat('hrv')` rend `flVfcRepereBase` pour une
+     nuit « montre » (index.html), et `recovery` y lit l'écart prédictif, borné à ±2,5 comme les
+     autres et pesé par la même rampe de maturité, (n − 2)/6. Avant TROIS nuits, pas de repère pour elle (le
+     Moniteur, lui, colore dès deux) : la récupération suit son chemin « sans VFC » (`flRecupSansNormeVfc`).
+
+   F · « TON CORPS LUTTE » (`flCorpsLutte`) : fonction pure, aucun écran ne la lit encore.
+
+   Banc : tests/test-vfc-montre.js. */
+window.FL_VFC_MONTRE = {
+  LOGICIEL: [2, 3, 7], METH: 'h1',
+  MINI: 3, VMIN: 5, VMAX: 250, APRES: 60,          /* la mesure : 3 valeurs de 5 à 250 ms, jusqu'à 60 min après le réveil */
+  AVANT: 7, RATTRAPAGE: 1, SIGNATURE: 110,         /* la version : 7 jours en arrière, UN jour de rattrapage (relecture du 21 nov. : sept laissaient entrer des nuits de l'ancien logiciel), signature ≤ 110 ms */
+  FEN: 30, MINI_REPERE: 2, FERME: 8, A_PRIORI: 0.13, A_PRIORI_N: 8, NUIT_MIN: 240,   /* FERME : une étiquette (« provisoire » en dessous), pas un calcul */
+  ORANGE: -0.5, ROUGE: -2,                         /* calibrés sur 547 nuits WHOOP : 379 / 138 / 30 */
+  DEMI_VIE: 90
+};
+
+function flvmNum(k) { var p = String(k || '').split('-'); return (+p[0]) * 10000 + (+p[1]) * 100 + (+p[2]); }
+function flvmFitcare(w) {
+  try { return typeof window.flInstrumentVfc === 'function' && window.flInstrumentVfc(w && w.marque) === 'fitcare'; } catch (e) { return false; }
+}
+function flvmVirgule(x) { return (x == null || isNaN(x)) ? '—' : (Math.round(x * 10) / 10).toFixed(1).replace('.', ','); }
+
+/* « V2.3.7 » → [2, 3, 7]. null : on ne sait pas lire, donc on ne sait pas. */
+window.flLogicielVersion = function (txt) {
+  var t = String(txt == null ? '' : txt), m = /[Vv](\d+)\.(\d+)(?:\.(\d+))?/.exec(t) || /(\d+)\.(\d+)(?:\.(\d+))?/.exec(t);   /* derrière son « V » d'abord : « FC2.4_V2.3.4 » n'est pas un 2.4 */
+  return m ? [+m[1], +m[2], +(m[3] || 0)] : null;
+};
+window.flLogicielAuMoins = function (txt, mini) {
+  var v = window.flLogicielVersion(txt); if (!v) return null;
+  for (var i = 0; i < 3; i++) { if (v[i] !== (mini[i] || 0)) return v[i] > (mini[i] || 0); }
+  return true;
+};
+
+/* Les valeurs horaires de la nuit de K, en minutes comptées depuis le minuit de K (négatives : la
+   veille). Même matière que `flPuceNuit` (`flMatiereNuit`, `flMatiereACheval` : la soirée d'une nuit
+   commencée avant minuit vit dans la veille, la puce d'un autre bracelet n'entre pas), fenêtre
+   ]coucher ; réveil + 60 min]. `b`/`r` : le coucher et le réveil dans ce même repère. */
+window.flVfcHorairesNuit = function (K, w) {
+  try {
+    var C = window.FL_VFC_MONTRE, n = w && w.night;
+    if (!n || n.bedMin == null || n.wakeMin == null) return null;
+    var b = +n.bedMin, r = +n.wakeMin, mat = w;
+    if (typeof flMatiereNuit === 'function') mat = flMatiereNuit(K, w) || w;
+    if (typeof flMatiereACheval === 'function') mat = flMatiereACheval(K, mat, ['hrvMontre'], true) || mat;
+    var L = (mat.hrvMontre || []).slice();
+    if (mat._matiereNuit) L = L.concat(w.hrvMontre || []);   /* nuit finie avant minuit : sa dernière heure peut se clore après */
+    if (b > r) b -= 1440;                                    /* nuit à cheval : le coucher est la veille */
+    var S = window.flPuceSansGel(L), out = [];
+    for (var i = 0; i < S.length; i++) {
+      var x = S[i]; if (!x || x[0] == null) continue;
+      var m = +x[0], v = +x[1];
+      if (!(m > b && m <= r + C.APRES) || !(v >= C.VMIN && v <= C.VMAX)) continue;
+      out.push([m, v]);
+    }
+    out.sort(function (a, c) { return a[0] - c[0]; });
+    return { vals: out, b: b, r: r };
+  } catch (e) { return null; }
+};
+
+/* LA SIGNATURE DU LOGICIEL 2.3.7, pour le seul rattrapage : toutes les valeurs horaires de la journée
+   ≤ 110 ms, et aucune hors du sommeil — la nuit de K, ses autres sommeils (`sommeils`), ou le début
+   de la nuit suivante quand elle commence avant minuit. L'ancien logiciel écrivait une valeur par
+   heure, jour compris, de 50 à 180. Une journée sans valeur ou sans nuit n'a pas de signature. */
+window.flVfcSignatureNeuve = function (K, w) {
+  try {
+    var C = window.FL_VFC_MONTRE; w = w || flsbW(K);
+    if (!w || !flvmFitcare(w)) return false;
+    var L = w.hrvMontre || [], n = w.night;
+    if (!L.length || !n || n.bedMin == null || n.wakeMin == null) return false;
+    var F = [], b = +n.bedMin, r = +n.wakeMin, t0 = flsbMinuit(K);
+    if (b > r) b -= 1440;
+    F.push([b, r + C.APRES]);
+    (w.sommeils || []).forEach(function (s) {
+      if (s && s.debut != null && s.fin != null) F.push([(s.debut - t0) / 60000, (s.fin - t0) / 60000 + C.APRES]);
+    });
+    var K1 = flsbCle(K, 1);
+    if (typeof tk !== 'function' || flvmNum(K1) <= flvmNum(tk(0))) {
+      var n1 = (flsbW(K1) || {}).night;
+      if (n1 && n1.bedMin != null && n1.wakeMin != null) {
+        var b1 = +n1.bedMin, r1 = +n1.wakeMin;
+        if (b1 > r1) F.push([b1, 1440 + r1 + C.APRES]);                 /* commencée ce soir, finie demain */
+        else if (r1 < 0) F.push([1440 + b1, 1440 + r1 + C.APRES]);      /* commencée ET finie ce soir */
+      }
+    }
+    for (var i = 0; i < L.length; i++) {
+      var x = L[i]; if (!x || x[0] == null) continue;
+      var m = +x[0], v = +x[1];
+      if (!(v <= C.SIGNATURE)) return false;
+      var dans = false;
+      for (var j = 0; j < F.length && !dans; j++) dans = (m > F[j][0] && m <= F[j][1]);
+      if (!dans) return false;
+    }
+    return true;
+  } catch (e) { return false; }
+};
+
+/* LE LOGICIEL DU BRACELET POUR LA NUIT DE K. `par` : 'jour' (la version du jour du réveil), 'avant'
+   (la dernière connue des 7 jours d'avant), 'rattrapage' (voir l'en-tête), ou null.
+
+   LE JOUR DE LA MISE À JOUR. `watch_<jour>.logiciel` est la DERNIÈRE version vue ce jour-là : le jour
+   où le bracelet passe au 2.3.7, la nuit du matin a été mesurée sous l'ancien logiciel. C'est le
+   20 nov. de Dino — mis à jour vers 18 h, sa nuit porte 80 à 180 et des valeurs jusqu'à 18:01 ; lue
+   comme du 2.3.7, elle aurait servi ~130 ms et ouvert le repère neuf sur une autre échelle. Si les
+   jours d'avant disent une version PLUS ANCIENNE : refus (« miseAJour »), sans regarder la signature ;
+   s'ils ne disent rien (le premier jour du nouveau natif) : la nuit doit montrer la signature. Dès le
+   lendemain, la veille dit 2.3.7 et la version suffit. */
+window.flVfcLogicielNuit = function (K, w) {
+  var non = { ok: false, par: null, version: null };
+  try {
+    var C = window.FL_VFC_MONTRE, d, wk, a, avant = null, vAvant = null;
+    var au = function (x) { return (x && x.logiciel) ? window.flLogicielAuMoins(x.logiciel, C.LOGICIEL) : null; };
+    w = w || flsbW(K);
+    a = au(w); if (a === false) return { ok: false, par: null, version: w.logiciel };
+    for (d = 1; d <= C.AVANT && avant == null; d++) {
+      wk = flsbW(flsbCle(K, -d)); avant = au(wk);
+      if (avant != null) vAvant = wk.logiciel;
+    }
+    if (a === true) {
+      if (avant === true) return { ok: true, par: 'jour', version: w.logiciel };
+      /* relecture du 21 nov. — la veille disait un logiciel PLUS ANCIEN : c'est le jour de la mise à jour, la nuit du matin a été
+         mesurée sous l'ancien. Aucune signature ne le rattrape (un bracelet porté la nuit seulement, des valeurs ≤ 110 : elle passait). */
+      if (avant === false) return { ok: false, par: null, version: w.logiciel, raison: 'miseAJour' };
+      if (window.flVfcSignatureNeuve(K, w)) return { ok: true, par: 'jour', version: w.logiciel };
+      return { ok: false, par: null, version: w.logiciel, raison: 'signature' };
+    }
+    if (avant != null) return { ok: avant, par: avant ? 'avant' : null, version: vAvant };
+    /* aucune version sur 7 jours : une nuit d'avant l'installation de ce code ? */
+    if (!window.flVfcSignatureNeuve(K, w)) return non;
+    var auj = (typeof tk === 'function') ? flvmNum(tk(0)) : null;
+    for (d = 1; d <= C.RATTRAPAGE; d++) {
+      var kj = flsbCle(K, d);
+      if (auj != null && flvmNum(kj) > auj) break;
+      wk = flsbW(kj); a = au(wk);
+      if (a != null) return { ok: a, par: a ? 'rattrapage' : null, version: wk.logiciel };
+      if (!window.flVfcSignatureNeuve(kj, wk)) return non;   /* « sans trou » : un jour sans signature arrête la chaîne */
+    }
+    return non;
+  } catch (e) { return non; }
+};
+
+/* La variante gardée en silence : chaque heure pesée par ses minutes de sommeil profond, chacune
+   × 0,5^((fin de nuit − minute)/90 min). null sans sommeil profond dans ces heures. */
+window.flVfcPonderee = function (w, H) {
+  try {
+    var C = window.FL_VFC_MONTRE, st = (w && w.night && w.night.stages) || [];
+    if (!st.length || !H || !H.vals || !H.vals.length) return null;
+    var S = 0, W = 0;
+    H.vals.forEach(function (x) {
+      var p = 0;
+      for (var m = x[0] - 60; m < x[0]; m++) {
+        var rel = m - H.b; if (rel < 0) continue;
+        for (var i = 0; i < st.length; i++) {
+          var g = st[i];
+          if (rel >= g.startMin && rel < g.startMin + g.durMin) {
+            if (g.stage === 'deep') p += Math.pow(0.5, Math.max(0, H.r - m) / C.DEMI_VIE);
+            break;
+          }
+        }
+      }
+      S += p * x[1]; W += p;
+    });
+    return W > 0 ? Math.round(S / W * 10) / 10 : null;
+  } catch (e) { return null; }
+};
+
+/* LA MESURE. null : pas une nuit Fitcare. `ok:false` dit pourquoi ('valeurs' : moins de trois valeurs
+   horaires dans la nuit ; 'logiciel' : version trop ancienne, ou inconnue sans signature). */
+window.flVfcMontreNuit = function (K, w) {
+  try {
+    var C = window.FL_VFC_MONTRE; w = w || flsbW(K);
+    if (!w || !w.night || !flvmFitcare(w)) return null;
+    var H = window.flVfcHorairesNuit(K, w); if (!H) return null;
+    var n = H.vals.length;
+    if (n < C.MINI) return { ok: false, raison: 'valeurs', n: n };
+    var V = window.flVfcLogicielNuit(K, w);
+    if (!V.ok) return { ok: false, raison: 'logiciel', n: n };
+    var s = 0; for (var i = 0; i < n; i++) s += H.vals[i][1];
+    return { ok: true, v: Math.round(s / n * 10) / 10, exact: s / n, n: n, valeurs: H.vals, H: H, par: V.par, logiciel: V.version };
+  } catch (e) { return null; }
+};
+
+/* CE QUE `sensorOf` SERT (index.html) : null = rien ne change, le calcul d'avant reste. `fz` : le
+   résumé figé de la nuit. Figé en « montre », `sensorOf` l'a déjà lu ; figé sur nos intervalles et
+   reconnu depuis (rattrapage, version arrivée après le figeage), il est refait une fois. */
+window.flVfcServie = function (K, w, fz) {
+  try {
+    if (!w || !w.night || (fz && fz.src === 'montre')) return null;
+    var h = window.flVfcMontreNuit(K, w); if (!h) return null;
+    /* relecture du 21 nov. — LE BRACELET EST EN 2.3.7 MAIS N'A PAS (ENCORE) RENDU TROIS VALEURS : on ne sert RIEN. Servir notre RMSSD
+       ce matin-là, c'était une autre échelle au milieu de la série (69 entre 64 et 69, jugé contre la vieille normale), et un chiffre
+       qui changeait sous les yeux quand le fichier horaire arrivait. Une absence dit sa raison (`flVfcAttendBracelet`, `flVfcMotif`). */
+    if (!h.ok) return (h.raison === 'valeurs' && window.flVfcLogicielNuit(K, w).ok) ? { v: null, src: null, m: null, attente: true } : null;
+    if (fz && fz.v != null) window.flVfcFigerMontre(K, w);
+    return { v: h.v, src: 'montre', m: window.FL_VFC_MONTRE.METH };
+  } catch (e) { return null; }
+};
+
+/* Vrai quand la nuit de K est celle d'un bracelet en 2.3.7 qui n'a pas rendu ses trois valeurs horaires : la VFC est absente, et
+   c'est le bracelet qu'on attend (pas nos battements). Lu par `flVfcMotif` (flint-recup-cycle.js) pour la phrase de la carte. */
+window.flVfcAttendBracelet = function (K, w) {
+  try {
+    w = w || flsbW(K);
+    if (!w || !w.night) return false;
+    var fz = w.night.vfcNuit || null; if (fz && fz.src === 'montre') return false;
+    var h = window.flVfcMontreNuit(K, w);
+    return !!(h && !h.ok && h.raison === 'valeurs' && window.flVfcLogicielNuit(K, w).ok);
+  } catch (e) { return false; }
+};
+
+/* LE RÉSUMÉ FIGÉ D'UNE NUIT « MONTRE », et sa ligne de journal. `r` : le résultat de `flRmssdNuit`
+   quand l'appelant l'a (le figeage, index.html) ; sans lui, on le redemande. Rend vrai si le résumé
+   a été écrit. Ne touche jamais une nuit que la voie horaire ne sert pas. */
+window.flVfcFigerMontre = function (K, w, r) {
+  try {
+    var C = window.FL_VFC_MONTRE, auFigeage = (r !== undefined);
+    if (!w || !w.night) return false;
+    var fz = w.night.vfcNuit || null;
+    if (fz && (fz.src === 'montre' || fz.src === 'puce')) return false;
+    var h = window.flVfcMontreNuit(K, w);
+    if (r === undefined) { try { r = (typeof flRmssdNuit === 'function') ? flRmssdNuit(K) : null; } catch (e1) { r = null; } }
+    var rr = (fz && fz.v != null) ? fz.v : ((r && r.ok) ? r.rmssd : null);
+    var rr1 = (r && r.ok && r.exact != null && (rr == null || Math.abs(r.exact - rr) <= 0.5)) ? r.exact : rr;   /* le dixième, seulement s'il est bien celui du chiffre figé */
+    var voie = (fz && fz.voie) || ((r && r.ok && r.voie && rr1 === r.exact) ? r.voie : null);
+    var dire = function (servie, hh, pond) {
+      try {
+        var t = 'VFC nuit ' + K + ' : bracelet ' + (hh ? flvmVirgule(hh.v) : '—') + ' (' + (hh ? hh.n : 0) + ' h) · pondérée ' + flvmVirgule(pond)
+              + ' · intervalles ' + flvmVirgule(rr1) + (rr1 != null ? ' (' + (voie || '?') + ')' : '') + ' · servie : ' + servie;
+        window._flVfcJournal = t;
+        var nt = window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.flint;
+        if (nt) nt.postMessage({ cmd: 'journal', texte: t });
+      } catch (e2) {}
+    };
+    if (!h || !h.ok) {
+      /* logiciel ≥ 2.3.7 mais moins de trois valeurs : AUCUNE VFC n'est servie (`flVfcServie`), et le journal le dit — une fois, au figeage */
+      if (auFigeage && h && h.raison === 'valeurs' && fz && fz.v != null && window.flVfcLogicielNuit(K, w).ok) {
+        var Hx = window.flVfcHorairesNuit(K, w), sx = 0;
+        ((Hx && Hx.vals) || []).forEach(function (x) { sx += x[1]; });
+        dire('aucune (moins de trois valeurs horaires)', (Hx && Hx.vals.length) ? { v: sx / Hx.vals.length, n: Hx.vals.length } : null, null);
+      }
+      return false;
+    }
+    var nv = {}, c;
+    if (fz) for (c in fz) if (Object.prototype.hasOwnProperty.call(fz, c)) nv[c] = fz[c];
+    nv.v = h.v; nv.src = 'montre'; nv.m = C.METH; nv.heures = h.n;
+    nv.rmssdRR = rr; nv.rmssdRR1 = rr1; nv.voie = voie;
+    nv.vfcPonderee = window.flVfcPonderee(w, h.H);
+    if (nv.minutes == null && r && r.minutes != null) nv.minutes = r.minutes;
+    if (nv.qualite == null && r && r.qualite != null) nv.qualite = r.qualite;
+    w.night.vfcNuit = nv;
+    if (typeof wSaveK === 'function') wSaveK(K);
+    try { window._flBandeMemo = {}; } catch (e3) {}
+    try { window._bsMemo = {}; window._bsCle = ''; } catch (e4) {}   /* relecture du 21 nov. — le repère des nuits suivantes vient de changer : la mémoire de `baseStat` (index.html, deux `var` globales) se jette */
+    dire('bracelet', h, nv.vfcPonderee);
+    return true;
+  } catch (e) { return false; }
+};
+
+/* ── C · LE REPÈRE ─────────────────────────────────────────────────────────────────────────────────
+   `valeurs` : les VFC (ms) des nuits précédentes de même provenance ; `x` : la VFC jugée (ou null).
+   Rend toujours le compte et σ ; l'écart, la couleur et la plage seulement s'il y a un repère. */
+window.flVfcCouleur = function (z) {
+  var C = window.FL_VFC_MONTRE;
+  if (z == null || isNaN(z)) return null;
+  return z >= C.ORANGE ? 'vert' : (z >= C.ROUGE ? 'orange' : 'rouge');
+};
+window.flVfcRepereCalcul = function (valeurs, x) {
+  var C = window.FL_VFC_MONTRE, L = [], i;
+  for (i = 0; i < (valeurs || []).length; i++) if (+valeurs[i] > 0) L.push(Math.log(+valeurs[i]));
+  var n = L.length, m = null, s = 0;
+  if (n) { m = 0; for (i = 0; i < n; i++) m += L[i]; m /= n; }
+  if (n >= 2) { var q = 0; for (i = 0; i < n; i++) q += (L[i] - m) * (L[i] - m); s = Math.sqrt(q / n); }
+  var provisoire = n < C.FERME;   /* une étiquette : le lissage ci-dessous est le même pour tout n */
+  var sigma = Math.sqrt((C.A_PRIORI_N * C.A_PRIORI * C.A_PRIORI + n * s * s) / (C.A_PRIORI_N + n));
+  var R = { n: n, requis: C.MINI_REPERE, repere: n >= C.MINI_REPERE, provisoire: provisoire, m: m, s: s, sigma: sigma,
+            sigmaPred: null, centre: null, min: null, max: null, seuilVert: null, seuilRouge: null, z: null, niveau: null };
+  if (!R.repere) return R;
+  R.sigmaPred = sigma * Math.sqrt(1 + 1 / n);
+  R.centre = Math.exp(m);
+  R.seuilVert = Math.exp(m + C.ORANGE * R.sigmaPred); R.seuilRouge = Math.exp(m + C.ROUGE * R.sigmaPred);
+  /* relecture du 21 nov. — la plage imprimée descendait à exp(m − σ), SOUS le seuil du vert : une nuit sur sept, la carte disait
+     « plus bas que d'habitude » pour une valeur écrite dans sa plage (57 pour 56–70). Elle commence maintenant où le vert commence. */
+  R.min = Math.ceil(R.seuilVert); R.max = Math.max(R.min, Math.round(Math.exp(m + sigma)));   /* le premier entier VERT (voir `flVfcRepereMoniteur`) */
+  if (+x > 0) { R.z = (Math.log(+x) - m) / R.sigmaPred; R.niveau = window.flVfcCouleur(R.z); }
+  return R;
+};
+
+/* ═══ 21 nov. 2026 (soir) — L'ÂGE FLINT NE BOUGE PAS PARCE QUE LA MESURE CHANGE ═══════════════════
+   L'Âge FLINT (`flAgeFlintAu`, index.html) lit la VFC en millisecondes ABSOLUES : la moyenne de 30
+   nuits contre une norme d'âge écrite pour notre RMSSD. La VFC du bracelet est plus basse (61,6
+   contre 69 le 21 nov.) : rejoué sur la base de Dino, l'âge passait de 20,2 à 22,8 ans vers le
+   14-15 déc. — le jour où il restait moins de cinq nuits `rmssd` dans ses 30 jours — sans que le
+   corps change. Pour l'âge, et pour lui seul, une nuit « montre » fournit donc le RMSSD gardé en
+   silence dans son résumé (`rmssdRR`, la même échelle que les nuits d'avant). Pas encore figée :
+   ce que le figeage gardera (`flRmssdNuit`, tant que les battements sont là). Sans l'un ni
+   l'autre : null, et la nuit ne compte pas pour le terme VFC de l'âge.
+   RIEN D'AUTRE NE LIT `rmssdRR` : ni la VFC servie, ni le repère, ni la récupération. */
+window.flVfcRmssdRR = function (K) {
+  try {
+    var w = flsbW(K), fz = (w && w.night && w.night.vfcNuit) || null;
+    if (fz && fz.src === 'montre') return (fz.rmssdRR != null && !isNaN(+fz.rmssdRR)) ? +fz.rmssdRR : null;
+    var r = (typeof flRmssdNuit === 'function') ? flRmssdNuit(K) : null;
+    return (r && r.ok && r.rmssd != null) ? r.rmssd : null;
+  } catch (e) { return null; }
+};
+
+/* La provenance entière d'une nuit servie : « montre|fitcare|h1 ». */
+function flvmProv(s) { return (s && s.hrvSrc) ? (s.hrvSrc + '|' + (s.instr || '') + '|' + (s.hrvMeth || 1)) : null; }
+
+/* `liste` : les `sensorOf` des jours, du plus ancien au jour jugé (le DERNIER). null si le jour jugé
+   n'est pas une nuit « montre » — l'appelant garde alors sa règle d'avant. Les nuits d'une autre
+   provenance (dont celles d'avant une remise à zéro, marquées `|avant`), et celles de moins de 4 h
+   (le plancher de `baseStat`, v2214), n'entrent pas. */
+window.flVfcRepereListe = function (liste) {
+  try {
+    var C = window.FL_VFC_MONTRE;
+    if (!liste || !liste.length) return null;
+    var jour = liste[liste.length - 1];
+    if (!jour || jour.hrv == null || jour.hrvSrc !== 'montre') return null;
+    var prov = flvmProv(jour), vals = [];
+    for (var i = Math.max(0, liste.length - 1 - C.FEN); i < liste.length - 1; i++) {
+      var t = liste[i];
+      if (!t || t.hrv == null || flvmProv(t) !== prov) continue;
+      if (t.sleepMin != null && t.sleepMin < C.NUIT_MIN) continue;
+      vals.push(+t.hrv);
+    }
+    var R = window.flVfcRepereCalcul(vals, +jour.hrv);
+    R.provenance = prov; R.x = +jour.hrv;
+    return R;
+  } catch (e) { return null; }
+};
+window.flVfcRepere = function (K, s0) {
+  try {
+    if (typeof sensorOf !== 'function') return null;
+    var C = window.FL_VFC_MONTRE, L = [];
+    s0 = s0 || sensorOf(K);
+    if (!s0 || s0.hrv == null || s0.hrvSrc !== 'montre') return null;
+    for (var i = C.FEN; i >= 1; i--) {
+      var k = flsbCle(K, -i), t = null;
+      try { t = sensorOf(k); if (t && typeof window.flVfcMarquerAvant === 'function') t = window.flVfcMarquerAvant(t, k, K); } catch (e1) { t = null; }
+      L.push(t || null);
+    }
+    L.push(s0);
+    return window.flVfcRepereListe(L);
+  } catch (e) { return null; }
+};
+/* Ce que `baseStat('hrv')` rend pour une nuit « montre » : la forme qu'attend `recovery` (`m`, `sd`,
+   `n`, en millisecondes) plus `lnM` et `sdPred`, d'où elle tire l'écart prédictif. null sans repère. */
+window.flVfcRepereBase = function (K, s0) {
+  try {
+    var R = window.flVfcRepere(K, s0); if (!R || !R.repere || R.n < 3) return null;   /* relecture du 21 nov. — trois nuits pour la récupération (le plancher de `baseStat`) ; à deux, un centre fait de deux nuits entrait à plein poids et le score sautait (68 → 55) */
+    return { m: R.centre, sd: R.centre * R.sigmaPred, n: R.n, src: 'montre', provisoire: R.provisoire,
+             lnM: R.m, sdPred: R.sigmaPred, min: R.min, max: R.max };
+  } catch (e) { return null; }
+};
+/* Ce qui traverse le pont vers le Moniteur (MoniteurSante.swift, `repereMoteur`) : des nombres déjà
+   jugés, le natif ne recalcule rien. `niveau` nul = le repère se construit (`n` sur `requis`). */
+window.flVfcRepereMoniteur = function (liste) {
+  try {
+    var R = window.flVfcRepereListe(liste); if (!R) return null;
+    var a = function (x, d) { return x == null ? null : Math.round(x * d) / d; };
+    /* relecture du 21 nov. — L'ÉCRAN JUGE CE QU'IL IMPRIME. La valeur s'affiche en millisecondes entières, les bandes de la fiche aussi
+       (« Verte = 59 ms et plus ») : la couleur de la carte se décide donc sur ces entiers-là, sinon 58,6 affiché « 59 » sortait orange
+       sous un seuil imprimé à 59. L'écart `z` reste exact — c'est lui que la récupération lit. */
+    /* Les entiers que la fiche imprime (MoniteurSante.swift, `bandes`) : « Verte = sv et plus · Orange = sr+1 à sv−1 · Rouge = sr et
+       moins ». `sv` est donc le PREMIER entier vert (plafond du seuil exact) et `sr` le DERNIER entier rouge (le plus grand entier
+       strictement sous le seuil exact) : les vrais seuils, appliqués à la valeur telle qu'elle est écrite. */
+    var sv = (R.seuilVert == null) ? null : Math.ceil(R.seuilVert), sr = (R.seuilRouge == null) ? null : Math.ceil(R.seuilRouge) - 1;
+    var niv = R.niveau, xr = (R.x > 0) ? Math.round(R.x) : null;
+    if (niv != null && xr != null && sv != null && sr != null) niv = xr >= sv ? 'vert' : (xr > sr ? 'orange' : 'rouge');
+    return { n: R.n, requis: R.requis, provisoire: R.provisoire, min: R.min, max: R.max, z: a(R.z, 100),
+             niveau: niv, seuilVert: sv, seuilRouge: sr };
+  } catch (e) { return null; }
+};
+
+/* ── F · « TON CORPS LUTTE » ───────────────────────────────────────────────────────────────────────
+   Vrai si la VFC est à −1 écart ou moins, le pouls de repos à +1 ou plus, ET la respiration ou la
+   température de peau à +1,5 ou plus — chaque écart contre le repère de 30 jours de la personne.
+   Faux dès que la VFC ou le pouls n'ont pas de repère (null). Calibrage (547 nuits WHOOP) : 28 nuits,
+   rouges chez WHOOP 71 %, jamais vertes. FONCTION PURE : aucun écran ne la lit encore. */
+window.flCorpsLutte = function (zVfc, zPouls, zResp, zTemp) {
+  var nb = function (x) { return x != null && !isNaN(x); };
+  if (!nb(zVfc) || !nb(zPouls)) return false;
+  if (!(+zVfc <= -1 && +zPouls >= 1)) return false;
+  return (nb(zResp) && +zResp >= 1.5) || (nb(zTemp) && +zTemp >= 1.5);
+};
+/* Les quatre écarts d'un jour, tels que le moteur les connaît : la VFC contre son repère « montre »
+   (ou sa normale de 30 jours pour une autre provenance), le pouls, la respiration et la température
+   contre `baseStat(…, 30)` — huit nuits au moins, comme le calibrage. Lecture seule. */
+window.flCorpsLutteJour = function (K) {
+  var out = { lutte: false, zVfc: null, zPouls: null, zResp: null, zTemp: null };
+  try {
+    if (typeof sensorOf !== 'function' || typeof baseStat !== 'function' || typeof tk !== 'function') return out;
+    var off = Math.round((flsbMinuit(K || tk(0)) - flsbMinuit(tk(0))) / 86400000);
+    if (off > 0 || flvmNum(tk(off)) !== flvmNum(K || tk(0))) return out;
+    var s = sensorOf(tk(off)); if (!s) return out;
+    var z = function (v, b) { return (v != null && b && b.n >= 8 && b.sd > 0) ? (v - b.m) / b.sd : null; };
+    if (s.hrvSrc === 'montre') { var R = window.flVfcRepere(tk(off), s); out.zVfc = (R && R.repere) ? R.z : null; }
+    else out.zVfc = z(s.hrv, baseStat('hrv', 30, off));
+    out.zPouls = z(s.rhr, baseStat('rhr', 30, off));
+    out.zResp = z(s.resp, baseStat('resp', 30, off));
+    out.zTemp = z(s.tempNuit, baseStat('tempNuit', 30, off));
+    out.lutte = window.flCorpsLutte(out.zVfc, out.zPouls, out.zResp, out.zTemp);
+    return out;
+  } catch (e) { return out; }
+};

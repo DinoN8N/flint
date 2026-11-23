@@ -79,7 +79,16 @@
      de santé. Donc : sur le Fitcare (et les nuits mêlées), pas de chiffre, la carte dit « Pas de mesure ».
      L'ancien bracelet mesure vraiment et ne change pas. Quand Fitcare aura corrigé son firmware, passer
      FL_SPO2_FITCARE_FIABLE à true suffit. Banc : test-moniteur-fitcare.js § 1. */
-  window.FL_SPO2_FITCARE_FIABLE=false;
+  /* ═══ 19 nov. 2026 — REBRANCHÉ, À LA DEMANDE DE DINO (« j'aimerais bien qu'on rebranche la SpO2 ») ═══
+     L'interrupteur passe à true : le Fitcare redonne son chiffre (Moniteur, Coach, courbes, export). CE
+     QU'IL MONTRE, mesuré sur les 19 nuits du 1er au 19 nov. (base du téléphone, oxygene.js) : 142 relevés
+     de nuit, 68 % à 100 et 18 % à 99 ; la carte (le bas de la nuit) afficherait 95 à 100 % — 99 sept fois,
+     98 quatre fois, 100 trois fois —, WHOOP lisant 95,2 à 97,2 % sur les treize nuits comparables : deux
+     points de plus que WHOOP, et sans le suivre d'une nuit à l'autre (WHOOP au plus bas le 10 nov., 95,2 :
+     99 ici). Le capteur n'a PAS changé depuis le 5 nov. ; c'est une décision de produit, dite à Dino avec
+     ces chiffres. Ce qui reste coupé : une nuit TOUTE à 100 (`flSpo2Plafonne`, deux nuits sur dix-neuf) et
+     une nuit mêlée à l'ancien bracelet (`flSpo2NonFiable`, inchangé quand l'interrupteur est à false). */
+  window.FL_SPO2_FITCARE_FIABLE=true;
   window.flSpo2NonFiable=function(w){try{return !window.FL_SPO2_FITCARE_FIABLE&&!!(w&&typeof window.flInstrumentVfc==='function'&&window.flInstrumentVfc(w.marque));}catch(e){return false;}};
   window._flSpo2NuitMemo={__sceau:null};
   window.flSpo2NuitDe=function(K){
@@ -189,3 +198,92 @@
    }catch(e){return _calcul(K);}
   };
   window.flSpo2BasNuit=function(off){return window.flSpo2BasNuitDe(((typeof window.flCleJourCourant==='function')?window.flCleJourCourant:tk)(Math.min(0,off|0)));};
+
+  /* ═══ 19 nov. 2026 — SUR LE FITCARE, L'OXYGÈNE SE JUGE CONTRE SON HABITUDE ════════════════════════
+     Dino, après « rebranche la SpO2 » et mes chiffres (le capteur lit 99-100, deux points au-dessus de
+     WHOOP, sans le suivre) : « on s'en fout. Tu la branches d'une certaine manière : on sait comment
+     il renvoie la SpO2, donc on sait que si c'est en dessous, c'est pas bon. »
+
+     CE QUE CE CAPTEUR SAIT DIRE. Un relevé par heure (six à dix par nuit), 68 % à 100. Le seuil
+     médical de 90 % (`SeuilOxygene`, natif) ne peut pas tomber : la carte était verte quoi qu'il
+     arrive. Ce qui se lit, c'est un NIVEAU — la moyenne des relevés de la nuit — et son écart à
+     l'habitude de la personne SUR CE BRACELET. Mesuré sur les 19 nuits du 1er au 19 nov. :
+       · la moyenne de nuit va de 98,3 à 100 (arrondie : 98 une fois, 99 onze fois, 100 sept fois) ;
+       · le « bas » (2e relevé le plus bas) va de 95 à 100 et s'effondre sur UN poignet mal posé : le
+         7 nov., deux relevés à 95 sur six — et WHOOP y lit sa meilleure nuit (97,2). La moyenne, elle,
+         reste à 98,3. On juge donc la moyenne, pas le creux (qu'un relevé par heure ne voit pas).
+     LA RÈGLE. Sur une nuit Fitcare (pas une nuit mêlée à l'ancien bracelet) :
+       · `niveau` = moyenne des relevés de la fenêtre de sommeil, AFFICHÉE à l'entier ;
+       · l'habitude = la médiane des niveaux affichés des `nuits` (30) jours précédents, dès `mini` (7)
+         nuits mesurées ; la marge = max(`marge` 2 points, 2,5 écarts-types arrondis au-dessus) ;
+       · ORANGE (« plus bas que d'habitude ») quand le niveau affiché est à la marge ou plus sous
+         l'habitude — pour Dino : habitude 99, orange à 97 % et moins ; aucune de ses 19 nuits ;
+       · sous 90 %, orange de toute façon (la borne médicale reste).
+     Une nuit toute à 100 a ICI son chiffre (100) : sur cette échelle, c'est le haut de l'habitude,
+     pas une mesure absolue. L'ancien bracelet garde son « bas de la nuit » et son plancher, inchangés.
+     Le natif lit `niveau`, `normale`, `seuilPerso`, `sousHabitude` (MoniteurSante.swift) ; un binaire
+     d'avant les ignore et garde son plancher. Banc : tests/test-spo2-habitude.js. */
+  window.flSpo2Perso={nuits:30,mini:7,marge:2,kSigma:2.5};
+  window._flSpo2NiveauMemo={__sceau:null};
+  window.flSpo2NiveauNuitDe=function(K){
+   var _calcul=function(K){try{
+    if(!window.FL_SPO2_FITCARE_FIABLE)return null;
+    var w=DB.get('watch_'+K,null);
+    if(!w||typeof window.flInstrumentVfc!=='function'||window.flInstrumentVfc(w.marque)!=='fitcare')return null;
+    if(typeof flMatiereNuit==='function')w=flMatiereNuit(K,w);
+    if(!w||!w.spo2||!w.spo2.length)return null;
+    if(typeof window.flInstrumentVfc==='function'&&window.flInstrumentVfc(w.marque)!=='fitcare')return null;   /* la veille recollée venait de l'autre bracelet */
+    var n=w.night;
+    if(!n||n.bedMin==null||n.wakeMin==null)return null;
+    var b=n.bedMin, r=n.wakeMin;
+    var v=w.spo2.filter(function(x){var m=x[0];return (b<=r)?(m>=b&&m<=r):(m>=b||m<=r);})
+      .map(function(x){return x[1];}).filter(function(x){return x>=70&&x<=100;});
+    if(v.length<((typeof window.flSpo2Plancher==='function')?window.flSpo2Plancher(w,b,r):12))return null;
+    var s=0; for(var i=0;i<v.length;i++)s+=v[i];
+    return Math.round(10*s/v.length)/10;
+   }catch(e){return null;}};
+   try{
+    var _auj=(typeof tk==='function')?tk():null;
+    if(!K||K===_auj)return _calcul(K);
+    var _sc=null; try{_sc=DB.tampon('sensor_')+'|'+DB.tampon('watch_')+'|'+DB.tampon('sessions_')+'|'+DB.tampon('hrfine_')+'|'+DB.tampon('recov')+'|'+(window.FL_SPO2_FITCARE_FIABLE?1:0);}catch(e){_sc=null;}
+    if(_sc==null)return _calcul(K);
+    var _m=window._flSpo2NiveauMemo; if(!_m||_m.__sceau!==_sc){_m=window._flSpo2NiveauMemo={__sceau:null};_m.__sceau=_sc;}
+    if(Object.prototype.hasOwnProperty.call(_m,K))return _m[K];
+    var _r=_calcul(K); _m[K]=_r; return _r;
+   }catch(e){return _calcul(K);}
+  };
+  /* `cle(q)` rend la clé du jour situé q jours AVANT celui qu'on juge (q = 0 : lui-même). */
+  window.flSpo2Habitude=function(cle){
+   try{
+    var P=window.flSpo2Perso, niv=window.flSpo2NiveauNuitDe(cle(0));
+    if(niv==null)return null;
+    var out={niveau:niv, affiche:Math.round(niv), n:0, normale:null, seuil:null, sous:false}, vals=[];
+    for(var q=1;q<=P.nuits;q++){var x=null; try{x=window.flSpo2NiveauNuitDe(cle(q));}catch(e){} if(x!=null)vals.push(Math.round(x));}
+    out.n=vals.length;
+    if(vals.length<P.mini)return out;
+    vals.sort(function(a,b){return a-b;});
+    var med=vals.length%2?vals[vals.length>>1]:(vals[vals.length/2-1]+vals[vals.length/2])/2;
+    var moy=0; for(var i=0;i<vals.length;i++)moy+=vals[i]; moy/=vals.length;
+    var va=0; for(var j=0;j<vals.length;j++)va+=(vals[j]-moy)*(vals[j]-moy);
+    var sigma=Math.sqrt(va/vals.length);
+    out.normale=Math.round(med); out.sigma=Math.round(sigma*100)/100;
+    out.seuil=out.normale-Math.max(P.marge,Math.ceil(P.kSigma*sigma));
+    out.sous=out.affiche<=out.seuil;
+    return out;
+   }catch(e){return null;}
+  };
+  /* La ligne du Moniteur (index.html, juste avant de la rendre) : sur une nuit Fitcare mesurée, la valeur
+     LUE devient le niveau, la série devient celle des niveaux, et l'habitude voyage en nombres. Sinon la
+     ligne n'est pas touchée. */
+  window.flSpo2PourMoniteur=function(l,off){
+   try{
+    var cleJ=(typeof window.flCleJourCourant==='function')?window.flCleJourCourant:tk, o=Math.min(0,off|0);
+    var h=window.flSpo2Habitude(function(q){return cleJ(o-q);});
+    if(!h)return l;
+    l.valeur=String(h.affiche); l.bas=h.affiche; l.niveau=true; l.nuits=h.n;
+    if(h.normale!=null){l.normale=h.normale; l.seuilPerso=h.seuil; l.sousHabitude=!!h.sous;}
+    var sp=[]; for(var q=21;q>=0;q--){var v=null; try{v=window.flSpo2NiveauNuitDe(cleJ(o-q));}catch(e){} sp.push(v==null?null:Math.round(v));}
+    l.sparkBas=sp;
+   }catch(e){}
+   return l;
+  };

@@ -1118,6 +1118,11 @@
            « Ta nuit arrive » ne coche pas « Ton bracelet a tout envoyé » pendant que le moteur attend. */
         else if (rec.etat === 'FINALIZING' && rec.cause === USER && rec.tFinal0 && (now - rec.tFinal0) < ATTENTE_FILE_GESTE_MS
                  && fileDuPont(now)) out.attendFile = true;
+        /* 19 nov. 2026 — de même pendant qu'on attend le fichier de nuit entier du bracelet (`fichierNuitAttendu`). */
+        else if (rec.etat === 'FINALIZING' && rec.cause === USER && rec.tFinal0) {
+          var fnE = fichierNuitAttendu(K, now, rec.tFinal0);
+          if (fnE && !fnE.echu) out.attendFile = true;
+        }
         return out;
       }
 
@@ -1259,6 +1264,7 @@
       try { var cM = cycleDe(K); if (cM && cM.finNuit != null) finM = Math.min(+cM.finNuit, now); } catch (e) {}
       rec.provisoire = { t: now, dormi0: dormiM, fin0: finM, clos: now, matin: true };
     }
+    try { demanderLaNuitSiBesoin(now, 'geste du matin'); } catch (e) {}   /* 19 nov. 2026 — le fichier de nuit entier, dès le doigt */
     rec.etat = 'JOURNAL_IN_PROGRESS';
     rec.cause = USER;
     rec.tUser = now;
@@ -1866,6 +1872,11 @@
       /* 13 oct. 2026 — la journée a-t-elle repris ? Voir `journeeReprise`. */
       var jr = journeeReprise(K, now, cyc);
       if (!jr.ok) { out.raison = jr.raison; direLaDecision(K, out.raison); return out; }
+      /* 19 nov. 2026 — ni tant que le fichier de nuit du bracelet ne couvre pas la nuit (borné : `fichierNuitAvantDeDecider`).
+         APRÈS « la journée a repris » (relecture) : une levée à 5 h 20 suivie d'un rendormissement ne dépense pas les
+         trois essais du fond — ni ne fait rouvrir le lien — pendant que la personne dort. */
+      var _fnD = fichierNuitAvantDeDecider(K, now);
+      if (_fnD) { out.raison = _fnD.raison; direLaDecision(K, out.raison); return out; }
       /* 18 oct. 2026 — « debout » vaut aussi en `collecte` quand la montre vient
          de rendre la nuit gardée : la signature bouge parce que les pages
          arrivent, pas parce que la personne dort. */
@@ -2180,6 +2191,173 @@
   function plafondAttente(K, cause) {
     return (cause === USER && jourFitcare(K)) ? ATTENTE_GESTE_FITCARE_MS : ATTENTE_MAX_MS;
   }
+
+  /* ═══ 19 nov. 2026 — LE MATIN N'AFFICHE QU'UNE NUIT : ON ATTEND LE FICHIER ENTIER DU BRACELET ═══
+     LE MATIN DU 19, lu dans le journal du téléphone et celui du bracelet. Dino glisse à 09:27:37 ;
+     la nuit est scellée à 09:27:40 au pouls seul (7 h 37, 1 h 04 d'éveil) ; à 09:28:17 le morceau
+     de 05:29 du bracelet déplace l'endormissement (7 h 19) ; à 09:28:35 la nuit entière arrive et
+     les règles du témoin la relisent (7 h 45, 38 min) — trois nuits en 55 s, et des titres restés
+     sur la deuxième. « Il faut trouver une solution : on recalcule et on recalcule. » Les six
+     matins du 14 au 19 se ressemblent : le fichier entier arrive 28 à 43 s après l'ouverture (le
+     bracelet fige sa mémoire le temps d'une connexion, HistoriqueFitcare.swift).
+
+     LA RÈGLE. Un jour Fitcare, après 5 h, tant que le fichier de nuit du bracelet ne COUVRE pas la
+     nuit lue (`flNuitFichierCouvre`, flint-sommeil.js), on ne la scelle pas :
+       · LE GESTE reste garé sur l'écran « Ta nuit arrive » — `ATTENTE_FICHIER_NUIT_MS` au plus
+         depuis le doigt, et seulement tant que le bracelet donne signe de vie (synchro, pouls,
+         lien) : sans aucun signe depuis `SIGNE_FRAIS_MS`, passé `ATTENTE_FICHIER_SILENCE_MS`, on
+         scelle ce qu'on a (Bluetooth coupé, bracelet loin — comme avant) ;
+       · LA DÉCISION AUTOMATIQUE attend de même, app ouverte (la même fenêtre, comptée depuis que
+         la page est visible) ; en fond, elle demande le fichier et rend la main, trois essais au
+         plus par nuit, huit minutes entre deux, et seulement quand la journée a repris.
+     On DEMANDE le fichier au natif (`relireMemoire`, `nuit: true` : il fait écrire le bracelet et
+     rouvre le lien dès le 97 — un binaire d'avant ignore `nuit` et relit comme il sait). Si le
+     plafond lâche, la nuit se scelle et le fichier tardif la rescelle d'un bloc, titres compris
+     (`rescellerSiBesoin`, v3114). Le geste DE NUIT (aperçu) n'attend rien, comme avant.
+     Bancs : tests/test-nuit-fichier-entier.js. */
+  var ATTENTE_FICHIER_NUIT_MS = 75000;
+  /* Relecture du 19 nov. — LE FICHIER NEUF NE VIENT QU'APRÈS UNE COUPURE DU LIEN. Si le natif ne le rouvre pas
+     (bracelet sur son chargeur, séance possible, deux minutes depuis la dernière coupure, binaire d'avant sur un
+     lien jeune), attendre 75 s n'apporte rien. Sans coupure vue (`status` disconnected / reconnecting) depuis
+     une minute avant le début de l'attente, on lâche à 30 s : le temps qu'un binaire d'avant finisse de lire sa
+     liste figée et rouvre le lien de lui-même (10 à 25 s, mesuré du 14 au 19 nov.). */
+  var ATTENTE_COUPURE_MS = 30000;
+  var COUPURE_AVANT_MS = 60000;
+  var DEVERROUILLAGE_ECART_MS = 15 * 60000;
+  var ATTENTE_FICHIER_SILENCE_MS = ATTENTE_GESTE_FITCARE_MS;   /* 12 s : le plafond du 5 nov., gardé pour un bracelet qui ne répond pas */
+  var SIGNE_FRAIS_MS = 30000;
+  var FICHIER_REDEMANDE_MS = 30000;
+  var FICHIER_FOND = { essais: 3, ecart: 8 * 60000 };
+  var signeBraceletA = 0, fichierDemandeA = 0, visibleDepuis = 0, fichierRepriseT = null, fichierRafaleT = null;
+  var coupureVueA = 0, deverrouillageDemandeA = 0, fondVolatil = {};
+  window.flNuitCoupureVue = function (t) { coupureVueA = +t || Date.now(); };
+  window.flNuitFichierEntierReglages = { plafond: ATTENTE_FICHIER_NUIT_MS, silence: ATTENTE_FICHIER_SILENCE_MS, signe: SIGNE_FRAIS_MS };
+  window.flNuitSigneBracelet = function (t) { signeBraceletA = +t || Date.now(); };
+  try {
+    if (typeof document !== 'undefined' && document.addEventListener) {
+      document.addEventListener('flintWatch', function (e) {
+        try {
+          var t = e && e.detail && e.detail.type, d = (e && e.detail && e.detail.data) || {};
+          if (t === 'hr' || t === 'rr' || t === 'hrhistory' || t === 'sommeil' || t === 'synchro'
+              || (t === 'status' && (d.status === 'connected' || d.status === 'streaming'))) signeBraceletA = Date.now();
+          if (t === 'status' && (d.status === 'disconnected' || d.status === 'reconnecting')) coupureVueA = Date.now();
+          /* un fichier de nuit vient d'être rangé : le geste garé sur lui repart tout de suite (une passe
+             pour toute la rafale — le bracelet rend une quinzaine de nuits par lecture) */
+          if (t === 'sommeil' && !fichierRafaleT) {
+            var r0 = lire(tk(0));
+            if (r0 && r0.attendFichier) fichierRafaleT = setTimeout(function () {
+              fichierRafaleT = null;
+              try { window.flNuitPasse('REPRISE'); } catch (e2) {}
+            }, 300);
+          }
+          /* le téléphone vient d'être déverrouillé un matin : on va chercher la nuit avant l'ouverture de l'app
+             (le natif d'après la v3115 le fait de lui-même, page vivante ou non ; celui d'avant, ici) */
+          if (t === 'verrou' && Array.isArray(d.evenements) && d.evenements.length) {
+            var ev = d.evenements[d.evenements.length - 1];
+            var maintD = Date.now();
+            if (ev && ev[1] === 1 && maintD - ev[0] * 1000 < 20000
+                && !(deverrouillageDemandeA && maintD - deverrouillageDemandeA < DEVERROUILLAGE_ECART_MS)
+                && demanderLaNuitSiBesoin(maintD, 'téléphone déverrouillé')) deverrouillageDemandeA = maintD;
+          }
+        } catch (e1) {}
+      });
+      document.addEventListener('visibilitychange', function () {
+        try {
+          visibleDepuis = (document.visibilityState === 'visible') ? Date.now() : 0;
+          if (visibleDepuis) demanderLaNuitSiBesoin(visibleDepuis, 'app ouverte');
+        } catch (e3) {}
+      });
+    }
+  } catch (e0) {}
+  function pageVisible() {
+    try { return typeof document !== 'undefined' && document.visibilityState === 'visible'; } catch (e) { return false; }
+  }
+  function demanderLaNuitAuBracelet(now, pourquoi) {
+    try {
+      if (fichierDemandeA && now - fichierDemandeA >= 0 && now - fichierDemandeA < FICHIER_REDEMANDE_MS) return false;
+      fichierDemandeA = now;
+      window.webkit.messageHandlers.flint.postMessage({ cmd: 'relireMemoire', pourquoi: pourquoi, nuit: true });
+      return true;
+    } catch (e) { return false; }
+  }
+  /* Le matin, nuit du jour pas encore scellée, fichier qui ne couvre pas : on le demande SANS attendre
+     que quelqu'un attende — à l'ouverture de l'app, au déverrouillage, au geste. Bornée par
+     `FICHIER_REDEMANDE_MS` ici, et par le natif (2 min entre deux coupures du lien). */
+  function demanderLaNuitSiBesoin(now, pourquoi) {
+    try {
+      var K = tk(0);
+      if (!jourFitcare(K) || new Date(now).getHours() < 5 || new Date(now).getHours() >= 12) return false;
+      var r = lire(K);
+      if (r && r.etat === 'FINALIZED') return false;
+      if (typeof window.flNuitFichierCouvre !== 'function') return false;
+      var cv = window.flNuitFichierCouvre(K);
+      if (!cv || cv.couvre) return false;
+      return demanderLaNuitAuBracelet(now, pourquoi + ', le fichier de nuit ne couvre pas la nuit');
+    } catch (e) { return false; }
+  }
+  window.flNuitDemanderFichier = function (maintenant, pourquoi) { return demanderLaNuitSiBesoin(maintenant || Date.now(), pourquoi || 'moteur'); };
+  /* `depuis` : l'instant d'où se compte l'attente (le geste, ou la page devenue visible). Rend null
+     s'il n'y a rien à attendre ; `{ echu, raison }` quand le plafond lâche ; `{ raison }` sinon. */
+  function fichierNuitAttendu(K, now, depuis) {
+    try {
+      if (K !== tk(0) || !jourFitcare(K) || new Date(now).getHours() < 5) return null;
+      if (typeof window.flNuitFichierCouvre !== 'function') return null;
+      var wM = (typeof window.watchOf === 'function') ? window.watchOf(K) : DB.get('watch_' + K, null);
+      if (wM && wM.night && wM.night.source === 'manuel') return null;   /* la personne a écrit sa nuit : rien à attendre */
+      var cv = window.flNuitFichierCouvre(K);
+      if (!cv || cv.couvre) return null;
+      var ecoule = Math.max(0, now - (+depuis || now));
+      var coupe = coupureVueA > 0 && coupureVueA >= (+depuis || now) - COUPURE_AVANT_MS;
+      if (!coupe && ecoule >= ATTENTE_COUPURE_MS)
+        return { echu: true, raison: 'le lien du bracelet n\'a pas été rouvert en ' + Math.round(ecoule / 1000) + ' s — sa mémoire reste figée, son fichier de nuit ne viendra pas maintenant : on scelle ce qu\'on a' };
+      if (ecoule >= ATTENTE_FICHIER_NUIT_MS)
+        return { echu: true, raison: 'le fichier de nuit entier du bracelet n\'est pas venu en ' + Math.round(ecoule / 1000) + ' s — on scelle ce qu\'on a, il rescellera la nuit d\'un bloc s\'il arrive' };
+      var signe = Math.max(+signeBraceletA || 0, memoireEnCours(now) || 0, +window.flMemoireDebutA || 0);
+      var vivant = signe > 0 && now - signe < SIGNE_FRAIS_MS;
+      if (ecoule >= ATTENTE_FICHIER_SILENCE_MS && !vivant)
+        return { echu: true, muet: true, raison: 'aucun signe du bracelet depuis ' + Math.round(ecoule / 1000) + ' s — on n\'attend pas son fichier de nuit, on scelle ce qu\'on a' };
+      demanderLaNuitAuBracelet(now, 'le fichier de nuit entier est attendu');
+      return { raison: 'le bracelet écrit sa nuit — on l\'attend entière pour ne l\'afficher qu\'une fois ('
+               + Math.max(1, Math.ceil((ATTENTE_FICHIER_NUIT_MS - ecoule) / 1000)) + ' s au plus)'
+               + (cv.fin ? '' : ' ; aucun hypnogramme reçu') };
+    } catch (e) { return null; }
+  }
+  /* La décision automatique. App ouverte : la fenêtre du geste, comptée depuis que la page est
+     visible. En fond : on demande, on rend la main ; trois essais par nuit, huit minutes entre deux. */
+  function fichierNuitAvantDeDecider(K, now) {
+    try {
+      if (pageVisible()) {
+        if (!visibleDepuis) visibleDepuis = now;
+        var f = fichierNuitAttendu(K, now, visibleDepuis);
+        return (f && !f.echu) ? f : null;
+      }
+      if (K !== tk(0) || !jourFitcare(K) || new Date(now).getHours() < 5) return null;
+      if (typeof window.flNuitFichierCouvre !== 'function') return null;
+      var cv = window.flNuitFichierCouvre(K);
+      if (!cv || cv.couvre) return null;
+      var m = fondVolatil[K] || DB.get('flFichierNuitFond_' + K, null) || { n: 0, t0: 0, t: 0 };
+      if (m.n >= FICHIER_FOND.essais && now - m.t >= FICHIER_FOND.ecart) return null;
+      if (!m.t || now - m.t >= FICHIER_FOND.ecart) {
+        if (m.n >= FICHIER_FOND.essais) return null;
+        m = { n: m.n + 1, t0: m.t0 || now, t: now };
+        fondVolatil[K] = m;   /* le compte tient même si le disque refuse l'écriture : le fond n'est jamais retenu sans fin */
+        try { DB.set('flFichierNuitFond_' + K, m); } catch (e2) {}
+        fichierDemandeA = 0;
+        demanderLaNuitAuBracelet(now, 'le fichier de nuit entier est attendu avant de sceller (essai ' + m.n + '/' + FICHIER_FOND.essais + ')');
+      }
+      return { raison: 'le fichier de nuit entier du bracelet est demandé avant de sceller (essai ' + m.n + '/' + FICHIER_FOND.essais + ')' };
+    } catch (e) { return null; }
+  }
+  window.flNuitFichierAttendu = function (K, maintenant, depuis) { return fichierNuitAttendu(K || tk(0), maintenant || Date.now(), depuis); };
+  function armerRepriseFichier() {
+    if (fichierRepriseT) return;
+    try {
+      fichierRepriseT = setTimeout(function () {
+        fichierRepriseT = null;
+        try { window.flNuitPasse('REPRISE'); } catch (e) {}
+      }, 2000);
+    } catch (e) { fichierRepriseT = null; }
+  }
   var REPRISE_MS = [4000, 8000, 15000, 30000];
   var repriseRang = 0;
   function armerReprise() {
@@ -2226,7 +2404,7 @@
          garée qui reprend ne scelle pas une demi-nuit. La session redevient « détectée » ; la
          décision repartira après la livraison. */
       if (cause === AUTO) {
-        var attF = attenteDesDonnees(K, now);
+        var attF = attenteDesDonnees(K, now) || fichierNuitAvantDeDecider(K, now);   /* 19 nov. 2026 — et le fichier de nuit entier */
         if (attF) {
           if (rec.etat === 'AUTO_FINALIZING') {
             rec.etat = 'DETECTED'; rec.cause = null; rec.tFinal0 = null; rec.raison = attF.raison;
@@ -2271,6 +2449,27 @@
         if (fpG) tracer(rec.id, 'parking timed out', cause, rec.etat,
                         'des mesures arrivent encore depuis ' + Math.round((now - rec.tFinal0) / 1000)
                         + ' s — on scelle ce qu\'on a plutôt que de faire attendre le geste');
+      }
+
+      /* ── 1 quater · 19 nov. 2026 — LE GESTE DU MATIN ATTEND LE FICHIER DE NUIT ENTIER DU BRACELET ──
+         Voir le pavé de `fichierNuitAttendu`. La finalisation reste garée (FINALIZING : l'écran
+         « Ta nuit arrive ») ; une passe revient toutes les deux secondes et à chaque fichier de
+         nuit rangé. Le geste de nuit (aperçu) ne passe pas ici. */
+      if (cause === USER && !provisoireOuverte(rec, now) && rec.tFinal0) {
+        var fnA = fichierNuitAttendu(K, now, rec.tFinal0);
+        if (fnA && !fnA.echu) {
+          if (!rec.attendFichier) tracer(rec.id, 'finalization waits for the night file', cause, rec.etat, fnA.raison);
+          rec.attendFichier = now;
+          rec.raison = fnA.raison;
+          ecrire(K, rec);
+          res.attente = true; res.raison = fnA.raison;
+          armerRepriseFichier();
+          return res;
+        }
+        if (fnA && fnA.echu) tracer(rec.id, 'parking timed out', cause, rec.etat, fnA.raison);
+        else if (rec.attendFichier) tracer(rec.id, 'night file complete', cause, rec.etat,
+                                           'le fichier de nuit du bracelet couvre la nuit, ' + Math.round((now - rec.tFinal0) / 1000) + ' s après le geste');
+        if (rec.attendFichier) { delete rec.attendFichier; ecrire(K, rec); }
       }
 
       /* ── 1 bis · LA MONTRE GARDE-T-ELLE ENCORE LA NUIT ? (12 oct. 2026) ──
@@ -2431,6 +2630,33 @@
         return res;
       }
 
+      /* ═══ 22 nov. 2026 — EN FOND, SUR UN FITCARE, ON NE SCELLE PAS UNE NUIT QUE LE BRACELET N'A PAS CONFIRMÉE ═══
+         Le 22 nov. à 04:46 le fond a scellé une soirée immobile (23:40 → 02:20) que le moteur venait de
+         REFUSER (« lue au cœur seul, le bracelet ne la confirme pas ») : `sleepNight` en rendait quand
+         même une estimation. Personne ne regardait — rien ne pressait — et la bannière « ta nuit » est
+         partie à 07:30 sur 2 h 40 pendant que Dino dormait. En fond (`BACKGROUND_AUTO`), un jour Fitcare
+         attend donc que le moteur ait ÉCRIT la nuit (`watch_.night` : sur un Fitcare, c'est la
+         confirmation du bracelet). Un geste de la personne, lui, garde son aperçu : rien n'y change.
+         Pas de reprise armée : le fond repasse de lui-même à chaque arrivée de données. */
+      /* 22 nov. 2026 (suite) — ÉCRAN ALLUMÉ AUSSI. Rejoué le jour même avec la version du téléphone : app
+         OUVERTE à 04:01, la même soirée était encore scellée (« écran visible : les portes d'avant
+         décident » — elles laissaient passer l'estimation au bout de 3 min). Dino : « si l'app est ouverte
+         en pleine nuit, elle peut encore inventer une nuit toute seule » — non. Avec ce bracelet, SANS
+         GESTE de la personne, l'app ne publie jamais son calcul de secours, écran allumé ou éteint : elle
+         attend la nuit du bracelet (quelques secondes le matin, lien ouvert). Le geste (« Traiter »,
+         réveil déclaré) garde son aperçu, et la nuit du bracelet le remplace à son arrivée. */
+      if (cause === AUTO && jourFitcare(K)) {
+        var _wN = null; try { _wN = (typeof window.watchOf === 'function') ? window.watchOf(K) : null; } catch (eN) {}
+        /* `_est` : la nuit ESTIMÉE au pouls que le web range sous le même nom — ce n'est pas celle du moteur */
+        if (!(_wN && _wN.night && !_wN.night._est && _wN.night.sleepStart > 0 && _wN.night.sleepMin != null)) {
+          rec.raison = pageVisible() ? 'le bracelet n\'a pas encore confirmé cette nuit — on attend sa mémoire, on ne publie pas une estimation'
+                                     : 'le bracelet n\'a pas encore confirmé cette nuit — en fond, on attend sa mémoire';
+          ecrire(K, rec);
+          res.attente = true; res.raison = rec.raison;
+          return res;
+        }
+      }
+
       /* ── 3 · LA NUIT, FIGÉE. ───────────────────────────────────────────
          On ne recalcule pas la nuit : on prend l'instantané que le moteur rend
          et on l'ÉCRIT. À partir d'ici, ce qui s'affiche vient de cette case et
@@ -2456,6 +2682,7 @@
                       `flNuitMesureArrivee`. */
                    src: (mesureBracelet(K) ? 'ble' : 'estimation'),
                    ts: new Date(now).toISOString(), gen: SESSION_GEN, id: rec.id };
+      try { var _ds1 = window.flNuitDessin(n); if (_ds1) fige.stages = _ds1; } catch (eD) {}   /* 22 nov. 2026 — le dessin de la nuit scellée */
       try { DB.set(CLE_NUIT + K, fige); } catch (e) {}
 
       /* ── 4 · LE SCORE DE SOMMEIL, sur la nuit qu'on vient de figer. ───── */
@@ -2657,8 +2884,8 @@
      `rescellerSiBesoin` réécrit le sceau de la nuit et son score, pas la récupération. Le 5 nov. : nuit
      corrigée de 00:44 à 23:32 (6 h 05 → 7 h 17, score 65 → 74), récup restée à 49, calculée sur l'ancienne
      nuit. Le fichier du bracelet peut arriver après le sceau : l'écran se contredirait chaque fois.
-     Une fois par nuit, dans les 4 h après le réveil (un score ne change pas l'après-midi), et jamais
-     pour un coup de stylo. */
+     Trois fois par nuit au plus (19 nov. : une fois ne suffisait pas, voir plus bas), dans les 4 h après
+     le réveil (un score ne change pas l'après-midi), et jamais pour un coup de stylo. */
   var recupSuitEssais = 0;
   function recupSuitLeSceau(K, id, now) {
     try {
@@ -2668,12 +2895,17 @@
       var d = Math.abs(f.bedMin - r.e.bedMin) % 1440; d = Math.min(d, 1440 - d);
       if (d <= SEUIL_RENDORMI_MIN && Math.abs((+f.asleep || 0) - (+r.e.sleepMin || 0)) <= SEUIL_RENDORMI_MIN) return null;
       if (typeof flMinuitMsDe !== 'function' || now - (flMinuitMsDe(K) + f.wakeMin * 60000) > 240 * 60000) return null;
-      if (DB.get('recupSuit_' + K, null)) return null;
+      /* 19 nov. 2026 — TROIS FOIS AU PLUS, et plus « une fois » : le fichier du bracelet arrive en deux
+         lectures (le 19 : 09:28:15 l'endormissement, 09:28:35 l'intérieur), le sceau est réécrit deux
+         fois en vingt secondes et la récup restait calculée sur le premier (439 min pour 465). Le
+         garde du dessus ne laisse passer qu'une nuit VRAIMENT différente de celle du score. */
+      var dejaS = DB.get('recupSuit_' + K, null), nS = dejaS ? (+dejaS.n || 1) : 0;
+      if (nS >= 3) return null;
       if (recupSuitEssais >= 3) return null;
       recupSuitEssais++;
       var rp = (typeof window.flRecupPublier === 'function') ? window.flRecupPublier(K, 'rattrapage', true, { nuitRescellee: true }) : null;
       if (!rp || rp.s == null || !rp.publie) return rp;   /* rien de publié : la passe suivante réessaie, trois fois au plus */
-      DB.set('recupSuit_' + K, { t: now });
+      DB.set('recupSuit_' + K, { t: now, n: nS + 1 });
       tracer(id, 'recovery follows the seal', 'CORRECTION', 'FINALIZED',
              'récupération ' + r.s + ' → ' + rp.s + ' : le sceau de la nuit a changé (' + r.e.sleepMin + ' → ' + f.asleep + ' min)');
       try {
@@ -3234,6 +3466,40 @@
     return null;
   }
 
+  /* ═══ 22 nov. 2026 — LE SCEAU PORTAIT SUR UNE AUTRE NUIT QUE CELLE QUE LE FITCARE CONFIRME ═══════
+     LA NUIT DU 21 AU 22 NOV. Dino reste immobile de 23:40 à 02:20 (pouls 55-60, aucun pas), se lève,
+     se couche vers 03:40. À 04:01 l'app est relancée (une pose) : l'automate du matin voit la soirée
+     comme une nuit finie et la scelle en fond à 04:46 — 2 h 40, « estimation », score 36, récup 13.
+     À 09:28 le bracelet rend sa nuit (03:46 → 09:38), le moteur l'écrit — et rien ne bouge : le haut
+     de la page garde 23:40 → 02:20 pendant que le dessin montre 03:46 → 09:38. La promotion répondait
+     « le bracelet n'a toujours pas livré sa nuit » : `mesureBracelet` ne connaît que le sommeil
+     `mainSleep/ble` de l'ancien bracelet, et le Fitcare a rendu la sienne en QUATRE morceaux (trois
+     rangés en siestes, le dernier non valide). Sur un Fitcare cette porte ne s'ouvrait donc jamais.
+     LA RÈGLE, ÉTROITE : jour Fitcare, sceau né d'une ESTIMATION, et la nuit que le moteur a écrite
+     (`watch_.night`, qu'il n'écrit sur un Fitcare qu'avec la confirmation du bracelet) NE RECOUVRE
+     PAS l'intervalle scellé — à dix minutes près. Ce n'était pas la même nuit : l'estimation cède, une
+     fois (`nuitPromu_`, inchangé). Une nuit scellée qui recouvre celle du bracelet (un rendormissement,
+     une nuit qui s'allonge) reste aux portes qui la traitent déjà. Banc : test-nuit-sceau-hors-nuit.js. */
+  window.flNuitSceauHorsNuit = function (f, nuit, minuitMs) {
+    try {
+      if (!f || f.bedMin == null || f.wakeMin == null || !nuit || !(nuit.sleepStart > 0) || !(nuit.sleepEnd > nuit.sleepStart)) return false;
+      if (minuitMs == null || isNaN(minuitMs)) return false;
+      var deb = minuitMs + (+f.bedMin) * 60000, fin = minuitMs + (+f.wakeMin) * 60000;
+      if (deb >= fin) deb -= 86400000;
+      var commun = Math.min(fin, +nuit.sleepEnd) - Math.max(deb, +nuit.sleepStart);
+      return commun <= 10 * 60000;
+    } catch (e) { return false; }
+  };
+  function nuitFitcareHorsDuSceau(K, f) {
+    try {
+      if (!f || f.src !== 'estimation' || !jourFitcare(K)) return null;
+      var w = (typeof window.watchOf === 'function') ? window.watchOf(K) : null, n = w && w.night;
+      if (!n || n._est || n.sleepMin == null) return null;   /* `_est` : une estimation au pouls n'est pas une mesure */
+      var m0 = (typeof flMinuitMsDe === 'function') ? flMinuitMsDe(K) : null;
+      if (!window.flNuitSceauHorsNuit(f, n, m0)) return null;
+      return { type: 'mainSleep', source: 'ble', debut: +n.sleepStart, fin: +n.sleepEnd, sleepMin: +n.sleepMin, via: 'nuitFitcare' };
+    } catch (e) { return null; }
+  }
   window.flNuitMesureArrivee = function (K) {
     K = K || tk(0);
     var out = { promouvoir: false, raison: null };
@@ -3259,6 +3525,7 @@
       }
       if (f.src === 'ble') { out.raison = 'la nuit scellée vient déjà de la mesure'; return out; }
       var m = mesureBracelet(K);
+      if (!m) m = nuitFitcareHorsDuSceau(K, f);   /* 22 nov. 2026 — voir plus bas */
       if (!m) { out.raison = 'le bracelet n\'a toujours pas livré sa nuit'; return out; }
       var n = null;
       try { n = (typeof sleepNight === 'function') ? sleepNight(K) : null; } catch (e) {}
@@ -3507,6 +3774,7 @@
                    src: (mesureBracelet(K) ? 'ble' : 'estimation'),
                    ts: new Date(now).toISOString(), gen: SESSION_GEN, id: rec.id,
                    rattrape: true };
+      try { var _ds2 = window.flNuitDessin(n); if (_ds2) fige.stages = _ds2; } catch (eD) {}   /* 22 nov. 2026 — le dessin de la nuit scellée */
       if (!DB.set(CLE_NUIT + K, fige)) { res.raison = 'écriture du sceau refusée'; return res; }
       /* Le score de sommeil suit le même sort : sans lui, l'autre nombre de la
          nuit se recalcule aussi à chaque lecture. Même fonction, même case et
@@ -3999,6 +4267,78 @@
   /* La nuit figée, pour les écrans qui veulent la nuit TELLE QU'ELLE A ÉTÉ
      PUBLIÉE plutôt que telle que le moteur la recalcule. Rend `null` tant que
      rien n'est scellé — jamais un à-peu-près. */
+  /* ═══ 22 nov. 2026 — LE DESSIN ENTRE DANS LE SCEAU ═══════════════════════════════════════════
+     Le sceau ne gardait que les titres ; le dessin restait celui de la nuit vive, et les deux pouvaient
+     montrer deux nuits (22 nov.). `flNuitDessin` copie les stades de la nuit qu'on scelle ; les trois
+     endroits qui écrivent `nuitFige_` l'appellent. `flNuitServir` les ressert, coupés à l'axe des titres. */
+  window.flNuitDessin = function (n) {
+    try { return (n && Array.isArray(n.stages) && n.stages.length) ? JSON.parse(JSON.stringify(n.stages)) : null; } catch (e) { return null; }
+  };
+  /* ═══ 22 nov. 2026 — L'AXE DU DESSIN EST L'ÉCART ENTRE LES TITRES, POUR TOUTE NUIT ═════════════════
+     Dino : « L'heure du dessus et l'heure de la nuit en dessous ne doivent JAMAIS être différentes. Quoi
+     qu'il se passe. » `flNuitServir` le tient pour la nuit scellée du jour. Restaient les nuits SANS sceau
+     (les jours passés, un autre bracelet, une nuit importée) : la page tirait ses titres de `bedMin` /
+     `wakeMin` et la longueur de son axe de `inBed` — deux champs que rien n'oblige à s'accorder (sans
+     `timeInBed`, `inBed` vaut le temps DORMI : 03:46 → 09:38 en haut, 03:46 → 09:11 sous le dessin).
+     Zéro cas sur les 30 nuits du téléphone de Dino ; la règle ferme la porte pour les autres.
+     AFFICHAGE SEUL : rien de ce qui note la nuit ne lit cette fonction ; `inBed` et l'efficacité restent
+     ce qu'ils étaient. Les stades qui dépasseraient l'axe sont coupés, jamais étirés ; s'ils finissent
+     avant, la fin de l'axe reste vide — on ne dessine pas ce qu'on n'a pas mesuré. */
+  window.flNuitAxe = function (n) {
+    var out = { lit: (n && n.inBed != null) ? n.inBed : null, stages: (n && n.stages && n.stages.length) ? n.stages : null };
+    try {
+      if (!n || n.bedMin == null || n.wakeMin == null) return out;
+      var L = (((Math.round(n.wakeMin) - Math.round(n.bedMin)) % 1440) + 1440) % 1440;
+      if (!(L > 0)) return out;
+      out.lit = L;
+      if (out.stages && out.stages.some(function (g) { return (+g.startMin || 0) + (+g.durMin || 0) > L; })) {
+        var coupes = [];
+        out.stages.forEach(function (g) {
+          var d = +g.startMin || 0, f = Math.min(L, d + (+g.durMin || 0));
+          if (d < L && f > d) { var c = {}; for (var k in g) c[k] = g[k]; c.startMin = d; c.durMin = f - d; coupes.push(c); }
+        });
+        out.stages = coupes.length ? coupes : null;
+      }
+    } catch (e) {}
+    return out;
+  };
+  /* ═══ 22 nov. 2026 — IL Y A UNE NUIT : CE QUE L'APP ANNONCE DE LA NUIT DU JOUR SE LIT ICI ═══════════
+     Dino : « Ce que je veux pas, c'est savoir que l'app arrive quand même à annoncer deux heures
+     différentes d'endormissement et deux heures différentes de réveil à deux endroits de l'app. Ça doit
+     être interdit. Il y a une nuit. »
+     LE DÉFAUT DE FOND. La nuit du jour existe en deux versions : la PUBLIÉE (`nuitFige_`, figée au réveil
+     pour ne pas bouger sous les yeux) et la RECALCULÉE (`sensorOf`, que chaque synchro retouche d'une à
+     trois minutes). L'accueil, « Ma nuit » et le coach lisaient la publiée (`flNuitServir`) ; la page
+     Récupération (« sommeil 5h23 »), la question du réveil (« coucher 03h46, réveil 09h36 »), le Profil,
+     les Tendances et l'export lisaient la recalculée. Une minute d'écart les jours ordinaires ; le
+     22 nov. à 09:45 : 2h40 d'un côté, 5h25 de l'autre. Trouvé par un traceur (deux nuits différentes en
+     mémoire, toutes les sorties d'écran interrogées), pas par une capture.
+     LA RÈGLE. Tout écran qui lit le capteur pour AFFICHER la nuit du jour le lit par cette fonction :
+     quand un sceau existe, la durée, le coucher, le réveil, l'éveil et les stades sont ceux du sceau.
+     Les jours passés n'ont qu'une version lue (la recalculée) : on n'y touche pas. Les calculs (score,
+     récupération scellée, machine du matin) ne passent PAS par ici : ils gardent leur lecture.
+     CE QUI L'INTERDIT POUR LA SUITE : `test-une-seule-nuit.js` monte deux nuits différentes et interroge
+     toutes les sorties `fl…Data` trouvées dans le moteur — un écran neuf qui raconte l'autre nuit le
+     fait rougir sans qu'on ait pensé à lui. */
+  window.flCapteurNuit = function (k, so) {
+    try {
+      if (so === undefined) so = (typeof window.sensorOf === 'function') ? window.sensorOf(k) : null;
+      if (!so || k !== tk(0)) return so;
+      var f = DB.get(CLE_NUIT + k, null);
+      if (!f || f.asleep == null) return so;
+      var c = {}; for (var x in so) c[x] = so[x];
+      c.sleepMin = f.asleep;
+      if (f.awake != null) c.awake = f.awake;
+      if (f.bedMin != null) c.bedMin = f.bedMin;
+      if (f.wakeMin != null) c.wakeMin = f.wakeMin;
+      if (f.deep != null) c.deep = f.deep;
+      if (f.rem != null) c.rem = f.rem;
+      if (f.light != null) c.light = f.light;
+      if (f.bedMin != null && f.wakeMin != null) { var L = (((Math.round(f.wakeMin) - Math.round(f.bedMin)) % 1440) + 1440) % 1440; if (L > 0) c.timeInBed = L; }
+      c._scelle = true;
+      return c;
+    } catch (e) { return so; }
+  };
   window.flNuitFigee = function (K) {
     K = K || tk(0);
     try { return DB.get(CLE_NUIT + K, null); } catch (e) { return null; }
@@ -4038,8 +4378,31 @@
          dessiné la nuit vive À PARTIR de 01:01 — tous les stades 1 h 29 trop tôt, l'axe « 01:01 →
          07:53 ». Quand le coucher vif s'écarte du sceau de plus que le seuil de la maison, on le
          garde à côté (`bedVive`) : `flSommeilData` cale l'axe dessus. Les titres ne changent pas. */
-      var _bv = n.bedMin, _eb = (_bv != null && f.bedMin != null) ? Math.abs(_bv - f.bedMin) % 1440 : 0;
-      if (Math.min(_eb, 1440 - _eb) > (typeof SEUIL_RENDORMI_MIN === 'number' ? SEUIL_RENDORMI_MIN : 5)) n.bedVive = _bv;
+      /* ═══ 22 nov. 2026 — UNE SEULE NUIT SUR LA PAGE, QUOI QU'IL ARRIVE ═══════════════════════════
+         Dino, 22 nov. : « L'heure du dessus et l'heure de la nuit en dessous ne doivent JAMAIS être
+         différentes. Quoi qu'il se passe. » Ce matin-là le sceau disait 23:40 → 02:20 et le dessin
+         03:46 → 09:38. La règle du 17 nov. ci-dessus (les titres au sceau, le dessin à la nuit vive,
+         l'axe calé à côté par `bedVive`) permettait justement deux nuits sur un écran : elle part.
+         LA RÈGLE : quand un sceau existe, il porte la page ENTIÈRE.
+           · les titres : comme avant, ses champs ;
+           · le dessin : ses propres stades (`stages`, gardés au scellement depuis ce jour — voir
+             `flNuitDessin`). Un sceau plus ancien n'en a pas : on prend ceux de la nuit vive SI elle
+             est la même nuit (coucher et réveil à moins du seuil de la maison), recalés sur le coucher
+             scellé ; sinon AUCUN stade — un dessin d'une autre nuit sous ces titres, jamais ;
+           · l'axe : du coucher scellé au réveil scellé (`inBed` = leur écart), et aucun stade ne
+             déborde. L'heure écrite en haut et celle du dessin sortent du même nombre.
+         Resceller reste l'affaire des portes qui le font (promotion, rendormissement, saisie) : elles
+         réécrivent titres et dessin ensemble. */
+      var _seuil = (typeof SEUIL_RENDORMI_MIN === 'number' ? SEUIL_RENDORMI_MIN : 5);
+      /* (tout est écrit EN LIGNE : un banc exécute cette fonction découpée seule, sans ses voisines) */
+      var _eb = (n.bedMin != null && f.bedMin != null) ? Math.abs(n.bedMin - f.bedMin) % 1440 : 0, _ew = (n.wakeMin != null && f.wakeMin != null) ? Math.abs(n.wakeMin - f.wakeMin) % 1440 : 0;
+      var _meme = !(Math.min(_eb, 1440 - _eb) > _seuil || Math.min(_ew, 1440 - _ew) > _seuil);
+      var _dessin = null, _decal = 0;
+      if (Array.isArray(f.stages)) { _dessin = f.stages; n._dessinScelle = true; }
+      else if (_meme) {
+        _dessin = Array.isArray(n.stages) ? n.stages : [];
+        if (n.bedMin != null && f.bedMin != null) { _decal = (n.bedMin - f.bedMin) % 1440; if (_decal > 720) _decal -= 1440; if (_decal < -720) _decal += 1440; }
+      } else { _dessin = []; n._dessinRetire = true; }
       if (f.asleep != null) n.asleep = f.asleep;
       if (f.awake != null) n.awake = f.awake;
       if (f.bedMin != null) n.bedMin = f.bedMin;
@@ -4051,6 +4414,18 @@
       if (f.deep != null) n.deep = f.deep;
       if (f.rem != null) n.rem = f.rem;
       if (f.light != null) n.light = f.light;
+      if (n.bedMin != null && n.wakeMin != null) {
+        var _long = ((n.wakeMin - n.bedMin) % 1440 + 1440) % 1440;
+        n.inBed = _long;
+        var _borne = [];
+        for (var _i = 0; _i < _dessin.length; _i++) {
+          var _g = _dessin[_i]; if (!_g || !(_g.durMin > 0)) continue;
+          var _a = Math.max(0, (+_g.startMin || 0) + _decal), _b = Math.min(_long, (+_g.startMin || 0) + _decal + (+_g.durMin));
+          if (!(_b > _a)) continue;
+          var _c = JSON.parse(JSON.stringify(_g)); _c.startMin = _a; _c.durMin = _b - _a; _borne.push(_c);
+        }
+        n.stages = _borne;
+      }
       n._scelle = true;
       return n;
     } catch (e) { return n; }
@@ -4081,6 +4456,7 @@
                    deep: (n.deep != null ? n.deep : null), rem: (n.rem != null ? n.rem : null), light: (n.light != null ? n.light : null),
                    src: cause || 'manuel', rescelle: cause || 'manuel',
                    ts: new Date().toISOString(), gen: f.gen, id: f.id };
+      try { var _ds3 = window.flNuitDessin(n); if (_ds3) fige.stages = _ds3; } catch (eD) {}   /* 22 nov. 2026 — le dessin de la nuit rescellée */
       try { DB.set(CLE_NUIT + K, fige); } catch (e) { res.raison = 'écriture du sceau : ' + e.message; return res; }
       var sc = null;
       try {
