@@ -283,3 +283,118 @@ window.flSeuilSommeilAppris=function(){
   return window.flSeuilAppriseCalcul(pts);
  }catch(e){return {min:null,nuits:0,manque:21};}
 };
+
+/* ═══ 23 nov. 2026 — LE PREMIER DESSIN DE LA NUIT : CES DEUX FONCTIONS QUITTENT flint-sommeil.js ═════
+   Dino, 14 h 40, capture à l'appui : en rouvrant FLINT après une pose, « Ma nuit » s'est d'abord
+   dessinée sans ses stades — la courbe seule et « Les stades de cette nuit n'ont pas été mesurés. » —
+   puis, quelques secondes après, la vraie page. « J'ai l'impression que c'est des pages codées sur
+   des pages. » Journal du téléphone : 14:37:07 « sommeil ← posée · durée 8h18 · aucun stade »,
+   14:37:15 « stades 498min · segments 52 » ; même forme le matin à 10:03:12.
+   LA CAUSE, MONTRÉE AU TRACEUR (démarrage à froid, `moteur-monte.js` avec `sansSommeil`) :
+   flint-sommeil.js n'est pas un <script> de la page ; le natif l'injecte APRÈS son chargement
+   (`injecterMoteurSommeil`, PontSommeil.swift). `flSommeilData` répond avant : il a la nuit
+   publiée, ses titres et ses 52 segments, mais `stades` y vaut `null` tant que `flStadesNuit` —
+   qui vivait dans le fichier injecté — n'existe pas. Le natif lit « aucun stade » comme « pas
+   mesurés » et monte l'autre page. Sur les 25 fonctions `fl…Data`, c'est la SEULE différence
+   entre avant et après l'injection (flSommeilData et flNuitData, champ `stades`).
+   LA CORRECTION : les deux fonctions vivent ici, dans un fichier que la page charge elle-même
+   (<script src> d'index.html) ; la première réponse est donc complète. Leur texte n'a pas
+   changé. Banc : tests/test-nuit-demarrage-froid.js (toute sortie `fl…Data` identique avant et
+   après l'injection) ; tests/test-stades-parts.js les découpe maintenant d'ici. */
+
+/* ═══ v2281 — LA STRUCTURE DE LA NUIT, ET SON DÉNOMINATEUR ══════════════════
+
+   Les quatre lignes de la fiche — PROFOND, LÉGER, PARADOXAL, RÉVEIL — avec
+   leur part, leur durée, et la plage habituelle de la part. Elles viennent
+   d'index.html (`flSommeilData`), qui touchait son plafond de découpage :
+   c'est du métier, il va dans un fichier de métier.
+
+   ── CE QUI EST CORRIGÉ EN PASSANT, ET C'EST LA RAISON DU DÉPLACEMENT ──────
+
+   Le dénominateur était `asleep`, le temps de SOMMEIL. Or le réveil n'est pas
+   une part du sommeil : profond + léger + paradoxal font déjà 100 % à eux
+   trois, et diviser le réveil par la même chose l'ajoute PAR-DESSUS. Relevé
+   sur la nuit du 9 septembre de Félix — 73 + 201 + 85 min de sommeil, 13 min
+   d'éveil : 20 + 56 + 24 + 4 = 104 %. Un écran qui affiche 104 % ne se
+   discute pas.
+
+   LE DÉNOMINATEUR EST DONC LE TOTAL DES QUATRE LIGNES. C'est le seul qui
+   fasse d'elles une partition : chacune est sa part de ce qui est montré, et
+   la somme fait cent. Ce n'est pas `timeInBed`, et c'est délibéré — un total
+   lu ailleurs peut ne pas coïncider avec ce que les quatre lignes affichent,
+   et la somme repartirait à côté de cent sans qu'on sache pourquoi.
+
+   IL RESTE JUSTE QUAND LE SCEAU ET LE MOTEUR DIVERGENT, et c'est le second
+   gain. Le 8 septembre, `flNuitServir` a greffé un total scellé de 288 min
+   sur des stades qui en font 409 : l'ancien calcul rendait 34 + 69 + 39 + 8
+   = 150 %. Avec le total des quatre, les barres décrivent une nuit COHÉRENTE
+   même quand l'en-tête ment. Ça ne corrige pas la greffe — c'est le défaut 1
+   de CHANTIER-DINO-8-SEPTEMBRE.md, et il reste entier — mais ça l'empêche de
+   produire un écran absurde.
+
+   ── CE QUI NE CHANGE PAS ──────────────────────────────────────────────────
+
+   LA PART, PAS LA DURÉE, pour la plage habituelle. Une nuit courte et une
+   nuit longue peuvent avoir la même structure ; c'est la structure qu'on
+   compare. Un profond à 20 % reste un profond à 20 %, qu'on ait dormi cinq
+   heures ou huit. Dino a choisi les pourcents et non les minutes, et il a
+   raison : c'est déjà l'unité que la bande encode.
+
+   LA PLAGE SUIT LE MÊME DÉNOMINATEUR QUE LA PART. Sans ça la bande et ses
+   repères parleraient deux langues, et le repère tomberait à côté de la
+   barre qu'il est censé situer.
+
+   On relit `sleepNight` des nuits passées : la même source que la nuit
+   affichée, jamais un cache d'affichage. Une nuit sans stades mesurés ne rend
+   rien — c'est le cas des nuits de Dino, et c'est ce qui doit arriver.
+
+   ⚠ LIAISONS. `tk` se lit NU, jamais par `window` (garde-liaisons, et la
+   leçon de marche.js). `sleepNight` et `flPlageHabituelle` se testent par
+   `typeof` avant d'être appelés : une liaison de fichier ne se suppose pas.
+   Le banc : tests/test-stades-parts.js. */
+window.flStadesTotal = function (x) {
+  if (!x) return 0;
+  return (+x.deep || 0) + (+x.light || 0) + (+x.rem || 0) + (+x.awake || 0);
+};
+
+window.flStadesNuit = function (n) {
+  if (!n) return null;
+  function hm(m) {
+    if (m == null) return null;
+    m = Math.round(m);
+    return Math.floor(m / 60) + 'h' + String(m % 60).padStart(2, '0');
+  }
+  /* La part d'un stade sur une nuit passée, pour la plage habituelle. */
+  function part(cle) {
+    return function (off) {
+      try {
+        if (typeof sleepNight !== 'function') return null;
+        var nn = sleepNight(tk(off));
+        if (!nn || !nn.asleep) return null;
+        if (!nn.stages || !nn.stages.length) return null;
+        var v = nn[cle]; if (v == null) return null;
+        var T = window.flStadesTotal(nn); if (!T) return null;
+        return v / T * 100;
+      } catch (e) { return null; }
+    };
+  }
+  var TOT = window.flStadesTotal(n);
+  var _dec = Math.min(0, (window.flDayOff | 0));
+  function faire(nom, cle, minutes) {
+    var o = { nom: nom, pct: (TOT ? Math.round((minutes || 0) / TOT * 100) : 0),
+              duree: hm(minutes || 0) };
+    var p = null;
+    try {
+      if (typeof window.flPlageHabituelle === 'function')
+        p = window.flPlageHabituelle('stade:' + cle, part(cle), _dec);
+    } catch (e) {}
+    /* Les deux bornes ou aucune : une borne seule ne décrit pas un intervalle,
+       et le front l'ignorerait. On arrondit comme `pct`. */
+    if (p) { o.plageMin = Math.round(p.min); o.plageMax = Math.round(p.max); }
+    return o;
+  }
+  return [faire('PROFOND', 'deep', n.deep),
+          faire('LÉGER', 'light', n.light),
+          faire('PARADOXAL', 'rem', n.rem),
+          faire('RÉVEIL', 'awake', n.awake)];
+};

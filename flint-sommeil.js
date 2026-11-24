@@ -3329,7 +3329,7 @@ function restageSleep(dayKey) {
                      sansTemoinMin: 10, sansTemoinFen: 10, sansTemoinSeuil: 9, sansTemoinFin: 30,
                      /* 18 nov. 2026 — voir « DES PICS COLLÉS NE FONT PAS UN RÉVEIL » */
                      salveEcartNuit: 2 };
-  var SECOND_DIT = {}, SANS_TEMOIN_DIT = {}, DOUBLE_IMMOBILE_DIT = {};
+  var SECOND_DIT = {}, SANS_TEMOIN_DIT = {}, DOUBLE_IMMOBILE_DIT = {}, TEMOIN_AVANCE_DIT = {};
   window.flNuitCoeurReglages = NUIT_COEUR;
 
   /* ═══ 11 nov. 2026 (v3074) — LES MARGES SUIVENT LE CŒUR DE CHACUN ══════════════════════════
@@ -5240,14 +5240,88 @@ function restageSleep(dayKey) {
           flsLog('nuit ' + K + ' : ' + nb + ' min de pouls haut SANS TÉMOIN (ni pas, ni téléphone, ni éveil du bracelet) lues comme du sommeil — ' + dits.join(', '));
         }
       }
+      var EXT = null;   /* 23 nov. 2026 — LE RÉVEIL QUI A UN TÉMOIN COMMENCE À LA VRAIE MONTÉE DU POULS (Dino : « pour les réveils
+         pendant la nuit, c'est plutôt eux [WHOOP] qui ont raison » ; « il faut les faire », 11 h). Rejouée sur 26 nuits Fitcare
+         contre WHOOP (7 à la minute) : aucune heure de coucher ni de lever ne bouge, aucun réveil sans témoin n'est créé, le 15 et
+         le 18 nov. inchangés ; le gros réveil du 23 passe de 04:26 à 04:20 (WHOOP 04:18). Réglage retenu : fenêtre de 10 min,
+         seuil repos + 8 (p.eveil + 2). Labo : ~/.flint/chantiers/nuit-23nov/labo23.js ; `window.__EVX` remplace le réglage,
+         `window.__EVX === false` l'éteint. */
+      /* 23 nov. 2026, après les bancs (v2 de la règle) — DEUX GARDES, trouvées par la cause :
+         · un COUP D'ŒIL ne prouve pas un réveil : un téléphone déverrouillé 20 s (une minute de témoin) faisait remonter
+           le réveil de 8 à 10 min sur la montée de pouls d'avant (28 et 29 oct., test-nuit-debut-bracelet : « une minute
+           d'éveil de plus » devenait 8 à 10). Il faut au moins `temoinMin` minutes de témoin dans le bloc ;
+         · la règle a été calibrée sur les nuits Fitcare qui portent leur détail (`TB.aH`) — 26 nuits contre WHOOP. Une nuit
+           sans ce détail (autre bracelet, pouls et pas seuls) n'y entre pas : le 18 sept. (test-nuit-coeur), 2 min de pas à
+           06:02 avançaient le réveil de 5 min et éloignaient le sommeil de WHOOP (457 → 452, WHOOP 459). */
+      var REGLE_TEMOINS = { fen: 10, plus: 2, temoinMin: 2 };
+      function etendreTemoins() {
+        EXT = null;
+        var X = (typeof window !== 'undefined' && window.__EVX != null) ? window.__EVX : REGLE_TEMOINS;
+        if (!X) return;
+        if (!TB.aH && !X.sansDetail) return;   /* calibrée sur les nuits Fitcare qui portent leur détail */
+        var ext = {}, nb = 0, ditsX = [];
+        function temoin(z) { return (P[z] > 0) || !!(U && U[z]) || (TB.aH && TB.code[z] === 0) || (X.pb && TB.aH && TB.PB[z]); }
+        /* B — un trou entre deux fichiers du bracelet, dans la nuit : le bracelet dit « pas endormi » */
+        var bordX = (X.bord != null ? X.bord : p.sansTemoinFin);
+        if (X.trous) {
+          try {
+            var morX = [wKN.nuitFitcare].concat(Array.isArray(wKN.siestesFitcare) ? wKN.siestesFitcare : [])
+              .filter(function (x) { return x && +x.debut > 0 && +x.fin > +x.debut; })
+              .map(function (x) { return [Math.round((x.debut * 1000 - t0) / 60000), Math.round((x.fin * 1000 - t0) / 60000)]; })
+              .sort(function (x, y) { return x[0] - y[0]; });
+            var finP = null;
+            morX.forEach(function (mX) {
+              if (finP != null && mX[0] > finP && mX[0] - finP <= (X.trouMax || 60)) {
+                for (var zC = Math.max(a0 + bordX, finP); zC < Math.min(fin - bordX, mX[0]); zC++) { if (!ext[zC]) { ext[zC] = true; nb++; } }
+              }
+              finP = (finP == null) ? mX[1] : Math.max(finP, mX[1]);
+            });
+          } catch (eX) {}
+        }
+        /* A — un réveil qui a un témoin commence à la première vraie montée du pouls des X.fen minutes d'avant
+           (et, en option, finit à la dernière des X.fen minutes d'après) */
+        var aw = function (z) { return etats[z - a0] === 'awake' || ext[z]; };
+        for (var iX = a0; iX < fin; iX++) {
+          if (!aw(iX)) continue;
+          var jX = iX; while (jX + 1 < fin && aw(jX + 1)) jX++;
+          var nT = 0, kT = []; for (var zX = iX; zX <= jX; zX++) if (temoin(zX)) { nT++; }
+          if (P.slice(iX, jX + 1).some(function (x) { return x > 0; })) kT.push('pas');
+          for (var zY = iX; zY <= jX; zY++) if (U && U[zY]) { kT.push('téléphone'); break; }
+          if (TB.aH) for (var zW = iX; zW <= jX; zW++) if (TB.code[zW] === 0) { kT.push('bracelet'); break; }
+          var vu = nT >= (X.temoinMin != null ? X.temoinMin : 1);   /* un coup d'œil (1 min) ne suffit pas */
+          if (iX < a0 + bordX || jX >= fin - bordX) vu = false;
+          if (vu && X.fen > 0) {
+            for (var bX = Math.max(a0, iX - X.fen); bX < iX; bX++) {
+              var FiX = (k2 >= 0 && bX >= k2) ? F2 : F;
+              if (H[bX] != null && H[bX] >= FiX + p.eveil + (X.plus || 0) && !picHeure[bX]) {
+                for (var cX = bX; cX < iX; cX++) if (!ext[cX]) { ext[cX] = true; nb++; }
+                var dX0 = new Date(t0 + bX * 60000), dX1 = new Date(t0 + iX * 60000);
+                ditsX.push(dX0.getHours() + 'h' + ('0' + dX0.getMinutes()).slice(-2) + ' au lieu de ' + dX1.getHours() + 'h' + ('0' + dX1.getMinutes()).slice(-2) + ' (' + (iX - bX) + ' min, témoin ' + kT.join('+') + ' ' + nT + ' min)');
+                break;
+              }
+            }
+            if (X.apres) for (var dX = Math.min(fin - 1, jX + X.fen); dX > jX; dX--) {
+              var FiY = (k2 >= 0 && dX >= k2) ? F2 : F;
+              if (H[dX] != null && H[dX] >= FiY + p.eveil + (X.plus || 0) && !picHeure[dX]) { for (var eX = jX + 1; eX <= dX; eX++) if (!ext[eX]) { ext[eX] = true; nb++; } break; }
+            }
+          }
+          iX = jX;
+        }
+        if (nb) EXT = ext;
+        if (ditsX.length) { var sX = a0 + '·' + fin + '·' + ditsX.join(','); if (TEMOIN_AVANCE_DIT[K] !== sX) { TEMOIN_AVANCE_DIT[K] = sX;
+          flsLog('nuit ' + K + ' : réveil avancé à la vraie montée du pouls — ' + ditsX.join(', ')); } }
+      }
       function classer() {
-        eveil = 0; dorm = []; etats = new Array(fin - a0);
+        eveil = 0; dorm = []; etats = new Array(fin - a0); EXT = null;
         secondSommeil();
         sansTemoin();
         salves();
+        classerBoucle();
+      }
+      function classerBoucle() {
         for (i = a0; i < fin; i++) {
           var Fi = (k2 >= 0 && i >= k2) ? F2 : F;
-          var _long = (R[i] != null && R[i] >= Fi + p.eveil && !picHeure[i] && !(sansT && sansT[i])) || P[i] > 0 || !!(U && U[i]);   /* v2994 — téléphone déverrouillé = éveillé ; 4 nov. — pas un pic d'heure pile ; 18 nov. — pas un plateau sans témoin */
+          var _long = (R[i] != null && R[i] >= Fi + p.eveil && !picHeure[i] && !(sansT && sansT[i])) || P[i] > 0 || !!(U && U[i]) || !!(EXT && EXT[i]);   /* v2994 — téléphone déverrouillé = éveillé ; 4 nov. — pas un pic d'heure pile ; 18 nov. — pas un plateau sans témoin */
           if (_long || (salveVue && salveVue[i] && !picHeure[i])) {
             eveil++; etats[i - a0] = 'awake';
             /* une salve d'une ou deux minutes ne change pas le NIVEAU de la nuit : son pouls lissé reste
@@ -5628,6 +5702,7 @@ function restageSleep(dayKey) {
       } catch (eD) {}
       }   /* fin du « if (!fx) » de la v2994 */
       if (fin !== finCoeur || a0 !== debutCoeur) classer();
+      etendreTemoins(); if (EXT) { eveil = 0; dorm = []; etats = new Array(fin - a0); classerBoucle(); }
       var tot = fin - a0, dormi = Math.max(0, tot - eveil);
       dorm.sort(function (x, y) { return x - y; });
       var deep = 0, rem = 0, light = 0;
@@ -6087,102 +6162,8 @@ function restageSleep(dayKey) {
 })();
 
 
-/* ═══ v2281 — LA STRUCTURE DE LA NUIT, ET SON DÉNOMINATEUR ══════════════════
-
-   Les quatre lignes de la fiche — PROFOND, LÉGER, PARADOXAL, RÉVEIL — avec
-   leur part, leur durée, et la plage habituelle de la part. Elles viennent
-   d'index.html (`flSommeilData`), qui touchait son plafond de découpage :
-   c'est du métier, il va dans un fichier de métier.
-
-   ── CE QUI EST CORRIGÉ EN PASSANT, ET C'EST LA RAISON DU DÉPLACEMENT ──────
-
-   Le dénominateur était `asleep`, le temps de SOMMEIL. Or le réveil n'est pas
-   une part du sommeil : profond + léger + paradoxal font déjà 100 % à eux
-   trois, et diviser le réveil par la même chose l'ajoute PAR-DESSUS. Relevé
-   sur la nuit du 9 septembre de Félix — 73 + 201 + 85 min de sommeil, 13 min
-   d'éveil : 20 + 56 + 24 + 4 = 104 %. Un écran qui affiche 104 % ne se
-   discute pas.
-
-   LE DÉNOMINATEUR EST DONC LE TOTAL DES QUATRE LIGNES. C'est le seul qui
-   fasse d'elles une partition : chacune est sa part de ce qui est montré, et
-   la somme fait cent. Ce n'est pas `timeInBed`, et c'est délibéré — un total
-   lu ailleurs peut ne pas coïncider avec ce que les quatre lignes affichent,
-   et la somme repartirait à côté de cent sans qu'on sache pourquoi.
-
-   IL RESTE JUSTE QUAND LE SCEAU ET LE MOTEUR DIVERGENT, et c'est le second
-   gain. Le 8 septembre, `flNuitServir` a greffé un total scellé de 288 min
-   sur des stades qui en font 409 : l'ancien calcul rendait 34 + 69 + 39 + 8
-   = 150 %. Avec le total des quatre, les barres décrivent une nuit COHÉRENTE
-   même quand l'en-tête ment. Ça ne corrige pas la greffe — c'est le défaut 1
-   de CHANTIER-DINO-8-SEPTEMBRE.md, et il reste entier — mais ça l'empêche de
-   produire un écran absurde.
-
-   ── CE QUI NE CHANGE PAS ──────────────────────────────────────────────────
-
-   LA PART, PAS LA DURÉE, pour la plage habituelle. Une nuit courte et une
-   nuit longue peuvent avoir la même structure ; c'est la structure qu'on
-   compare. Un profond à 20 % reste un profond à 20 %, qu'on ait dormi cinq
-   heures ou huit. Dino a choisi les pourcents et non les minutes, et il a
-   raison : c'est déjà l'unité que la bande encode.
-
-   LA PLAGE SUIT LE MÊME DÉNOMINATEUR QUE LA PART. Sans ça la bande et ses
-   repères parleraient deux langues, et le repère tomberait à côté de la
-   barre qu'il est censé situer.
-
-   On relit `sleepNight` des nuits passées : la même source que la nuit
-   affichée, jamais un cache d'affichage. Une nuit sans stades mesurés ne rend
-   rien — c'est le cas des nuits de Dino, et c'est ce qui doit arriver.
-
-   ⚠ LIAISONS. `tk` se lit NU, jamais par `window` (garde-liaisons, et la
-   leçon de marche.js). `sleepNight` et `flPlageHabituelle` se testent par
-   `typeof` avant d'être appelés : une liaison de fichier ne se suppose pas.
-   Le banc : tests/test-stades-parts.js. */
-window.flStadesTotal = function (x) {
-  if (!x) return 0;
-  return (+x.deep || 0) + (+x.light || 0) + (+x.rem || 0) + (+x.awake || 0);
-};
-
-window.flStadesNuit = function (n) {
-  if (!n) return null;
-  function hm(m) {
-    if (m == null) return null;
-    m = Math.round(m);
-    return Math.floor(m / 60) + 'h' + String(m % 60).padStart(2, '0');
-  }
-  /* La part d'un stade sur une nuit passée, pour la plage habituelle. */
-  function part(cle) {
-    return function (off) {
-      try {
-        if (typeof sleepNight !== 'function') return null;
-        var nn = sleepNight(tk(off));
-        if (!nn || !nn.asleep) return null;
-        if (!nn.stages || !nn.stages.length) return null;
-        var v = nn[cle]; if (v == null) return null;
-        var T = window.flStadesTotal(nn); if (!T) return null;
-        return v / T * 100;
-      } catch (e) { return null; }
-    };
-  }
-  var TOT = window.flStadesTotal(n);
-  var _dec = Math.min(0, (window.flDayOff | 0));
-  function faire(nom, cle, minutes) {
-    var o = { nom: nom, pct: (TOT ? Math.round((minutes || 0) / TOT * 100) : 0),
-              duree: hm(minutes || 0) };
-    var p = null;
-    try {
-      if (typeof window.flPlageHabituelle === 'function')
-        p = window.flPlageHabituelle('stade:' + cle, part(cle), _dec);
-    } catch (e) {}
-    /* Les deux bornes ou aucune : une borne seule ne décrit pas un intervalle,
-       et le front l'ignorerait. On arrondit comme `pct`. */
-    if (p) { o.plageMin = Math.round(p.min); o.plageMax = Math.round(p.max); }
-    return o;
-  }
-  return [faire('PROFOND', 'deep', n.deep),
-          faire('LÉGER', 'light', n.light),
-          faire('PARADOXAL', 'rem', n.rem),
-          faire('RÉVEIL', 'awake', n.awake)];
-};
+/* ═══ v2281 — LA STRUCTURE DE LA NUIT : `flStadesTotal` et `flStadesNuit` vivent dans
+   flint-score-sommeil.js depuis le 23 nov. 2026 (voir « LE PREMIER DESSIN DE LA NUIT » là-bas). */
 
 
 /* ═══ 30 oct. 2026 (v2994) — UN POULS SANS BATTEMENTS N'EST PAS UN POULS ═══════════════════════

@@ -2867,7 +2867,7 @@ body.stepsview header{display:none}
 <script src="flint-classement.js"></script>
 <script src="flint-fuseau.js"></script>
 <script src="flint-equilibre.js"></script>
-<script src="flint-oxygene.js"></script>
+<script src="flint-oxygene.js"></script><script src="flint-vo2.js"></script>
 <script src="flint-additifs.js"></script>
 <script src="flint-coach.js"></script>
 <script src="flint-semis.js"></script>
@@ -9285,7 +9285,7 @@ window.flRecupData=function(_argJour){try{
    var _a=DB.get('recovAj_'+K,null);
    return (_a!=null&&+_a!==0)?(((typeof flLangue==='function'&&flLangue()==='en')?'Evening journal: ':(typeof flLangue==='function'&&flLangue()==='es')?'Diario de la noche: ':'Journal de bord : ')+_a+' pts'):null;
   }catch(e){return null;}})(),
-  metriques:metriques,hebdo:hebdo,effortRecup:effortRecup};
+  metriques:metriques,hebdo:hebdo,effortRecup:effortRecup,corpsLutte:(function(){try{return (typeof window.flCorpsLutteJour==='function')?window.flCorpsLutteJour(K):null;}catch(e){return null;}})()};   /* 23 nov. 2026 — « TON CORPS LUTTE » sur le Moniteur (MoniteurSante.swift, `AlerteCorpsLutte`) : le moteur décide (flint-vfc-source.js), le natif affiche */
 }catch(e){return {aDesDonnees:false};}};
 
 /* ═══ v1846 — LE MOTEUR D'IMPACT DU JOURNAL (le « backend », enfin réel) ══════
@@ -12497,7 +12497,7 @@ window.flAccueilData=function(_argJour){try{
           reformulation, et sans un mot : la coche resterait verte. On pose donc
           le meme ecart en NOMBRE, a cote de sa phrase. La phrase reste ce qui
           s affiche ; le nombre est ce qui decide. */
-       if(_t&&_t.ecart!=null)_l.ecartNum=_t.ecart;
+       if(_t&&_t.ecart!=null)_l.ecartNum=_t.ecart; if(_t&&_t.spark)_l.spark=_t.spark;   /* 23 nov. 2026 — la petite courbe des 7 nuits (MoniteurSante.swift) */
        /* v2319 — LE MAILLON QUI MANQUAIT. La v2181 juge la temperature en
           ecarts-types ; le moteur rendait `z` et le Swift savait le lire, mais
           personne ne le RECOPIAIT ici : le verdict retombait sur les degres en
@@ -23373,7 +23373,7 @@ function wipeData(){if(!confirm('Vider TOUTES les données (démo incluse) et re
 function exportData(){const dump={};Object.keys(localStorage).forEach(k=>dump[k]=localStorage.getItem(k));const t=JSON.stringify(dump,null,2);try{const blob=new Blob([t],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='flint-data.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},1500);toast('⬇️ Données exportées (flint-data.json)')}catch(e){try{navigator.clipboard.writeText(t);toast('📋 Données copiées')}catch(e2){toast('Export impossible')}}}
 
 /* ===== Coach IA (réponses fondées sur les données du jour) ===== */
-const APP_VERSION='v3128';
+const APP_VERSION='v3132';
 async function checkUpdate(auto){try{const r=await fetch('sw.js?cb='+Date.now(),{cache:'no-store'});const t=await r.text();const m=t.match(/flint-v(\d+)/);if(m){const liveN=+m[1],curN=+((APP_VERSION.match(/(\d+)/)||['0'])[0]);if(liveN>curN){if(auto){forceUpdate();return}const b=document.getElementById('updBanner');if(!b)return;b.style.display='block';b.textContent='⬆️ Nouvelle version (flint-v'+liveN+') — appuie pour mettre à jour'}}}catch(e){}}
 async function forceUpdate(){toast('Mise à jour…');try{if('serviceWorker'in navigator){const rs=await navigator.serviceWorker.getRegistrations();for(const r of rs)await r.unregister()}if(window.caches){const ks=await caches.keys();for(const k of ks)await caches.delete(k)}}catch(e){}location.replace(location.href.split('?')[0]+'?v='+Date.now())}
 if(!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.flint)&&(function(){try{return localStorage.getItem('flintForceShell')!=='1';}catch(e){return true;}})())ensureDemo();
@@ -30152,7 +30152,7 @@ window.flDansFenetre=function(m,d,f){ return m>=d && m<f; };
       l emploie tel quel. */
    var pv=(typeof getProfile==='function'?getProfile():null)||{};
    var mes=+pv.vo2Mesure||0;
-   if(mes>=15&&mes<=90)return Math.round(mes);
+   if(mes>=15&&mes<=90)return Math.round(mes);   /* 23 nov. 2026 — PUIS LA VO₂ MAX DU BRACELET (flint-vo2.js) : le chiffre que le bracelet calcule passe devant notre estimation, comme la VFC le 21 nov. */ var _vb=(typeof window.flVo2BraceletRecent==='function')?window.flVo2BraceletRecent(off):null; if(_vb&&_vb.v!=null)return _vb.v;
    var fm=flFcMax(); if(!fm)return null;
    var w=DB.get('watch_'+((typeof flCleJourCourant==='function')?flCleJourCourant:tk)(Math.min(0,off|0)),null);
    var hr=(w&&w.hr)?w.hr.filter(function(x){return x&&x[1]>25&&x[1]<230;}):[];
@@ -30316,7 +30316,7 @@ window.flDansFenetre=function(m,d,f){ return m>=d && m<f; };
     var kk=d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();
     var x=nuitDe(kk); if(x!=null&&(_tnI[kk]||'')===(_tnI[K]||''))a.push(x);
    }
-   var out={valeur:Math.round(v*10)/10, nuits:a.length};
+   var out={valeur:Math.round(v*10)/10, nuits:a.length}; out.spark=(function(){var r=[];for(var j=6;j>=1;j--){var d=new Date(+p[0],(+p[1])-1,+p[2]);d.setDate(d.getDate()-j);var kk=d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();var x=nuitDe(kk);r.push((x!=null&&(_tnI[kk]||'')===(_tnI[K]||''))?Math.round(x*100)/100:null);}r.push(Math.round(v*100)/100);return r;})();   /* 23 nov. 2026 — les 7 dernières nuits (même bracelet), pour la petite courbe de la rangée du Moniteur */
    if(a.length>=8){
     a.sort(function(x,y){return x-y;});
     var m=a.length%2?a[a.length>>1]:(a[a.length/2-1]+a[a.length/2])/2;
@@ -35749,7 +35749,7 @@ window.flDeriverMetriques=function(k,liste){
    var j=DB.get('bodylog',{})||{};
    var dPoids=null,qPoids=null,dBf=null,qBf=null;   /* 14 sept. 2026 — DEUX MESURES, DEUX DATES : la boucle s arretait a la premiere entree portant l un OU l autre, si bien qu une correction de poids MASQUAIT la masse grasse de la veille (« A saisir » pour un chiffre saisi). Chacune se cherche dans SON entree. */
    for(var i=0;i<60;i++){var e=j[tk(-i)];if(!e)continue;if(qPoids==null&&e.weight!=null){dPoids=e.weight;qPoids=tk(-i);}if(qBf==null&&e.bf!=null){dBf=e.bf;qBf=tk(-i);}if(qPoids!=null&&qBf!=null)break;}
-   var fm=flFcMax();
+   var fm=flFcMax(); var _vp=(typeof window.flVo2Provenance==='function')?window.flVo2Provenance(0):{source:null,semaine:null};
    return {
     poids:(dPoids!=null)?dPoids:(+p.weight||null),
     masseGrasse:dBf,
@@ -35758,7 +35758,7 @@ window.flDeriverMetriques=function(k,liste){
     fcMax:fm?fm.v:null,
     fcMaxMesuree:(+p.hrMax||null),
     fcMaxSource:fm?fm.src:null,
-    vo2:flVo2Max(),
+    vo2:flVo2Max(), vo2Source:_vp.source, vo2Semaine:_vp.semaine,   /* 23 nov. 2026 — d'où vient la VO₂ max, et la semaine du bracelet (flint-vo2.js, flVo2Provenance) */
     vo2Mesure:(+p.vo2Mesure||null),
     metaBase:flMetaBase(),
     metaBaseSource:(flMasseMaigre()>0?'Katch-McArdle, depuis ta masse maigre'
